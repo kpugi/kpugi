@@ -1,0 +1,466 @@
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+
+/* ─────────────────────────────────────────────────────
+   MOCK DATA 
+───────────────────────────────────────────────────── */
+type Platform = 'TikTok' | 'Instagram' | 'X';
+type Category = 'Fashion' | 'Food & Drink' | 'Tech' | 'Lifestyle' | 'Finance' | 'Gaming' | 'Beauty' | 'Sports';
+
+interface Campaign {
+  id: string;
+  brand: string;
+  brief: string;
+  platform: Platform[];
+  category: Category;
+  cpm: number;          
+  slotsTotal: number;
+  slotsFilled: number;
+  budgetTotal: number;  
+  budgetSpent: number;  
+  minViews: number;     
+  daysLeft: number;
+  tone: string;         
+  timePosted: string;
+}
+
+const CAMPAIGNS: Campaign[] = [
+  {
+    id: 'c1',
+    brand: 'Chi Limited',
+    brief: 'Repost: Chivita Active "Start Strong" Commercial',
+    platform: ['TikTok', 'Instagram'],
+    category: 'Food & Drink',
+    cpm: 1800,
+    slotsTotal: 80,
+    slotsFilled: 31,
+    budgetTotal: 2_400_000,
+    budgetSpent: 890_000,
+    minViews: 1000,
+    daysLeft: 12,
+    tone: 'Audience: Fitness, Lifestyle, Youth',
+    timePosted: '1mo',
+  },
+  {
+    id: 'c2',
+    brand: 'Paystack',
+    brief: 'Amplify: Paystack "One Tap Checkout" Explainer',
+    platform: ['X', 'Instagram'],
+    category: 'Finance',
+    cpm: 2600,
+    slotsTotal: 40,
+    slotsFilled: 18,
+    budgetTotal: 3_200_000,
+    budgetSpent: 1_180_000,
+    minViews: 1000,
+    daysLeft: 8,
+    tone: 'Audience: Entrepreneurs, Tech, Business',
+    timePosted: '6d',
+  },
+  {
+    id: 'c3',
+    brand: 'Bumpa',
+    brief: 'Share: Bumpa Store Reveal Feature Walkthrough',
+    platform: ['TikTok', 'Instagram'],
+    category: 'Tech',
+    cpm: 2200,
+    slotsTotal: 60,
+    slotsFilled: 9,
+    budgetTotal: 1_800_000,
+    budgetSpent: 264_000,
+    minViews: 1000,
+    daysLeft: 21,
+    tone: 'Audience: Small Business Owners, Vendors',
+    timePosted: '2w',
+  },
+  {
+    id: 'c4',
+    brand: 'Konga',
+    brief: 'Repost: Konga Black Friday Teaser Trailer',
+    platform: ['TikTok', 'Instagram', 'X'],
+    category: 'Lifestyle',
+    cpm: 1400,
+    slotsTotal: 120,
+    slotsFilled: 57,
+    budgetTotal: 5_000_000,
+    budgetSpent: 2_240_000,
+    minViews: 1000,
+    daysLeft: 5,
+    tone: 'Audience: General, Deal-hunters, Shoppers',
+    timePosted: '3d',
+  },
+];
+
+const PLATFORMS: Platform[] = ['TikTok', 'Instagram', 'X'];
+
+/* ─────────────────────────────────────────────────────
+   ICONS
+───────────────────────────────────────────────────── */
+function IconTikTok({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path 
+        d="M12.525.025c-3.308 0-6.327 2.684-6.327 6.002V15.4c0 2.378-1.926 4.305-4.305 4.305S-.412 17.778-.412 15.4s1.926-4.305 4.305-4.305c.162 0 .32.012.474.035v3.136c-.154-.027-.311-.041-.474-.041-1.156 0-2.095.939-2.095 2.095s.939 2.095 2.095 2.095 2.095-.939 2.095-2.095V.025h3.21c.143 2.158 1.83 3.844 3.987 3.987v3.21c-1.396-.134-2.612-.862-3.33-1.95v10.128c0 3.774-3.056 6.83-6.83 6.83S0 19.174 0 15.4s3.056-6.83 6.83-6.83V6.002c-4.498 0-8.59 3.655-8.59 8.153s4.092 8.153 8.59 8.153c4.498 0 8.153-3.655 8.153-8.153V6.368c1.378 1.206 3.197 1.933 5.168 1.933V5.09c-1.968 0-3.766-.806-5.068-2.108-1.302-1.302-2.108-3.1-2.108-5.068H12.525z" 
+        transform="translate(4 2) scale(0.8)" 
+        fill="#FFFFFF" 
+        style={{ filter: 'drop-shadow(1.5px 1.5px 0px #FE2C55) drop-shadow(-1.5px -1.5px 0px #25F4EE)' }}
+      />
+    </svg>
+  );
+}
+
+function IconInstagram({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ig-grad" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#feda75" />
+          <stop offset="0.3" stopColor="#fa7e1e" />
+          <stop offset="0.6" stopColor="#d62976" />
+          <stop offset="0.9" stopColor="#962fbf" />
+          <stop offset="1" stopColor="#4f5bd5" />
+        </linearGradient>
+      </defs>
+      <path 
+        fill="url(#ig-grad)" 
+        d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
+      />
+    </svg>
+  );
+}
+
+function IconX({ className }: { className?: string }) {
+  // X is just white on dark mode, so fill="#FFFFFF"
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="#FFFFFF"/>
+    </svg>
+  );
+}
+
+function PlatformIcon({ platform, className }: { platform: Platform, className?: string }) {
+  if (platform === 'TikTok') return <IconTikTok className={className} />;
+  if (platform === 'Instagram') return <IconInstagram className={className} />;
+  if (platform === 'X') return <IconX className={className} />;
+  return null;
+}
+
+/* ─────────────────────────────────────────────────────
+   FEATURED HERO SLIDESHOW
+───────────────────────────────────────────────────── */
+const FEATURED_ITEMS = [
+  {
+    id: 'f1',
+    brand: 'Chi Limited',
+    title: 'Chi Limited · Active',
+    category: 'Food & Drink',
+    cpm: 1800,
+    budget: 2_400_000,
+    gradient: 'from-[#1a1c2e] via-[#0d1326] to-[#0a0a0f]',
+    badge: 'Kpugi Originals',
+  },
+  {
+    id: 'f2',
+    brand: 'Paystack',
+    title: 'Paystack · One Tap Checkout',
+    category: 'Finance',
+    cpm: 2600,
+    budget: 3_200_000,
+    gradient: 'from-[#0d2218] via-[#0a1820] to-[#0a0a0f]',
+    badge: 'Trending Campaign',
+  },
+  {
+    id: 'f3',
+    brand: 'Konga',
+    title: 'Konga · Black Friday Teaser',
+    category: 'Lifestyle',
+    cpm: 1400,
+    budget: 5_000_000,
+    gradient: 'from-[#2e1810] via-[#1a0d18] to-[#0a0a0f]',
+    badge: 'High Volume',
+  },
+];
+
+function FeaturedHero() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % FEATURED_ITEMS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const current = FEATURED_ITEMS[currentIndex];
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % FEATURED_ITEMS.length);
+  };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + FEATURED_ITEMS.length) % FEATURED_ITEMS.length);
+  };
+
+  return (
+    <div className="relative w-full h-[420px] sm:h-[500px] overflow-hidden group cursor-pointer mb-10 select-none">
+      {/* Background Slides */}
+      {FEATURED_ITEMS.map((item, idx) => (
+        <div
+          key={item.id}
+          className={`absolute inset-0 bg-gradient-to-br ${item.gradient} transition-opacity duration-700 ease-in-out ${
+            idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          }`}
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent"></div>
+          <div className="absolute right-[10%] top-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-500/10 blur-[100px] rounded-full group-hover:bg-blue-500/20 transition-colors duration-700"></div>
+          <div className="absolute right-[25%] top-[20%] w-[180px] h-[180px] bg-emerald-500/10 blur-[80px] rounded-full group-hover:bg-emerald-500/20 transition-colors duration-700"></div>
+        </div>
+      ))}
+
+      {/* Content overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#090a0f] via-[#090a0f]/60 to-transparent flex flex-col justify-end z-20 pointer-events-none">
+        <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 pb-10 sm:pb-14 flex items-end justify-between">
+          <div className="pointer-events-auto">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 rounded-full bg-[#E4A12C] flex items-center justify-center text-[10px] font-bold text-black">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <span className="text-sm font-semibold text-white/90">{current.badge}</span>
+            </div>
+            
+            <h1 className="font-display font-bold text-white text-4xl sm:text-6xl mb-4 tracking-tight">
+              {current.title}
+            </h1>
+            
+            <div className="flex items-center gap-2 text-sm text-white/60 font-medium mb-8">
+              <span>{current.category}</span>
+              <span>·</span>
+              <span className="text-white">₦{(current.cpm / 1000).toFixed(1)}k<span className="text-white/60">/1K views</span></span>
+              <span>·</span>
+              <span>₦{current.budget.toLocaleString()} Budget</span>
+            </div>
+            
+            <div>
+              <button className="bg-white text-black px-8 py-3.5 rounded-full font-bold text-sm hover:bg-white/90 transition-transform hover:scale-105 active:scale-95">
+                View Program
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Arrows */}
+          <div className="hidden sm:flex items-center gap-3 pointer-events-auto">
+            <button 
+              onClick={handlePrev}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button 
+              onClick={handleNext}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Slide Indicator Dashes */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-auto z-30">
+          {FEATURED_ITEMS.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentIndex(idx);
+              }}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                idx === currentIndex ? 'w-8 bg-white' : 'w-2 bg-white/30 hover:bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
+   CAMPAIGN CARD
+───────────────────────────────────────────────────── */
+function CampaignCard({ c, index }: { c: Campaign, index: number }) {
+  const progress = (c.budgetSpent / c.budgetTotal) * 100;
+  
+  // Deterministic gradient based on index for variety
+  const gradients = [
+    'from-[#1a103c] to-[#0B1026]',
+    'from-[#0f1f1a] to-[#0B1026]',
+    'from-[#2a1310] to-[#0B1026]',
+    'from-[#0e1b2e] to-[#0B1026]',
+  ];
+  const bgClass = gradients[index % gradients.length];
+
+  return (
+    <article className="group relative flex flex-col bg-[#12141A] rounded-2xl overflow-hidden hover:bg-[#161820] transition-colors duration-300 border border-white/5 hover:border-white/10 cursor-pointer">
+      {/* Thumbnail Area */}
+      <div className={`h-[180px] w-full bg-gradient-to-br ${bgClass} relative p-5 flex flex-col justify-between`}>
+         <div className="w-full h-full flex items-center justify-center opacity-30 group-hover:opacity-50 transition-opacity duration-500">
+             <div className="w-24 h-24 rounded-full border border-white/20 blur-[2px]"></div>
+             <div className="absolute w-16 h-16 rounded-full border border-white/10 blur-[1px]"></div>
+         </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="p-5 flex flex-col flex-1">
+        
+        {/* Brand & Platform Row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+              {c.brand.charAt(0)}
+            </div>
+            <span className="text-[13px] font-semibold text-white/90 truncate max-w-[90px]">{c.brand}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#E4A12C] shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span className="text-[13px] text-white/40 shrink-0">·</span>
+            <span className="text-[13px] text-white/40 shrink-0">{c.timePosted}</span>
+          </div>
+          
+          <div className="flex items-center gap-1.5 shrink-0">
+            {c.platform.map(p => (
+              <div key={p} className="w-5 h-5 rounded-full bg-black flex items-center justify-center border border-white/10">
+                <PlatformIcon platform={p} className="w-[14px] h-[14px]" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="font-display font-semibold text-white text-[15px] leading-snug mb-2">
+          {c.brief}
+        </h3>
+        
+        {/* Tone/Audience */}
+        <p className="text-[12px] text-white/40 mb-6 italic">
+          {c.tone}
+        </p>
+
+        {/* Bottom Stats */}
+        <div className="mt-auto flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="text-[12px] font-semibold">
+              <span className="text-white">₦{(c.budgetSpent / 1000).toLocaleString()}k</span>
+              <span className="text-white/40">/₦{(c.budgetTotal / 1000).toLocaleString()}k</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-md">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span className="text-[11px] font-bold text-white/90">{c.slotsFilled}</span>
+              </div>
+              <div className="bg-[#2F49E8] px-2 py-1 rounded-md text-[11px] font-bold text-white shadow-sm">
+                ₦{(c.cpm / 1000).toFixed(1)}k/1K
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Progress Bar at bottom edge */}
+      <div className="w-full h-[2px] bg-white/5">
+        <div className="h-full bg-white transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
+      </div>
+    </article>
+  )
+}
+
+/* ─────────────────────────────────────────────────────
+   MAIN PAGE
+───────────────────────────────────────────────────── */
+export default function BrowsePage() {
+  const [activePlatform, setActivePlatform] = useState<Platform | null>(null);
+
+  const filtered = useMemo(() => {
+    let list = [...CAMPAIGNS];
+    if (activePlatform) list = list.filter((c) => c.platform.includes(activePlatform));
+    return list;
+  }, [activePlatform]);
+
+  return (
+    <div className="min-h-screen bg-[#090A0F] font-sans pb-16">
+      
+      {/* Full width hero - no container padding or borders */}
+      <FeaturedHero />
+
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* Toolbar */}
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
+          
+          {/* Search */}
+          <div className="relative w-full md:w-[320px]">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input 
+              type="text" 
+              placeholder="Campaigns and creators" 
+              className="w-full bg-[#13151A] border border-white/5 rounded-full pl-11 pr-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/20 transition-colors" 
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-white/30 font-mono border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
+          </div>
+          
+          {/* Platform Filters */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
+            <button className="w-11 h-11 shrink-0 rounded-full bg-[#13151A] border border-white/5 flex items-center justify-center hover:bg-white/10 transition-colors text-white">
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+            </button>
+            <button 
+              onClick={() => setActivePlatform(null)}
+              className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-colors text-sm font-semibold
+                ${!activePlatform ? 'bg-white text-black' : 'bg-[#13151A] border border-white/5 text-white/70 hover:text-white hover:bg-white/10'}
+              `}
+            >
+              All
+            </button>
+            {PLATFORMS.map(p => (
+              <button 
+                key={p} 
+                onClick={() => setActivePlatform(p)}
+                className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-colors
+                  ${activePlatform === p ? 'bg-white text-black' : 'bg-[#13151A] border border-white/5 text-white/70 hover:text-white hover:bg-white/10'}
+                `}
+              >
+                <PlatformIcon platform={p} className="w-5 h-5" />
+              </button>
+            ))}
+          </div>
+
+          {/* Dropdowns */}
+          <div className="md:ml-auto flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+            {['Status', 'Category', 'Content'].map(label => (
+              <div key={label} className="relative shrink-0">
+                <select className="bg-[#13151A] border border-white/5 rounded-full pl-5 pr-10 py-3 text-sm text-white/80 appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none">
+                  <option>{label}</option>
+                </select>
+                <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Featured Section Title */}
+        <h2 className="font-display font-bold text-white text-xl mb-6 tracking-tight">Featured</h2>
+
+        {/* Campaign Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {filtered.map((c, i) => (
+            <CampaignCard key={c.id} c={c} index={i} />
+          ))}
+        </div>
+
+      </div>
+    </div>
+  );
+}
