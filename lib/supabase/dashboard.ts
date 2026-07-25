@@ -193,3 +193,136 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     recentNotifications: notifications || [],
   };
 }
+
+// ─────────────────────────────────────────────
+// CAMPAIGN DETAILS FOR CREATORS
+// ─────────────────────────────────────────────
+
+export interface CampaignDetailsForCreator {
+  campaign: {
+    id: string;
+    title: string;
+    description: string;
+    ad_format: string;
+    requirements: Record<string, any>;
+    cpm_rate: number;
+    total_budget: number;
+    reserved_budget: number;
+    spent_budget: number;
+    min_view_threshold: number;
+    required_live_duration_hours: number;
+    verification_grace_hours: number;
+    status: string;
+    created_at: string;
+    company_name: string;
+    company_logo: string | null;
+  } | null;
+  creatives: {
+    id: string;
+    file_url: string | null;
+    copy_text: string | null;
+    caption_suggestion: string | null;
+  }[];
+  submission: {
+    id: string;
+    post_url: string;
+    screenshot_url: string;
+    status: string;
+    reserved_amount: number;
+    final_view_count: number | null;
+    verified_at: string | null;
+    paid_at: string | null;
+    payout_amount: number | null;
+  } | null;
+  socialAccounts: {
+    id: string;
+    platform: string;
+    handle: string;
+  }[];
+}
+
+export async function getCampaignDetailsForCreator(
+  campaignId: string,
+  creatorProfileId: string
+): Promise<CampaignDetailsForCreator> {
+  const supabase = createAdminClient();
+
+  // 1. Fetch Campaign with Advertiser profile joined
+  const { data: campaign } = await supabase
+    .from('campaigns')
+    .select(`
+      id,
+      title,
+      description,
+      ad_format,
+      requirements,
+      cpm_rate,
+      total_budget,
+      reserved_budget,
+      spent_budget,
+      min_view_threshold,
+      required_live_duration_hours,
+      verification_grace_hours,
+      status,
+      created_at,
+      advertiser:advertiser_profiles (
+        company_name,
+        profile:profiles (
+          avatar_url
+        )
+      )
+    `)
+    .eq('id', campaignId)
+    .single();
+
+  const adv = campaign?.advertiser as any;
+  const companyName = adv?.company_name || 'Brand Partner';
+  const companyLogo = adv?.profile?.avatar_url || null;
+
+  // 2. Fetch associated creatives
+  const { data: creatives } = await supabase
+    .from('campaign_creatives')
+    .select('id, file_url, copy_text, caption_suggestion')
+    .eq('campaign_id', campaignId);
+
+  // 3. Fetch current creator's submission for this campaign
+  const { data: submission } = await supabase
+    .from('submissions')
+    .select('id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount')
+    .eq('campaign_id', campaignId)
+    .eq('creator_id', creatorProfileId)
+    .maybeSingle();
+
+  // 4. Fetch creator's social accounts
+  const { data: socialAccounts } = await supabase
+    .from('social_accounts')
+    .select('id, platform, handle')
+    .eq('creator_id', creatorProfileId);
+
+  return {
+    campaign: campaign
+      ? {
+          id: campaign.id,
+          title: campaign.title,
+          description: campaign.description,
+          ad_format: campaign.ad_format,
+          requirements: campaign.requirements as Record<string, any>,
+          cpm_rate: Number(campaign.cpm_rate),
+          total_budget: Number(campaign.total_budget),
+          reserved_budget: Number(campaign.reserved_budget),
+          spent_budget: Number(campaign.spent_budget),
+          min_view_threshold: campaign.min_view_threshold,
+          required_live_duration_hours: campaign.required_live_duration_hours,
+          verification_grace_hours: campaign.verification_grace_hours,
+          status: campaign.status,
+          created_at: campaign.created_at,
+          company_name: companyName,
+          company_logo: companyLogo,
+        }
+      : null,
+    creatives: creatives || [],
+    submission: submission || null,
+    socialAccounts: socialAccounts || [],
+  };
+}
+

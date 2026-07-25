@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 /* ─────────────────────────────────────────────────────
    MOCK DATA 
@@ -382,12 +383,73 @@ function CampaignCard({ c, index }: { c: Campaign, index: number }) {
 ───────────────────────────────────────────────────── */
 export default function BrowsePage() {
   const [activePlatform, setActivePlatform] = useState<Platform | null>(null);
+  const [dbCampaigns, setDbCampaigns] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCampaigns() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select(`
+            id,
+            title,
+            description,
+            ad_format,
+            cpm_rate,
+            total_budget,
+            reserved_budget,
+            spent_budget,
+            status,
+            min_view_threshold,
+            required_live_duration_hours,
+            created_at,
+            advertiser:advertiser_profiles (
+              company_name
+            )
+          `)
+          .eq('status', 'live')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setDbCampaigns(data || []);
+      } catch (err) {
+        console.error('Error fetching campaigns:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchCampaigns();
+  }, []);
+
+  const mappedCampaigns = useMemo(() => {
+    return dbCampaigns.map((c) => {
+      const brandName = c.advertiser?.company_name || 'Brand Partner';
+      return {
+        id: c.id,
+        brand: brandName,
+        brief: c.title,
+        platform: (c.ad_format === 'video' ? ['TikTok', 'Instagram', 'X'] : ['Instagram', 'TikTok']) as Platform[],
+        category: 'Marketing' as Category,
+        cpm: Number(c.cpm_rate),
+        slotsTotal: 100,
+        slotsFilled: 0,
+        budgetTotal: Number(c.total_budget),
+        budgetSpent: Number(c.spent_budget || 0),
+        minViews: c.min_view_threshold,
+        daysLeft: 14,
+        tone: c.description.slice(0, 100) + '...',
+        timePosted: '1d',
+      };
+    });
+  }, [dbCampaigns]);
 
   const filtered = useMemo(() => {
-    let list = [...CAMPAIGNS];
+    let list = [...mappedCampaigns];
     if (activePlatform) list = list.filter((c) => c.platform.includes(activePlatform));
     return list;
-  }, [activePlatform]);
+  }, [mappedCampaigns, activePlatform]);
 
   return (
     <div className="min-h-screen bg-[#090A0F] font-sans pb-16">
@@ -454,11 +516,23 @@ export default function BrowsePage() {
         <h2 className="font-display font-bold text-white text-xl mb-6 tracking-tight">Featured</h2>
 
         {/* Campaign Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filtered.map((c, i) => (
-            <CampaignCard key={c.id} c={c} index={i} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <span className="loading loading-spinner loading-lg text-kpugi-blue"></span>
+          </div>
+        ) : filtered.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {filtered.map((c, i) => (
+              <Link key={c.id} href={`/browse/${c.id}`}>
+                <CampaignCard c={c} index={i} />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center bg-[#12141A] rounded-2xl border border-white/5 text-slate-400">
+            No live campaigns found.
+          </div>
+        )}
 
       </div>
     </div>
