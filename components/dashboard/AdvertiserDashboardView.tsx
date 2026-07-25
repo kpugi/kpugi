@@ -94,7 +94,16 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
               <tbody>
                 {data.campaigns.map((camp) => (
                   <tr key={camp.id} className="border-b border-kpugi-border/60">
-                    <td className="font-bold text-kpugi-ink py-3.5">{camp.title}</td>
+                    <td className="py-3.5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-kpugi-ink">{camp.title}</span>
+                        {camp.campaign_code && (
+                          <span className="font-mono text-[9px] text-kpugi-blue font-bold tracking-wider uppercase mt-0.5">
+                            {camp.campaign_code}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="font-mono uppercase">{camp.ad_format}</td>
                     <td className="font-mono">₦{Number(camp.cpm_rate).toLocaleString()}/cpm</td>
                     <td className="font-mono font-bold">₦{Number(camp.total_budget).toLocaleString()}</td>

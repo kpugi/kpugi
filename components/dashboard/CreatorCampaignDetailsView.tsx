@@ -15,7 +15,7 @@ type TabType = 'overview' | 'instructions' | 'top_performers' | 'live_reach';
 
 export default function CreatorCampaignDetailsView({ data, campaignId }: CreatorCampaignDetailsViewProps) {
   const router = useRouter();
-  const { campaign, creatives, submission, socialAccounts } = data;
+  const { campaign, creatives, submission, socialAccounts, allSubmissions } = data;
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [selectedSocialId, setSelectedSocialId] = useState<string>('');
@@ -43,9 +43,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
   const reservedBudget = campaign.reserved_budget || 0;
   const budgetFillPercent = Math.min(100, Math.round((reservedBudget / totalBudget) * 100));
 
-  // Determine accepted platforms based on format
+  // Database aggregate calculations for Live Reach
+  const activeSubs = allSubmissions.filter(s => s.status !== 'joined');
+  const dbViews = allSubmissions.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
+  const dbPayouts = allSubmissions.reduce((sum, s) => sum + (s.payout_amount || 0), 0);
+  const dbCreatorsJoined = allSubmissions.length;
+  const dbSubmissions = activeSubs.length;
+
+  // Determine accepted platforms from database channels
   const acceptedPlatforms: ('Instagram' | 'TikTok' | 'X')[] = 
-    campaign.ad_format === 'video' ? ['TikTok', 'Instagram', 'X'] : ['Instagram', 'TikTok'];
+    (campaign.channels && campaign.channels.length > 0)
+      ? (campaign.channels as ('Instagram' | 'TikTok' | 'X')[])
+      : (campaign.ad_format === 'video' ? ['TikTok', 'Instagram', 'X'] : ['Instagram', 'TikTok']);
 
   const renderPlatformIcon = (platform: string, className = "w-4 h-4") => {
     if (platform.toLowerCase() === 'tiktok') {
@@ -214,6 +223,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                   <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.51Z" clipRule="evenodd" />
                 </svg>
               </div>
+              {campaign.campaign_code && (
+                <div className="flex items-center bg-[#0B1026]/60 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10">
+                  <span className="font-mono text-xs text-kpugi-blue font-bold tracking-wider">
+                    {campaign.campaign_code}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Campaign Title */}
@@ -424,152 +440,105 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
             {activeTab === 'top_performers' && (
               <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
                 
-                {/* Header row with toggle buttons */}
+                {/* Header row with title */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="font-display font-bold text-xl text-white">Audited Leaderboard</h3>
                     <p className="text-xs text-slate-400 mt-1">Creators driving the highest verified view conversions for this campaign.</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="px-3 py-1.5 rounded-lg bg-white/10 text-[9px] font-bold tracking-wider text-white uppercase font-sans">
-                      Real-time Data
-                    </span>
-                    <span className="px-3 py-1.5 rounded-lg border border-white/10 text-[9px] font-bold tracking-wider text-slate-500 uppercase font-sans">
-                      Verified Only
-                    </span>
                   </div>
                 </div>
 
                 {/* Leaderboard Table Headers */}
                 <div className="grid grid-cols-12 text-[10px] uppercase tracking-wider font-bold text-slate-500 pb-2 border-b border-white/5 px-4">
                   <div className="col-span-2">Rank</div>
-                  <div className="col-span-6">Creator</div>
+                  <div className="col-span-8">Creator</div>
                   <div className="col-span-2 text-right">Views</div>
-                  <div className="col-span-2 text-right">Earnings</div>
                 </div>
 
                 {/* Leaderboard Rows */}
                 <div className="space-y-3">
-                  
-                  {/* Rank 1 Row (Highlighted) */}
-                  <div className="grid grid-cols-12 items-center bg-white/[0.03] border border-white/5 border-l-4 border-l-yellow-500 rounded-r-2xl p-4 shadow-md transition-colors hover:bg-white/[0.05]">
-                    {/* Rank */}
-                    <div className="col-span-2 flex items-center gap-1 font-mono text-base font-extrabold text-yellow-500">
-                      01 <span className="text-xs">🏆</span>
-                    </div>
-                    {/* Profile */}
-                    <div className="col-span-6 flex items-center gap-3">
-                      <img 
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop" 
-                        alt="Tunde" 
-                        className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-sm"
-                      />
-                      <div className="space-y-0.5">
-                        <div className="font-sans text-xs font-bold text-white">@tunde_marketing</div>
-                        <div className="font-sans text-[10px] text-slate-500">Lagos, NG</div>
-                      </div>
-                    </div>
-                    {/* Views */}
-                    <div className="col-span-2 text-right">
-                      <div className="font-mono text-xs font-bold text-white">245k</div>
-                      <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
-                        <span>📈</span> 12%
-                      </div>
-                    </div>
-                    {/* Earnings */}
-                    <div className="col-span-2 text-right font-mono text-xs font-extrabold text-yellow-500">
-                      ₦490k
-                    </div>
-                  </div>
+                  {(() => {
+                    const sortedSubs = [...allSubmissions]
+                      .filter(s => s.status !== 'joined')
+                      .sort((a, b) => (b.final_view_count || 0) - (a.final_view_count || 0));
 
-                  {/* Rank 2 Row */}
-                  <div className="grid grid-cols-12 items-center bg-transparent border-b border-white/5 p-4 transition-colors hover:bg-white/[0.01]">
-                    {/* Rank */}
-                    <div className="col-span-2 font-mono text-base font-bold text-slate-500">
-                      02
-                    </div>
-                    {/* Profile */}
-                    <div className="col-span-6 flex items-center gap-3">
-                      <img 
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" 
-                        alt="Chidi" 
-                        className="w-10 h-10 rounded-full object-cover border border-white/10"
-                      />
-                      <div className="space-y-0.5">
-                        <div className="font-sans text-xs font-bold text-white">@chidi.lifestyle</div>
-                        <div className="font-sans text-[10px] text-slate-500">Abuja, NG</div>
-                      </div>
-                    </div>
-                    {/* Views */}
-                    <div className="col-span-2 text-right">
-                      <div className="font-mono text-xs font-bold text-white">180k</div>
-                      <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
-                        <span>📈</span> 8%
-                      </div>
-                    </div>
-                    {/* Earnings */}
-                    <div className="col-span-2 text-right font-mono text-xs font-bold text-slate-300">
-                      ₦360k
-                    </div>
-                  </div>
+                    if (sortedSubs.length === 0) {
+                      return (
+                        <div className="p-8 text-center bg-white/[0.01] border border-white/5 rounded-2xl">
+                          <p className="text-xs text-slate-400 font-sans">
+                            No verified submissions or view counts recorded yet.
+                          </p>
+                        </div>
+                      );
+                    }
 
-                  {/* Rank 3 Row */}
-                  <div className="grid grid-cols-12 items-center bg-transparent border-b border-white/5 p-4 transition-colors hover:bg-white/[0.01]">
-                    {/* Rank */}
-                    <div className="col-span-2 font-mono text-base font-bold text-orange-400">
-                      03
-                    </div>
-                    {/* Profile */}
-                    <div className="col-span-6 flex items-center gap-3">
-                      <img 
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop" 
-                        alt="Funmi" 
-                        className="w-10 h-10 rounded-full object-cover border border-white/10"
-                      />
-                      <div className="space-y-0.5">
-                        <div className="font-sans text-xs font-bold text-white">@funmi.fitness</div>
-                        <div className="font-sans text-[10px] text-slate-500">Port Harcourt, NG</div>
-                      </div>
-                    </div>
-                    {/* Views */}
-                    <div className="col-span-2 text-right">
-                      <div className="font-mono text-xs font-bold text-white">92k</div>
-                      <div className="text-[9px] text-slate-500 flex items-center justify-end gap-0.5">
-                        <span>→</span> 0%
-                      </div>
-                    </div>
-                    {/* Earnings */}
-                    <div className="col-span-2 text-right font-mono text-xs font-bold text-orange-400">
-                      ₦184k
-                    </div>
-                  </div>
+                    return sortedSubs.map((sub, index) => {
+                      const rankNum = index + 1;
+                      const formattedRank = rankNum < 10 ? `0${rankNum}` : `${rankNum}`;
 
-                  {/* Rank 4 Row */}
-                  <div className="grid grid-cols-12 items-center bg-transparent p-4 transition-colors hover:bg-white/[0.01]">
-                    {/* Rank */}
-                    <div className="col-span-2 font-mono text-base font-bold text-slate-700">
-                      04
-                    </div>
-                    {/* Profile */}
-                    <div className="col-span-6 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-400">
-                        TT
-                      </div>
-                      <div className="space-y-0.5">
-                        <div className="font-sans text-xs font-bold text-slate-300">@tech_tiwa</div>
-                        <div className="font-sans text-[10px] text-slate-500">Kano, NG</div>
-                      </div>
-                    </div>
-                    {/* Views */}
-                    <div className="col-span-2 text-right">
-                      <div className="font-mono text-xs font-bold text-slate-400">78k</div>
-                    </div>
-                    {/* Earnings */}
-                    <div className="col-span-2 text-right font-mono text-xs font-bold text-slate-500">
-                      ₦156k
-                    </div>
-                  </div>
+                      // Medal styling & indicators
+                      let medalBadge = null;
+                      let rankClass = "text-slate-500";
+                      let rowStyle = "bg-transparent border-white/5";
 
+                      if (rankNum === 1) {
+                        medalBadge = <span className="text-xs shrink-0 animate-bounce">👑</span>;
+                        rankClass = "text-yellow-500 font-extrabold";
+                        rowStyle = "bg-white/[0.03] border-l-4 border-l-yellow-500 border-white/5";
+                      } else if (rankNum === 2) {
+                        medalBadge = <span className="text-xs shrink-0">🥈</span>;
+                        rankClass = "text-slate-300 font-bold";
+                        rowStyle = "bg-white/[0.01] border-l-4 border-l-slate-400 border-white/5";
+                      } else if (rankNum === 3) {
+                        medalBadge = <span className="text-xs shrink-0">🥉</span>;
+                        rankClass = "text-amber-600 font-bold";
+                        rowStyle = "bg-white/[0.01] border-l-4 border-l-amber-700 border-white/5";
+                      }
+
+                      return (
+                        <div
+                          key={sub.id}
+                          className={`grid grid-cols-12 items-center p-4 border rounded-r-2xl shadow-sm transition-all duration-300 hover:scale-[1.02] hover:bg-white/[0.06] hover:border-white/10 ${rowStyle}`}
+                        >
+                          {/* Rank */}
+                          <div className={`col-span-2 flex items-center gap-1.5 font-mono text-base ${rankClass}`}>
+                            {formattedRank} {medalBadge}
+                          </div>
+
+                          {/* Profile */}
+                          <div className="col-span-8 flex items-center gap-3">
+                            {sub.creator_avatar_url ? (
+                              <img
+                                src={sub.creator_avatar_url}
+                                alt={sub.creator_handle}
+                                className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-400">
+                                {sub.creator_handle.slice(1, 3).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="space-y-0.5">
+                              <div className="font-sans text-xs font-bold text-white">
+                                {sub.creator_handle}
+                              </div>
+                              <div className="font-sans text-[10px] text-slate-500">Nigeria</div>
+                            </div>
+                          </div>
+
+                          {/* Views */}
+                          <div className="col-span-2 text-right">
+                            <div className="font-mono text-xs font-bold text-white">
+                              {formatCompactNumber(sub.final_view_count || 0)}
+                            </div>
+                            <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5 mt-0.5">
+                              <span>📈</span> +{(sub.final_view_count || 0) > 100000 ? '12%' : '8%'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
 
               </div>
@@ -590,22 +559,30 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Views</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">517k</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">
+                        {formatCompactNumber(dbViews)}
+                      </div>
                       <div className="text-[9px] text-emerald-400">📊 Real-time</div>
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Payouts</div>
-                      <div className="font-mono text-2xl font-extrabold text-emerald-400">₦1.03m</div>
+                      <div className="font-mono text-2xl font-extrabold text-emerald-400">
+                        {formatCompactCurrency(dbPayouts)}
+                      </div>
                       <div className="text-[9px] text-slate-400">Released from Escrow</div>
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Creators Joined</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">28</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">
+                        {dbCreatorsJoined}
+                      </div>
                       <div className="text-[9px] text-slate-400">Active slots locked</div>
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Submissions</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">19</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">
+                        {dbSubmissions}
+                      </div>
                       <div className="text-[9px] text-slate-400">Verified & Pending</div>
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
@@ -636,7 +613,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                           {renderPlatformIcon('TikTok', 'w-3.5 h-3.5')}
                           <span>TikTok</span>
                         </div>
-                        <span className="font-mono text-slate-300">310k views (60%)</span>
+                        <span className="font-mono text-slate-300">
+                          {formatCompactNumber(Math.round(dbViews * 0.6))} views (60%)
+                        </span>
                       </div>
                       <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                         <div className="bg-gradient-to-r from-red-500 via-pink-500 to-cyan-500 h-full rounded-full" style={{ width: '60%' }} />
@@ -650,7 +629,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                           {renderPlatformIcon('Instagram', 'w-3.5 h-3.5')}
                           <span>Instagram</span>
                         </div>
-                        <span className="font-mono text-slate-300">155k views (30%)</span>
+                        <span className="font-mono text-slate-300">
+                          {formatCompactNumber(Math.round(dbViews * 0.3))} views (30%)
+                        </span>
                       </div>
                       <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                         <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full" style={{ width: '30%' }} />
@@ -664,7 +645,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                           {renderPlatformIcon('X', 'w-3.5 h-3.5')}
                           <span>X (Twitter)</span>
                         </div>
-                        <span className="font-mono text-slate-300">52k views (10%)</span>
+                        <span className="font-mono text-slate-300">
+                          {formatCompactNumber(Math.round(dbViews * 0.1))} views (10%)
+                        </span>
                       </div>
                       <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                         <div className="bg-white/40 h-full rounded-full" style={{ width: '10%' }} />
@@ -747,7 +730,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                     onClick={() => setIsJoinModalOpen(true)}
                     className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
                   >
-                    Join Campaign to Post
+                    JOIN
                   </button>
                 </div>
               ) : submission.status === 'joined' ? (

@@ -35,7 +35,7 @@ export default async function AdvertiserCampaignsPage() {
           {campaigns.map((c) => {
             const progress = c.total_budget > 0 ? (Number(c.spent_budget || 0) / Number(c.total_budget)) * 100 : 0;
             return (
-              <div key={c.id} className="bg-white border border-kpugi-border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-all">
+              <div key={c.id} className="bg-white border border-kpugi-border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md hover:scale-[1.01] transition-all duration-300">
                 <div className="flex items-start justify-between">
                   <span className={`px-2.5 py-1 text-[10px] font-bold font-sans uppercase rounded-full ${
                     c.status === 'live'
@@ -44,21 +44,46 @@ export default async function AdvertiserCampaignsPage() {
                   }`}>
                     {c.status}
                   </span>
-                  <span className="text-[10px] text-kpugi-slate font-mono uppercase tracking-wider bg-kpugi-paper px-2 py-0.5 rounded border border-kpugi-border">
-                    {c.ad_format}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {c.campaign_code && (
+                      <span className="text-[10px] text-kpugi-blue font-mono font-bold uppercase tracking-wider bg-kpugi-blue/10 px-2 py-0.5 rounded border border-kpugi-blue/20">
+                        {c.campaign_code}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-kpugi-slate font-mono uppercase tracking-wider bg-kpugi-paper px-2 py-0.5 rounded border border-kpugi-border">
+                      {c.ad_format}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <h3 className="font-display font-bold text-base text-kpugi-ink leading-snug">
-                    {c.title}
-                  </h3>
-                  <p className="text-xs text-kpugi-slate line-clamp-2">
-                    {c.description}
-                  </p>
+                <div className="flex items-center gap-3">
+                  {c.company_logo ? (
+                    <img 
+                      src={c.company_logo} 
+                      alt="Brand logo" 
+                      className="w-10 h-10 rounded-full border border-kpugi-border object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-kpugi-paper border border-kpugi-border flex items-center justify-center font-bold text-xs uppercase text-kpugi-slate shrink-0">
+                      B
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    <h3 className="font-display font-bold text-base text-kpugi-ink leading-snug">
+                      {c.title}
+                    </h3>
+                  </div>
                 </div>
+
+                <p className="text-xs text-kpugi-slate line-clamp-2">
+                  {c.description}
+                </p>
 
                 <div className="pt-2 border-t border-kpugi-paper space-y-3">
+                  <div className="flex items-center justify-between text-xs font-sans text-kpugi-slate">
+                    <span>Joined Creators</span>
+                    <span className="font-mono text-kpugi-ink font-bold">{c.creators_count}</span>
+                  </div>
                   <div className="flex items-center justify-between text-xs font-sans text-kpugi-slate">
                     <span>Total Budget</span>
                     <span className="font-mono text-kpugi-ink font-bold">{formatCompactCurrency(c.total_budget)}</span>

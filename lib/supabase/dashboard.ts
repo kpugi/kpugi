@@ -17,6 +17,7 @@ export interface CreatorSubmission {
     id: string;
     title: string;
     status: string;
+    channels: string[];
     ad_format: string;
     cpm_rate: number;
     total_budget: number;
@@ -76,6 +77,7 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
         id,
         title,
         status,
+        channels,
         ad_format,
         cpm_rate,
         total_budget,
@@ -116,6 +118,7 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
 export interface AdvertiserCampaign {
   id: string;
   title: string;
+  campaign_code: string | null;
   description: string;
   ad_format: string;
   cpm_rate: number;
@@ -123,8 +126,11 @@ export interface AdvertiserCampaign {
   reserved_budget: number;
   spent_budget: number;
   status: string;
+  channels: string[];
   created_at: string;
   updated_at: string;
+  creators_count: number;
+  company_logo: string | null;
 }
 
 export interface AdvertiserDashboardData {
@@ -140,10 +146,20 @@ export interface AdvertiserDashboardData {
     payload: Record<string, unknown> | null;
     sent_at: string;
   }[];
+  advertiserAvatarUrl: string | null;
 }
 
 export async function getAdvertiserDashboardData(profileId: string): Promise<AdvertiserDashboardData> {
   const supabase = createAdminClient();
+
+  // Fetch advertiser profile avatar
+  const { data: advProfile } = await supabase
+    .from('advertiser_profiles')
+    .select('profile:profiles(avatar_url)')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  const advertiserAvatarUrl = (advProfile as any)?.profile?.avatar_url || null;
 
   // Fetch wallet balance
   const { data: wallet } = await supabase
@@ -156,7 +172,22 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
   // Fetch campaigns
   const { data: campaigns } = await supabase
     .from('campaigns')
-    .select('id, title, description, ad_format, cpm_rate, total_budget, reserved_budget, spent_budget, status, created_at, updated_at')
+    .select(`
+      id, 
+      title, 
+      campaign_code,
+      description, 
+      ad_format, 
+      cpm_rate, 
+      total_budget, 
+      reserved_budget, 
+      spent_budget, 
+      status, 
+      channels,
+      created_at, 
+      updated_at,
+      submissions:submissions(id)
+    `)
     .eq('advertiser_id', profileId)
     .order('created_at', { ascending: false })
     .limit(20);
@@ -181,7 +212,24 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     .order('sent_at', { ascending: false })
     .limit(10);
 
-  const camps = (campaigns || []) as AdvertiserCampaign[];
+  const camps = (campaigns || []).map((c: any) => ({
+    id: c.id,
+    title: c.title,
+    campaign_code: c.campaign_code || null,
+    description: c.description,
+    ad_format: c.ad_format,
+    cpm_rate: Number(c.cpm_rate),
+    total_budget: Number(c.total_budget),
+    reserved_budget: Number(c.reserved_budget),
+    spent_budget: Number(c.spent_budget),
+    status: c.status,
+    channels: c.channels || [],
+    created_at: c.created_at,
+    updated_at: c.updated_at,
+    creators_count: c.submissions ? c.submissions.length : 0,
+    company_logo: advertiserAvatarUrl,
+  })) as AdvertiserCampaign[];
+
   const totalSpent = camps.reduce((sum, c) => sum + Number(c.spent_budget || 0), 0);
 
   return {
@@ -191,6 +239,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     pendingSubmissions,
     campaigns: camps,
     recentNotifications: notifications || [],
+    advertiserAvatarUrl,
   };
 }
 
@@ -202,6 +251,7 @@ export interface CampaignDetailsForCreator {
   campaign: {
     id: string;
     title: string;
+    campaign_code: string | null;
     description: string;
     ad_format: string;
     requirements: Record<string, any>;
@@ -213,6 +263,7 @@ export interface CampaignDetailsForCreator {
     required_live_duration_hours: number;
     verification_grace_hours: number;
     status: string;
+    channels: string[];
     created_at: string;
     company_name: string;
     company_logo: string | null;
@@ -240,6 +291,17 @@ export interface CampaignDetailsForCreator {
     platform: string;
     handle: string;
   }[];
+  allSubmissions: {
+    id: string;
+    status: string;
+    post_url: string | null;
+    screenshot_url: string | null;
+    reserved_amount: number;
+    payout_amount: number | null;
+    final_view_count: number | null;
+    creator_handle: string;
+    creator_avatar_url: string | null;
+  }[];
 }
 
 export async function getCampaignDetailsForCreator(
@@ -254,6 +316,7 @@ export async function getCampaignDetailsForCreator(
     .select(`
       id,
       title,
+      campaign_code,
       description,
       ad_format,
       requirements,
@@ -265,6 +328,7 @@ export async function getCampaignDetailsForCreator(
       required_live_duration_hours,
       verification_grace_hours,
       status,
+      channels,
       created_at,
       advertiser:advertiser_profiles (
         company_name,
@@ -300,11 +364,50 @@ export async function getCampaignDetailsForCreator(
     .select('id, platform, handle')
     .eq('creator_id', creatorProfileId);
 
+  // 5. Fetch all submissions for this campaign (for leaderboard & aggregates)
+  const { data: allSubs } = await supabase
+    .from('submissions')
+    .select(`
+      id,
+      status,
+      post_url,
+      screenshot_url,
+      reserved_amount,
+      payout_amount,
+      final_view_count,
+      creator:creator_profiles(
+        display_name,
+        profile:profiles(
+          full_name,
+          avatar_url
+        )
+      )
+    `)
+    .eq('campaign_id', campaignId);
+
+  const mappedAllSubs = (allSubs || []).map((sub: any) => {
+    const creatorHandle = sub.creator?.display_name || sub.creator?.profile?.full_name || 'Anonymous Creator';
+    const creatorAvatar = sub.creator?.profile?.avatar_url || null;
+
+    return {
+      id: sub.id,
+      status: sub.status,
+      post_url: sub.post_url,
+      screenshot_url: sub.screenshot_url,
+      reserved_amount: Number(sub.reserved_amount),
+      payout_amount: sub.payout_amount ? Number(sub.payout_amount) : null,
+      final_view_count: sub.final_view_count ? Number(sub.final_view_count) : null,
+      creator_handle: creatorHandle.startsWith('@') ? creatorHandle : `@${creatorHandle}`,
+      creator_avatar_url: creatorAvatar,
+    };
+  });
+
   return {
     campaign: campaign
       ? {
           id: campaign.id,
           title: campaign.title,
+          campaign_code: campaign.campaign_code || null,
           description: campaign.description,
           ad_format: campaign.ad_format,
           requirements: campaign.requirements as Record<string, any>,
@@ -316,6 +419,7 @@ export async function getCampaignDetailsForCreator(
           required_live_duration_hours: campaign.required_live_duration_hours,
           verification_grace_hours: campaign.verification_grace_hours,
           status: campaign.status,
+          channels: campaign.channels || [],
           created_at: campaign.created_at,
           company_name: companyName,
           company_logo: companyLogo,
@@ -337,6 +441,7 @@ export async function getCampaignDetailsForCreator(
         }
       : null,
     socialAccounts: socialAccounts || [],
+    allSubmissions: mappedAllSubs,
   };
 }
 

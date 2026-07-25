@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { formatCompactCurrency } from '@/lib/utils/format';
 
 type Mode = 'creator' | 'brand';
 type Platform = 'TikTok' | 'Instagram' | 'X';
@@ -192,6 +193,8 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 ───────────────────────────────────────────────────── */
 function PopularCampaignCard({
   brand,
+  brandLogo,
+  thumbnailUrl,
   title,
   category,
   cpm,
@@ -203,6 +206,8 @@ function PopularCampaignCard({
   index,
 }: {
   brand: string;
+  brandLogo: string | null;
+  thumbnailUrl: string | null;
   title: string;
   category: string;
   cpm: number;
@@ -213,22 +218,33 @@ function PopularCampaignCard({
   platforms: Platform[];
   index: number;
 }) {
-  const progress = (spent / total) * 100;
+  const progress = total > 0 ? (spent / total) * 100 : 0;
   const gradients = [
     'from-[#1a103c] to-[#0B1026]',
     'from-[#0f1f1a] to-[#0B1026]',
     'from-[#2a1310] to-[#0B1026]',
+    'from-[#0e1b2e] to-[#0B1026]',
   ];
   const bgClass = gradients[index % gradients.length];
 
   return (
-    <article className="group relative flex flex-col bg-[#12141A] rounded-2xl overflow-hidden hover:bg-[#161820] transition-all duration-300 border border-white/5 hover:border-white/20 cursor-pointer shadow-xl">
+    <article className="group relative flex flex-col bg-[#12141A] rounded-2xl overflow-hidden hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-white/5 hover:border-white/20 cursor-pointer shadow-xl">
       {/* Thumbnail Area */}
-      <div className={`h-[160px] w-full bg-gradient-to-br ${bgClass} relative p-5 flex flex-col justify-between`}>
-        <div className="w-full h-full flex items-center justify-center opacity-30 group-hover:opacity-50 transition-opacity duration-500">
-          <div className="w-20 h-20 rounded-full border border-white/20 blur-[2px]" />
-          <div className="absolute w-12 h-12 rounded-full border border-white/10 blur-[1px]" />
-        </div>
+      <div className="h-[160px] w-full relative overflow-hidden bg-slate-900">
+        {thumbnailUrl ? (
+          <img 
+            src={thumbnailUrl} 
+            alt={title} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-br ${bgClass} relative p-5 flex flex-col justify-between`}>
+            <div className="w-full h-full flex items-center justify-center opacity-30 group-hover:opacity-50 transition-opacity duration-500">
+              <div className="w-20 h-20 rounded-full border border-white/20 blur-[2px]" />
+              <div className="absolute w-12 h-12 rounded-full border border-white/10 blur-[1px]" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content Area */}
@@ -236,9 +252,17 @@ function PopularCampaignCard({
         {/* Brand Row with Gold Checkmark & Official SM Icons */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-              {brand.charAt(0)}
-            </div>
+            {brandLogo ? (
+              <img 
+                src={brandLogo} 
+                alt={brand} 
+                className="w-5 h-5 rounded-full object-cover border border-white/10 shadow-sm shrink-0" 
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                {brand.charAt(0)}
+              </div>
+            )}
             <span className="text-[13px] font-semibold text-white/90 truncate max-w-[90px]">{brand}</span>
             {/* Gold Verified Checkmark Badge */}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#E4A12C] shrink-0">
@@ -260,7 +284,7 @@ function PopularCampaignCard({
         </div>
 
         {/* Title */}
-        <h3 className="font-display font-semibold text-white text-[15px] leading-snug mb-2">
+        <h3 className="font-display font-semibold text-white text-[15px] leading-snug mb-2 line-clamp-2">
           {title}
         </h3>
 
@@ -270,9 +294,9 @@ function PopularCampaignCard({
         {/* Bottom Stats */}
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <div className="text-[12px] font-semibold">
-              <span className="text-white">₦{(spent / 1000).toLocaleString()}k</span>
-              <span className="text-white/40">/₦{(total / 1000).toLocaleString()}k</span>
+            <div className="text-[12px] font-semibold flex items-center gap-0.5">
+              <span className="text-white">{formatCompactCurrency(spent)}</span>
+              <span className="text-white/40">/{formatCompactCurrency(total)}</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -281,7 +305,7 @@ function PopularCampaignCard({
                 <span className="text-[11px] font-bold text-white/90">{slots}</span>
               </div>
               <div className="bg-kpugi-blue px-2 py-1 rounded-md text-[11px] font-bold text-white shadow-sm">
-                ₦{(cpm / 1000).toFixed(1)}k/1K
+                {formatCompactCurrency(cpm)}/1K
               </div>
             </div>
           </div>
@@ -458,6 +482,66 @@ function HeroCardStack() {
 ───────────────────────────────────────────────────── */
 export default function HomePage() {
   const [mode, setMode] = useState<Mode>('creator');
+  const [dbCampaigns, setDbCampaigns] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCampaigns() {
+      try {
+        const res = await fetch('/api/campaigns');
+        const data = await res.json();
+        if (res.ok) {
+          setDbCampaigns(data.campaigns || []);
+        }
+      } catch (err) {
+        console.error('Error fetching campaigns:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchCampaigns();
+  }, []);
+
+  const mappedCampaigns = useMemo(() => {
+    return dbCampaigns.map((c) => {
+      const brandName = c.advertiser?.company_name || 'Brand Partner';
+      const brandLogo = c.advertiser?.profile?.avatar_url || null;
+      const thumbnailUrl = c.creatives?.[0]?.file_url || null;
+      const creatorsCount = c.submissions ? c.submissions.length : 0;
+
+      // Map Dynamic Categories
+      let category = 'Tech';
+      if (brandName === 'PiggyVest') category = 'Audience: Finance';
+      else if (brandName === 'Chowdeck') category = 'Audience: Food & Drink';
+      else if (brandName === 'Zaron Cosmetics') category = 'Audience: Beauty';
+      else if (brandName === 'Kpugi') category = 'Audience: Lifestyle';
+
+      return {
+        id: c.id,
+        brand: brandName,
+        brandLogo: brandLogo,
+        thumbnailUrl: thumbnailUrl,
+        title: c.title,
+        platform: (c.channels || []) as Platform[],
+        category: category,
+        cpm: Number(c.cpm_rate),
+        slotsFilled: creatorsCount,
+        budgetTotal: Number(c.total_budget),
+        budgetSpent: Number(c.spent_budget || 0),
+        minViews: c.min_view_threshold,
+        daysLeft: 14,
+        tone: c.description.slice(0, 100) + '...',
+        timePosted: '1d',
+        is_featured: !!c.is_featured,
+      };
+    });
+  }, [dbCampaigns]);
+
+  // Get featured campaigns for displaying on HP
+  const featuredCampaigns = useMemo(() => {
+    const list = mappedCampaigns.filter((c) => c.is_featured);
+    return list.length > 0 ? list.slice(0, 3) : mappedCampaigns.slice(0, 3);
+  }, [mappedCampaigns]);
 
   // Single word typewriter arrays
   const CREATOR_SINGLE_WORDS = [
@@ -924,44 +1008,36 @@ export default function HomePage() {
           </div>
 
           {/* SHARED COOL BROWSE-STYLE CAMPAIGN CARDS WITH OFFICIAL SM ICONS & GOLD CHECKMARKS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PopularCampaignCard
-              brand="Chi Limited"
-              title="Chivita Active 'Start Strong' Repost"
-              category="Audience: Fitness, Youth & Lifestyle"
-              cpm={1800}
-              spent={890000}
-              total={2400000}
-              slots={31}
-              time="1mo"
-              platforms={['TikTok', 'Instagram']}
-              index={0}
-            />
-            <PopularCampaignCard
-              brand="Paystack"
-              title="One Tap Checkout Explainer Campaign"
-              category="Audience: Entrepreneurs, Business & Tech"
-              cpm={2600}
-              spent={1180000}
-              total={3200000}
-              slots={18}
-              time="6d"
-              platforms={['X', 'Instagram']}
-              index={1}
-            />
-            <PopularCampaignCard
-              brand="Bumpa"
-              title="Bumpa Store Feature Walkthrough"
-              category="Audience: Small Business Owners"
-              cpm={2200}
-              spent={264000}
-              total={1800000}
-              slots={9}
-              time="2w"
-              platforms={['TikTok', 'Instagram']}
-              index={2}
-            />
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 w-full">
+              <span className="loading loading-spinner loading-lg text-kpugi-blue"></span>
+            </div>
+          ) : featuredCampaigns.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {featuredCampaigns.map((c, idx) => (
+                <Link key={c.id} href={`/browse/${c.id}`}>
+                  <PopularCampaignCard
+                    brand={c.brand}
+                    brandLogo={c.brandLogo}
+                    thumbnailUrl={c.thumbnailUrl}
+                    title={c.title}
+                    category={c.category}
+                    cpm={c.cpm}
+                    spent={c.budgetSpent}
+                    total={c.budgetTotal}
+                    slots={c.slotsFilled}
+                    time={c.timePosted}
+                    platforms={c.platform}
+                    index={idx}
+                  />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center bg-[#12141A]/5 rounded-2xl border border-[#12141A]/10 text-slate-500 w-full">
+              No live campaigns found.
+            </div>
+          )}
 
         </div>
       </section>
