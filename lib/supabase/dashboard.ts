@@ -225,8 +225,9 @@ export interface CampaignDetailsForCreator {
   }[];
   submission: {
     id: string;
-    post_url: string;
-    screenshot_url: string;
+    social_account_id: string;
+    post_url: string | null;
+    screenshot_url: string | null;
     status: string;
     reserved_amount: number;
     final_view_count: number | null;
@@ -288,7 +289,7 @@ export async function getCampaignDetailsForCreator(
   // 3. Fetch current creator's submission for this campaign
   const { data: submission } = await supabase
     .from('submissions')
-    .select('id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount')
+    .select('id, social_account_id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount')
     .eq('campaign_id', campaignId)
     .eq('creator_id', creatorProfileId)
     .maybeSingle();
@@ -321,7 +322,20 @@ export async function getCampaignDetailsForCreator(
         }
       : null,
     creatives: creatives || [],
-    submission: submission || null,
+    submission: submission
+      ? {
+          id: submission.id,
+          social_account_id: submission.social_account_id,
+          post_url: submission.post_url,
+          screenshot_url: submission.screenshot_url,
+          status: submission.status,
+          reserved_amount: Number(submission.reserved_amount),
+          final_view_count: submission.final_view_count,
+          verified_at: submission.verified_at,
+          paid_at: submission.paid_at,
+          payout_amount: submission.payout_amount ? Number(submission.payout_amount) : null,
+        }
+      : null,
     socialAccounts: socialAccounts || [],
   };
 }

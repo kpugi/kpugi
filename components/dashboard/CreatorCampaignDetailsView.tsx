@@ -21,6 +21,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
   const [selectedSocialId, setSelectedSocialId] = useState<string>('');
   const [postUrl, setPostUrl] = useState<string>('');
   const [screenshotUrl, setScreenshotUrl] = useState<string>('');
+  
+  // Interaction states
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState<boolean>(false);
+  const [isJoining, setIsJoining] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
@@ -70,12 +74,47 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
     alert('Caption copied to clipboard!');
   };
 
-  const handleSubmitPost = async (e: React.FormEvent) => {
+  // Step 1: Join Campaign
+  const handleJoinCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSocialId) {
-      setErrorMsg('Please select a connected social account.');
+      setErrorMsg('Please select a connected social account to join.');
       return;
     }
+
+    setIsJoining(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'join',
+          campaignId: campaign.id,
+          socialAccountId: selectedSocialId,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        setErrorMsg(result.error || 'Failed to join campaign.');
+      } else {
+        setSuccessMsg('You have successfully joined the campaign and reserved your budget slot!');
+        setIsJoinModalOpen(false);
+        router.refresh();
+      }
+    } catch (err) {
+      setErrorMsg('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  // Step 2: Submit Published Link
+  const handleSubmitPost = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!postUrl) {
       setErrorMsg('Please paste your published post URL.');
       return;
@@ -90,8 +129,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'submit_link',
           campaignId: campaign.id,
-          socialAccountId: selectedSocialId,
           postUrl,
           screenshotUrl,
         }),
@@ -115,7 +154,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
   const heroBackground = creatives[0]?.file_url || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&auto=format&fit=crop&q=80';
 
   return (
-    <div className="min-h-screen bg-[#0B1026] text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0B1026] text-white flex flex-col font-sans relative">
       
       {/* ─────────────────────────────────────────────────────
          1. FULL-BLEED STICKY TOP NAVBAR
@@ -151,47 +190,66 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B1026] via-[#0B1026]/75 to-transparent z-10" />
         <div className="absolute inset-0 bg-black/45 z-0" />
 
-        <div className="relative z-20 max-w-7xl mx-auto w-full space-y-4">
+        <div className="relative z-20 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-6">
           
-          {/* Advertiser Profile with avatar from Clerk / DB */}
-          <div className="flex items-center gap-3">
-            {campaign.company_logo ? (
-              <img
-                src={campaign.company_logo}
-                alt={campaign.company_name}
-                className="w-10 h-10 rounded-full border border-white/20 object-cover shadow-md"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm uppercase text-white shadow-md">
-                {campaign.company_name.slice(0, 1)}
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 bg-[#0B1026]/60 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10">
-              <span className="font-sans text-xs font-semibold text-white">
-                {campaign.company_name}
-              </span>
-              <svg className="w-3.5 h-3.5 text-kpugi-blue fill-current" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.51Z" clipRule="evenodd" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Campaign Title */}
-          <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white tracking-tight leading-tight drop-shadow-md">
-            {campaign.title}
-          </h1>
-
-          {/* Platform brand icons list under title */}
-          <div className="flex items-center gap-3 pt-2">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Channels:</span>
-            <div className="flex items-center gap-2">
-              {acceptedPlatforms.map(p => (
-                <div key={p} className="w-7 h-7 rounded-full bg-[#0B1026]/60 backdrop-blur-sm flex items-center justify-center border border-white/10" title={p}>
-                  {renderPlatformIcon(p, "w-3.5 h-3.5")}
+          <div className="space-y-4 max-w-3xl">
+            {/* Advertiser Profile with avatar from Clerk / DB */}
+            <div className="flex items-center gap-3">
+              {campaign.company_logo ? (
+                <img
+                  src={campaign.company_logo}
+                  alt={campaign.company_name}
+                  className="w-10 h-10 rounded-full border border-white/20 object-cover shadow-md"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm uppercase text-white shadow-md">
+                  {campaign.company_name.slice(0, 1)}
                 </div>
-              ))}
+              )}
+              <div className="flex items-center gap-1.5 bg-[#0B1026]/60 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10">
+                <span className="font-sans text-xs font-semibold text-white">
+                  {campaign.company_name}
+                </span>
+                <svg className="w-3.5 h-3.5 text-kpugi-blue fill-current" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.51Z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Campaign Title */}
+            <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white tracking-tight leading-tight drop-shadow-md">
+              {campaign.title}
+            </h1>
+
+            {/* Platform brand icons list under title */}
+            <div className="flex items-center gap-3 pt-2">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Channels:</span>
+              <div className="flex items-center gap-2">
+                {acceptedPlatforms.map(p => (
+                  <div key={p} className="w-7 h-7 rounded-full bg-[#0B1026]/60 backdrop-blur-sm flex items-center justify-center border border-white/10" title={p}>
+                    {renderPlatformIcon(p, "w-3.5 h-3.5")}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Hero CTA button: Join Campaign / Status */}
+          <div className="shrink-0 pb-2">
+            {!submission ? (
+              <button
+                onClick={() => setIsJoinModalOpen(true)}
+                className="bg-white text-black hover:bg-white/90 px-8 py-4 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
+              >
+                Join Campaign
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold font-sans uppercase tracking-wider">
+                Joined ✓
+              </span>
+            )}
+          </div>
+
         </div>
       </div>
 
@@ -365,74 +423,256 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
             {/* TOP PERFORMERS TAB */}
             {activeTab === 'top_performers' && (
               <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
-                <div>
-                  <h3 className="font-display font-bold text-lg text-white">Audited Leaderboard</h3>
-                  <p className="text-xs text-slate-400 mt-1">Creators driving the highest verified view conversions for this campaign.</p>
+                
+                {/* Header row with toggle buttons */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-display font-bold text-xl text-white">Audited Leaderboard</h3>
+                    <p className="text-xs text-slate-400 mt-1">Creators driving the highest verified view conversions for this campaign.</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="px-3 py-1.5 rounded-lg bg-white/10 text-[9px] font-bold tracking-wider text-white uppercase font-sans">
+                      Real-time Data
+                    </span>
+                    <span className="px-3 py-1.5 rounded-lg border border-white/10 text-[9px] font-bold tracking-wider text-slate-500 uppercase font-sans">
+                      Verified Only
+                    </span>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="table w-full text-xs font-sans text-slate-300">
-                    <thead>
-                      <tr className="border-b border-white/10 text-slate-400 uppercase text-[10px] tracking-wider">
-                        <th className="py-3 text-left">Rank</th>
-                        <th className="py-3 text-left">Creator</th>
-                        <th className="py-3 text-right">Views</th>
-                        <th className="py-3 text-right">Earnings</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 font-bold text-amber-500">1</td>
-                        <td className="py-4 font-semibold text-white">@tunde_marketing</td>
-                        <td className="py-4 text-right font-mono">245k</td>
-                        <td className="py-4 text-right font-mono text-emerald-400">₦490k</td>
-                      </tr>
-                      <tr className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 font-bold text-slate-400">2</td>
-                        <td className="py-4 font-semibold text-white">@chidi.lifestyle</td>
-                        <td className="py-4 text-right font-mono">180k</td>
-                        <td className="py-4 text-right font-mono text-emerald-400">₦360k</td>
-                      </tr>
-                      <tr className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 font-bold text-amber-700">3</td>
-                        <td className="py-4 font-semibold text-white">@funmi.fitness</td>
-                        <td className="py-4 text-right font-mono">92k</td>
-                        <td className="py-4 text-right font-mono text-emerald-400">₦184k</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {/* Leaderboard Table Headers */}
+                <div className="grid grid-cols-12 text-[10px] uppercase tracking-wider font-bold text-slate-500 pb-2 border-b border-white/5 px-4">
+                  <div className="col-span-2">Rank</div>
+                  <div className="col-span-6">Creator</div>
+                  <div className="col-span-2 text-right">Views</div>
+                  <div className="col-span-2 text-right">Earnings</div>
                 </div>
+
+                {/* Leaderboard Rows */}
+                <div className="space-y-3">
+                  
+                  {/* Rank 1 Row (Highlighted) */}
+                  <div className="grid grid-cols-12 items-center bg-white/[0.03] border border-white/5 border-l-4 border-l-yellow-500 rounded-r-2xl p-4 shadow-md transition-colors hover:bg-white/[0.05]">
+                    {/* Rank */}
+                    <div className="col-span-2 flex items-center gap-1 font-mono text-base font-extrabold text-yellow-500">
+                      01 <span className="text-xs">🏆</span>
+                    </div>
+                    {/* Profile */}
+                    <div className="col-span-6 flex items-center gap-3">
+                      <img 
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop" 
+                        alt="Tunde" 
+                        className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-sm"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="font-sans text-xs font-bold text-white">@tunde_marketing</div>
+                        <div className="font-sans text-[10px] text-slate-500">Lagos, NG</div>
+                      </div>
+                    </div>
+                    {/* Views */}
+                    <div className="col-span-2 text-right">
+                      <div className="font-mono text-xs font-bold text-white">245k</div>
+                      <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
+                        <span>📈</span> 12%
+                      </div>
+                    </div>
+                    {/* Earnings */}
+                    <div className="col-span-2 text-right font-mono text-xs font-extrabold text-yellow-500">
+                      ₦490k
+                    </div>
+                  </div>
+
+                  {/* Rank 2 Row */}
+                  <div className="grid grid-cols-12 items-center bg-transparent border-b border-white/5 p-4 transition-colors hover:bg-white/[0.01]">
+                    {/* Rank */}
+                    <div className="col-span-2 font-mono text-base font-bold text-slate-500">
+                      02
+                    </div>
+                    {/* Profile */}
+                    <div className="col-span-6 flex items-center gap-3">
+                      <img 
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" 
+                        alt="Chidi" 
+                        className="w-10 h-10 rounded-full object-cover border border-white/10"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="font-sans text-xs font-bold text-white">@chidi.lifestyle</div>
+                        <div className="font-sans text-[10px] text-slate-500">Abuja, NG</div>
+                      </div>
+                    </div>
+                    {/* Views */}
+                    <div className="col-span-2 text-right">
+                      <div className="font-mono text-xs font-bold text-white">180k</div>
+                      <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
+                        <span>📈</span> 8%
+                      </div>
+                    </div>
+                    {/* Earnings */}
+                    <div className="col-span-2 text-right font-mono text-xs font-bold text-slate-300">
+                      ₦360k
+                    </div>
+                  </div>
+
+                  {/* Rank 3 Row */}
+                  <div className="grid grid-cols-12 items-center bg-transparent border-b border-white/5 p-4 transition-colors hover:bg-white/[0.01]">
+                    {/* Rank */}
+                    <div className="col-span-2 font-mono text-base font-bold text-orange-400">
+                      03
+                    </div>
+                    {/* Profile */}
+                    <div className="col-span-6 flex items-center gap-3">
+                      <img 
+                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop" 
+                        alt="Funmi" 
+                        className="w-10 h-10 rounded-full object-cover border border-white/10"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="font-sans text-xs font-bold text-white">@funmi.fitness</div>
+                        <div className="font-sans text-[10px] text-slate-500">Port Harcourt, NG</div>
+                      </div>
+                    </div>
+                    {/* Views */}
+                    <div className="col-span-2 text-right">
+                      <div className="font-mono text-xs font-bold text-white">92k</div>
+                      <div className="text-[9px] text-slate-500 flex items-center justify-end gap-0.5">
+                        <span>→</span> 0%
+                      </div>
+                    </div>
+                    {/* Earnings */}
+                    <div className="col-span-2 text-right font-mono text-xs font-bold text-orange-400">
+                      ₦184k
+                    </div>
+                  </div>
+
+                  {/* Rank 4 Row */}
+                  <div className="grid grid-cols-12 items-center bg-transparent p-4 transition-colors hover:bg-white/[0.01]">
+                    {/* Rank */}
+                    <div className="col-span-2 font-mono text-base font-bold text-slate-700">
+                      04
+                    </div>
+                    {/* Profile */}
+                    <div className="col-span-6 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-400">
+                        TT
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="font-sans text-xs font-bold text-slate-300">@tech_tiwa</div>
+                        <div className="font-sans text-[10px] text-slate-500">Kano, NG</div>
+                      </div>
+                    </div>
+                    {/* Views */}
+                    <div className="col-span-2 text-right">
+                      <div className="font-mono text-xs font-bold text-slate-400">78k</div>
+                    </div>
+                    {/* Earnings */}
+                    <div className="col-span-2 text-right font-mono text-xs font-bold text-slate-500">
+                      ₦156k
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
             )}
 
             {/* LIVE REACH TAB */}
             {activeTab === 'live_reach' && (
               <div className="space-y-6">
+                
+                {/* Visual Stats Overview */}
                 <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
                   <div>
-                    <h3 className="font-display font-bold text-lg text-white">Engagement metrics</h3>
-                    <p className="text-xs text-slate-400 mt-1">Real-time audience impressions generated by creators.</p>
+                    <h3 className="font-display font-bold text-xl text-white">Live Campaign Reach</h3>
+                    <p className="text-xs text-slate-400 mt-1">Real-time aggregate performance of all active creator placements.</p>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Views</div>
-                      <div className="font-mono text-xl font-bold text-white">517k</div>
+                  {/* 6 Grid Metrics */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Views</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">517k</div>
+                      <div className="text-[9px] text-emerald-400">📊 Real-time</div>
                     </div>
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Watch</div>
-                      <div className="font-mono text-xl font-bold text-white">24.5s</div>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Payouts</div>
+                      <div className="font-mono text-2xl font-extrabold text-emerald-400">₦1.03m</div>
+                      <div className="text-[9px] text-slate-400">Released from Escrow</div>
                     </div>
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Engagement</div>
-                      <div className="font-mono text-xl font-bold text-white">8.4%</div>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Creators Joined</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">28</div>
+                      <div className="text-[9px] text-slate-400">Active slots locked</div>
                     </div>
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Payouts</div>
-                      <div className="font-mono text-xl font-bold text-emerald-400">₦1.03m</div>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Submissions</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">19</div>
+                      <div className="text-[9px] text-slate-400">Verified & Pending</div>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Engagement</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">8.4%</div>
+                      <div className="text-[9px] text-slate-400">Like & Comment ratio</div>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">24.5s</div>
+                      <div className="text-[9px] text-slate-400">Retention benchmark</div>
                     </div>
                   </div>
                 </div>
+
+                {/* Channel Share Breakdown */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-5">
+                  <div>
+                    <h4 className="font-display font-bold text-base text-white">Platform Channel Share</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">Distribution of campaign views across connected social networks.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* TikTok Share */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 font-bold text-white">
+                          {renderPlatformIcon('TikTok', 'w-3.5 h-3.5')}
+                          <span>TikTok</span>
+                        </div>
+                        <span className="font-mono text-slate-300">310k views (60%)</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-red-500 via-pink-500 to-cyan-500 h-full rounded-full" style={{ width: '60%' }} />
+                      </div>
+                    </div>
+
+                    {/* Instagram Share */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 font-bold text-white">
+                          {renderPlatformIcon('Instagram', 'w-3.5 h-3.5')}
+                          <span>Instagram</span>
+                        </div>
+                        <span className="font-mono text-slate-300">155k views (30%)</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full" style={{ width: '30%' }} />
+                      </div>
+                    </div>
+
+                    {/* X Share */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 font-bold text-white">
+                          {renderPlatformIcon('X', 'w-3.5 h-3.5')}
+                          <span>X (Twitter)</span>
+                        </div>
+                        <span className="font-mono text-slate-300">52k views (10%)</span>
+                      </div>
+                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div className="bg-white/40 h-full rounded-full" style={{ width: '10%' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
 
@@ -481,11 +721,76 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
               </div>
             </div>
 
-            {/* Submission card */}
+            {/* Submission / Portal card */}
             <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 space-y-4">
               <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider">Submission Portal</h3>
 
-              {submission ? (
+              {errorMsg && (
+                <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+                  {errorMsg}
+                </div>
+              )}
+
+              {successMsg && (
+                <div className="p-3 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                  {successMsg}
+                </div>
+              )}
+
+              {!submission ? (
+                /* Dynamic Not Joined State Card */
+                <div className="space-y-4">
+                  <p className="font-sans text-xs text-slate-400 leading-relaxed">
+                    You have not joined this campaign yet. Connect one of your placement handles and click <strong>Join Campaign</strong> to reserve your escrow budget.
+                  </p>
+                  <button
+                    onClick={() => setIsJoinModalOpen(true)}
+                    className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
+                  >
+                    Join Campaign to Post
+                  </button>
+                </div>
+              ) : submission.status === 'joined' ? (
+                /* Joined but not submitted link form */
+                <form onSubmit={handleSubmitPost} className="space-y-4">
+                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-300 font-sans flex items-center gap-2">
+                    <span>✓</span>
+                    <span>You are registered using <strong>@{socialAccounts.find(s => s.id === submission.social_account_id)?.handle || 'connected handle'}</strong>.</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Published Post URL</label>
+                    <input
+                      type="url"
+                      placeholder="e.g. https://www.instagram.com/p/..."
+                      value={postUrl}
+                      onChange={(e) => setPostUrl(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scraper settles backup screenshot</label>
+                    <input
+                      type="text"
+                      placeholder="Screenshot image URL (optional)"
+                      value={screenshotUrl}
+                      onChange={(e) => setScreenshotUrl(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 disabled:bg-white/10 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/20 transition-all"
+                  >
+                    {isSubmitting ? 'Submitting Link...' : '🚀 Submit Post Link'}
+                  </button>
+                </form>
+              ) : (
+                /* Link Submitted / Under Scraper Audit */
                 <div className="space-y-4">
                   <div className={`p-4 rounded-2xl border ${
                     submission.status === 'pending'
@@ -507,7 +812,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                   <div className="space-y-2 text-xs font-sans text-slate-400 border-t border-white/5 pt-3">
                     <div className="flex justify-between">
                       <span>Submitted Post</span>
-                      <a href={submission.post_url} target="_blank" rel="noreferrer" className="text-kpugi-blue hover:underline font-mono truncate max-w-[150px]">
+                      <a href={submission.post_url || undefined} target="_blank" rel="noreferrer" className="text-kpugi-blue hover:underline font-mono truncate max-w-[150px]">
                         Link →
                       </a>
                     </div>
@@ -521,76 +826,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                     </div>
                   </div>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmitPost} className="space-y-4">
-                  {errorMsg && (
-                    <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
-                      {errorMsg}
-                    </div>
-                  )}
-
-                  {successMsg && (
-                    <div className="p-3 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-                      {successMsg}
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Connect placement profile</label>
-                    {socialAccounts.length > 0 ? (
-                      <select
-                        value={selectedSocialId}
-                        onChange={(e) => setSelectedSocialId(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
-                        required
-                      >
-                        <option value="" disabled className="bg-[#0B1026]">Select Connected Handle</option>
-                        {socialAccounts.map((account) => (
-                          <option key={account.id} value={account.id} className="bg-[#0B1026]">
-                            @{account.handle} ({account.platform.toUpperCase()})
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 font-sans">
-                        No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-white">Accounts Settings</Link> to connect handles before joining.
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Published Post URL</label>
-                    <input
-                      type="url"
-                      placeholder="e.g. https://www.instagram.com/p/..."
-                      value={postUrl}
-                      onChange={(e) => setPostUrl(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
-                      required
-                      disabled={socialAccounts.length === 0}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scraper settles backup screenshot</label>
-                    <input
-                      type="text"
-                      placeholder="Screenshot image URL (optional)"
-                      value={screenshotUrl}
-                      onChange={(e) => setScreenshotUrl(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
-                      disabled={socialAccounts.length === 0}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || socialAccounts.length === 0}
-                    className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 disabled:bg-white/10 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/20 transition-all"
-                  >
-                    {isSubmitting ? 'Verifying Link...' : '🚀 Submit Post Link'}
-                  </button>
-                </form>
               )}
 
             </div>
@@ -600,6 +835,76 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
         </div>
 
       </div>
+
+      {/* ─────────────────────────────────────────────────────
+         4. GLASSMORPHIC JOIN MODAL OVERLAY
+      ───────────────────────────────────────────────────── */}
+      {isJoinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-all">
+          <div className="bg-[#0B1026] border border-white/10 rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative">
+            
+            <button
+              onClick={() => setIsJoinModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white font-bold"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-1">
+              <h3 className="font-display font-extrabold text-xl text-white">Join Campaign</h3>
+              <p className="text-xs text-slate-400">Select the social handle you will use to post for this campaign.</p>
+            </div>
+
+            <form onSubmit={handleJoinCampaign} className="space-y-4">
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Connect placement profile</label>
+                {socialAccounts.length > 0 ? (
+                  <select
+                    value={selectedSocialId}
+                    onChange={(e) => setSelectedSocialId(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                    required
+                  >
+                    <option value="" disabled>Select Connected Handle</option>
+                    {socialAccounts.map((account) => (
+                      <option key={account.id} value={account.id} className="bg-[#0B1026]">
+                        @{account.handle} ({account.platform.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 font-sans">
+                    No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-white">Accounts Settings</Link> to connect handles before joining.
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-white/5 pt-4 space-y-2 text-xs font-sans text-slate-400">
+                <div className="flex justify-between">
+                  <span>Base Payout Rate</span>
+                  <span className="text-kpugi-blue font-mono font-bold">{formatCompactCurrency(campaign.cpm_rate)} / 1k Views</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Minimum Threshold</span>
+                  <span className="text-white font-mono">{formatCompactNumber(campaign.min_view_threshold)} views</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isJoining || socialAccounts.length === 0}
+                className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
+              >
+                {isJoining ? 'Joining Campaign...' : 'Confirm Join'}
+              </button>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
