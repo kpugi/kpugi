@@ -1,7 +1,7 @@
 import { Knock } from '@knocklabs/node';
 
 const knockApiKey = process.env.KNOCK_API_KEY;
-export const knock = knockApiKey ? new Knock({ apiKey: knockApiKey }) : null;
+export const knock = knockApiKey ? new Knock(knockApiKey) : null;
 
 export async function triggerNotification({
   workflowKey,

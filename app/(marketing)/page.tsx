@@ -66,6 +66,15 @@ function TypewriterWord({ words }: { words: string[] }) {
   const [reverse, setReverse] = useState(false);
   const [blink, setBlink] = useState(true);
 
+  // Find maximum length word to lock container width
+  const maxWord = words.reduce((max, w) => (w.length > max.length ? w : max), words[0] || '');
+
+  useEffect(() => {
+    setIndex(0);
+    setSubIndex(0);
+    setReverse(false);
+  }, [words]);
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       setBlink((prev) => !prev);
@@ -74,9 +83,10 @@ function TypewriterWord({ words }: { words: string[] }) {
   }, [blink]);
 
   useEffect(() => {
+    if (!words || words.length === 0) return;
     if (index >= words.length) setIndex(0);
 
-    const currentWord = words[index];
+    const currentWord = words[index] || words[0];
 
     // Word completed, pause before deleting
     if (subIndex === currentWord.length + 1 && !reverse) {
@@ -101,10 +111,21 @@ function TypewriterWord({ words }: { words: string[] }) {
     return () => clearTimeout(timeout);
   }, [subIndex, index, reverse, words]);
 
+  const currentWordText = words[index] ? words[index].substring(0, subIndex) : '';
+
   return (
-    <span className="inline-block text-kpugi-blue underline decoration-kpugi-blue/30 decoration-wavy underline-offset-8">
-      {words[index].substring(0, subIndex)}
-      <span className={`${blink ? 'opacity-100' : 'opacity-0'} transition-opacity font-mono text-kpugi-blue ml-0.5`}>|</span>
+    <span className="inline-inline-flex items-center justify-center px-3.5 sm:px-4 py-1 mx-1.5 bg-kpugi-blue/10 border border-kpugi-blue/25 rounded-2xl align-baseline text-kpugi-blue shadow-sm font-extrabold transition-all duration-300">
+      <span className="inline-grid grid-cols-1 grid-rows-1 align-baseline text-left font-extrabold text-kpugi-blue">
+        {/* Invisible phantom word that reserves the exact maximum width */}
+        <span className="col-start-1 row-start-1 invisible opacity-0 pointer-events-none select-none font-extrabold px-0.5" aria-hidden="true">
+          {maxWord}&nbsp;|
+        </span>
+        {/* Visible typing word */}
+        <span className="col-start-1 row-start-1 whitespace-nowrap font-extrabold text-kpugi-blue px-0.5">
+          {currentWordText}
+          <span className={`${blink ? 'opacity-100' : 'opacity-0'} transition-opacity font-mono text-kpugi-blue ml-0.5`}>|</span>
+        </span>
+      </span>
     </span>
   );
 }
@@ -694,64 +715,112 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────
-         SECTION 2: BENTO TRUST SCORE & VERIFICATION
+         SECTION 2: BENTO TRUST SCORE & VERIFICATION (PREMIUM DARK GLASS DESIGN)
       ───────────────────────────────────────────────────── */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 relative">
+        {/* Ambient section glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl h-[600px] bg-gradient-to-r from-kpugi-blue/10 via-emerald-500/5 to-kpugi-blue/10 blur-3xl pointer-events-none -z-10" />
+
         <div className="max-w-7xl mx-auto">
           
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="inline-block px-3 py-1 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase tracking-wider mb-4">
-              TRUST & SAFETY
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#0B1026] border border-kpugi-blue/30 text-kpugi-blue text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              TRUST & SAFETY INFRASTRUCTURE
             </span>
             <h2 className="font-display font-extrabold text-kpugi-ink text-3xl sm:text-5xl tracking-tight mb-4">
               {mode === 'creator' ? 'Build Your Creator Trust Score' : 'Bank-Grade Anti-Fraud Infrastructure'}
             </h2>
-            <p className="text-kpugi-slate text-base">
+            <p className="text-kpugi-slate text-base sm:text-lg">
               {mode === 'creator'
                 ? 'Higher trust scores unlock premium high-CPM brand campaigns and instant automated payouts.'
                 : 'Every view is audited through automated scrapers to ensure zero bot traffic or inflated numbers.'}
             </p>
           </div>
 
-          {/* Bento Grid */}
+          {/* Bento Grid Container - Deep Dark Luxury Palette */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {/* Bento Card 1: Score Gauge Meter */}
-            <div className="p-8 rounded-3xl bg-white border border-kpugi-border flex flex-col justify-between shadow-sm">
+            {/* Bento Card 1: Score Gauge Meter (Dark Premium Glassmorphism) */}
+            <div className="p-8 rounded-3xl bg-gradient-to-br from-[#0D152D] via-[#0B1026] to-[#121B3A] border border-white/15 flex flex-col justify-between shadow-2xl relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-300">
+              {/* Corner Glow Overlay */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-all" />
+
               <div>
-                <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider block mb-4">VERIFICATION TIER</span>
-                <h4 className="font-display font-bold text-2xl text-kpugi-ink mb-1">Trust Score: 10 / 10</h4>
-                <p className="text-xs text-kpugi-slate mb-6">Complete 3 verified payouts to reach Top Creator tier.</p>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                    VERIFICATION TIER
+                  </span>
+                  <span className="text-xs text-white/50 font-mono">TOP CREATOR</span>
+                </div>
+                <h4 className="font-display font-bold text-2xl text-white mb-1">Trust Score: 10 / 10</h4>
+                <p className="text-xs text-white/60 mb-6">Complete 3 verified payouts to reach Top Creator tier.</p>
               </div>
 
-              {/* Gauge Meter Visual */}
-              <div className="relative flex flex-col items-center justify-center p-6 rounded-2xl bg-[#F6F8FD] border border-kpugi-border">
-                <div className="w-28 h-14 border-[10px] border-emerald-500 border-b-0 rounded-t-full relative flex items-end justify-center">
-                  <span className="font-display font-extrabold text-2xl text-kpugi-ink -mb-2">10</span>
+              {/* Enhanced Gauge Meter Visual with Neon Dark Theme */}
+              <div className="relative flex flex-col items-center justify-center p-6 rounded-2xl bg-[#070A18]/80 border border-white/10 backdrop-blur-md shadow-inner">
+                {/* Neon Glow behind arc */}
+                <div className="absolute w-24 h-12 bg-emerald-500/20 rounded-t-full blur-lg pointer-events-none" />
+
+                <div className="w-32 h-16 relative flex items-end justify-center">
+                  {/* Gauge Arc SVG with gradient stroke */}
+                  <svg className="w-32 h-16 overflow-visible" viewBox="0 0 100 50">
+                    <defs>
+                      <linearGradient id="gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#10B981" />
+                        <stop offset="50%" stopColor="#34D399" />
+                        <stop offset="100%" stopColor="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    {/* Background Arc */}
+                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" strokeLinecap="round" />
+                    {/* Active Gradient Arc */}
+                    <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="url(#gauge-grad)" strokeWidth="10" strokeLinecap="round" strokeDasharray="126" strokeDashoffset="0" />
+                  </svg>
+
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
+                    <span className="font-display font-extrabold text-3xl text-white drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+                      10
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[11px] font-bold text-emerald-600 mt-4 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+
+                <span className="text-xs font-bold text-emerald-400 mt-5 bg-emerald-500/15 px-3.5 py-1.5 rounded-full border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                   ✓ Verified Creator
                 </span>
               </div>
             </div>
 
-            {/* Bento Card 2: Guaranteed Escrow Shield */}
-            <div className="p-8 rounded-3xl bg-gradient-to-br from-kpugi-ink to-slate-900 text-white flex flex-col justify-between md:col-span-2 shadow-xl">
+            {/* Bento Card 2: Guaranteed Escrow Shield (Rich Luxury Dark Gradient) */}
+            <div className="p-8 rounded-3xl bg-gradient-to-br from-[#0F1838] via-[#0B1026] to-[#0A0D1F] border border-kpugi-blue/40 text-white flex flex-col justify-between md:col-span-2 shadow-2xl relative overflow-hidden group hover:border-kpugi-blue/70 transition-all duration-300">
+              {/* Background Glow */}
+              <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-kpugi-blue/20 rounded-full blur-3xl pointer-events-none group-hover:bg-kpugi-blue/30 transition-all" />
+
               <div>
-                <span className="text-xs font-bold text-kpugi-blue uppercase tracking-wider block mb-4">GUARANTEED ESCROW</span>
-                <h4 className="font-display font-bold text-3xl mb-3">100% Payout Security</h4>
-                <p className="text-white/70 text-base max-w-lg mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold text-kpugi-blue uppercase tracking-wider px-3 py-1 rounded-full bg-kpugi-blue/15 border border-kpugi-blue/30">
+                    GUARANTEED ESCROW
+                  </span>
+                  <span className="text-xs text-emerald-400 font-mono flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    LIVE AUDIT ACTIVE
+                  </span>
+                </div>
+                <h4 className="font-display font-bold text-3xl sm:text-4xl mb-3 text-white">100% Payout Security</h4>
+                <p className="text-white/75 text-base max-w-lg mb-8 leading-relaxed">
                   Brand budgets are ring-fenced upfront in platform escrow before any campaign goes live. Once your views are verified, payment is guaranteed.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-white/10 text-xs text-white/60">
-                <span className="flex items-center gap-2">
+
+              <div className="flex flex-wrap items-center gap-6 pt-5 border-t border-white/10 text-xs sm:text-sm text-white/80">
+                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
                   <span className="text-emerald-400 font-bold">✓</span> No Manual Gatekeepers
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
                   <span className="text-emerald-400 font-bold">✓</span> Automated Scraper Audit
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
                   <span className="text-emerald-400 font-bold">✓</span> Instant Payout Engine
                 </span>
               </div>
@@ -767,7 +836,7 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               
               {/* TikTok */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md hover:border-black/30 transition-all">
                 <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center border border-white/10 shrink-0">
                   <IconTikTok className="w-4 h-4" />
                 </div>
@@ -775,7 +844,7 @@ export default function HomePage() {
               </div>
 
               {/* Instagram */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md hover:border-[#d62976]/30 transition-all">
                 <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center border border-white/10 shrink-0">
                   <IconInstagram className="w-4 h-4" />
                 </div>
@@ -785,7 +854,7 @@ export default function HomePage() {
               </div>
 
               {/* X (Twitter) */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md hover:border-black/30 transition-all">
                 <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center border border-white/10 shrink-0">
                   <IconX className="w-4 h-4" />
                 </div>
@@ -793,7 +862,7 @@ export default function HomePage() {
               </div>
 
               {/* YouTube Shorts */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md hover:border-red-500/30 transition-all">
                 <div className="w-6 h-6 rounded-full bg-[#FF0000] flex items-center justify-center text-white shrink-0">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
@@ -803,7 +872,7 @@ export default function HomePage() {
               </div>
 
               {/* Facebook */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md hover:border-[#1877F2]/30 transition-all">
                 <div className="w-6 h-6 rounded-full bg-[#1877F2] flex items-center justify-center text-white shrink-0">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -813,7 +882,7 @@ export default function HomePage() {
               </div>
 
               {/* LinkedIn */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-kpugi-border shadow-sm hover:shadow-md hover:border-[#0A66C2]/30 transition-all">
                 <div className="w-6 h-6 rounded-full bg-[#0A66C2] flex items-center justify-center text-white shrink-0">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>

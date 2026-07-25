@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function Navbar() {
   return (
@@ -17,26 +18,36 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-kpugi-slate">
-          <Link href="/how-it-works" className="hover:text-kpugi-primary transition-colors">
+          <Link href="/how-it-works" className="hover:text-kpugi-blue transition-colors">
             How it Works
           </Link>
-          <Link href="/pricing" className="hover:text-kpugi-primary transition-colors">
+          <Link href="/pricing" className="hover:text-kpugi-blue transition-colors">
             Pricing
           </Link>
-          <Link href="/browse" className="hover:text-kpugi-primary transition-colors">
+          <Link href="/browse" className="hover:text-kpugi-blue transition-colors">
             Browse
           </Link>
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link href="/sign-in" className="btn btn-ghost btn-sm text-kpugi-ink font-semibold">
-            Sign In
-          </Link>
-          <Link href="/sign-up" className="btn btn-primary btn-sm px-4 font-semibold shadow-sm">
-            Get Started
-          </Link>
+          <SignedOut>
+            <Link href="/sign-in" className="px-4 py-2 text-xs font-bold text-kpugi-ink hover:text-kpugi-blue transition-colors">
+              Sign In
+            </Link>
+            <Link href="/sign-up" className="px-4 py-2.5 text-xs font-bold text-white bg-kpugi-blue hover:bg-blue-700 rounded-xl shadow-sm transition-all">
+              Get Started
+            </Link>
+          </SignedOut>
+
+          <SignedIn>
+            <Link href="/dashboard" className="px-4 py-2.5 text-xs font-bold text-white bg-kpugi-ink hover:bg-black rounded-xl shadow-sm transition-all">
+              Dashboard →
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
       </div>
     </header>
   );
 }
+

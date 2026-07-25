@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
+import KnockProviderWrapper from '@/components/providers/KnockProviderWrapper';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Kpugi — Where a Post Turns into a Payout',
   description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
   icons: {
-    icon: '\Kpugi\public\kpugi_favicon.png',
+    icon: '/kpugi_favicon.png',
   },
 };
 
@@ -29,9 +30,12 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-screen bg-kpugi-paper text-kpugi-ink antialiased overflow-x-hidden">
-          {children}
+          <KnockProviderWrapper>
+            {children}
+          </KnockProviderWrapper>
         </body>
       </html>
     </ClerkProvider>
   );
 }
+

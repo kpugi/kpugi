@@ -11,6 +11,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.9.0",
     "@knocklabs/node": "^0.6.9",
+    "@knocklabs/react": "^0.12.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
     "clsx": "^2.1.1",
