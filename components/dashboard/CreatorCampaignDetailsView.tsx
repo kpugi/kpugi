@@ -60,7 +60,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
     if (platform.toLowerCase() === 'tiktok') {
       return (
         <svg className={`${className} text-white`} fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12.525.025c-3.308 0-6.327 2.684-6.327 6.002V15.4c0 2.378-1.926 4.305-4.305 4.305S-.412 17.778-.412 15.4s1.926-4.305 4.305-4.305c.162 0 .32.012.474.035v3.136c-.154-.027-.311-.041-.474-.041-1.156 0-2.095.939-2.095 2.095s.939 2.095 2.095 2.095 2.095-.939 2.095-2.095V.025h3.21c.143 2.158 1.83 3.844 3.987 3.987v3.21c-1.396-.134-2.612-.862-3.33-1.95v10.128c0 3.774-3.056 6.83-6.83 6.83S0 19.174 0 15.4s3.056-6.83 6.83-6.83V6.002c-4.498 0-8.59 3.655-8.59 8.153s4.092 8.153 8.59 8.153c4.498 0 8.153-3.655 8.153-8.153V6.368c1.378 1.206 3.197 1.933 5.168 1.933V5.09c-1.968 0-3.766-.806-5.068-2.108-1.302-1.302-2.108-3.1-2.108-5.068H12.525z"/>
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.22V8.19a6.34 6.34 0 0 0-5.46 6.25 6.34 6.34 0 1 0 11.8-3.41V9.04a8.3 8.3 0 0 0 5.25 1.83V7.42a4.85 4.85 0 0 1-1.48-.73z"/>
         </svg>
       );
     }
@@ -72,7 +72,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
       );
     }
     return (
-      <svg className={`${className} text-sky-400`} fill="currentColor" viewBox="0 0 24 24">
+      <svg className={`${className} text-white`} fill="currentColor" viewBox="0 0 24 24">
         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
       </svg>
     );
@@ -931,11 +931,11 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                 </div>
 
                 <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-sm shrink-0">🏷️</span>
+                  <span className="text-sm shrink-0">🎥</span>
                   <div className="space-y-0.5">
-                    <div className="font-sans text-xs font-bold text-white">Brand Tags & Code</div>
+                    <div className="font-sans text-xs font-bold text-white">Brand Creatives & Guidelines</div>
                     <div className="text-[11px] text-slate-400 leading-snug">
-                      Tag the official brand handle and include campaign code in caption.
+                      Post the official brand creatives provided and follow any additional requirements specified by the brand.
                     </div>
                   </div>
                 </div>
