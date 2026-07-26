@@ -12,23 +12,20 @@ export default async function BrowseCampaignDetailPage({
   params: Promise<{ campaignId: string }>;
 }) {
   const userProfile = await getOrCreateUserProfile();
+  const creatorId = userProfile?.profile?.id || null;
 
-  if (!userProfile || !userProfile.profile) {
-    redirect('/sign-in');
-  }
-
-  // Ensure user is onboarding complete
-  if (!userProfile.onboardingComplete) {
-    redirect('/onboarding/role');
-  }
-
-  // Ensure they are creator
-  if (userProfile.role !== 'creator' && !userProfile.creatorProfile) {
-    redirect('/dashboard');
+  // If user is logged in, check role & onboarding
+  if (userProfile && userProfile.profile) {
+    if (!userProfile.onboardingComplete) {
+      redirect('/onboarding/role');
+    }
+    if (userProfile.role !== 'creator' && !userProfile.creatorProfile) {
+      redirect('/dashboard');
+    }
   }
 
   const { campaignId } = await params;
-  const campaignData = await getCampaignDetailsForCreator(campaignId, userProfile.profile.id);
+  const campaignData = await getCampaignDetailsForCreator(campaignId, creatorId);
 
   if (!campaignData.campaign) {
     redirect('/browse');

@@ -306,7 +306,7 @@ export interface CampaignDetailsForCreator {
 
 export async function getCampaignDetailsForCreator(
   campaignId: string,
-  creatorProfileId: string
+  creatorProfileId?: string | null
 ): Promise<CampaignDetailsForCreator> {
   const supabase = createAdminClient();
 
@@ -350,19 +350,23 @@ export async function getCampaignDetailsForCreator(
     .select('id, file_url, copy_text, caption_suggestion')
     .eq('campaign_id', campaignId);
 
-  // 3. Fetch current creator's submission for this campaign
-  const { data: submission } = await supabase
-    .from('submissions')
-    .select('id, social_account_id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount')
-    .eq('campaign_id', campaignId)
-    .eq('creator_id', creatorProfileId)
-    .maybeSingle();
+  // 3. Fetch current creator's submission for this campaign (if logged in)
+  const { data: submission } = creatorProfileId
+    ? await supabase
+        .from('submissions')
+        .select('id, social_account_id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount')
+        .eq('campaign_id', campaignId)
+        .eq('creator_id', creatorProfileId)
+        .maybeSingle()
+    : { data: null };
 
-  // 4. Fetch creator's social accounts
-  const { data: socialAccounts } = await supabase
-    .from('social_accounts')
-    .select('id, platform, handle')
-    .eq('creator_id', creatorProfileId);
+  // 4. Fetch creator's social accounts (if logged in)
+  const { data: socialAccounts } = creatorProfileId
+    ? await supabase
+        .from('social_accounts')
+        .select('id, platform, handle')
+        .eq('creator_id', creatorProfileId)
+    : { data: [] };
 
   // 5. Fetch all submissions for this campaign (for leaderboard & aggregates)
   const { data: allSubs } = await supabase
