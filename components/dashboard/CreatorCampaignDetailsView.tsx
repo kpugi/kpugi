@@ -347,17 +347,17 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                       {/* Main 2-Column Grid: Left Content, Right Radial Gauge */}
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
                         
-                        {/* Left Column (Col 6) */}
-                        <div className="md:col-span-6 space-y-4">
+                        {/* Left Column (Col 6) - Centered on Mobile */}
+                        <div className="md:col-span-6 space-y-4 text-center md:text-left flex flex-col items-center md:items-start">
                           <h2 className="font-display font-extrabold text-white text-3xl sm:text-4xl tracking-tight leading-none">
                             AI-Powered Sync
                           </h2>
-                          <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                          <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-md">
                             Our vector engine has matched your creative profile with this brand&apos;s core demographic.
                           </p>
 
-                          {/* Social Platform Icon Tiles */}
-                          <div className="pt-2 flex items-center gap-3">
+                          {/* Social Platform Icon Tiles - Centered on Mobile */}
+                          <div className="pt-2 flex items-center justify-center md:justify-start gap-3 w-full">
                             {['TikTok', 'Instagram', 'X'].map((p) => {
                               const isSupported = acceptedPlatforms.includes(p as any);
                               return (
@@ -378,9 +378,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                           </div>
                         </div>
 
-                        {/* Right Column: Completely Seamless Radial Compatibility Gauge (Col 6) */}
+                        {/* Right Column: Larger Seamless Radial Compatibility Gauge (Col 6) */}
                         <div className="md:col-span-6 flex items-center justify-center py-4">
-                          <div className="relative w-56 h-56 flex items-center justify-center">
+                          <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 flex items-center justify-center">
                             <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 100 100">
                               {/* Background Track */}
                               <circle
@@ -409,10 +409,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                             {/* Ring Center Text */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                               <div className="flex items-baseline gap-0.5">
-                                <span className="font-display font-extrabold text-white text-5xl sm:text-6xl tracking-tight">{dbMatchScore}</span>
-                                <span className="font-sans font-bold text-white text-2xl">%</span>
+                                <span className="font-display font-extrabold text-white text-6xl sm:text-7xl tracking-tight">{dbMatchScore}</span>
+                                <span className="font-sans font-bold text-white text-2xl sm:text-3xl">%</span>
                               </div>
-                              <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
+                              <span className="text-[10px] sm:text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
                             </div>
                           </div>
                         </div>
