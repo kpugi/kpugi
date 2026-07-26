@@ -80,8 +80,6 @@ function PlatformIcon({ platform, className = "w-4 h-4" }: { platform: string, c
     </svg>
   );
 }
-  );
-}
 
 /* ─────────────────────────────────────────────────────
    FEATURED HERO SLIDESHOW (Connected dynamically)
