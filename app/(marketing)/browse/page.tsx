@@ -28,6 +28,7 @@ interface Campaign {
   tone: string;         
   timePosted: string;
   is_featured: boolean;
+  matchScore?: number;
 }
 
 const PLATFORMS: Platform[] = ['TikTok', 'Instagram', 'X'];
@@ -224,6 +225,20 @@ function CampaignCard({ c, index }: { c: Campaign, index: number }) {
     <article className="group relative flex flex-col bg-[#12141A] rounded-2xl overflow-hidden hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-white/5 hover:border-white/10 cursor-pointer">
       {/* Thumbnail Area */}
       <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
+        {/* AI Match Score Badge Overlay */}
+        <div className="absolute top-3 right-3 z-20">
+          <div className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border backdrop-blur-md ${
+            (c.matchScore || 88) >= 85
+              ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20'
+              : (c.matchScore || 88) >= 65
+              ? 'bg-blue-950/80 border-blue-500/50 text-blue-300'
+              : 'bg-slate-900/80 border-white/20 text-slate-300'
+          }`}>
+            <span>✨</span>
+            <span>{c.matchScore || 88}% Match</span>
+          </div>
+        </div>
+
         {c.thumbnailUrl ? (
           <img 
             src={c.thumbnailUrl} 
@@ -367,6 +382,7 @@ export default function BrowsePage() {
         tone: c.description.slice(0, 100) + '...',
         timePosted: '1d',
         is_featured: !!c.is_featured,
+        matchScore: c.match_score || 88,
       };
     });
   }, [dbCampaigns]);
