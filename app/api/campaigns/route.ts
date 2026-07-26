@@ -21,7 +21,6 @@ export async function GET(request: Request) {
         reserved_budget,
         spent_budget,
         status,
-        is_featured,
         channels,
         min_view_threshold,
         required_live_duration_hours,
@@ -43,8 +42,8 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[Campaigns API] Error fetching campaigns:', error);
-      return NextResponse.json({ error: 'Failed to fetch campaigns' }, { status: 500 });
+      console.error('[Campaigns API Error]:', JSON.stringify(error, null, 2));
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // Attach AI match scores
