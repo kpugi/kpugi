@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
+import { CampaignGridSkeleton } from '@/components/ui/Skeletons';
 
 /* ─────────────────────────────────────────────────────
    TYPES
@@ -475,9 +476,7 @@ export default function BrowsePage() {
 
         {/* Campaign Grid */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <span className="loading loading-spinner loading-lg text-kpugi-blue"></span>
-          </div>
+          <CampaignGridSkeleton count={8} />
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {filtered.map((c, i) => (
