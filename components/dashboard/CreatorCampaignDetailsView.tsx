@@ -378,19 +378,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                           </div>
                         </div>
 
-                        {/* Right Column: Borderless Radial Compatibility Gauge (Col 6) */}
+                        {/* Right Column: Completely Seamless Radial Compatibility Gauge (Col 6) */}
                         <div className="md:col-span-6 flex items-center justify-center py-4">
                           <div className="relative w-56 h-56 flex items-center justify-center">
-                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 100 100">
                               {/* Background Track */}
                               <circle
                                 cx="50"
                                 cy="50"
                                 r="42"
-                                stroke="currentColor"
+                                stroke="rgba(255, 255, 255, 0.06)"
                                 strokeWidth="7"
-                                className="text-[#13192E]"
-                                fill="transparent"
+                                fill="none"
                               />
                               {/* Dynamic Progress Arc from DB Match Score */}
                               <circle
@@ -402,13 +401,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                                 strokeDasharray={263.89}
                                 strokeDashoffset={263.89 * (1 - (dbMatchScore / 100))}
                                 strokeLinecap="round"
-                                className="transition-all duration-1000 ease-out filter drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]"
-                                fill="transparent"
+                                fill="none"
+                                className="transition-all duration-1000 ease-out"
                               />
                             </svg>
 
                             {/* Ring Center Text */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                               <div className="flex items-baseline gap-0.5">
                                 <span className="font-display font-extrabold text-white text-5xl sm:text-6xl tracking-tight">{dbMatchScore}</span>
                                 <span className="font-sans font-bold text-white text-2xl">%</span>
