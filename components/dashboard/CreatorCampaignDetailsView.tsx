@@ -488,19 +488,33 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                 <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Campaign Assets</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href="https://docs.google.com" target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all">
-                      <span className="text-xl">📄</span>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-white">Campaign Brief Guidelines</div>
-                        <div className="text-[10px] text-slate-400">Google Docs</div>
+                    <a href="https://docs.google.com" target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">📄</span>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-white group-hover:text-kpugi-blue transition-colors">Campaign Brief Guidelines</div>
+                          <div className="text-[10px] text-slate-400">Google Docs</div>
+                        </div>
                       </div>
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
                     </a>
-                    <a href="https://drive.google.com" target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all">
-                      <span className="text-xl">📂</span>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-white">Video Creative Asset Folder</div>
-                        <div className="text-[10px] text-slate-400">Google Drive</div>
+                    <a href="https://drive.google.com" target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">📂</span>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-white group-hover:text-kpugi-blue transition-colors">Video Creative Asset Folder</div>
+                          <div className="text-[10px] text-slate-400">Google Drive</div>
+                        </div>
                       </div>
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
                     </a>
                   </div>
                 </div>
