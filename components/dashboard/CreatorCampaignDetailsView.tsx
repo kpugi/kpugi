@@ -483,20 +483,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
 
                     </div>
                   );
-                })()}lassName="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                          <span>AESTHETIC CONSISTENCY</span>
-                          <span className="font-mono text-white">96%</span>
-                        </div>
-                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                          <div className="bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] h-full rounded-full" style={{ width: '96%' }} />
-                        </div>
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
+                })()}
 
                 <div>
                   <h3 className="font-display font-bold text-lg text-white mb-4">Payouts</h3>
