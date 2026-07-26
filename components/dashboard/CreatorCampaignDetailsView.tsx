@@ -901,11 +901,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                       <span>Reserved payout</span>
                       <span className="text-white font-mono">{formatCompactCurrency(submission.reserved_amount)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Verified views</span>
-                      <span className="text-white font-mono">{submission.final_view_count?.toLocaleString() || '0'} Views</span>
-                    </div>
                   </div>
+                </div>
+              )}
+
             </div>
 
             {/* Posting Requirements & Escrow Timeline Card */}
