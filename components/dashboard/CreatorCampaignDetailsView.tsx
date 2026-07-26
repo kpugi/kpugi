@@ -470,14 +470,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                                 <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
                               </div>
                             ) : (
-                              <Link
-                                href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
-                                className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 hover:scale-105 transition-all group"
-                              >
-                                <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">🔒</span>
-                                <span className="font-display font-extrabold text-white text-base tracking-wider uppercase">AI Score Locked</span>
-                                <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1 group-hover:underline">Sign in to view →</span>
-                              </Link>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none select-none">
+                                <span className="text-2xl mb-1.5 animate-bounce inline-block leading-none">🔒</span>
+                                <span className="font-display font-extrabold text-white text-[11px] sm:text-xs tracking-wider uppercase">
+                                  AI Score Locked
+                                </span>
+                                <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-1">
+                                  Sign in to view
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>
