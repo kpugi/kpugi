@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 
@@ -15,6 +16,7 @@ type TabType = 'overview' | 'instructions' | 'top_performers' | 'live_reach';
 
 export default function CreatorCampaignDetailsView({ data, campaignId }: CreatorCampaignDetailsViewProps) {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const { campaign, creatives, submission, socialAccounts, allSubmissions } = data;
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -276,14 +278,32 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
           {/* Hero CTA button: Join Campaign / Status & AI Match Badge */}
           <div className="shrink-0 pb-2 flex items-center gap-3">
             {/* AI Match Badge Pill */}
-            <div className="flex items-center gap-2.5 bg-[#0B1026] border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md">
-              <span className="text-sm">✨</span>
-              <div className="flex flex-col">
-                <span className="font-mono text-xs font-extrabold text-emerald-400">94% AI Match Score</span>
+            {!isSignedIn ? (
+              <Link
+                href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
+                className="flex items-center gap-2 bg-[#0B1026] border border-white/20 hover:border-white/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md transition-all group"
+              >
+                <span className="text-sm">🔒</span>
+                <span className="font-mono text-xs font-bold text-slate-300 group-hover:text-white">Sign in for AI Score</span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2.5 bg-[#0B1026] border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md">
+                <span className="text-sm">✨</span>
+                <div className="flex flex-col">
+                  <span className="font-mono text-xs font-extrabold text-emerald-400">94% AI Match Score</span>
+                </div>
               </div>
-            </div>
+            )}
 
-            {!submission ? (
+            {!isSignedIn ? (
+              <Link
+                href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
+                className="bg-white text-black hover:bg-white/90 px-8 py-3.5 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <span>🔒</span>
+                <span>Sign in to Join</span>
+              </Link>
+            ) : !submission ? (
               <button
                 onClick={() => setIsJoinModalOpen(true)}
                 className="bg-white text-black hover:bg-white/90 px-8 py-3.5 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
@@ -375,8 +395,20 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                             AI-Powered Sync
                           </h2>
                           <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-sm">
-                            Our vector engine has matched your creative profile with this brand&apos;s core demographic.
+                            {isSignedIn
+                              ? "Our vector engine has matched your creative profile with this brand's core demographic."
+                              : "Sign in to analyze your creator audience niche, engagement metrics & vector compatibility with this campaign."}
                           </p>
+
+                          {!isSignedIn && (
+                            <Link
+                              href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-sans text-xs font-bold transition-all shadow-md"
+                            >
+                              <span>🔒</span>
+                              <span>Sign in to Unlock Match Score</span>
+                            </Link>
+                          )}
 
                           {/* Social Platform Icon Tiles (Supports 6 Major Networks) */}
                           <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-2.5 w-full">
@@ -421,21 +453,32 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                                 stroke="#3B82F6"
                                 strokeWidth="7"
                                 strokeDasharray={263.89}
-                                strokeDashoffset={263.89 * (1 - (dbMatchScore / 100))}
+                                strokeDashoffset={isSignedIn ? 263.89 * (1 - (dbMatchScore / 100)) : 263.89 * 0.7}
                                 strokeLinecap="round"
                                 fill="none"
-                                className="transition-all duration-1000 ease-out"
+                                className="transition-all duration-1000 ease-out opacity-40"
                               />
                             </svg>
 
                             {/* Ring Center Text */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                              <div className="flex items-baseline gap-0.5">
-                                <span className="font-display font-extrabold text-white text-5xl sm:text-6xl tracking-tight">{dbMatchScore}</span>
-                                <span className="font-sans font-bold text-white text-2xl">%</span>
+                            {isSignedIn ? (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                                <div className="flex items-baseline gap-0.5">
+                                  <span className="font-display font-extrabold text-white text-5xl sm:text-6xl tracking-tight">{dbMatchScore}</span>
+                                  <span className="font-sans font-bold text-white text-2xl">%</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
                               </div>
-                              <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
-                            </div>
+                            ) : (
+                              <Link
+                                href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
+                                className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 hover:scale-105 transition-all group"
+                              >
+                                <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">🔒</span>
+                                <span className="font-display font-extrabold text-white text-base tracking-wider uppercase">AI Score Locked</span>
+                                <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1 group-hover:underline">Sign in to view →</span>
+                              </Link>
+                            )}
                           </div>
                         </div>
 
@@ -930,7 +973,21 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                 </div>
               )}
 
-              {!submission ? (
+              {!isSignedIn ? (
+                /* Non-authenticated Creator State */
+                <div className="space-y-4">
+                  <p className="font-sans text-xs text-slate-400 leading-relaxed">
+                    Sign in to your creator account to join this campaign, connect your placement handle, and lock your reserved escrow payout.
+                  </p>
+                  <Link
+                    href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
+                    className="w-full py-3.5 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>🔒</span>
+                    <span>Sign in to Join</span>
+                  </Link>
+                </div>
+              ) : !submission ? (
                 /* Dynamic Not Joined State Card */
                 <div className="space-y-4">
                   <p className="font-sans text-xs text-slate-400 leading-relaxed">
