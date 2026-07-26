@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     // Attach AI match scores
     const enrichedCampaigns = await Promise.all(
       (campaigns || []).map(async (camp) => {
-        let matchScore = 88;
+        let matchScore = 94;
         if (creatorId) {
           try {
             const { data: scoreData } = await supabase.rpc('get_campaign_match_score', {

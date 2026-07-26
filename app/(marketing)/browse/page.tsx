@@ -405,7 +405,7 @@ export default function BrowsePage() {
         tone: c.description.slice(0, 100) + '...',
         timePosted: '1d',
         is_featured: !!c.is_featured,
-        matchScore: c.match_score || 88,
+        matchScore: c.match_score || 94,
       };
     });
   }, [dbCampaigns]);
