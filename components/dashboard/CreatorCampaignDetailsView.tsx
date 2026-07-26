@@ -906,9 +906,88 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                       <span className="text-white font-mono">{submission.final_view_count?.toLocaleString() || '0'} Views</span>
                     </div>
                   </div>
-                </div>
-              )}
+            </div>
 
+            {/* Posting Requirements & Escrow Timeline Card */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 space-y-6">
+              <div>
+                <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>📌</span> Posting Rules & Checklist
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Follow these essential guidelines to guarantee automated escrow view payout releases.
+                </p>
+              </div>
+
+              {/* Requirements List */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
+                  <span className="text-sm shrink-0">🔒</span>
+                  <div className="space-y-0.5">
+                    <div className="font-sans text-xs font-bold text-white">72-Hour Public Lock</div>
+                    <div className="text-[11px] text-slate-400 leading-snug">
+                      Your post MUST remain public for at least {campaign.required_live_duration_hours}h without archiving.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
+                  <span className="text-sm shrink-0">🏷️</span>
+                  <div className="space-y-0.5">
+                    <div className="font-sans text-xs font-bold text-white">Brand Tags & Code</div>
+                    <div className="text-[11px] text-slate-400 leading-snug">
+                      Tag the official brand handle and include campaign code in caption.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
+                  <span className="text-sm shrink-0">🎥</span>
+                  <div className="space-y-0.5">
+                    <div className="font-sans text-xs font-bold text-white">Unmodified Creative Asset</div>
+                    <div className="text-[11px] text-slate-400 leading-snug">
+                      Use brand provided video/image assets without cropping brand logos.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Escrow Timeline */}
+              <div className="border-t border-white/5 pt-5 space-y-4">
+                <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <span>⏱️</span> Automated Escrow Flow
+                </h4>
+                
+                <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/10">
+                  {/* Step 1 */}
+                  <div className="relative flex items-center justify-between text-xs">
+                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-[8px] text-emerald-400 font-bold">1</span>
+                    <span className="font-bold text-white">Lock Escrow Slot</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">Instant</span>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="relative flex items-center justify-between text-xs">
+                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-blue-500/20 border border-blue-400 flex items-center justify-center text-[8px] text-blue-400 font-bold">2</span>
+                    <span className="font-bold text-white">Submit Post URL</span>
+                    <span className="text-[10px] text-slate-400 font-mono">Within 24h</span>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="relative flex items-center justify-between text-xs">
+                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[8px] text-slate-400 font-bold">3</span>
+                    <span className="font-bold text-slate-300">Auto-Audit Views</span>
+                    <span className="text-[10px] text-slate-400 font-mono">72h Live</span>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div className="relative flex items-center justify-between text-xs">
+                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[8px] text-slate-400 font-bold">4</span>
+                    <span className="font-bold text-slate-300">Escrow Payout Release</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">Automatic</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
