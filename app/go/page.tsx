@@ -15,18 +15,20 @@ function PrelanderContent() {
   const [isAutoRedirecting, setIsAutoRedirecting] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!rawUrl) return;
+    if (!rawUrl) {
+      router.replace('/browse');
+      return;
+    }
 
     try {
       const decoded = decodeURIComponent(rawUrl);
-      setDestinationUrl(decoded);
       const parsed = new URL(decoded);
+      setDestinationUrl(decoded);
       setHostname(parsed.hostname);
     } catch (e) {
-      setDestinationUrl(rawUrl);
-      setHostname(rawUrl.replace(/^https?:\/\//, '').split('/')[0]);
+      router.replace('/browse');
     }
-  }, [rawUrl]);
+  }, [rawUrl, router]);
 
   // Countdown timer for automatic seamless navigation
   useEffect(() => {
@@ -45,18 +47,7 @@ function PrelanderContent() {
   }, [countdown, destinationUrl, isAutoRedirecting]);
 
   if (!destinationUrl) {
-    return (
-      <div className="min-h-screen bg-[#090A0F] text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl mb-4">
-          ⚠️
-        </div>
-        <h1 className="font-display font-extrabold text-2xl mb-2">Invalid Redirect URL</h1>
-        <p className="text-slate-400 text-xs max-w-sm mb-6">No valid destination URL was provided to the Kpugi prelander.</p>
-        <Link href="/browse" className="px-6 py-3 rounded-full bg-white text-black font-bold text-xs">
-          Return to Browse
-        </Link>
-      </div>
-    );
+    return null;
   }
 
   return (

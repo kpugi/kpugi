@@ -23,7 +23,20 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Rate limiter for public API endpoints
+  const hostname = req.headers.get('host') || '';
+
+  // 1. Handle go.kpugi.com subdomain requests seamlessly
+  if (hostname.startsWith('go.kpugi.com') || hostname.startsWith('go.localhost')) {
+    const urlParam = req.nextUrl.searchParams.get('url');
+    if (!urlParam) {
+      return NextResponse.redirect(new URL('https://kpugi.com/browse', req.url));
+    }
+    if (req.nextUrl.pathname === '/') {
+      return NextResponse.rewrite(new URL(`/go${req.nextUrl.search}`, req.url));
+    }
+  }
+
+  // 2. Rate limiter for public API endpoints
   if (ratelimit && req.nextUrl.pathname.startsWith('/api/')) {
     const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
     const { success, limit, remaining, reset } = await ratelimit.limit(`ratelimit_${ip}`);

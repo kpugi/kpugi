@@ -20,5 +20,11 @@ export function getSafeExternalUrl(targetUrl: string): string {
     return targetUrl;
   }
 
+  // Use go.kpugi.com subdomain in production or /go?url=... in dev
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd) {
+    return `https://go.kpugi.com/?url=${encodeURIComponent(targetUrl)}`;
+  }
+
   return `/go?url=${encodeURIComponent(targetUrl)}`;
 }
