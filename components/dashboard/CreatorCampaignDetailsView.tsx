@@ -257,8 +257,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
             <div className="flex items-center gap-2.5 bg-[#0B1026] border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md">
               <span className="text-sm">✨</span>
               <div className="flex flex-col">
-                <span className="font-mono text-xs font-extrabold text-emerald-400">94% AI Match</span>
-                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">High Creator Fit</span>
+                <span className="font-mono text-xs font-extrabold text-emerald-400">94% AI Match Score</span>
               </div>
             </div>
 
@@ -335,32 +334,143 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                   </p>
                 </div>
 
-                {/* AI Compatibility Breakdown Widget */}
-                <div className="bg-gradient-to-r from-emerald-950/30 via-slate-900/40 to-slate-900/40 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-lg">✨</span>
-                      <div>
-                        <h4 className="text-sm font-bold text-white">AI Audience & Style Match</h4>
-                        <p className="text-xs text-slate-400">Calculated via vector similarity with your connected social handles.</p>
-                      </div>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-extrabold">
-                      94% Compatibility
-                    </div>
+                {/* ⚡ LIVE INTELLIGENCE AI-POWERED SYNC CARD (Matching user mockup) */}
+                <div className="bg-[#0B1021] border border-blue-500/20 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+                  
+                  {/* Background Ambient Glow */}
+                  <div className="absolute top-0 right-1/3 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+                  {/* Header Badge */}
+                  <div className="flex items-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/80 border border-blue-500/30 text-blue-400 text-[11px] font-bold tracking-wider uppercase">
+                      ⚡ LIVE INTELLIGENCE
+                    </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 font-medium">
-                      🎯 Category Fit: Finance & Tech
-                    </span>
-                    <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 font-medium">
-                      📱 Platforms: {acceptedPlatforms.join(' & ')}
-                    </span>
-                    <span className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-medium">
-                      ⚡ High View Conversion Likelihood
-                    </span>
+                  {/* Main Grid: Left Content, Center Radial Ring, Right Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                    
+                    {/* Left Column (Col 5) */}
+                    <div className="md:col-span-5 space-y-4">
+                      <h2 className="font-display font-extrabold text-white text-3xl sm:text-4xl tracking-tight leading-none">
+                        AI-Powered Sync
+                      </h2>
+                      <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                        Our vector engine has matched your creative profile with this brand&apos;s core demographic.
+                      </p>
+
+                      {/* Social Platform Icon Tiles */}
+                      <div className="pt-2 flex items-center gap-3">
+                        {['TikTok', 'Instagram', 'X'].map((p) => {
+                          const isSupported = acceptedPlatforms.includes(p as any);
+                          return (
+                            <div key={p} className="flex flex-col items-center gap-1.5">
+                              <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${
+                                isSupported
+                                  ? 'bg-[#151C33] border-blue-500/30 shadow-md'
+                                  : 'bg-white/5 border-white/10 opacity-40'
+                              }`}>
+                                {renderPlatformIcon(p, "w-5 h-5")}
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                {p === 'X' ? 'X (TWITTER)' : p.toUpperCase()}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Center Column: Circular Compatibility Gauge (Col 4) */}
+                    <div className="md:col-span-4 flex flex-col items-center justify-center relative py-2">
+                      {/* Floating Badge at top of ring */}
+                      <div className="absolute -top-1 z-20 bg-[#0D152A] border border-emerald-500/40 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[10px] font-extrabold text-white uppercase tracking-wider">HIGH CONVERSION</span>
+                      </div>
+
+                      {/* SVG Radial Progress Ring */}
+                      <div className="relative w-48 h-48 flex items-center justify-center">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                          {/* Background Track */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            stroke="currentColor"
+                            strokeWidth="7"
+                            className="text-[#13192E]"
+                            fill="transparent"
+                          />
+                          {/* Progress Arc with Glowing Drop Shadow */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            stroke="#3B82F6"
+                            strokeWidth="7"
+                            strokeDasharray={263.89}
+                            strokeDashoffset={263.89 * (1 - 0.94)}
+                            strokeLinecap="round"
+                            className="transition-all duration-1000 ease-out filter drop-shadow-[0_0_12px_rgba(59,130,246,0.8)]"
+                            fill="transparent"
+                          />
+                        </svg>
+
+                        {/* Ring Center Text */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="font-display font-extrabold text-white text-4xl sm:text-5xl tracking-tight">94</span>
+                            <span className="font-sans font-bold text-white text-xl">%</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-0.5">COMPATIBILITY</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Mini Cards & Affinity Progress Bars (Col 3) */}
+                    <div className="md:col-span-3 space-y-3">
+                      
+                      {/* Top 2 Mini Stat Cards */}
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div className="bg-[#12192E] border border-white/5 rounded-2xl p-3.5 space-y-1">
+                          <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                          <div className="font-mono text-base font-extrabold text-white">1.2M</div>
+                          <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-tight">OVERLAP AUDIENCE</div>
+                        </div>
+                        <div className="bg-[#12192E] border border-white/5 rounded-2xl p-3.5 space-y-1">
+                          <svg className="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                          <div className="font-mono text-base font-extrabold text-white">Vibe+</div>
+                          <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-tight">SENTIMENT MATCH</div>
+                        </div>
+                      </div>
+
+                      {/* Demographic Affinity Bar */}
+                      <div className="bg-[#12192E] border border-white/5 rounded-2xl p-3.5 space-y-2">
+                        <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span>DEMOGRAPHIC AFFINITY</span>
+                          <span className="font-mono text-white">88%</span>
+                        </div>
+                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                          <div className="bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] h-full rounded-full" style={{ width: '88%' }} />
+                        </div>
+                      </div>
+
+                      {/* Aesthetic Consistency Bar */}
+                      <div className="bg-[#12192E] border border-white/5 rounded-2xl p-3.5 space-y-2">
+                        <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span>AESTHETIC CONSISTENCY</span>
+                          <span className="font-mono text-white">96%</span>
+                        </div>
+                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                          <div className="bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] h-full rounded-full" style={{ width: '96%' }} />
+                        </div>
+                      </div>
+
+                    </div>
+
                   </div>
+
                 </div>
 
                 <div>
