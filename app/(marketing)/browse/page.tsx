@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
-import { CampaignGridSkeleton } from '@/components/ui/Skeletons';
+import { CampaignGridSkeleton, FeaturedHeroSkeleton } from '@/components/ui/Skeletons';
 
 /* ─────────────────────────────────────────────────────
    TYPES
@@ -436,7 +436,11 @@ export default function BrowsePage() {
     <div className="min-h-screen bg-[#090A0F] font-sans pb-16">
       
       {/* Full width hero - dynamically powered */}
-      <FeaturedHero items={featuredItems} />
+      {isLoading || featuredItems.length === 0 ? (
+        <FeaturedHeroSkeleton />
+      ) : (
+        <FeaturedHero items={featuredItems} />
+      )}
 
       <div className="max-w-7xl mx-auto px-6">
 
