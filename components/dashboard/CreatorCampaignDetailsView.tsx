@@ -1015,6 +1015,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                     </div>
                   </div>
                 </div>
+              )}
+
             </div>
 
           </div>
