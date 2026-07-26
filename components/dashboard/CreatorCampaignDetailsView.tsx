@@ -202,30 +202,31 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
         <div className="relative z-20 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-6">
           
           <div className="space-y-4 max-w-3xl">
-            {/* Advertiser Profile with avatar from Clerk / DB */}
-            <div className="flex items-center gap-3">
-              {campaign.company_logo ? (
-                <img
-                  src={campaign.company_logo}
-                  alt={campaign.company_name}
-                  className="w-10 h-10 rounded-full border border-white/20 object-cover shadow-md"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm uppercase text-white shadow-md">
-                  {campaign.company_name.slice(0, 1)}
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 bg-[#0B1026]/60 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10">
-                <span className="font-sans text-xs font-semibold text-white">
+            {/* Advertiser Profile & Campaign Code Pill (Unified Capsule) */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5 bg-[#0B1026] backdrop-blur-md pl-1.5 pr-4 py-1.5 rounded-full border border-white/15 shadow-md">
+                {campaign.company_logo ? (
+                  <img
+                    src={campaign.company_logo}
+                    alt={campaign.company_name}
+                    className="w-7 h-7 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xs uppercase text-white shadow-sm shrink-0">
+                    {campaign.company_name.slice(0, 1)}
+                  </div>
+                )}
+                <span className="font-sans text-xs font-bold text-white">
                   {campaign.company_name}
                 </span>
-                <svg className="w-3.5 h-3.5 text-kpugi-blue fill-current" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-blue-500 fill-current shrink-0" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.51Z" clipRule="evenodd" />
                 </svg>
               </div>
+
               {campaign.campaign_code && (
-                <div className="flex items-center bg-[#0B1026]/60 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-white/10">
-                  <span className="font-mono text-xs text-kpugi-blue font-bold tracking-wider">
+                <div className="flex items-center bg-[#0B1026] backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 shadow-md">
+                  <span className="font-mono text-xs text-white font-bold tracking-wider">
                     {campaign.campaign_code}
                   </span>
                 </div>
@@ -242,7 +243,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
               <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Channels:</span>
               <div className="flex items-center gap-2">
                 {acceptedPlatforms.map(p => (
-                  <div key={p} className="w-7 h-7 rounded-full bg-[#0B1026]/60 backdrop-blur-sm flex items-center justify-center border border-white/10" title={p}>
+                  <div key={p} className="w-7 h-7 rounded-full bg-[#0B1026] backdrop-blur-sm flex items-center justify-center border border-white/15" title={p}>
                     {renderPlatformIcon(p, "w-3.5 h-3.5")}
                   </div>
                 ))}
@@ -252,24 +253,24 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
 
           {/* Hero CTA button: Join Campaign / Status & AI Match Badge */}
           <div className="shrink-0 pb-2 flex items-center gap-3">
-            {/* AI Match Badge placed right next to Join button */}
-            <div className="flex items-center gap-2.5 bg-gradient-to-r from-emerald-950/80 via-teal-950/80 to-cyan-950/80 border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg shadow-emerald-500/10 backdrop-blur-md">
+            {/* AI Match Badge Pill */}
+            <div className="flex items-center gap-2.5 bg-[#0B1026] border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md">
               <span className="text-sm">✨</span>
               <div className="flex flex-col">
-                <span className="font-mono text-xs font-extrabold text-emerald-300">94% AI Match</span>
-                <span className="text-[9px] font-bold text-emerald-400/90 uppercase tracking-wider">High Creator Fit</span>
+                <span className="font-mono text-xs font-extrabold text-emerald-400">94% AI Match</span>
+                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">High Creator Fit</span>
               </div>
             </div>
 
             {!submission ? (
               <button
                 onClick={() => setIsJoinModalOpen(true)}
-                className="bg-white text-black hover:bg-white/90 px-8 py-4 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
+                className="bg-white text-black hover:bg-white/90 px-8 py-3.5 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 Join Campaign
               </button>
             ) : (
-              <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold font-sans uppercase tracking-wider">
+              <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#0B1026] border border-emerald-500/50 text-emerald-400 text-xs font-bold font-sans uppercase tracking-wider shadow-md">
                 Joined ✓
               </span>
             )}
