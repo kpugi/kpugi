@@ -1,12 +1,29 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { generateTextEmbedding, constructCampaignEmbeddingText } from '@/lib/ai/embeddings';
+import { getRedisCache, setRedisCache, deleteRedisCache } from '@/lib/redis/client';
 
 export async function GET(request: Request) {
   try {
-    const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const creatorId = searchParams.get('creatorId');
+
+    // If public request (no creatorId), try Redis cache first for sub-15ms response
+    const cacheKey = creatorId ? `campaigns:creator_${creatorId}` : 'campaigns:public';
+    const cachedCampaigns = await getRedisCache<any[]>(cacheKey);
+
+    if (cachedCampaigns) {
+      return NextResponse.json(
+        { campaigns: cachedCampaigns, cached: true },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          },
+        }
+      );
+    }
+
+    const supabase = createAdminClient();
 
     const { data: campaigns, error } = await supabase
       .from('campaigns')
@@ -70,7 +87,17 @@ export async function GET(request: Request) {
       })
     );
 
-    return NextResponse.json({ campaigns: enrichedCampaigns });
+    // Save to Redis Cache (TTL: 45 seconds)
+    await setRedisCache(cacheKey, enrichedCampaigns, 45);
+
+    return NextResponse.json(
+      { campaigns: enrichedCampaigns, cached: false },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (err) {
     console.error('[Campaigns API] Server error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -104,6 +131,9 @@ export async function POST(request: Request) {
       console.error('[Campaigns API POST Error]:', error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Invalidate Redis Public Campaigns Cache on new campaign creation
+    await deleteRedisCache('campaigns:public');
 
     return NextResponse.json({ campaign: newCampaign });
   } catch (err) {
