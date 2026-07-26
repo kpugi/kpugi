@@ -14,14 +14,9 @@ export default async function BrowseCampaignDetailPage({
   const userProfile = await getOrCreateUserProfile();
   const creatorId = userProfile?.profile?.id || null;
 
-  // If user is logged in, check role & onboarding
-  if (userProfile && userProfile.profile) {
-    if (!userProfile.onboardingComplete) {
-      redirect('/onboarding/role');
-    }
-    if (userProfile.role !== 'creator' && !userProfile.creatorProfile) {
-      redirect('/dashboard');
-    }
+  // If user is logged in, check onboarding
+  if (userProfile && userProfile.profile && !userProfile.onboardingComplete) {
+    redirect('/onboarding/role');
   }
 
   const { campaignId } = await params;
@@ -32,6 +27,10 @@ export default async function BrowseCampaignDetailPage({
   }
 
   return (
-    <CreatorCampaignDetailsView data={campaignData} campaignId={campaignId} />
+    <CreatorCampaignDetailsView
+      data={campaignData}
+      campaignId={campaignId}
+      userRole={userProfile?.role || 'public'}
+    />
   );
 }

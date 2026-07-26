@@ -10,11 +10,12 @@ import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 interface CreatorCampaignDetailsViewProps {
   data: CampaignDetailsForCreator;
   campaignId: string;
+  userRole?: string;
 }
 
 type TabType = 'overview' | 'instructions' | 'top_performers' | 'live_reach';
 
-export default function CreatorCampaignDetailsView({ data, campaignId }: CreatorCampaignDetailsViewProps) {
+export default function CreatorCampaignDetailsView({ data, campaignId, userRole = 'public' }: CreatorCampaignDetailsViewProps) {
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { campaign, creatives, submission, socialAccounts, allSubmissions } = data;
@@ -295,7 +296,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
               </div>
             )}
 
-            {!isSignedIn ? (
+            {userRole === 'advertiser' ? (
+              <Link
+                href="/dashboard"
+                className="bg-kpugi-blue hover:bg-blue-600 text-white px-7 py-3.5 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <span>📊</span>
+                <span>Advertiser Dashboard</span>
+              </Link>
+            ) : !isSignedIn ? (
               <Link
                 href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
                 className="bg-white text-black hover:bg-white/90 px-8 py-3.5 rounded-full font-sans font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
@@ -974,7 +983,23 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                 </div>
               )}
 
-              {!isSignedIn ? (
+              {userRole === 'advertiser' ? (
+                /* Advertiser View Banner */
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-xs text-blue-300 font-sans space-y-2">
+                  <div className="font-bold flex items-center gap-1.5 text-sm">
+                    <span>📢</span>
+                    <span>Advertiser Mode (Read-Only)</span>
+                  </div>
+                  <p className="text-slate-300 leading-relaxed">
+                    You are viewing this campaign brief in advertiser mode. Verified creators use this portal to lock escrow budget and submit published post links.
+                  </p>
+                  <div className="pt-1">
+                    <Link href="/dashboard" className="text-kpugi-blue font-bold hover:underline block text-xs">
+                      Go to Advertiser Dashboard →
+                    </Link>
+                  </div>
+                </div>
+              ) : !isSignedIn ? (
                 /* Non-authenticated Creator State */
                 <div className="space-y-4">
                   <p className="font-sans text-xs text-slate-400 leading-relaxed">
