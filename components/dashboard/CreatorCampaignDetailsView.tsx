@@ -313,7 +313,28 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
             onClick={() => setActiveTab('live_reach')}
             className={`font-sans text-sm font-bold pb-2 transition-all relative shrink-0 ${
               activeTab === 'live_reach' ? 'text-white border-b-2 border-white' : 'text-slate-400 hover:text-white'
-                           {/* ⚡ LIVE INTELLIGENCE AI-POWERED SYNC CARD (Connected to Supabase DB) */}
+            }`}
+          >
+            Live Reach
+          </button>
+        </div>
+
+        {/* MAIN COLUMN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* OVERVIEW TAB */}
+            {activeTab === 'overview' && (
+              <div className="space-y-8">
+                <div className="prose prose-invert max-w-none">
+                  <p className="font-sans text-slate-300 leading-relaxed text-sm">
+                    {campaign.description}
+                  </p>
+                </div>
+
+                {/* ⚡ LIVE INTELLIGENCE AI-POWERED SYNC CARD (Connected to Supabase DB) */}
                 {(() => {
                   const dbMatchScore = (campaign as any).match_score || 94;
                   const demoAffinity = Math.max(60, Math.min(98, dbMatchScore - 6));
