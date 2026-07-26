@@ -559,14 +559,84 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
 
             {/* DETAILED INSTRUCTIONS TAB */}
             {activeTab === 'instructions' && (
-              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
-                <h3 className="font-display font-bold text-lg text-white">Auditing & Safety Requirements</h3>
-                <ul className="space-y-4 font-sans text-sm text-slate-300 list-disc pl-5 leading-relaxed">
-                  <li>Your post must remain publicly visible and reachable for a minimum of <strong>{campaign.required_live_duration_hours} hours</strong> from the time of submission.</li>
-                  <li>Our verification scraper checks view count progress automatically hourly.</li>
-                  <li>A grace period of <strong>{campaign.verification_grace_hours} hours</strong> is allowed for final scraping settling.</li>
-                  <li>Deleting, archiving, or restricting access to the post during the audit phase violates terms and results in immediate forfeiture of reserved escrow funds.</li>
-                </ul>
+              <div className="space-y-6">
+                
+                {/* 1. Auditing & Safety Requirements Card */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
+                  <div>
+                    <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
+                      <span>🛡️</span> Auditing & Safety Requirements
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">Key rules enforced by our automated view scraper and escrow verification bot.</p>
+                  </div>
+                  <ul className="space-y-4 font-sans text-sm text-slate-300 list-disc pl-5 leading-relaxed">
+                    <li>Your post must remain publicly visible and reachable for a minimum of <strong>{campaign.required_live_duration_hours} hours</strong> from the time of submission.</li>
+                    <li>Our verification scraper checks view count progress automatically hourly.</li>
+                    <li>A grace period of <strong>{campaign.verification_grace_hours} hours</strong> is allowed for final scraping settling.</li>
+                    <li>Deleting, archiving, or restricting access to the post during the audit phase violates terms and results in immediate forfeiture of reserved escrow funds.</li>
+                  </ul>
+                </div>
+
+                {/* 2. Comprehensive Posting Rules & Step-by-Step Checklist Card */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
+                  <div>
+                    <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
+                      <span>📌</span> Detailed Posting Guidelines & Creator Rules
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      Follow these step-by-step rules to guarantee your post passes automated audit and unlocks instant CPM payouts.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Item 1: Public Visibility */}
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
+                        <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">🔒</span>
+                        <span>72-Hour Public Visibility Lock</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                        Do not archive, set to private, or delete your video post for at least {campaign.required_live_duration_hours} hours after submitting your link. The automated scraper audits view counts hourly.
+                      </p>
+                    </div>
+
+                    {/* Item 2: Brand Creatives */}
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
+                        <span className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">🎥</span>
+                        <span>Official Brand Creatives & Assets</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                        Publish the official video/image asset provided in the Campaign Assets folder without cropping out brand logos or modifying essential visual overlays.
+                      </p>
+                    </div>
+
+                    {/* Item 3: Tags & Captions */}
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
+                        <span className="p-2 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20">🏷️</span>
+                        <span>Mandatory Tags & Handles</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                        Tag the official brand handle and include the campaign hashtag or unique identifier in your post caption so our scraper can verify ownership.
+                      </p>
+                    </div>
+
+                    {/* Item 4: Instant Escrow Payouts */}
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
+                        <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">⚡</span>
+                        <span>Automated Escrow Payout Settlement</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                        Once your post reaches the view threshold ({campaign.min_view_threshold.toLocaleString()} min views), earnings are calculated at ₦{campaign.cpm_rate.toLocaleString()} CPM and released directly to your wallet.
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+
               </div>
             )}
 
@@ -945,90 +1015,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                     </div>
                   </div>
                 </div>
-              )}
-
-            </div>
-
-            {/* Posting Requirements & Escrow Timeline Card */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 space-y-6">
-              <div>
-                <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                  <span>📌</span> Posting Rules & Checklist
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                  Follow these essential guidelines to guarantee automated escrow view payout releases.
-                </p>
-              </div>
-
-              {/* Requirements List */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-sm shrink-0">🔒</span>
-                  <div className="space-y-0.5">
-                    <div className="font-sans text-xs font-bold text-white">72-Hour Public Lock</div>
-                    <div className="text-[11px] text-slate-400 leading-snug">
-                      Your post MUST remain public for at least {campaign.required_live_duration_hours}h without archiving.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-sm shrink-0">🎥</span>
-                  <div className="space-y-0.5">
-                    <div className="font-sans text-xs font-bold text-white">Brand Creatives & Guidelines</div>
-                    <div className="text-[11px] text-slate-400 leading-snug">
-                      Post the official brand creatives provided and follow any additional requirements specified by the brand.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-sm shrink-0">🎥</span>
-                  <div className="space-y-0.5">
-                    <div className="font-sans text-xs font-bold text-white">Unmodified Creative Asset</div>
-                    <div className="text-[11px] text-slate-400 leading-snug">
-                      Use brand provided video/image assets without cropping brand logos.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Escrow Timeline */}
-              <div className="border-t border-white/5 pt-5 space-y-4">
-                <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <span>⏱️</span> Automated Escrow Flow
-                </h4>
-                
-                <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/10">
-                  {/* Step 1 */}
-                  <div className="relative flex items-center justify-between text-xs">
-                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-[8px] text-emerald-400 font-bold">1</span>
-                    <span className="font-bold text-white">Lock Escrow Slot</span>
-                    <span className="text-[10px] text-emerald-400 font-mono">Instant</span>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="relative flex items-center justify-between text-xs">
-                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-blue-500/20 border border-blue-400 flex items-center justify-center text-[8px] text-blue-400 font-bold">2</span>
-                    <span className="font-bold text-white">Submit Post URL</span>
-                    <span className="text-[10px] text-slate-400 font-mono">Within 24h</span>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="relative flex items-center justify-between text-xs">
-                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[8px] text-slate-400 font-bold">3</span>
-                    <span className="font-bold text-slate-300">Auto-Audit Views</span>
-                    <span className="text-[10px] text-slate-400 font-mono">72h Live</span>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div className="relative flex items-center justify-between text-xs">
-                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[8px] text-slate-400 font-bold">4</span>
-                    <span className="font-bold text-slate-300">Escrow Payout Release</span>
-                    <span className="text-[10px] text-emerald-400 font-mono">Automatic</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
           </div>
