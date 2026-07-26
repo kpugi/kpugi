@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
+import { getSafeExternalUrl } from '@/lib/utils/url';
 
 interface CreatorCampaignDetailsViewProps {
   data: CampaignDetailsForCreator;
@@ -541,7 +542,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Campaign Assets</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href="https://docs.google.com" target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                    <a href={getSafeExternalUrl("https://docs.google.com")} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">📄</span>
                         <div className="text-left">
@@ -555,7 +556,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                       </svg>
                     </a>
-                    <a href="https://drive.google.com" target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                    <a href={getSafeExternalUrl("https://drive.google.com")} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">📂</span>
                         <div className="text-left">
@@ -1088,7 +1089,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   <div className="space-y-2 text-xs font-sans text-slate-400 border-t border-white/5 pt-3">
                     <div className="flex justify-between">
                       <span>Submitted Post</span>
-                      <a href={submission.post_url || undefined} target="_blank" rel="noreferrer" className="text-kpugi-blue hover:underline font-mono truncate max-w-[150px]">
+                      <a href={submission.post_url ? getSafeExternalUrl(submission.post_url) : undefined} target="_blank" rel="noreferrer" className="text-kpugi-blue hover:underline font-mono truncate max-w-[150px]">
                         Link →
                       </a>
                     </div>
