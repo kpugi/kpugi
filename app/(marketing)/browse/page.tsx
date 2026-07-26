@@ -517,6 +517,78 @@ export default function BrowsePage() {
           </div>
         )}
 
+        {/* Large Kpugi Advert Promotional Banner */}
+        <div className="relative w-full rounded-3xl overflow-hidden my-12 border border-blue-500/20 bg-[#0B1026] shadow-2xl">
+          {/* Background Graphic Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity scale-105 transition-transform duration-1000"
+            style={{ backgroundImage: "url('/images/kpugi_promo_banner.png')" }}
+          />
+          {/* Gradient Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#090A0F] via-[#090A0F]/90 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#090A0F] via-transparent to-blue-900/20 z-10" />
+
+          {/* Content Layer */}
+          <div className="relative z-20 p-8 sm:p-12 lg:p-14 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            
+            {/* Left Column: Brand Wordmark, Tagline & Bullets */}
+            <div className="space-y-6 max-w-2xl">
+              {/* Badge & Wordmark Pill */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5 bg-[#121833] border border-blue-500/30 px-4 py-2 rounded-full shadow-inner">
+                  <img src="/kpugi_logo.png" alt="Kpugi Logo" className="h-6 w-auto object-contain" />
+                </div>
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-full">
+                  ⚡ Guaranteed Automated Escrow
+                </span>
+              </div>
+
+              {/* Headline */}
+              <h3 className="font-display font-extrabold text-3xl sm:text-5xl text-white tracking-tight leading-tight">
+                Where Every Post Turns Into an <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">Instant Payout</span>.
+              </h3>
+
+              {/* Subtext */}
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-sans max-w-xl">
+                Whether you&apos;re a creator monetizing high-reach viral posts or a brand scaling CPM campaigns across Nigeria, Kpugi automates verified view payouts with zero escrow delay.
+              </p>
+
+              {/* Key Feature Stats Bar */}
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10 max-w-lg">
+                <div>
+                  <div className="font-display font-extrabold text-2xl text-white">₦2,000</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Base CPM Rate</div>
+                </div>
+                <div>
+                  <div className="font-display font-extrabold text-2xl text-white">72 Hours</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Live Audit Window</div>
+                </div>
+                <div>
+                  <div className="font-display font-extrabold text-2xl text-emerald-400">100%</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Escrow Protected</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Dual CTAs for Creators & Brands */}
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-4 w-full sm:w-auto shrink-0 z-20">
+              <Link
+                href="/sign-in"
+                className="px-8 py-4 bg-kpugi-blue hover:bg-blue-600 text-white font-sans font-bold text-sm rounded-2xl shadow-xl shadow-kpugi-blue/25 hover:scale-[1.02] active:scale-95 transition-all text-center flex items-center justify-center gap-2"
+              >
+                <span>🚀 Start Earning as a Creator</span>
+              </Link>
+              <Link
+                href="/onboarding/advertiser"
+                className="px-8 py-4 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-sans font-bold text-sm rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-center flex items-center justify-center gap-2"
+              >
+                <span>📢 Launch a Brand Campaign</span>
+              </Link>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   );
