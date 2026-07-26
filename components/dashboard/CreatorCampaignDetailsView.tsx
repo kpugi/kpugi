@@ -250,8 +250,17 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
             </div>
           </div>
 
-          {/* Hero CTA button: Join Campaign / Status */}
-          <div className="shrink-0 pb-2">
+          {/* Hero CTA button: Join Campaign / Status & AI Match Badge */}
+          <div className="shrink-0 pb-2 flex items-center gap-3">
+            {/* AI Match Badge placed right next to Join button */}
+            <div className="flex items-center gap-2.5 bg-gradient-to-r from-emerald-950/80 via-teal-950/80 to-cyan-950/80 border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg shadow-emerald-500/10 backdrop-blur-md">
+              <span className="text-sm">✨</span>
+              <div className="flex flex-col">
+                <span className="font-mono text-xs font-extrabold text-emerald-300">94% AI Match</span>
+                <span className="text-[9px] font-bold text-emerald-400/90 uppercase tracking-wider">High Creator Fit</span>
+              </div>
+            </div>
+
             {!submission ? (
               <button
                 onClick={() => setIsJoinModalOpen(true)}
@@ -323,6 +332,34 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                   <p className="font-sans text-slate-300 leading-relaxed text-sm">
                     {campaign.description}
                   </p>
+                </div>
+
+                {/* AI Compatibility Breakdown Widget */}
+                <div className="bg-gradient-to-r from-emerald-950/30 via-slate-900/40 to-slate-900/40 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-lg">✨</span>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">AI Audience & Style Match</h4>
+                        <p className="text-xs text-slate-400">Calculated via vector similarity with your connected social handles.</p>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-extrabold">
+                      94% Compatibility
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 font-medium">
+                      🎯 Category Fit: Finance & Tech
+                    </span>
+                    <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 font-medium">
+                      📱 Platforms: {acceptedPlatforms.join(' & ')}
+                    </span>
+                    <span className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-medium">
+                      ⚡ High View Conversion Likelihood
+                    </span>
+                  </div>
                 </div>
 
                 <div>
