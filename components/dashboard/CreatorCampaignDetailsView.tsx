@@ -813,9 +813,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId }: Creator
                   <span>Format</span>
                   <span className="text-white font-mono uppercase">{campaign.ad_format}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Platform conversion</span>
-                  <span className="text-white font-mono uppercase">{acceptedPlatforms.join('/')}</span>
+                  <div className="flex items-center gap-1.5">
+                    {acceptedPlatforms.map(p => (
+                      <div key={p} className="p-1 rounded-lg bg-white/5 border border-white/10" title={p}>
+                        {renderPlatformIcon(p, "w-3.5 h-3.5")}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span>Audit duration</span>
