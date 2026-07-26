@@ -5,19 +5,19 @@
 @layer base {
   :root {
     --color-primary: #2F49E8;
-    --color-ink: #0B1026;
-    --color-paper: #F6F7FB;
-    --color-surface: #FFFFFF;
+    --color-ink: #FFFFFF;
+    --color-paper: #090A0F;
+    --color-surface: #0B1026;
     --color-naira: #17A75B;
     --color-cliff: #E4483C;
     --color-amber: #F5A623;
     --color-slate: #64748B;
-    --color-border: #E4E7F0;
+    --color-border: rgba(255, 255, 255, 0.08);
   }
 
-  body {
-    background-color: var(--color-paper);
-    color: var(--color-ink);
+  html, body {
+    background-color: #090A0F !important;
+    color: #FFFFFF;
     font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
   }

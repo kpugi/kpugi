@@ -29,7 +29,7 @@ export default function RootLayout({
             href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           />
         </head>
-        <body className="min-h-screen bg-kpugi-paper text-kpugi-ink antialiased overflow-x-hidden">
+        <body className="min-h-screen bg-[#090A0F] text-white antialiased overflow-x-hidden">
           <KnockProviderWrapper>
             {children}
           </KnockProviderWrapper>
