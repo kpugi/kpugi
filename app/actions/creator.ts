@@ -3,6 +3,28 @@
 import { revalidatePath } from 'next/cache';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
+
+export async function getNigerianBanksAction(): Promise<BankOption[]> {
+  try {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_d158c402f2a980b1b327605aa39ab78083fb80a1';
+    const res = await fetch('https://api.paystack.co/bank?country=nigeria', {
+      headers: {
+        Authorization: `Bearer ${paystackSecret}`,
+      },
+      next: { revalidate: 86400 },
+    });
+    const json = await res.json();
+    if (json.status && Array.isArray(json.data)) {
+      return json.data
+        .map((b: any) => ({ code: b.code, name: b.name }))
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+    }
+  } catch (err) {
+    console.error('Failed to fetch bank list from Paystack:', err);
+  }
+  return FALLBACK_NIGERIAN_BANKS;
+}
 
 export async function submitCampaignVideoAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();

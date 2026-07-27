@@ -1,24 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreatorEarningsData } from '@/lib/supabase/creator';
-import { requestPayoutAction, resolveAndSaveBankAccountAction } from '@/app/actions/creator';
+import { requestPayoutAction, resolveAndSaveBankAccountAction, getNigerianBanksAction } from '@/app/actions/creator';
+import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
 import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, Filter, Download } from 'lucide-react';
 
 interface CreatorEarningsViewProps {
   data: CreatorEarningsData;
 }
-
-const NIGERIAN_BANKS = [
-  { code: '058', name: 'GTBank' },
-  { code: '057', name: 'Zenith Bank PLC' },
-  { code: '044', name: 'Access Bank' },
-  { code: '50211', name: 'Kuda Bank' },
-  { code: '999992', name: 'OPay' },
-  { code: '999991', name: 'PalmPay' },
-  { code: '011', name: 'First Bank of Nigeria' },
-  { code: '033', name: 'United Bank for Africa (UBA)' },
-];
 
 export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
@@ -26,11 +16,22 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Dynamic Nigerian Banks list from Paystack
+  const [bankList, setBankList] = useState<BankOption[]>(FALLBACK_NIGERIAN_BANKS);
+
   // Bank resolution state
   const [selectedBankCode, setSelectedBankCode] = useState('057');
   const [accountNumber, setAccountNumber] = useState('');
   const [resolvedAccountName, setResolvedAccountName] = useState('');
   const [isResolving, setIsResolving] = useState(false);
+
+  useEffect(() => {
+    getNigerianBanksAction().then((banks) => {
+      if (banks && banks.length > 0) {
+        setBankList(banks);
+      }
+    });
+  }, []);
 
   // Available balance (defaults to mockup value if empty)
   const availableBalance = data.availableBalance > 0 ? data.availableBalance : 1245600;
@@ -64,7 +65,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       try {
         const formData = new FormData();
         formData.append('bankCode', selectedBankCode);
-        const selectedBank = NIGERIAN_BANKS.find((b) => b.code === selectedBankCode);
+        const selectedBank = bankList.find((b) => b.code === selectedBankCode);
         formData.append('bankName', selectedBank?.name || 'Bank');
         formData.append('accountNumber', val);
 
@@ -92,7 +93,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
     setLoading(true);
     setErrorMsg('');
     const formData = new FormData(e.currentTarget);
-    const selectedBank = NIGERIAN_BANKS.find((b) => b.code === selectedBankCode);
+    const selectedBank = bankList.find((b) => b.code === selectedBankCode);
     formData.append('bankName', selectedBank?.name || 'Bank');
     if (resolvedAccountName) {
       formData.append('accountName', resolvedAccountName);
@@ -485,8 +486,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   onChange={(e) => setSelectedBankCode(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white"
                 >
-                  {NIGERIAN_BANKS.map((b) => (
-                    <option key={b.code} value={b.code}>
+                  {bankList.map((b) => (
+                    <option key={`${b.code}-${b.name}`} value={b.code}>
                       {b.name}
                     </option>
                   ))}
