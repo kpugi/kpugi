@@ -24,6 +24,8 @@ export interface CreatorSubmission {
     min_view_threshold: number;
     created_at: string;
     updated_at: string;
+    company_name?: string;
+    company_logo?: string | null;
   };
 }
 

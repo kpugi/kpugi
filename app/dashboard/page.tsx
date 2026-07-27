@@ -4,7 +4,8 @@ import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import DashboardLayoutShell from '@/components/dashboard/DashboardLayoutShell';
 import AdvertiserDashboardView from '@/components/dashboard/AdvertiserDashboardView';
 import CreatorDashboardView from '@/components/dashboard/CreatorDashboardView';
-import { getCreatorDashboardData, getAdvertiserDashboardData } from '@/lib/supabase/dashboard';
+import { getCreatorOverviewData } from '@/lib/supabase/creator';
+import { getAdvertiserDashboardData } from '@/lib/supabase/dashboard';
 
 export default async function DashboardPage() {
   const userProfile = await getOrCreateUserProfile();
@@ -28,10 +29,10 @@ export default async function DashboardPage() {
   }
 
   const displayName = userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'Creator';
-  const data = await getCreatorDashboardData(userProfile.profile.id);
+  const data = await getCreatorOverviewData(userProfile.profile.id);
   return (
     <DashboardLayoutShell role="creator" title="Creator Console">
-      <CreatorDashboardView displayName={displayName} data={data} />
+      <CreatorDashboardView displayName={displayName} data={data as any} />
     </DashboardLayoutShell>
   );
 }

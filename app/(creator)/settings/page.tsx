@@ -1,8 +1,17 @@
-export default function CreatorSettingsPage() {
-  return (
-    <div>
-      <h1 className="font-display text-2xl font-bold mb-4">Creator Settings</h1>
-      <p className="text-kpugi-slate text-sm">Display name, bio, and notification preferences.</p>
-    </div>
-  );
+import React from 'react';
+import { redirect } from 'next/navigation';
+import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getCreatorProfileSettings } from '@/lib/supabase/creator';
+import CreatorSettingsView from '@/components/creator/settings/CreatorSettingsView';
+
+export default async function SettingsPage() {
+  const userProfile = await getOrCreateUserProfile();
+
+  if (!userProfile || !userProfile.profile) {
+    redirect('/sign-in');
+  }
+
+  const profile = await getCreatorProfileSettings(userProfile.profile.id);
+
+  return <CreatorSettingsView profile={profile} />;
 }

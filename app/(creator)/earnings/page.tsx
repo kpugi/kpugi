@@ -1,8 +1,17 @@
-export default function CreatorEarningsPage() {
-  return (
-    <div>
-      <h1 className="font-display text-2xl font-bold mb-4">Earnings & Payouts</h1>
-      <p className="text-kpugi-slate text-sm">View total Naira earned, payout recipient bank details, and Paystack transfer history.</p>
-    </div>
-  );
+import React from 'react';
+import { redirect } from 'next/navigation';
+import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getCreatorEarningsData } from '@/lib/supabase/creator';
+import CreatorEarningsView from '@/components/creator/earnings/CreatorEarningsView';
+
+export default async function EarningsPage() {
+  const userProfile = await getOrCreateUserProfile();
+
+  if (!userProfile || !userProfile.profile) {
+    redirect('/sign-in');
+  }
+
+  const data = await getCreatorEarningsData(userProfile.profile.id);
+
+  return <CreatorEarningsView data={data} />;
 }
