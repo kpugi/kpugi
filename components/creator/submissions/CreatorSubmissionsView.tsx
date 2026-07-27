@@ -347,8 +347,6 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
               <tr className="border-b border-kpugi-border bg-slate-50/70 text-[10px] font-bold text-kpugi-slate uppercase tracking-wider font-sans">
                 <th className="py-4 px-6">Campaign & Code</th>
                 <th className="py-4 px-6">Platform & URL</th>
-                <th className="py-4 px-6">Metrics</th>
-                <th className="py-4 px-6">Earnings</th>
                 <th className="py-4 px-6">Status</th>
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
@@ -383,52 +381,6 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         </a>
                       </div>
                     </div>
-                  </td>
-
-                  {/* Metrics */}
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-4 text-xs font-mono">
-                      <div>
-                        <span className="text-[10px] text-kpugi-slate uppercase block font-sans">Views</span>
-                        <span className="font-bold text-kpugi-ink">
-                          {item.viewsCount > 0 ? (item.viewsCount >= 1000000 ? `${(item.viewsCount / 1000000).toFixed(1)}M` : item.viewsCount >= 1000 ? `${(item.viewsCount / 1000).toFixed(1)}K` : item.viewsCount) : '--'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-kpugi-slate uppercase block font-sans">Eng.</span>
-                        <span className="font-bold text-kpugi-ink">
-                          {item.engagementRate > 0 ? `${item.engagementRate}%` : '--'}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Earnings */}
-                  <td className="py-4 px-6">
-                    {item.status === 'approved' ? (
-                      <div>
-                        <div className="font-mono font-bold text-kpugi-ink text-sm">
-                          ₦{item.earnedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </div>
-                        <div className="text-[10px] text-kpugi-slate font-mono mt-0.5">
-                          ₦{item.cpmRate.toLocaleString()} CPM
-                        </div>
-                      </div>
-                    ) : item.status === 'auditing' || item.status === 'pending' ? (
-                      <div>
-                        <div className="font-mono font-bold text-slate-400 text-sm">₦0.00</div>
-                        <div className="text-[10px] text-kpugi-blue font-mono mt-0.5 font-bold uppercase tracking-wider animate-pulse">
-                          CALCULATING
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="font-mono font-bold text-red-400 text-sm">₦0.00</div>
-                        <div className="text-[10px] text-red-500 font-mono mt-0.5 font-bold uppercase tracking-wider">
-                          NOT ELIGIBLE
-                        </div>
-                      </div>
-                    )}
                   </td>
 
                   {/* Status Pill */}
@@ -508,7 +460,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
 
               {filteredSubmissions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-kpugi-slate font-sans text-xs">
+                  <td colSpan={4} className="py-12 text-center text-kpugi-slate font-sans text-xs">
                     No submissions found matching filter criteria.
                   </td>
                 </tr>

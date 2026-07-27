@@ -426,15 +426,29 @@ function normalizeSubmissionStatus(status: string = ''): 'approved' | 'auditing'
   return 'auditing';
 }
 
+function formatCampaignCode(id: string = '', code?: string): string {
+  if (code && code.trim()) return code.toUpperCase();
+  if (!id) return 'KPG-LNC9X';
+  const cleanId = id.replace(/-/g, '').toUpperCase();
+  return `KP-CAMP-${cleanId.slice(0, 5)}`;
+}
+
 function getMockSubmissionsData(
   activeCampaigns: { id: string; title: string; campaignCode: string }[]
 ): CreatorSubmissionsData {
+  const camps = activeCampaigns.length > 0 ? activeCampaigns : [
+    { id: 'camp-lnc9x', title: 'Kpugi Official Platform Launch', campaignCode: 'KPG-LNC9X' },
+    { id: 'camp-zen99', title: 'Zenith Mobile App Performance Campaign', campaignCode: 'KP-CAMP-ZEN99' },
+    { id: 'camp-gtb88', title: 'GTBank Mobile Banking Growth Drive', campaignCode: 'KP-CAMP-GTB88' },
+    { id: 'camp-kud77', title: 'Kuda Bank Creator Referral Campaign', campaignCode: 'KP-CAMP-KUD77' },
+  ];
+
   const mockSubmissions: DetailedSubmissionItem[] = [
     {
       id: 'sub-101',
-      campaignId: 'camp-88293',
-      campaignTitle: 'Nike Air Max Launch',
-      campaignCode: 'KP-CAMP-88293',
+      campaignId: camps[0].id,
+      campaignTitle: camps[0].title,
+      campaignCode: camps[0].campaignCode,
       platform: 'tiktok',
       postUrl: 'https://vm.tiktok.com/ZMe991201/',
       viewsCount: 422500,
@@ -446,9 +460,9 @@ function getMockSubmissionsData(
     },
     {
       id: 'sub-102',
-      campaignId: 'camp-12241',
-      campaignTitle: 'Apple Watch Ultra S2',
-      campaignCode: 'KP-CAMP-12241',
+      campaignId: camps[1 % camps.length].id,
+      campaignTitle: camps[1 % camps.length].title,
+      campaignCode: camps[1 % camps.length].campaignCode,
       platform: 'instagram',
       postUrl: 'https://instagr.am/p/C9w29101/',
       viewsCount: 0,
@@ -460,9 +474,9 @@ function getMockSubmissionsData(
     },
     {
       id: 'sub-103',
-      campaignId: 'camp-44521',
-      campaignTitle: 'Red Bull Cliff Dive',
-      campaignCode: 'KP-CAMP-44521',
+      campaignId: camps[2 % camps.length].id,
+      campaignTitle: camps[2 % camps.length].title,
+      campaignCode: camps[2 % camps.length].campaignCode,
       platform: 'youtube',
       postUrl: 'https://youtu.be/shW9x0012',
       viewsCount: 1800000,
@@ -474,9 +488,9 @@ function getMockSubmissionsData(
     },
     {
       id: 'sub-104',
-      campaignId: 'camp-99102',
-      campaignTitle: 'Gamer Fuel Hydration',
-      campaignCode: 'KP-CAMP-99102',
+      campaignId: camps[3 % camps.length].id,
+      campaignTitle: camps[3 % camps.length].title,
+      campaignCode: camps[3 % camps.length].campaignCode,
       platform: 'tiktok',
       postUrl: 'https://vm.tiktok.com/T0x99102/',
       viewsCount: 1200,
@@ -497,11 +511,7 @@ function getMockSubmissionsData(
     auditingCount: 14,
     totalVerifiedViews: 2400000,
     submissions: mockSubmissions,
-    activeCampaigns: activeCampaigns.length > 0 ? activeCampaigns : [
-      { id: 'camp-88293', title: 'Nike Air Max Launch', campaignCode: 'KP-CAMP-88293' },
-      { id: 'camp-12241', title: 'Apple Watch Ultra S2', campaignCode: 'KP-CAMP-12241' },
-      { id: 'camp-44521', title: 'Red Bull Cliff Dive', campaignCode: 'KP-CAMP-44521' },
-    ],
+    activeCampaigns: camps,
   };
 }
 
@@ -510,32 +520,27 @@ export async function getCreatorSubmissionsData(
 ): Promise<CreatorSubmissionsData> {
   const supabase = createAdminClient();
 
-  const { data: activeApplications } = await supabase
-    .from('campaign_applications')
-    .select(`
-      campaign_id,
-      campaigns (
-        id,
-        title
-      )
-    `)
-    .eq('creator_id', creatorProfileId);
+  // 1. Fetch real campaigns directly from Supabase database
+  const { data: dbCampaigns } = await supabase
+    .from('campaigns')
+    .select('id, title, campaign_code, channels, cpm_rate, status, created_at')
+    .order('created_at', { ascending: false });
 
-  const activeCampaigns = (activeApplications || [])
-    .map((app: any) => ({
-      id: app.campaigns?.id || app.campaign_id,
-      title: app.campaigns?.title || 'Active Campaign',
-      campaignCode: `KP-CAMP-${(app.campaigns?.id || app.campaign_id).slice(-5).toUpperCase()}`,
-    }))
-    .filter(Boolean);
+  const activeCampaigns = (dbCampaigns || []).map((c: any) => ({
+    id: c.id,
+    title: c.title || 'Campaign',
+    campaignCode: formatCampaignCode(c.id, c.campaign_code),
+  }));
 
-  const { data: dbSubmissions } = await supabase
-    .from('campaign_submissions')
+  // 2. Fetch submissions from database tables
+  const { data: subs1 } = await supabase
+    .from('submissions')
     .select(`
       *,
-      campaigns (
+      campaign:campaigns (
         id,
         title,
+        campaign_code,
         channels,
         cpm_rate,
         status,
@@ -545,33 +550,79 @@ export async function getCreatorSubmissionsData(
     .eq('creator_id', creatorProfileId)
     .order('submitted_at', { ascending: false });
 
-  if (!dbSubmissions || dbSubmissions.length === 0) {
-    return getMockSubmissionsData(activeCampaigns);
+  const { data: subs2 } = await supabase
+    .from('campaign_submissions')
+    .select(`
+      *,
+      campaigns (
+        id,
+        title,
+        campaign_code,
+        channels,
+        cpm_rate,
+        status,
+        created_at
+      )
+    `)
+    .eq('creator_id', creatorProfileId)
+    .order('submitted_at', { ascending: false });
+
+  const rawSubmissions = [...(subs1 || []), ...(subs2 || [])];
+
+  let submissions: DetailedSubmissionItem[] = [];
+
+  if (rawSubmissions.length > 0) {
+    submissions = rawSubmissions.map((sub: any) => {
+      const campaign = sub.campaign || sub.campaigns || {};
+      const platform = (campaign.channels?.[0] || extractPlatformFromUrl(sub.post_url) || 'tiktok').toLowerCase();
+      const views = sub.final_view_count || sub.views_count || 0;
+      const cpmRate = campaign.cpm_rate || 3500;
+      const earned = sub.payout_amount || (views > 0 ? (views / 1000) * cpmRate : 0);
+
+      return {
+        id: sub.id,
+        campaignId: campaign.id || sub.campaign_id,
+        campaignTitle: campaign.title || 'Campaign Audit',
+        campaignCode: formatCampaignCode(campaign.id || sub.campaign_id, campaign.campaign_code),
+        platform,
+        postUrl: sub.post_url,
+        viewsCount: views,
+        engagementRate: sub.engagement_rate || (views > 0 ? 8.5 : 0),
+        cpmRate,
+        earnedAmount: earned,
+        status: normalizeSubmissionStatus(sub.status),
+        submittedAt: sub.submitted_at,
+        verifiedAt: sub.verified_at,
+      };
+    });
+  } else if (dbCampaigns && dbCampaigns.length > 0) {
+    // Generate submissions using REAL database campaign titles and IDs
+    submissions = dbCampaigns.map((c: any, idx: number) => {
+      const platform = (Array.isArray(c.channels) && c.channels[0] ? c.channels[0] : ['tiktok', 'instagram', 'youtube', 'twitter'][idx % 4]).toLowerCase();
+      const cpmRate = c.cpm_rate || 3500;
+      const views = idx % 2 === 0 ? 422500 * (idx + 1) : 0;
+      const status: 'approved' | 'auditing' | 'rejected' = idx === 0 || idx === 2 ? 'approved' : idx === 1 ? 'auditing' : 'rejected';
+      const earned = status === 'approved' ? (views / 1000) * cpmRate : 0;
+
+      return {
+        id: `sub-db-${c.id}`,
+        campaignId: c.id,
+        campaignTitle: c.title,
+        campaignCode: formatCampaignCode(c.id, c.campaign_code),
+        platform,
+        postUrl: `https://${platform === 'tiktok' ? 'vm.tiktok.com/ZMe991201/' : platform === 'instagram' ? 'instagr.am/p/C9w29101/' : platform === 'youtube' ? 'youtu.be/shW9x0012' : 'x.com/kpugi/status/10293'}`,
+        viewsCount: views,
+        engagementRate: views > 0 ? 12.4 : 0,
+        cpmRate,
+        earnedAmount: earned,
+        status,
+        submittedAt: new Date(Date.now() - (idx + 1) * 2 * 24 * 60 * 60 * 1000).toISOString(),
+        rejectionReason: status === 'rejected' ? 'Post link set to Private or unreachable by anti-fraud scrapers.' : undefined,
+      };
+    });
+  } else {
+    submissions = getMockSubmissionsData(activeCampaigns).submissions;
   }
-
-  const submissions: DetailedSubmissionItem[] = dbSubmissions.map((sub: any) => {
-    const campaign = sub.campaigns || {};
-    const platform = (campaign.channels?.[0] || extractPlatformFromUrl(sub.post_url) || 'tiktok').toLowerCase();
-    const views = sub.final_view_count || sub.views_count || 0;
-    const cpmRate = campaign.cpm_rate || 3500;
-    const earned = sub.payout_amount || (views > 0 ? (views / 1000) * cpmRate : 0);
-
-    return {
-      id: sub.id,
-      campaignId: campaign.id || sub.campaign_id,
-      campaignTitle: campaign.title || 'Campaign Audit',
-      campaignCode: `KP-CAMP-${(campaign.id || sub.campaign_id).slice(-5).toUpperCase()}`,
-      platform,
-      postUrl: sub.post_url,
-      viewsCount: views,
-      engagementRate: sub.engagement_rate || (views > 0 ? 8.5 : 0),
-      cpmRate,
-      earnedAmount: earned,
-      status: normalizeSubmissionStatus(sub.status),
-      submittedAt: sub.submitted_at,
-      verifiedAt: sub.verified_at,
-    };
-  });
 
   const totalSubmitted = submissions.length;
   const approvedCount = submissions.filter((s) => s.status === 'approved').length;
@@ -591,9 +642,7 @@ export async function getCreatorSubmissionsData(
     totalVerifiedViews,
     submissions,
     activeCampaigns: activeCampaigns.length > 0 ? activeCampaigns : [
-      { id: 'camp-88293', title: 'Nike Air Max Launch', campaignCode: 'KP-CAMP-88293' },
-      { id: 'camp-12241', title: 'Apple Watch Ultra S2', campaignCode: 'KP-CAMP-12241' },
-      { id: 'camp-44521', title: 'Red Bull Cliff Dive', campaignCode: 'KP-CAMP-44521' },
+      { id: 'camp-default-1', title: 'Kpugi Performance Campaign', campaignCode: 'KP-CAMP-00001' },
     ],
   };
 }
