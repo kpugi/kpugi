@@ -402,6 +402,80 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       </div>
 
       {/* ─────────────────────────────────────────────────────
+         BOTTOM ROW: LARGE CREATOR ESCROW & GROWTH BANNER
+      ───────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-kpugi-ink to-blue-950 p-6 sm:p-10 text-white shadow-xl border border-slate-800">
+        {/* Background Decorative Glow Shapes */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-kpugi-blue/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          {/* Left Column: Heading & Feature Badges */}
+          <div className="space-y-4 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold font-mono uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              Instant Payout Protection & Scraper Audited
+            </div>
+
+            <h3 className="font-display font-bold text-2xl sm:text-3xl text-white tracking-tight leading-tight">
+              Maximize Your Campaign Revenue with Guaranteed Escrow Clearances
+            </h3>
+
+            <p className="font-sans text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Every video view, engagement, and conversion is verified in real-time by Kpugi's anti-fraud performance network.
+              Funds are ring-fenced upfront in escrow and settle directly into your verified Nigerian bank account.
+            </p>
+
+            {/* Feature Pills Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="text-left">
+                  <span className="text-[11px] font-bold text-white block">100% Escrow Backed</span>
+                  <span className="text-[10px] text-slate-400 block">Funds locked prior to launch</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <ArrowUpRight className="w-5 h-5 text-blue-400 shrink-0" />
+                <div className="text-left">
+                  <span className="text-[11px] font-bold text-white block">Instant Direct NUBAN</span>
+                  <span className="text-[10px] text-slate-400 block">Paystack real-time transfers</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <Info className="w-5 h-5 text-indigo-400 shrink-0" />
+                <div className="text-left">
+                  <span className="text-[11px] font-bold text-white block">Automated Audit</span>
+                  <span className="text-[10px] text-slate-400 block">Zero manual review delays</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: CTA Buttons */}
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 justify-center">
+            <a
+              href="/campaigns"
+              className="px-6 py-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-lg shadow-kpugi-blue/30 flex items-center justify-center gap-2 group"
+            >
+              <span>Browse Active Campaigns</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+            <button
+              onClick={() => setShowPayoutModal(true)}
+              disabled={availableBalance < 10000}
+              className="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 font-sans text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <CreditCard className="w-4 h-4 text-blue-300" />
+              <span>Withdraw Available Earnings</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────
          MODAL 1: WITHDRAWAL REQUEST MODAL
       ───────────────────────────────────────────────────── */}
       {showPayoutModal && mounted && createPortal(
