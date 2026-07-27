@@ -1,8 +1,17 @@
-export default function CreatorSubmissionsPage() {
-  return (
-    <div>
-      <h1 className="font-display text-2xl font-bold mb-4">My Submissions</h1>
-      <p className="text-kpugi-slate text-sm">Track active clocked-in submissions and verification audit logs.</p>
-    </div>
-  );
+import React from 'react';
+import { redirect } from 'next/navigation';
+import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getCreatorSubmissionsData } from '@/lib/supabase/creator';
+import CreatorSubmissionsView from '@/components/creator/submissions/CreatorSubmissionsView';
+
+export default async function SubmissionsPage() {
+  const userProfile = await getOrCreateUserProfile();
+
+  if (!userProfile || !userProfile.profile || !userProfile.creatorProfile) {
+    redirect('/sign-in');
+  }
+
+  const data = await getCreatorSubmissionsData(userProfile.creatorProfile.id);
+
+  return <CreatorSubmissionsView data={data} />;
 }

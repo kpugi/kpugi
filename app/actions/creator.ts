@@ -265,3 +265,31 @@ export async function updateCreatorProfileAction(formData: FormData) {
   revalidatePath('/settings');
   return { success: true };
 }
+
+export async function resyncSubmissionScraperAction(submissionId: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!submissionId) {
+    return { success: false, error: 'Submission ID is required' };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('campaign_submissions')
+    .update({
+      status: 'pending',
+      verified_at: new Date().toISOString(),
+    })
+    .eq('id', submissionId)
+    .eq('creator_id', userProfile.creatorProfile.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/submissions');
+  return { success: true };
+}
