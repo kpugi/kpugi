@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import DashboardLayoutShell from '@/components/dashboard/DashboardLayoutShell';
 import CreatorCampaignDetailsView from '@/components/dashboard/CreatorCampaignDetailsView';
+import CreatorCampaignWorkspaceView from '@/components/creator/campaigns/CreatorCampaignWorkspaceView';
 import { getCampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 
 export default async function SingleCampaignPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,12 +23,19 @@ export default async function SingleCampaignPage({ params }: { params: Promise<{
   const isAdvertiser = userProfile.role === 'advertiser';
 
   return (
-    <DashboardLayoutShell role={isAdvertiser ? 'advertiser' : 'creator'} title="Campaign Details">
-      <CreatorCampaignDetailsView
-        data={campaignData}
-        campaignId={id}
-        userRole={isAdvertiser ? 'advertiser' : 'creator'}
-      />
+    <DashboardLayoutShell role={isAdvertiser ? 'advertiser' : 'creator'} title={campaignData.campaign.title}>
+      {isAdvertiser ? (
+        <CreatorCampaignDetailsView
+          data={campaignData}
+          campaignId={id}
+          userRole="advertiser"
+        />
+      ) : (
+        <CreatorCampaignWorkspaceView
+          data={campaignData}
+          campaignId={id}
+        />
+      )}
     </DashboardLayoutShell>
   );
 }

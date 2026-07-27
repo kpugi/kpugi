@@ -39,10 +39,14 @@ export interface CreatorOverviewData {
 
 export interface CreatorCampaignItem {
   id: string;
+  campaignId: string;
   title: string;
   brandName?: string;
+  companyLogo?: string | null;
   platform?: string;
   ratePer1k?: number;
+  minThreshold?: number;
+  reservedAmount?: number;
   status: string;
   postUrl?: string;
   viewsCount?: number;
@@ -187,13 +191,21 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
       post_url,
       status,
       submitted_at,
+      reserved_amount,
       final_view_count,
       payout_amount,
       campaign:campaigns (
         id,
         title,
         channels,
-        cpm_rate
+        cpm_rate,
+        min_view_threshold,
+        advertiser:advertiser_profiles (
+          company_name,
+          profile:profiles (
+            avatar_url
+          )
+        )
       )
     `)
     .or(creatorFilter)
@@ -203,11 +215,17 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
 
   return rawData.map((sub: any) => {
     const campaign = Array.isArray(sub.campaign) ? sub.campaign[0] : sub.campaign;
+    const adv = campaign?.advertiser as any;
     return {
-      id: campaign?.id || sub.id,
+      id: sub.id,
+      campaignId: campaign?.id || sub.id,
       title: campaign?.title || 'Campaign',
+      brandName: adv?.company_name || 'Brand Partner',
+      companyLogo: adv?.profile?.avatar_url || null,
       platform: campaign?.channels?.[0] || 'tiktok',
       ratePer1k: campaign?.cpm_rate || 0,
+      minThreshold: campaign?.min_view_threshold || 500,
+      reservedAmount: sub.reserved_amount || sub.payout_amount || 0,
       status: sub.status,
       postUrl: sub.post_url,
       viewsCount: sub.final_view_count || 0,

@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, Sparkles, ArrowRight, Megaphone } from 'lucide-react';
+import { Search, Megaphone, ArrowRight } from 'lucide-react';
 import { CreatorCampaignItem } from '@/lib/supabase/creator';
-import { PlatformBadge } from '@/components/ui/SocialIcons';
+import { formatCompactCurrency } from '@/lib/utils/format';
 
 interface CreatorCampaignsViewProps {
   campaigns: CreatorCampaignItem[];
@@ -14,7 +14,7 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
   const [activeTab, setActiveTab] = useState<'all' | 'auditing' | 'completed'>('all');
 
   const filteredCampaigns = campaigns.filter((c) => {
-    if (activeTab === 'auditing') return c.status === 'pending' || c.status === 'auditing' || c.status === 'under_review';
+    if (activeTab === 'auditing') return c.status === 'pending' || c.status === 'auditing' || c.status === 'under_review' || c.status === 'reserved';
     if (activeTab === 'completed') return c.status === 'paid' || c.status === 'completed' || c.status === 'approved';
     return true;
   });
@@ -52,7 +52,7 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
             activeTab === 'auditing' ? 'bg-kpugi-blue/10 text-kpugi-blue' : 'text-kpugi-slate hover:bg-slate-100'
           }`}
         >
-          Active / Auditing ({campaigns.filter((c) => c.status === 'pending' || c.status === 'auditing' || c.status === 'under_review').length})
+          Active / Auditing ({campaigns.filter((c) => c.status === 'pending' || c.status === 'auditing' || c.status === 'under_review' || c.status === 'reserved').length})
         </button>
         <button
           onClick={() => setActiveTab('completed')}
@@ -64,7 +64,7 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
         </button>
       </div>
 
-      {/* Campaigns List / Grid */}
+      {/* Campaigns List / Grid matching screenshot style */}
       {filteredCampaigns.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-3xl border border-kpugi-border shadow-sm space-y-4">
           <Megaphone className="w-10 h-10 text-kpugi-blue mx-auto" />
@@ -81,42 +81,61 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredCampaigns.map((item) => (
-            <div key={item.id} className="p-6 rounded-2xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4 hover:border-kpugi-blue/30 transition-all">
+            <Link
+              key={item.id}
+              href={`/campaigns/${item.campaignId || item.id}`}
+              className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between hover:shadow-md transition-all space-y-4 hover:border-kpugi-blue/40 group"
+            >
               <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <PlatformBadge platform={item.platform || 'tiktok'} />
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                <div className="flex items-center justify-between mb-4">
+                  {item.companyLogo ? (
+                    <img
+                      src={item.companyLogo}
+                      alt={item.brandName || item.title}
+                      className="w-10 h-10 rounded-2xl object-cover border border-kpugi-border shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-2xl bg-kpugi-ink text-white font-bold text-sm flex items-center justify-center uppercase shrink-0">
+                      {(item.brandName || item.title).charAt(0)}
+                    </div>
+                  )}
+
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                     item.status === 'paid' || item.status === 'completed'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-amber-100 text-amber-700'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   }`}>
-                    {item.status.replace('_', ' ')}
+                    JOINED
                   </span>
                 </div>
 
-                <h3 className="font-display font-bold text-lg text-kpugi-ink line-clamp-1">{item.title}</h3>
-                
-                <div className="mt-3 flex items-center justify-between text-xs font-sans">
-                  <span className="text-kpugi-slate">Rate Card</span>
-                  <span className="font-mono font-bold text-kpugi-blue">₦{item.ratePer1k?.toLocaleString()} / 1k views</span>
-                </div>
-
-                <div className="mt-2 flex items-center justify-between text-xs font-sans">
-                  <span className="text-kpugi-slate">Verified Views</span>
-                  <span className="font-mono font-bold text-kpugi-ink">{(item.viewsCount || 0).toLocaleString()}</span>
-                </div>
+                <h4 className="font-display font-bold text-base text-kpugi-ink mb-1 group-hover:text-kpugi-blue transition-colors line-clamp-1">
+                  {item.title}
+                </h4>
+                <p className="font-sans text-xs text-kpugi-slate mb-4">
+                  Min Threshold: {(item.minThreshold || 500).toLocaleString()} views
+                </p>
               </div>
 
-              <Link
-                href={`/campaigns/${item.id}`}
-                className="w-full py-2.5 rounded-xl bg-kpugi-paper hover:bg-kpugi-blue hover:text-white border border-kpugi-border text-kpugi-ink font-sans text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5"
-              >
-                <span>Open Workspace</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+              <div className="pt-4 border-t border-kpugi-border flex items-center justify-between text-xs font-sans">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-kpugi-slate block tracking-wider">RESERVED</span>
+                  <span className="font-mono font-bold text-kpugi-blue">
+                    {formatCompactCurrency(item.reservedAmount || item.earnedAmount || 0)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold uppercase text-kpugi-slate block tracking-wider">SUBMITTED</span>
+                  <span className="font-sans font-bold text-kpugi-ink">
+                    {item.submittedAt
+                      ? new Date(item.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      : 'Recently'}
+                  </span>
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       )}

@@ -206,11 +206,23 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-kpugi-border">
                   <div className="flex items-center gap-2">
                     <span className="font-sans text-xs font-bold text-kpugi-slate uppercase tracking-wider mr-1">Platforms:</span>
-                    {(featuredSub.campaign.channels && featuredSub.campaign.channels.length > 0
-                      ? featuredSub.campaign.channels
-                      : ['tiktok', 'instagram']
-                    ).map((ch: string) => (
-                      <PlatformBadge key={ch} platform={ch} />
+                    {Array.from(
+                      new Set(
+                        (featuredSub.campaign.channels && featuredSub.campaign.channels.length > 0
+                          ? featuredSub.campaign.channels
+                          : ['tiktok', 'instagram']
+                        ).map((ch: string) => {
+                          const p = ch.toLowerCase();
+                          if (p.includes('tiktok')) return 'tiktok';
+                          if (p.includes('youtube') || p.includes('shorts')) return 'youtube';
+                          if (p.includes('facebook') || p.includes('fb')) return 'facebook';
+                          if (p.includes('twitter') || p.includes('x')) return 'x';
+                          if (p.includes('insta')) return 'instagram';
+                          return ch;
+                        })
+                      )
+                    ).map((platform: string) => (
+                      <PlatformBadge key={platform} platform={platform} />
                     ))}
                   </div>
 
@@ -302,9 +314,10 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
         {data.submissions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {data.submissions.slice(0, 3).map((sub) => (
-              <div
+              <Link
                 key={sub.id}
-                className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between hover:shadow-md transition-all space-y-4"
+                href={`/campaigns/${sub.campaign.id}`}
+                className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between hover:shadow-md transition-all space-y-4 hover:border-kpugi-blue/40 group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -329,7 +342,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                     </span>
                   </div>
 
-                  <h4 className="font-display font-bold text-base text-kpugi-ink mb-1 truncate">
+                  <h4 className="font-display font-bold text-base text-kpugi-ink mb-1 group-hover:text-kpugi-blue transition-colors truncate">
                     {sub.campaign.title}
                   </h4>
                   <p className="font-sans text-xs text-kpugi-slate mb-4">
@@ -351,7 +364,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                     </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

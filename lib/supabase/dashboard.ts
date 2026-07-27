@@ -287,6 +287,7 @@ export interface CampaignDetailsForCreator {
     verified_at: string | null;
     paid_at: string | null;
     payout_amount: number | null;
+    submitted_at?: string | null;
   } | null;
   socialAccounts: {
     id: string;

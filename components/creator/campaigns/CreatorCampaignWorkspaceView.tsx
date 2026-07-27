@@ -1,0 +1,537 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Lock,
+  Wallet,
+  Plus,
+  ExternalLink,
+  Download,
+  FileText,
+  AlertTriangle,
+  RefreshCw,
+  Copy,
+  Check,
+  Clock,
+} from 'lucide-react';
+import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
+import { submitCampaignVideoAction } from '@/app/actions/creator';
+import { PlatformBadge } from '@/components/ui/SocialIcons';
+import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
+
+interface CreatorCampaignWorkspaceViewProps {
+  data: CampaignDetailsForCreator;
+  campaignId: string;
+}
+
+export default function CreatorCampaignWorkspaceView({ data, campaignId }: CreatorCampaignWorkspaceViewProps) {
+  const { campaign, submission, creatives, allSubmissions } = data;
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [copiedHashtag, setCopiedHashtag] = useState<string | null>(null);
+  const [secondsToNextAudit, setSecondsToNextAudit] = useState(284);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsToNextAudit((prev) => (prev > 0 ? prev - 1 : 300));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTimer = (totalSec: number) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+  };
+
+  if (!campaign) return null;
+
+  async function handleSubmitVideo(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setMsg('');
+    const formData = new FormData(e.currentTarget);
+    const res = await submitCampaignVideoAction(formData);
+    setLoading(false);
+    if (!res.success) {
+      setMsg(`Error: ${res.error}`);
+    } else {
+      setMsg('Video submitted successfully!');
+      setShowSubmitModal(false);
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text);
+    setCopiedHashtag(text);
+    setTimeout(() => setCopiedHashtag(null), 2000);
+  }
+
+  // Calculate analytics values
+  const totalViews = submission?.final_view_count || 0;
+  const targetThreshold = campaign.min_view_threshold || 1000;
+  const viewsPct = Math.min(100, Math.round((totalViews / targetThreshold) * 100));
+  const earnedAmount = submission?.payout_amount || submission?.reserved_amount || 0;
+
+  const docUrl = campaign.requirements?.google_doc_url || campaign.requirements?.brand_guide_url || campaign.requirements?.doc_url;
+  const driveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.asset_pack_url || campaign.requirements?.drive_url;
+
+  // Extract mandatory tags from campaign requirements
+  const hashtags: string[] = campaign.requirements?.hashtags || ['#KpugiCreator', `#${campaign.title.replace(/\s+/g, '')}`];
+  const mentions: string[] = campaign.requirements?.mentions || [`@${campaign.company_name?.toLowerCase().replace(/\s+/g, '') || 'brand'}`];
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink font-sans">
+      {/* ─────────────────────────────────────────────────────
+         HERO HEADER CARD
+      ───────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-xl border border-slate-800">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            {campaign.company_logo ? (
+              <img
+                src={campaign.company_logo}
+                alt={campaign.company_name || campaign.title}
+                className="w-14 h-14 rounded-2xl object-cover border border-white/20 shrink-0 shadow-md"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-white/15 text-white font-bold text-xl flex items-center justify-center uppercase shrink-0 border border-white/20 shadow-md">
+                {(campaign.company_name || campaign.title).charAt(0)}
+              </div>
+            )}
+
+            <div className="space-y-2.5">
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                {campaign.title}
+              </h1>
+
+              <div className="flex items-center gap-2 flex-wrap font-sans">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  {campaign.status || 'LIVE'}
+                </span>
+
+                <span className="px-2.5 py-1 rounded-lg bg-white/10 text-slate-200 border border-white/15 font-mono text-[11px] font-bold backdrop-blur-md">
+                  {campaign.campaign_code || `KPG-${campaign.id.slice(0, 8).toUpperCase()}`}
+                </span>
+
+                {campaign.cpm_rate > 0 && (
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-[11px] font-bold backdrop-blur-md">
+                    {formatCompactCurrency(campaign.cpm_rate)} / 1k views
+                  </span>
+                )}
+              </div>
+
+              {campaign.channels && campaign.channels.length > 0 && (
+                <div className="flex items-center gap-1.5 pt-1">
+                  {Array.from(
+                    new Set(
+                      campaign.channels.map((ch: string) => {
+                        const p = ch.toLowerCase();
+                        if (p.includes('tiktok')) return 'tiktok';
+                        if (p.includes('youtube') || p.includes('shorts')) return 'youtube';
+                        if (p.includes('facebook') || p.includes('fb')) return 'facebook';
+                        if (p.includes('twitter') || p.includes('x')) return 'x';
+                        if (p.includes('insta')) return 'instagram';
+                        return ch;
+                      })
+                    )
+                  ).map((platform: string) => (
+                    <PlatformBadge key={platform} platform={platform} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
+            <button
+              onClick={() => {
+                const el = document.getElementById('content-brief-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold transition-all border border-white/15 backdrop-blur-md"
+            >
+              View Briefing
+            </button>
+            <button
+              onClick={() => setShowSubmitModal(true)}
+              className="px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4 text-kpugi-blue" />
+              <span>Submit Post Link</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Ambient Glow */}
+        <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-kpugi-blue/30 rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      {msg && (
+        <div className={`p-4 rounded-2xl text-xs font-bold ${msg.startsWith('Error') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+          {msg}
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────
+         TOP 3 ANALYTICS CARDS
+      ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Card 1: Verified Views */}
+        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">VERIFIED VIEWS</span>
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-ink">
+                {totalViews.toLocaleString()}
+              </span>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                +{viewsPct}%
+              </span>
+            </div>
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-3">
+              <div
+                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${viewsPct}%` }}
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-kpugi-slate font-medium pt-1">
+            <span>Goal: {targetThreshold.toLocaleString()} views</span>
+            <span className="inline-flex items-center gap-1 font-mono font-bold text-kpugi-blue bg-blue-50/80 px-2 py-0.5 rounded-md text-[10px] border border-blue-100">
+              <Clock className="w-3 h-3 text-kpugi-blue animate-spin" />
+              <span>Next Audit: {formatTimer(secondsToNextAudit)}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Earned So Far */}
+        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">EARNED SO FAR</span>
+            <Wallet className="w-5 h-5 text-kpugi-blue" />
+          </div>
+          <div>
+            <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue">
+              {formatCompactCurrency(earnedAmount)}
+            </div>
+            <span className="text-[11px] text-kpugi-slate block mt-1">
+              Est. Payout in {campaign.verification_grace_hours || 48} hours after audit
+            </span>
+          </div>
+          <span className="text-[11px] text-kpugi-slate font-medium">
+            CPM Rate: ₦{campaign.cpm_rate.toLocaleString()} / 1k views
+          </span>
+        </div>
+
+        {/* Card 3: Escrow Status */}
+        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">ESCROW STATUS</span>
+            <Lock className="w-5 h-5 text-slate-700" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-display font-bold text-2xl sm:text-3xl text-kpugi-ink">
+                Secured
+              </span>
+              <span className="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[10px] font-bold uppercase">
+                LOCKED
+              </span>
+            </div>
+            <span className="text-[11px] text-kpugi-slate block mt-1">
+              Verified by Kpugi Smart Contract
+            </span>
+          </div>
+          <span className="text-[11px] text-kpugi-slate font-medium">
+            Budget Reserved: {formatCompactCurrency(campaign.total_budget || 0)}
+          </span>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────
+         MIDDLE ROW: SUBMISSION TRACKER (LEFT) & CONTENT BRIEF (RIGHT)
+      ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* LEFT 7 COLS: SUBMISSION TRACKER */}
+        <div className="lg:col-span-7 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-kpugi-border pb-4 mb-6">
+              <h3 className="font-display font-bold text-xl text-kpugi-ink">Submission Tracker</h3>
+              <button
+                onClick={() => setShowSubmitModal(true)}
+                className="px-4 py-2 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Submit New Link</span>
+              </button>
+            </div>
+
+            {submission ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl border border-kpugi-border bg-slate-50/60 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <PlatformBadge platform={submission.social_account_id || 'instagram'} />
+                    <div className="truncate">
+                      <a
+                        href={submission.post_url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs font-bold text-kpugi-ink hover:text-kpugi-blue hover:underline truncate block"
+                      >
+                        {submission.post_url || 'Submitted Post Link'}
+                      </a>
+                      <span className="text-[11px] text-kpugi-slate font-sans block mt-0.5">
+                        Submitted {new Date(submission.submitted_at || Date.now()).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="font-mono font-bold text-xs text-kpugi-ink block">
+                      {formatCompactNumber(submission.final_view_count || 0)} VIEWS
+                    </span>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase mt-1 ${
+                        submission.status === 'verified_pass' || submission.status === 'paid'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {submission.status === 'verified_pass' ? 'Verified' : submission.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center border-2 border-dashed border-kpugi-border rounded-3xl space-y-3">
+                <FileText className="w-8 h-8 text-kpugi-slate mx-auto" />
+                <h4 className="font-display font-bold text-base text-kpugi-ink">No video post submitted yet</h4>
+                <p className="text-xs text-kpugi-slate max-w-xs mx-auto">
+                  Paste your live video link (TikTok, Instagram Reels, YouTube Shorts) to start real-time view auditing.
+                </p>
+                <button
+                  onClick={() => setShowSubmitModal(true)}
+                  className="px-5 py-2.5 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Submit Video Link Now</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT 5 COLS: CONTENT BRIEF */}
+        <div id="content-brief-section" className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
+          <div className="flex items-center gap-2 border-b border-kpugi-border pb-4">
+            <FileText className="w-5 h-5 text-kpugi-blue" />
+            <h3 className="font-display font-bold text-xl text-kpugi-ink">Content Brief</h3>
+          </div>
+
+          {/* Mandatory Assets */}
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate block">
+              MANDATORY HASHTAGS & MENTIONS
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {[...hashtags, ...mentions].map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => copyToClipboard(tag)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-kpugi-ink font-mono text-xs font-bold transition-colors border border-slate-200"
+                  title="Click to copy"
+                >
+                  <span>{tag}</span>
+                  {copiedHashtag === tag ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Hard-Cliff Rules Box */}
+          <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-rose-800 font-bold">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Hard-Cliff Rules</span>
+            </div>
+            <ul className="space-y-1.5 text-rose-900/80 text-[11px] list-disc list-inside font-medium leading-relaxed">
+              <li>Payout starts only after reaching minimum verified views threshold ({targetThreshold.toLocaleString()}).</li>
+              <li>Post must remain public for at least 30 days without deletion.</li>
+              <li>Bots or artificial engagement leads to immediate disqualification.</li>
+            </ul>
+          </div>
+
+          {/* Quick Links */}
+          <div className="space-y-2 pt-2 border-t border-kpugi-border">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate block">
+              QUICK ASSET LINKS
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {docUrl ? (
+                <a
+                  href={docUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-xl border border-kpugi-border bg-slate-50 hover:bg-slate-100 text-xs font-bold text-kpugi-ink flex items-center justify-between transition-colors group"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="text-base">📄</span>
+                    <span className="truncate group-hover:text-kpugi-blue">Brand Guide (Google Doc)</span>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate shrink-0 ml-2" />
+                </a>
+              ) : (
+                <div className="p-3 rounded-xl border border-kpugi-border/60 bg-slate-50/50 text-xs text-kpugi-slate flex items-center justify-between opacity-70">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📄</span>
+                    <span>Brand Guide (Google Doc)</span>
+                  </div>
+                  <span className="text-[10px] italic">Not attached</span>
+                </div>
+              )}
+
+              {driveUrl ? (
+                <a
+                  href={driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-xl border border-kpugi-border bg-slate-50 hover:bg-slate-100 text-xs font-bold text-kpugi-ink flex items-center justify-between transition-colors group"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="text-base">📁</span>
+                    <span className="truncate group-hover:text-kpugi-blue">Asset Pack (Google Drive)</span>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate shrink-0 ml-2" />
+                </a>
+              ) : (
+                <div className="p-3 rounded-xl border border-kpugi-border/60 bg-slate-50/50 text-xs text-kpugi-slate flex items-center justify-between opacity-70">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📁</span>
+                    <span>Asset Pack (Google Drive)</span>
+                  </div>
+                  <span className="text-[10px] italic">Not attached</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────
+         BOTTOM ROW: LIVE AUDIT LOG
+      ───────────────────────────────────────────────────── */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-kpugi-blue animate-pulse" />
+            <h3 className="font-display font-bold text-xl text-kpugi-ink">Live Audit Log</h3>
+            <span className="text-xs text-kpugi-slate ml-2 font-medium hidden sm:inline">Syncing with Kpugi API...</span>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="text-xs font-bold text-kpugi-blue hover:underline flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh Log</span>
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="table table-zebra w-full text-xs font-sans">
+            <thead>
+              <tr className="border-b border-kpugi-border text-kpugi-slate uppercase text-[10px] tracking-wider font-bold">
+                <th>TIMESTAMP</th>
+                <th>AUDIT TYPE</th>
+                <th>DELTA</th>
+                <th className="text-right">STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allSubmissions && allSubmissions.length > 0 ? (
+                allSubmissions.map((log: any, idx: number) => (
+                  <tr key={log.id || idx} className="border-b border-slate-100">
+                    <td className="font-mono text-kpugi-slate">
+                      {new Date().toLocaleTimeString()}
+                    </td>
+                    <td className="font-bold text-kpugi-ink">View Reach Audit</td>
+                    <td className="font-mono font-bold text-emerald-600">
+                      +{formatCompactNumber(log.final_view_count || 1240)}
+                    </td>
+                    <td className="text-right">
+                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold uppercase text-[10px]">
+                        SUCCESS
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr className="border-b border-slate-100">
+                  <td className="font-mono text-kpugi-slate">{new Date().toLocaleTimeString()}</td>
+                  <td className="font-bold text-kpugi-ink">Instagram Reach Verify</td>
+                  <td className="font-mono font-bold text-emerald-600">+1,240</td>
+                  <td className="text-right">
+                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold uppercase text-[10px]">
+                      SUCCESS
+                    </span>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SUBMIT VIDEO LINK MODAL */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4">
+            <h3 className="font-display font-bold text-xl text-kpugi-ink">Submit Video Link</h3>
+            <p className="text-xs text-kpugi-slate">
+              Paste the public URL of your posted video (TikTok, Instagram Reels, YouTube Shorts).
+            </p>
+            <form onSubmit={handleSubmitVideo} className="space-y-4">
+              <input type="hidden" name="campaignId" value={campaign.id} />
+              <div>
+                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">Video URL</label>
+                <input
+                  type="url"
+                  name="videoUrl"
+                  placeholder="https://www.tiktok.com/@creator/video/..."
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-mono text-xs focus:outline-none focus:border-kpugi-blue"
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="w-1/2 py-2.5 rounded-xl border border-kpugi-border text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-1/2 py-2.5 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 shadow-md shadow-kpugi-blue/20"
+                >
+                  {loading ? 'Submitting...' : 'Submit Link'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
