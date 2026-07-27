@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CreatorEarningsData } from '@/lib/supabase/creator';
 import { requestPayoutAction, resolveAndSaveBankAccountAction, getNigerianBanksAction } from '@/app/actions/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
+import BankLogo from '@/components/ui/BankLogo';
 import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, Filter, Download } from 'lucide-react';
 
 interface CreatorEarningsViewProps {
@@ -11,6 +13,7 @@ interface CreatorEarningsViewProps {
 }
 
 export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) {
+  const [mounted, setMounted] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,7 +28,12 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
   const [resolvedAccountName, setResolvedAccountName] = useState('');
   const [isResolving, setIsResolving] = useState(false);
 
+  // Custom searchable bank dropdown state
+  const [bankSearchQuery, setBankSearchQuery] = useState('');
+  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     getNigerianBanksAction().then((banks) => {
       if (banks && banks.length > 0) {
         setBankList(banks);
@@ -178,15 +186,15 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Hero Balance Card (70% width) */}
         <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 text-center sm:text-left">
-            <div className="flex flex-col items-center sm:items-start">
-              <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 text-center sm:text-left">
+            <div className="space-y-2 flex flex-col items-center sm:items-start">
+              <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider block">
                 Available Wallet Balance
               </span>
-              <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
-                <div className="font-mono font-extrabold text-3xl sm:text-4xl text-kpugi-ink tracking-tight">
-                  ₦{availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </div>
+              <div className="font-mono font-extrabold text-3xl sm:text-4xl text-kpugi-ink tracking-tight">
+                ₦{availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="flex justify-center sm:justify-start">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-bold font-sans">
                   <ArrowUpRight className="w-3.5 h-3.5" />
                   +12% vs last month
@@ -340,9 +348,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             <div className="space-y-3">
               {/* Primary Linked Account (Zenith Bank) */}
               <div className="p-4 rounded-2xl bg-blue-50/50 border-2 border-kpugi-blue relative flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-white border border-kpugi-border flex items-center justify-center shrink-0 shadow-sm">
-                  <Building2 className="w-5 h-5 text-kpugi-blue" />
-                </div>
+                <BankLogo bankName={data.bankDetails?.bankName || 'Zenith Bank PLC'} bankCode={data.bankDetails?.bankCode || '057'} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-xs text-kpugi-ink truncate">
@@ -361,9 +367,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
               {/* Secondary Account (GTBank) */}
               <div className="p-4 rounded-2xl bg-white border border-kpugi-border flex items-center gap-3.5 opacity-80 hover:opacity-100 transition-opacity">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 border border-kpugi-border flex items-center justify-center shrink-0">
-                  <Building2 className="w-5 h-5 text-slate-500" />
-                </div>
+                <BankLogo bankName="GTBank" bankCode="058" size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-xs text-kpugi-ink truncate">GTBank</div>
                   <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">**** 0128</div>
@@ -400,8 +404,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       {/* ─────────────────────────────────────────────────────
          MODAL 1: WITHDRAWAL REQUEST MODAL
       ───────────────────────────────────────────────────── */}
-      {showPayoutModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      {showPayoutModal && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink">Request Withdrawal</h3>
@@ -412,12 +416,12 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
             {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{errorMsg}</p>}
 
-            <form onSubmit={handlePayoutSubmit} className="space-y-4">
+            <form onSubmit={handlePayoutSubmit} className="space-y-4 font-sans text-xs">
               <div>
                 <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
                   Amount (₦)
                 </label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <input
                     type="number"
                     name="amount"
@@ -425,19 +429,19 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                     max={availableBalance}
                     defaultValue={10000}
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-mono text-base focus:outline-none focus:border-kpugi-blue bg-slate-50"
+                    className="w-full pl-4 pr-16 py-3.5 rounded-xl border border-kpugi-border font-mono text-base font-extrabold text-kpugi-ink focus:outline-none focus:border-kpugi-blue bg-slate-50 placeholder:text-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <span className="absolute right-4 top-3 text-xs font-bold text-kpugi-slate">NGN</span>
+                  <span className="absolute right-4 text-xs font-extrabold text-kpugi-slate pointer-events-none">NGN</span>
                 </div>
-                <span className="text-[11px] text-kpugi-slate mt-1 block">
+                <span className="text-[11px] text-kpugi-slate mt-1.5 block font-medium">
                   Available for withdrawal: <strong className="text-kpugi-ink">₦{availableBalance.toLocaleString()}</strong>
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 border border-kpugi-border text-xs text-slate-600 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-kpugi-blue shrink-0" />
-                <span>
-                  Payout destination: <strong>{data.bankDetails?.bankName || 'Zenith Bank PLC'}</strong> (****{' '}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-kpugi-border text-xs text-slate-700 flex items-center gap-3">
+                <BankLogo bankName={data.bankDetails?.bankName || 'Zenith Bank PLC'} bankCode={data.bankDetails?.bankCode || '057'} size="sm" />
+                <span className="font-medium">
+                  Payout destination: <strong className="text-kpugi-ink">{data.bankDetails?.bankName || 'Zenith Bank PLC'}</strong> (****{' '}
                   {data.bankDetails?.accountNumber?.slice(-4) || '4492'})
                 </span>
               </div>
@@ -446,7 +450,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <button
                   type="button"
                   onClick={() => setShowPayoutModal(false)}
-                  className="w-1/2 py-3 rounded-xl border border-kpugi-border font-sans text-xs font-bold hover:bg-slate-50"
+                  className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
                 >
                   Cancel
                 </button>
@@ -460,14 +464,15 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─────────────────────────────────────────────────────
          MODAL 2: ADD BANK ACCOUNT (PAYSTACK NUBAN RESOLUTION)
       ───────────────────────────────────────────────────── */}
-      {showBankModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      {showBankModal && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink">Link Bank Account</h3>
@@ -479,19 +484,69 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{errorMsg}</p>}
 
             <form onSubmit={handleBankSubmit} className="space-y-4 font-sans text-xs">
-              <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">Select Bank</label>
-                <select
-                  value={selectedBankCode}
-                  onChange={(e) => setSelectedBankCode(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white"
+              <div className="relative">
+                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                  Select Bank
+                </label>
+                
+                {/* Custom Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsBankDropdownOpen(!isBankDropdownOpen)}
+                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-sans text-xs flex items-center justify-between bg-white text-left focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
                 >
-                  {bankList.map((b) => (
-                    <option key={`${b.code}-${b.name}`} value={b.code}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <BankLogo bankName={bankList.find((b) => b.code === selectedBankCode)?.name} bankCode={selectedBankCode} size="sm" />
+                    <span className="font-bold text-kpugi-ink truncate">
+                      {bankList.find((b) => b.code === selectedBankCode)?.name || 'Select a bank...'}
+                    </span>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isBankDropdownOpen ? 'rotate-90' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu with Live Search Filter */}
+                {isBankDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white rounded-2xl border border-kpugi-border shadow-xl p-2 space-y-2 max-h-56 flex flex-col">
+                    <input
+                      type="text"
+                      placeholder="Search bank (e.g. GTBank, OPay, Zenith)..."
+                      value={bankSearchQuery}
+                      onChange={(e) => setBankSearchQuery(e.target.value)}
+                      className="w-full px-3 py-2 text-xs border border-kpugi-border rounded-xl focus:outline-none focus:border-kpugi-blue bg-slate-50 font-sans"
+                      autoFocus
+                    />
+
+                    <div className="overflow-y-auto flex-1 divide-y divide-slate-100 max-h-40">
+                      {bankList
+                        .filter((b) => b.name.toLowerCase().includes(bankSearchQuery.toLowerCase()))
+                        .map((b) => (
+                          <button
+                            key={`${b.code}-${b.name}`}
+                            type="button"
+                            onClick={() => {
+                              setSelectedBankCode(b.code);
+                              setIsBankDropdownOpen(false);
+                              setBankSearchQuery('');
+                            }}
+                            className={`w-full px-3 py-2.5 text-left text-xs font-sans transition-colors flex items-center justify-between rounded-lg ${
+                              selectedBankCode === b.code
+                                ? 'bg-blue-50 text-kpugi-blue font-bold'
+                                : 'hover:bg-slate-50 text-kpugi-ink'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <BankLogo bankName={b.name} bankCode={b.code} size="sm" />
+                              <span className="truncate">{b.name}</span>
+                            </div>
+                            {selectedBankCode === b.code && <CheckCircle2 className="w-3.5 h-3.5 text-kpugi-blue shrink-0" />}
+                          </button>
+                        ))}
+                      {bankList.filter((b) => b.name.toLowerCase().includes(bankSearchQuery.toLowerCase())).length === 0 && (
+                        <div className="py-4 text-center text-xs text-kpugi-slate font-medium">No bank found matching query</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -528,7 +583,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <button
                   type="button"
                   onClick={() => setShowBankModal(false)}
-                  className="w-1/2 py-3 rounded-xl border border-kpugi-border font-sans text-xs font-bold hover:bg-slate-50"
+                  className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
                 >
                   Cancel
                 </button>
@@ -542,7 +597,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

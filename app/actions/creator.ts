@@ -12,6 +12,7 @@ export async function getNigerianBanksAction(): Promise<BankOption[]> {
       headers: {
         Authorization: `Bearer ${paystackSecret}`,
       },
+      signal: AbortSignal.timeout(8000),
       next: { revalidate: 86400 },
     });
     const json = await res.json();
@@ -157,6 +158,7 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
         headers: {
           Authorization: `Bearer ${paystackSecret}`,
         },
+        signal: AbortSignal.timeout(8000),
       }
     );
     const json = await res.json();

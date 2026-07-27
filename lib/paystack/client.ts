@@ -10,6 +10,7 @@ export async function paystackFetch(endpoint: string, options: RequestInit = {})
       'Content-Type': 'application/json',
       ...options.headers,
     },
+    signal: options.signal || AbortSignal.timeout(8000),
   });
 
   if (!response.ok) {

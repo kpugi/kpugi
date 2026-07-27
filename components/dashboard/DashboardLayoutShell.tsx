@@ -300,7 +300,7 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
 
       {/* Main Content — offset by sidebar width */}
       <div
-        className={`transition-all duration-300 ease-in-out min-h-screen flex flex-col ${
+        className={`transition-[margin-left] duration-300 ease-in-out min-h-screen flex flex-col ${
           isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[248px]'
         }`}
       >
