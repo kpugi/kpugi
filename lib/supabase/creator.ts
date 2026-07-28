@@ -344,21 +344,109 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
 export async function getCreatorSocialAccounts(profileId: string) {
   const supabase = createAdminClient();
+  
+  // 1. Fetch from social_accounts table (creator_id column)
   const { data: accounts } = await supabase
     .from('social_accounts')
     .select('*')
-    .eq('profile_id', profileId);
+    .eq('creator_id', profileId);
 
-  const socialLinks: Record<string, string> = {};
+  // 2. Fetch from creator_profiles.social_links as fallback
+  const { data: creator } = await supabase
+    .from('creator_profiles')
+    .select('social_links')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  const socialLinks: Record<string, string> = {
+    ...(creator?.social_links || {}),
+  };
+
   if (accounts) {
     accounts.forEach((acc: any) => {
-      if (acc.platform) {
+      if (acc.platform && acc.handle) {
         socialLinks[acc.platform.toLowerCase()] = acc.handle;
       }
     });
   }
 
   return socialLinks;
+}
+
+export async function saveSocialAccount({
+  profileId,
+  platform,
+  handle,
+  platformUserId,
+  followerCount = 0,
+  accessToken = null,
+  scopes = null,
+}: {
+  profileId: string;
+  platform: string;
+  handle: string;
+  platformUserId?: string;
+  followerCount?: number;
+  accessToken?: string | null;
+  scopes?: string[] | null;
+}) {
+  const supabase = createAdminClient();
+  const cleanHandle = handle.trim().replace(/^@/, '');
+  const platformKey = platform.toLowerCase();
+  const userId = platformUserId || cleanHandle;
+
+  // 1. Check if social account record already exists for this creator & platform
+  const { data: existing } = await supabase
+    .from('social_accounts')
+    .select('id')
+    .eq('creator_id', profileId)
+    .eq('platform', platformKey)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from('social_accounts')
+      .update({
+        handle: cleanHandle,
+        platform_user_id: userId,
+        follower_count: followerCount,
+        oauth_access_token: accessToken,
+        oauth_scopes: scopes,
+        last_synced_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id);
+  } else {
+    await supabase.from('social_accounts').insert({
+      creator_id: profileId,
+      platform: platformKey,
+      handle: cleanHandle,
+      platform_user_id: userId,
+      follower_count: followerCount,
+      oauth_access_token: accessToken,
+      oauth_scopes: scopes,
+      connected_at: new Date().toISOString(),
+    });
+  }
+
+  // 2. Dual-sync to creator_profiles.social_links JSON object
+  const { data: creator } = await supabase
+    .from('creator_profiles')
+    .select('social_links')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  const currentLinks = creator?.social_links || {};
+  await supabase
+    .from('creator_profiles')
+    .update({
+      social_links: {
+        ...currentLinks,
+        [platformKey]: cleanHandle,
+      },
+    })
+    .eq('profile_id', profileId);
+
+  return { success: true };
 }
 
 export async function getCreatorProfileSettings(profileId: string) {

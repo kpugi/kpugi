@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { saveSocialAccount } from '@/lib/supabase/creator';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -88,17 +89,18 @@ export async function GET(request: Request) {
       username = username.trim().replace(/^@/, '').replace(/\s+/g, '_').toLowerCase();
     }
 
-    // 3. Save to Supabase social_accounts table
+    // 3. Save to Supabase social_accounts & creator_profiles tables
     const userProfile = await getOrCreateUserProfile();
     if (userProfile?.profile?.id && username) {
-      const supabase = createAdminClient();
-      
-      await supabase.from('social_accounts').upsert({
-        profile_id: userProfile.profile.id,
+      await saveSocialAccount({
+        profileId: userProfile.profile.id,
         platform: 'tiktok',
         handle: username,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'profile_id,platform' });
+        platformUserId: openId || username,
+        followerCount: tiktokUser?.follower_count || 0,
+        accessToken,
+        scopes: ['user.info.basic', 'user.info.stats', 'video.list'],
+      });
     }
 
     // Return auto-close HTML response for popup window

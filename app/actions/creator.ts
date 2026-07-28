@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { saveSocialAccount } from '@/lib/supabase/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
 
 export async function getNigerianBanksAction(): Promise<BankOption[]> {
@@ -212,27 +213,16 @@ export async function linkSocialAccountAction(formData: FormData) {
     return { success: false, error: 'Platform and handle are required' };
   }
 
-  const supabase = createAdminClient();
-  const { data: creator } = await supabase
-    .from('creator_profiles')
-    .select('social_links')
-    .eq('id', userProfile.creatorProfile.id)
-    .single();
+  const cleanHandle = handle.trim().replace(/^@/, '');
+  const platformKey = platform.toLowerCase();
+  const profileId = userProfile.profile.id;
 
-  const currentLinks = creator?.social_links || {};
-  const updatedLinks = {
-    ...currentLinks,
-    [platform.toLowerCase()]: handle.replace(/^@/, ''),
-  };
-
-  const { error } = await supabase
-    .from('creator_profiles')
-    .update({ social_links: updatedLinks })
-    .eq('id', userProfile.creatorProfile.id);
-
-  if (error) {
-    return { success: false, error: error.message };
-  }
+  await saveSocialAccount({
+    profileId,
+    platform: platformKey,
+    handle: cleanHandle,
+    platformUserId: cleanHandle,
+  });
 
   revalidatePath('/accounts');
   return { success: true };
