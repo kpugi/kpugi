@@ -619,7 +619,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
-                      <span>🛡️</span> Auditing & Safety Requirements
+                      <span>🛡️</span> Auditing Requirements
                     </h3>
                     <p className="text-xs text-slate-400 mt-1">Key rules enforced by our automated view scraper and escrow verification bot.</p>
                   </div>

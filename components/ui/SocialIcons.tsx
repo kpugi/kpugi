@@ -42,6 +42,22 @@ export function TwitterXIcon({ className = 'w-4 h-4' }: { className?: string }) 
   );
 }
 
+export function ThreadsIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm3.8 13.5c-1.1.9-2.5 1.4-4.1 1.4-3.2 0-5.7-2.3-5.7-5.5s2.5-5.5 5.7-5.5c2.3 0 4.2 1.2 5.1 3.1l-1.6 1c-.6-1.3-1.9-2.1-3.5-2.1-2.1 0-3.7 1.5-3.7 3.5s1.6 3.5 3.7 3.5c1.1 0 2.1-.4 2.8-1l1.6 1.6z" />
+    </svg>
+  );
+}
+
+export function LinkedInIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.78a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28z" />
+    </svg>
+  );
+}
+
 export function PlatformBadge({ platform, showLabel = false, className = '' }: { platform: string; showLabel?: boolean; className?: string }) {
   const p = platform?.toLowerCase() || '';
   if (p.includes('tiktok')) {

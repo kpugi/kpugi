@@ -56,6 +56,10 @@ export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
+
+  const response = NextResponse.next();
+  response.headers.set('ngrok-skip-browser-warning', 'true');
+  return response;
 });
 
 export const config = {
