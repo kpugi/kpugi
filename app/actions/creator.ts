@@ -176,6 +176,12 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
     const supabase = createAdminClient();
     const profileId = userProfile.profile.id;
 
+    // Reset previous accounts to is_primary = false so only ONE primary account exists
+    await supabase
+      .from('bank_accounts')
+      .update({ is_primary: false })
+      .eq('profile_id', profileId);
+
     await supabase.from('bank_accounts').upsert({
       profile_id: profileId,
       bank_name: bankName || 'Bank',

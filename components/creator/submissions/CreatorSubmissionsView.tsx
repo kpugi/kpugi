@@ -252,7 +252,9 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
           </span>
           <div className="flex items-baseline justify-between">
             <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
-              {(data.totalVerifiedViews / 1000000).toFixed(1)}M
+              {data.totalVerifiedViews >= 1000000
+                ? `${(data.totalVerifiedViews / 1000000).toFixed(1)}M`
+                : data.totalVerifiedViews.toLocaleString()}
             </span>
             <span className="text-[11px] font-bold text-kpugi-slate">
               Verified Viewport
@@ -460,8 +462,23 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
 
               {filteredSubmissions.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-kpugi-slate font-sans text-xs">
-                    No submissions found matching filter criteria.
+                  <td colSpan={4} className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                        <Rocket className="w-5 h-5" />
+                      </div>
+                      <p className="font-bold text-sm text-kpugi-ink">No Video Submissions Found</p>
+                      <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                        Submit your live video link (TikTok, Instagram Reels, YouTube Shorts) to start real-time view auditing and anti-fraud verification.
+                      </p>
+                      <button
+                        onClick={() => setShowSubmitModal(true)}
+                        className="mt-2 px-4 py-2 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Submit New Link</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -513,7 +530,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                 <select
                   value={selectedCampaignId}
                   onChange={(e) => setSelectedCampaignId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white font-bold"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white font-bold text-slate-900"
                   required
                 >
                   {data.activeCampaigns.map((camp) => (
@@ -535,7 +552,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                     value={postUrlInput}
                     onChange={(e) => setPostUrlInput(e.target.value)}
                     required
-                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-kpugi-border font-mono text-xs focus:outline-none focus:border-kpugi-blue bg-slate-50"
+                    className="w-full pl-4 pr-10 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-xs text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
                   />
                   {postUrlInput && (
                     <div className="absolute right-3">

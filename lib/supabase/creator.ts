@@ -339,15 +339,16 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     .from('bank_accounts')
     .select('*')
     .eq('profile_id', profileId)
-    .order('is_primary', { ascending: false });
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  const bankAccounts: BankAccountItem[] = (dbBankAccounts || []).map((b: any) => ({
+  const bankAccounts: BankAccountItem[] = (dbBankAccounts || []).map((b: any, idx: number) => ({
     id: b.id,
     bankName: b.bank_name,
     bankCode: b.bank_code,
     accountNumber: b.account_number,
     accountName: b.account_name,
-    isPrimary: Boolean(b.is_primary),
+    isPrimary: idx === 0,
   }));
 
   // Fallback check on creator.paystack_recipient_code if bank_accounts table is empty
@@ -647,7 +648,7 @@ export async function getCreatorSubmissionsData(
 ): Promise<CreatorSubmissionsData> {
   const supabase = createAdminClient();
 
-  // 1. Fetch real campaigns directly from Supabase database
+  // 1. Fetch real active campaigns directly from Supabase database
   const { data: dbCampaigns } = await supabase
     .from('campaigns')
     .select('id, title, campaign_code, channels, cpm_rate, status, created_at')
@@ -659,7 +660,7 @@ export async function getCreatorSubmissionsData(
     campaignCode: formatCampaignCode(c.id, c.campaign_code),
   }));
 
-  // 2. Fetch submissions from database tables
+  // 2. Fetch submissions from database tables where post_url is non-null
   const { data: subs1 } = await supabase
     .from('submissions')
     .select(`
@@ -674,7 +675,8 @@ export async function getCreatorSubmissionsData(
         created_at
       )
     `)
-    .eq('creator_id', creatorProfileId)
+    .or(`creator_id.eq.${creatorProfileId},profile_id.eq.${creatorProfileId}`)
+    .not('post_url', 'is', null)
     .order('submitted_at', { ascending: false });
 
   const { data: subs2 } = await supabase
@@ -691,10 +693,13 @@ export async function getCreatorSubmissionsData(
         created_at
       )
     `)
-    .eq('creator_id', creatorProfileId)
+    .or(`creator_id.eq.${creatorProfileId},profile_id.eq.${creatorProfileId}`)
+    .not('post_url', 'is', null)
     .order('submitted_at', { ascending: false });
 
-  const rawSubmissions = [...(subs1 || []), ...(subs2 || [])];
+  const rawSubmissions = [...(subs1 || []), ...(subs2 || [])].filter(
+    (sub) => sub.post_url && sub.post_url.trim().length > 0
+  );
 
   let submissions: DetailedSubmissionItem[] = [];
 
@@ -718,58 +723,30 @@ export async function getCreatorSubmissionsData(
         cpmRate,
         earnedAmount: earned,
         status: normalizeSubmissionStatus(sub.status),
-        submittedAt: sub.submitted_at,
+        submittedAt: sub.submitted_at || sub.created_at || new Date().toISOString(),
         verifiedAt: sub.verified_at,
+        rejectionReason: sub.rejection_reason,
       };
     });
-  } else if (dbCampaigns && dbCampaigns.length > 0) {
-    // Generate submissions using REAL database campaign titles and IDs
-    submissions = dbCampaigns.map((c: any, idx: number) => {
-      const platform = (Array.isArray(c.channels) && c.channels[0] ? c.channels[0] : ['tiktok', 'instagram', 'youtube', 'twitter'][idx % 4]).toLowerCase();
-      const cpmRate = c.cpm_rate || 3500;
-      const views = idx % 2 === 0 ? 422500 * (idx + 1) : 0;
-      const status: 'approved' | 'auditing' | 'rejected' = idx === 0 || idx === 2 ? 'approved' : idx === 1 ? 'auditing' : 'rejected';
-      const earned = status === 'approved' ? (views / 1000) * cpmRate : 0;
-
-      return {
-        id: `sub-db-${c.id}`,
-        campaignId: c.id,
-        campaignTitle: c.title,
-        campaignCode: formatCampaignCode(c.id, c.campaign_code),
-        platform,
-        postUrl: `https://${platform === 'tiktok' ? 'vm.tiktok.com/ZMe991201/' : platform === 'instagram' ? 'instagr.am/p/C9w29101/' : platform === 'youtube' ? 'youtu.be/shW9x0012' : 'x.com/kpugi/status/10293'}`,
-        viewsCount: views,
-        engagementRate: views > 0 ? 12.4 : 0,
-        cpmRate,
-        earnedAmount: earned,
-        status,
-        submittedAt: new Date(Date.now() - (idx + 1) * 2 * 24 * 60 * 60 * 1000).toISOString(),
-        rejectionReason: status === 'rejected' ? 'Post link set to Private or unreachable by anti-fraud scrapers.' : undefined,
-      };
-    });
-  } else {
-    submissions = getMockSubmissionsData(activeCampaigns).submissions;
   }
 
   const totalSubmitted = submissions.length;
   const approvedCount = submissions.filter((s) => s.status === 'approved').length;
   const auditingCount = submissions.filter((s) => s.status === 'auditing' || s.status === 'pending').length;
   const totalVerifiedViews = submissions.reduce((sum, s) => sum + s.viewsCount, 0);
-  const approvedRate = totalSubmitted > 0 ? Math.round((approvedCount / totalSubmitted) * 1000) / 10 : 90.1;
+  const approvedRate = totalSubmitted > 0 ? Math.round((approvedCount / totalSubmitted) * 1000) / 10 : 0;
 
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const submittedThisWeek = submissions.filter((s) => new Date(s.submittedAt).getTime() >= oneWeekAgo).length;
 
   return {
     totalSubmitted,
-    submittedThisWeek: submittedThisWeek || 12,
+    submittedThisWeek,
     approvedCount,
     approvedRate,
     auditingCount,
     totalVerifiedViews,
     submissions,
-    activeCampaigns: activeCampaigns.length > 0 ? activeCampaigns : [
-      { id: 'camp-default-1', title: 'Kpugi Performance Campaign', campaignCode: 'KP-CAMP-00001' },
-    ],
+    activeCampaigns: activeCampaigns.length > 0 ? activeCampaigns : [],
   };
 }
