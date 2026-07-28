@@ -230,11 +230,20 @@ export async function linkSocialAccountAction(formData: FormData) {
   const platformKey = platform.toLowerCase();
   const profileId = userProfile.profile.id;
 
+  const followerCount = formData.get('followerCount') ? Number(formData.get('followerCount')) : null;
+  const avatarUrl = (formData.get('avatarUrl') as string) || null;
+  const avgViews = formData.get('avgViews') ? Number(formData.get('avgViews')) : null;
+  const engagementRate = formData.get('engagementRate') ? Number(formData.get('engagementRate')) : null;
+
   await saveSocialAccount({
     profileId,
     platform: platformKey,
     handle: cleanHandle,
     platformUserId: cleanHandle,
+    followerCount,
+    avatarUrl,
+    avgViews,
+    engagementRate,
   });
 
   revalidatePath('/accounts');

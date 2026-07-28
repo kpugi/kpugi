@@ -382,7 +382,19 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   };
 }
 
-export async function getCreatorSocialAccounts(profileId: string) {
+export interface SocialAccountDetails {
+  handle: string;
+  avatarUrl?: string | null;
+  followerCount?: number | null;
+  avgViews?: number | null;
+  engagementRate?: number | null;
+  platformUserId?: string | null;
+  lastSyncedAt?: string | null;
+}
+
+export async function getCreatorSocialAccounts(
+  profileId: string
+): Promise<Record<string, SocialAccountDetails>> {
   const supabase = createAdminClient();
   
   // 1. Fetch from social_accounts table (creator_id column)
@@ -398,19 +410,42 @@ export async function getCreatorSocialAccounts(profileId: string) {
     .eq('profile_id', profileId)
     .maybeSingle();
 
-  const socialLinks: Record<string, string> = {
-    ...(creator?.social_links || {}),
-  };
+  const result: Record<string, SocialAccountDetails> = {};
 
-  if (accounts) {
-    accounts.forEach((acc: any) => {
-      if (acc.platform && acc.handle) {
-        socialLinks[acc.platform.toLowerCase()] = acc.handle;
+  if (creator?.social_links) {
+    Object.entries(creator.social_links).forEach(([key, value]) => {
+      if (typeof value === 'string' && value) {
+        result[key.toLowerCase()] = { handle: value };
+      } else if (typeof value === 'object' && value && (value as any).handle) {
+        const valObj = value as any;
+        result[key.toLowerCase()] = {
+          handle: valObj.handle,
+          avatarUrl: valObj.avatarUrl || valObj.avatar_url || null,
+          followerCount: valObj.followerCount ?? valObj.follower_count ?? null,
+          avgViews: valObj.avgViews ?? valObj.avg_views ?? null,
+          engagementRate: valObj.engagementRate ?? valObj.engagement_rate ?? null,
+        };
       }
     });
   }
 
-  return socialLinks;
+  if (accounts) {
+    accounts.forEach((acc: any) => {
+      if (acc.platform && acc.handle) {
+        result[acc.platform.toLowerCase()] = {
+          handle: acc.handle,
+          avatarUrl: acc.avatar_url || result[acc.platform.toLowerCase()]?.avatarUrl || null,
+          followerCount: acc.follower_count ?? result[acc.platform.toLowerCase()]?.followerCount ?? null,
+          avgViews: acc.avg_views ?? result[acc.platform.toLowerCase()]?.avgViews ?? null,
+          engagementRate: acc.engagement_rate ?? result[acc.platform.toLowerCase()]?.engagementRate ?? null,
+          platformUserId: acc.platform_user_id || null,
+          lastSyncedAt: acc.last_synced_at || null,
+        };
+      }
+    });
+  }
+
+  return result;
 }
 
 export async function saveSocialAccount({
@@ -418,7 +453,10 @@ export async function saveSocialAccount({
   platform,
   handle,
   platformUserId,
-  followerCount = 0,
+  followerCount = null,
+  avatarUrl = null,
+  avgViews = null,
+  engagementRate = null,
   accessToken = null,
   scopes = null,
 }: {
@@ -426,7 +464,10 @@ export async function saveSocialAccount({
   platform: string;
   handle: string;
   platformUserId?: string;
-  followerCount?: number;
+  followerCount?: number | null;
+  avatarUrl?: string | null;
+  avgViews?: number | null;
+  engagementRate?: number | null;
   accessToken?: string | null;
   scopes?: string[] | null;
 }) {
@@ -443,17 +484,23 @@ export async function saveSocialAccount({
     .eq('platform', platformKey)
     .maybeSingle();
 
+  const updateData: any = {
+    handle: cleanHandle,
+    platform_user_id: userId,
+    last_synced_at: new Date().toISOString(),
+  };
+
+  if (followerCount !== undefined && followerCount !== null) updateData.follower_count = followerCount;
+  if (avatarUrl !== undefined && avatarUrl !== null) updateData.avatar_url = avatarUrl;
+  if (avgViews !== undefined && avgViews !== null) updateData.avg_views = avgViews;
+  if (engagementRate !== undefined && engagementRate !== null) updateData.engagement_rate = engagementRate;
+  if (accessToken !== undefined && accessToken !== null) updateData.oauth_access_token = accessToken;
+  if (scopes !== undefined && scopes !== null) updateData.oauth_scopes = scopes;
+
   if (existing) {
     await supabase
       .from('social_accounts')
-      .update({
-        handle: cleanHandle,
-        platform_user_id: userId,
-        follower_count: followerCount,
-        oauth_access_token: accessToken,
-        oauth_scopes: scopes,
-        last_synced_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', existing.id);
   } else {
     await supabase.from('social_accounts').insert({
@@ -461,7 +508,10 @@ export async function saveSocialAccount({
       platform: platformKey,
       handle: cleanHandle,
       platform_user_id: userId,
-      follower_count: followerCount,
+      follower_count: followerCount ?? 0,
+      avatar_url: avatarUrl,
+      avg_views: avgViews,
+      engagement_rate: engagementRate,
       oauth_access_token: accessToken,
       oauth_scopes: scopes,
       connected_at: new Date().toISOString(),
@@ -481,7 +531,13 @@ export async function saveSocialAccount({
     .update({
       social_links: {
         ...currentLinks,
-        [platformKey]: cleanHandle,
+        [platformKey]: {
+          handle: cleanHandle,
+          avatar_url: avatarUrl,
+          follower_count: followerCount,
+          avg_views: avgViews,
+          engagement_rate: engagementRate,
+        },
       },
     })
     .eq('profile_id', profileId);

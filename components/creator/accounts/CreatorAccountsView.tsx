@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { linkSocialAccountAction } from '@/app/actions/creator';
+import { SocialAccountDetails } from '@/lib/supabase/creator';
 import {
   TikTokIcon,
   InstagramIcon,
@@ -23,10 +24,11 @@ import {
   RefreshCw,
   Sparkles,
   UserCheck,
+  TrendingUp,
 } from 'lucide-react';
 
 interface CreatorAccountsViewProps {
-  socialAccounts: Record<string, string>;
+  socialAccounts: Record<string, SocialAccountDetails | string>;
 }
 
 export interface PlatformConfig {
@@ -96,9 +98,35 @@ export const ALL_SUPPORTED_PLATFORMS: PlatformConfig[] = [
   },
 ];
 
+function formatCompactNumber(num: number | null | undefined): string {
+  if (num === null || num === undefined) return '0';
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  return num.toLocaleString();
+}
+
+function getEngagementRate(
+  rate: number | null | undefined,
+  views: number | null | undefined,
+  followers: number | null | undefined
+): string {
+  if (rate !== null && rate !== undefined && rate > 0) {
+    return `${rate.toFixed(1)}%`;
+  }
+  if (views && followers && followers > 0) {
+    const calc = (views / followers) * 100;
+    return `${calc.toFixed(1)}%`;
+  }
+  return '0.0%';
+}
+
 export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsViewProps) {
   const [mounted, setMounted] = useState(false);
-  const [accountsState, setAccountsState] = useState<Record<string, string>>(socialAccounts || {});
+  const [accountsState, setAccountsState] = useState<Record<string, SocialAccountDetails | string>>(socialAccounts || {});
   
   // Modals state
   const [showModal, setShowModal] = useState(false);
@@ -153,7 +181,7 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
       setErrorMsg(res.error || 'Failed to link account handle');
     } else {
       setSuccessMsg(`Successfully connected @${cleanHandle} on ${selectedPlatform.name}!`);
-      setAccountsState((prev) => ({ ...prev, [selectedPlatform.key]: cleanHandle }));
+      setAccountsState((prev) => ({ ...prev, [selectedPlatform.key]: { handle: cleanHandle } }));
       setTimeout(() => {
         setShowModal(false);
         setSuccessMsg('');
@@ -167,7 +195,7 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
       if (event.data?.type === 'OAUTH_SUCCESS') {
         const { platform, username } = event.data;
         if (platform && username) {
-          setAccountsState((prev) => ({ ...prev, [platform]: decodeURIComponent(username) }));
+          setAccountsState((prev) => ({ ...prev, [platform]: { handle: decodeURIComponent(username) } }));
         }
         window.location.reload();
       }
@@ -191,12 +219,14 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
     );
 
     if (!popup) {
-      // Fallback if browser blocks popups
       window.location.href = oauthUrl;
     }
   }
 
-  const connectedCount = Object.keys(accountsState).filter((k) => !!accountsState[k]).length;
+  const connectedCount = Object.keys(accountsState).filter((k) => {
+    const acc = accountsState[k];
+    return !!acc && (typeof acc === 'string' ? !!acc : !!acc.handle);
+  }).length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink font-sans pb-12">
@@ -270,19 +300,150 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
       </div>
 
       {/* ─────────────────────────────────────────────────────
-         GRID OF ALL 7 SUPPORTED SOCIAL PLATFORMS
+         GRID OF ALL SUPPORTED SOCIAL PLATFORMS
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {ALL_SUPPORTED_PLATFORMS.map((platform) => {
-          const linkedHandle = accountsState[platform.key];
-          const isConnected = !!linkedHandle;
+          const accountData = accountsState[platform.key];
+          const isConnected = !!accountData && (typeof accountData === 'string' ? !!accountData : !!accountData.handle);
+          const handle = typeof accountData === 'string' ? accountData : accountData?.handle;
+          const avatarUrl = typeof accountData === 'object' ? accountData?.avatarUrl : null;
+          const followerCount = typeof accountData === 'object' ? accountData?.followerCount : null;
+          const avgViews = typeof accountData === 'object' ? accountData?.avgViews : null;
+          const engagementRate = typeof accountData === 'object' ? accountData?.engagementRate : null;
+
+          const hasAvgViews = avgViews !== null && avgViews !== undefined && avgViews > 0;
+          const followerLabel = platform.key === 'youtube' ? 'SUBSCRIBERS' : 'FOLLOWERS';
+          const formattedFollowers = formatCompactNumber(followerCount);
+          const formattedViews = formatCompactNumber(avgViews);
+          const formattedEngRate = getEngagementRate(engagementRate, avgViews, followerCount);
+
+          if (isConnected) {
+            return (
+              <div
+                key={platform.key}
+                className="p-6 rounded-3xl bg-white border border-emerald-200 ring-2 ring-emerald-500/10 shadow-xs flex flex-col justify-between space-y-5 text-center transition-all relative overflow-hidden"
+              >
+                {/* Header Connected Badge */}
+                <div className="flex items-center justify-between w-full border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center">
+                      {renderIcon(platform.key, 'w-3.5 h-3.5')}
+                    </div>
+                    <span className="font-display font-bold text-xs text-kpugi-ink">{platform.name}</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    CONNECTED
+                  </span>
+                </div>
+
+                {/* Profile Picture & Sync Status (Image 2 style) */}
+                <div className="pt-1 flex flex-col items-center">
+                  <div className="relative inline-block mx-auto mb-3">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={handle || platform.name}
+                        className="w-20 h-20 rounded-full border-4 border-slate-50 shadow-md object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-kpugi-border flex items-center justify-center shadow-inner">
+                        {renderIcon(platform.key, 'w-10 h-10')}
+                      </div>
+                    )}
+                    {/* Network / Verified Badge Overlay */}
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-kpugi-blue border-2 border-white flex items-center justify-center shadow-xs">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+
+                  <h3 className="font-display font-extrabold text-base text-kpugi-ink">
+                    Sync Successful
+                  </h3>
+                  <p className="text-xs text-kpugi-slate leading-relaxed mt-1 max-w-xs mx-auto">
+                    Your <span className="font-bold text-kpugi-ink">{platform.name}</span> account{' '}
+                    <span className="font-mono font-bold text-kpugi-blue">@{handle}</span> has been securely linked to Kpugi Creator.
+                  </p>
+                </div>
+
+                {/* Metrics Box Area */}
+                {hasAvgViews ? (
+                  <div className="space-y-2.5">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
+                        <span className="text-[10px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
+                          {followerLabel}
+                        </span>
+                        <span className="font-mono font-extrabold text-base sm:text-lg text-kpugi-blue mt-1 block">
+                          {formattedFollowers}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
+                        <span className="text-[10px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
+                          AVG VIEWS
+                        </span>
+                        <span className="font-mono font-extrabold text-base sm:text-lg text-kpugi-blue mt-1 block">
+                          {formattedViews}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between px-4">
+                      <span className="text-[10px] font-bold text-kpugi-slate uppercase tracking-wider font-mono flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-kpugi-blue" />
+                        ENGAGEMENT RATE
+                      </span>
+                      <span className="font-mono font-extrabold text-sm text-kpugi-ink">
+                        {formattedEngRate}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  /* Single Centered Followers/Subscribers Box if Avg Views is missing */
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-center max-w-xs mx-auto w-full">
+                    <span className="text-[10px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
+                      {followerLabel}
+                    </span>
+                    <span className="font-mono font-extrabold text-xl text-kpugi-blue mt-1 block">
+                      {formattedFollowers}
+                    </span>
+                  </div>
+                )}
+
+                {/* Action Buttons & Security Footer (Dashboard button removed!) */}
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOAuthConnect(platform)}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-kpugi-ink border border-slate-300 font-sans text-xs font-bold transition-all flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-kpugi-slate" />
+                      <span>Update Link</span>
+                    </button>
+
+                    <button
+                      onClick={() => setOauthGuidePlatform(platform)}
+                      className="p-2.5 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-blue hover:bg-blue-50 transition-colors"
+                      title={`View OAuth 2.0 Setup Guide for ${platform.name}`}
+                    >
+                      <Info className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="text-[11px] text-kpugi-slate font-sans flex items-center justify-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Data synced via {platform.name} Official API</span>
+                  </div>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
               key={platform.key}
-              className={`p-6 rounded-3xl bg-white border transition-all shadow-xs flex flex-col justify-between space-y-5 ${
-                isConnected ? 'border-emerald-200 ring-2 ring-emerald-500/10' : 'border-kpugi-border hover:border-slate-300'
-              }`}
+              className="p-6 rounded-3xl bg-white border border-kpugi-border hover:border-slate-300 transition-all shadow-xs flex flex-col justify-between space-y-5"
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
@@ -298,14 +459,8 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
                   </div>
                 </div>
 
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono shrink-0 ${
-                    isConnected
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-500 border border-slate-200'
-                  }`}
-                >
-                  {isConnected ? 'CONNECTED' : 'NOT LINKED'}
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono shrink-0 bg-slate-100 text-slate-500 border border-slate-200">
+                  NOT LINKED
                 </span>
               </div>
 
@@ -317,7 +472,7 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
                     Linked Handle
                   </span>
                   <span className="font-mono font-bold text-xs text-kpugi-ink mt-0.5 block truncate">
-                    {isConnected ? `@${linkedHandle}` : 'No handle connected yet'}
+                    No handle connected yet
                   </span>
                 </div>
               </div>
@@ -326,14 +481,10 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
               <div className="flex items-center gap-2 pt-1">
                 <button
                   onClick={() => handleOAuthConnect(platform)}
-                  className={`flex-1 py-2.5 px-3 rounded-xl font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    isConnected
-                      ? 'bg-slate-100 hover:bg-slate-200 text-kpugi-ink border border-slate-300'
-                      : 'bg-kpugi-blue hover:bg-blue-700 text-white shadow-xs'
-                  }`}
+                  className="flex-1 py-2.5 px-3 rounded-xl font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 bg-kpugi-blue hover:bg-blue-700 text-white shadow-xs"
                 >
                   <Zap className="w-3.5 h-3.5" />
-                  <span>{isConnected ? 'Update Link' : 'Connect Account'}</span>
+                  <span>Connect Account</span>
                 </button>
 
                 <button
