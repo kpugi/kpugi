@@ -248,7 +248,7 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
             <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider block">Anti-fraud Verification</span>
             <span className="font-mono font-bold text-sm text-emerald-600 mt-2 block flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 fill-emerald-600 text-white" />
-              Real-time Scraper Sync Active
+              Real-time Sync Active
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">

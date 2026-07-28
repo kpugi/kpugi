@@ -538,7 +538,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                   name="videoUrl"
                   placeholder="https://www.tiktok.com/@creator/video/..."
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-mono text-xs focus:outline-none focus:border-kpugi-blue bg-slate-50"
+                  className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-xs text-slate-900 font-bold placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
                 />
               </div>
 
