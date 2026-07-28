@@ -41,10 +41,14 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
     });
   }, []);
 
-  // Available balance (defaults to mockup value if empty)
-  const availableBalance = data.availableBalance > 0 ? data.availableBalance : 1245600;
-  const pendingEscrow = data.pendingEscrow > 0 ? data.pendingEscrow : 184300;
-  const totalEarned = data.totalEarned > 0 ? data.totalEarned : 4200150;
+  // Real creator balances from Supabase
+  const availableBalance = data.availableBalance || 0;
+  const pendingEscrow = data.pendingEscrow || 0;
+  const totalEarned = data.totalEarned || 0;
+  const totalWithdrawn = data.totalWithdrawn || 0;
+  const lastWithdrawal = data.lastWithdrawalDate
+    ? new Date(data.lastWithdrawalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'No withdrawals yet';
 
   async function handlePayoutSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -102,9 +106,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
     setErrorMsg('');
     const formData = new FormData(e.currentTarget);
     const selectedBank = bankList.find((b) => b.code === selectedBankCode);
-    formData.append('bankName', selectedBank?.name || 'Bank');
+    formData.set('bankCode', selectedBankCode);
+    formData.set('bankName', selectedBank?.name || 'Bank');
+    formData.set('accountNumber', accountNumber);
     if (resolvedAccountName) {
-      formData.append('accountName', resolvedAccountName);
+      formData.set('accountName', resolvedAccountName);
     }
 
     const res = await resolveAndSaveBankAccountAction(formData);
@@ -116,67 +122,16 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
     }
   }
 
-  // Combined ledger data (database transactions + fallback demo items from mockup)
-  const defaultTransactions = [
-    {
-      id: 'tx-1',
-      date: 'May 24, 2024',
-      title: 'Eco-Chic Brand Launch',
-      sub: 'Campaign Payout',
-      amount: 250000,
-      isCredit: true,
-      status: 'Success',
-    },
-    {
-      id: 'tx-2',
-      date: 'May 21, 2024',
-      title: 'Bank Withdrawal',
-      sub: 'Trans Id: KP-98231',
-      amount: 50000,
-      isCredit: false,
-      status: 'Success',
-    },
-    {
-      id: 'tx-3',
-      date: 'May 18, 2024',
-      title: 'Luxe Travel Series',
-      sub: 'Campaign Payout',
-      amount: 425000,
-      isCredit: true,
-      status: 'Processing',
-    },
-    {
-      id: 'tx-4',
-      date: 'May 15, 2024',
-      title: 'Bank Withdrawal',
-      sub: 'Trans Id: KP-98211',
-      amount: 15000,
-      isCredit: false,
-      status: 'Success',
-    },
-    {
-      id: 'tx-5',
-      date: 'May 10, 2024',
-      title: 'Summer Fitness Blast',
-      sub: 'Campaign Payout',
-      amount: 180000,
-      isCredit: true,
-      status: 'Success',
-    },
-  ];
-
-  const displayTransactions =
-    data.transactions && data.transactions.length > 0
-      ? data.transactions.map((tx: any) => ({
-          id: tx.id,
-          date: new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          title: tx.transaction_type === 'withdrawal' ? 'Bank Withdrawal' : 'Campaign Payout',
-          sub: tx.reference ? `Trans Id: ${tx.reference}` : 'Wallet Transaction',
-          amount: Number(tx.amount),
-          isCredit: tx.transaction_type !== 'withdrawal',
-          status: tx.status ? tx.status.charAt(0).toUpperCase() + tx.status.slice(1) : 'Success',
-        }))
-      : defaultTransactions;
+  // Real transactions from database
+  const displayTransactions = (data.transactions || []).map((tx: any) => ({
+    id: tx.id,
+    date: new Date(tx.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    title: tx.title || (tx.type === 'withdrawal' || tx.type === 'payout' ? 'Bank Withdrawal' : 'Campaign Payout'),
+    sub: tx.reference ? `Ref: ${tx.reference}` : (tx.campaign_title || 'Earnings Sync'),
+    amount: Number(tx.amount || 0),
+    isCredit: tx.type === 'credit' || tx.type === 'payout',
+    status: tx.status ? (tx.status.charAt(0).toUpperCase() + tx.status.slice(1)) : 'Success',
+  }));
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink pb-12 font-sans">
@@ -216,12 +171,12 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             <div>
               <span className="text-kpugi-slate font-medium text-[11px] block uppercase tracking-wider">Total Withdrawn</span>
               <span className="font-mono font-bold text-kpugi-ink text-sm sm:text-base mt-0.5 block">
-                ₦{totalEarned.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                ₦{totalWithdrawn.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
             </div>
             <div>
               <span className="text-kpugi-slate font-medium text-[11px] block uppercase tracking-wider">Last Withdrawal</span>
-              <span className="font-sans font-bold text-kpugi-ink text-sm sm:text-base mt-0.5 block">May 12, 2024</span>
+              <span className="font-sans font-bold text-kpugi-ink text-sm sm:text-base mt-0.5 block">{lastWithdrawal}</span>
             </div>
           </div>
         </div>
@@ -243,22 +198,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
           <div className="p-4 rounded-2xl bg-white border border-kpugi-border space-y-2">
             <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5 font-sans">
-              <span className="text-slate-400">🕒</span> Next Release In
+              <span className="text-slate-400">🕒</span> Verification Grace Period
             </span>
-            <div className="grid grid-cols-3 gap-2 text-center pt-1">
-              <div className="bg-slate-100 rounded-xl p-2 border border-slate-200">
-                <span className="font-mono font-bold text-base text-kpugi-blue block">02</span>
-                <span className="text-[9px] font-bold text-kpugi-slate uppercase tracking-wider block">DAYS</span>
-              </div>
-              <div className="bg-slate-100 rounded-xl p-2 border border-slate-200">
-                <span className="font-mono font-bold text-base text-kpugi-blue block">14</span>
-                <span className="text-[9px] font-bold text-kpugi-slate uppercase tracking-wider block">HRS</span>
-              </div>
-              <div className="bg-slate-100 rounded-xl p-2 border border-slate-200">
-                <span className="font-mono font-bold text-base text-kpugi-blue block">55</span>
-                <span className="text-[9px] font-bold text-kpugi-slate uppercase tracking-wider block">MINS</span>
-              </div>
-            </div>
+            <p className="text-[11px] text-kpugi-slate leading-relaxed">
+              Funds are automatically cleared into your wallet 48 hours after anti-fraud view verification.
+            </p>
           </div>
         </div>
       </div>
@@ -294,39 +238,49 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {displayTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-4 px-4 font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="font-bold text-kpugi-ink">{tx.title}</div>
-                      <div className="text-[11px] text-kpugi-slate">{tx.sub}</div>
-                    </td>
-                    <td className="py-4 px-4 font-mono font-bold whitespace-nowrap text-sm">
-                      <span className={tx.isCredit ? 'text-emerald-600' : 'text-slate-900'}>
-                        {tx.isCredit ? '+' : '-'}₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          tx.status === 'Success'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {tx.status}
-                      </span>
+                {displayTransactions.length > 0 ? (
+                  displayTransactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-4 px-4 font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="font-bold text-kpugi-ink">{tx.title}</div>
+                        <div className="text-[11px] text-kpugi-slate">{tx.sub}</div>
+                      </td>
+                      <td className="py-4 px-4 font-mono font-bold whitespace-nowrap text-sm">
+                        <span className={tx.isCredit ? 'text-emerald-600' : 'text-slate-900'}>
+                          {tx.isCredit ? '+' : '-'}₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            tx.status === 'Success'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {tx.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="text-center py-12">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <p className="font-bold text-sm text-kpugi-ink">No Transactions Yet</p>
+                        <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                          Completed campaign payouts and NUBAN bank withdrawals will automatically generate ledger records here.
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
-          </div>
-
-          <div className="pt-2 text-center border-t border-kpugi-border">
-            <button className="text-xs font-bold text-kpugi-blue hover:text-blue-700 transition-colors">
-              View All Transactions →
-            </button>
           </div>
         </div>
 
@@ -346,42 +300,57 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             </div>
 
             <div className="space-y-3">
-              {/* Primary Linked Account (Zenith Bank) */}
-              <div className="p-4 rounded-2xl bg-blue-50/50 border-2 border-kpugi-blue relative flex items-center gap-3.5">
-                <BankLogo bankName={data.bankDetails?.bankName || 'Zenith Bank PLC'} bankCode={data.bankDetails?.bankCode || '057'} size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-kpugi-ink truncate">
-                      {data.bankDetails?.bankName || 'Zenith Bank PLC'}
-                    </span>
-                    <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0 fill-kpugi-blue/10" />
+              {data.bankAccounts && data.bankAccounts.length > 0 ? (
+                data.bankAccounts.map((acc, idx) => (
+                  <div
+                    key={acc.id || idx}
+                    className={`p-4 rounded-2xl border-2 flex items-center gap-3.5 ${
+                      acc.isPrimary ? 'bg-blue-50/50 border-kpugi-blue' : 'bg-white border-kpugi-border'
+                    }`}
+                  >
+                    <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="md" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-kpugi-ink truncate">{acc.bankName}</span>
+                        {acc.isPrimary && <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0 fill-kpugi-blue/10" />}
+                      </div>
+                      <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">
+                        {acc.accountName} (**** {acc.accountNumber?.slice(-4) || '****'})
+                      </div>
+                      {acc.isPrimary && (
+                        <span className="inline-block text-[9px] font-bold text-kpugi-blue uppercase tracking-wider mt-1">
+                          PRIMARY ACCOUNT
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">
-                    **** {data.bankDetails?.accountNumber?.slice(-4) || '4492'}
-                  </div>
-                  <span className="inline-block text-[9px] font-bold text-kpugi-blue uppercase tracking-wider mt-1">
-                    PRIMARY ACCOUNT
-                  </span>
+                ))
+              ) : (
+                <div className="p-6 text-center border-2 border-dashed border-kpugi-border rounded-2xl space-y-3 bg-slate-50/50">
+                  <Building2 className="w-8 h-8 text-kpugi-slate mx-auto opacity-60" />
+                  <h4 className="font-display font-bold text-sm text-kpugi-ink">No Bank Account Linked Yet</h4>
+                  <p className="text-xs text-kpugi-slate max-w-xs mx-auto">
+                    Link your NUBAN bank account to receive automatic withdrawals via Paystack.
+                  </p>
+                  <button
+                    onClick={() => setShowBankModal(true)}
+                    className="px-4 py-2 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Link Bank Account</span>
+                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* Secondary Account (GTBank) */}
-              <div className="p-4 rounded-2xl bg-white border border-kpugi-border flex items-center gap-3.5 opacity-80 hover:opacity-100 transition-opacity">
-                <BankLogo bankName="GTBank" bankCode="058" size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-xs text-kpugi-ink truncate">GTBank</div>
-                  <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">**** 0128</div>
-                </div>
-              </div>
-
-              {/* Add New Bank Account Dashed Button */}
-              <button
-                onClick={() => setShowBankModal(true)}
-                className="w-full p-4 rounded-2xl border-2 border-dashed border-kpugi-border hover:border-kpugi-blue text-kpugi-slate hover:text-kpugi-blue transition-colors flex items-center justify-center gap-2 font-bold text-xs bg-slate-50/50"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add New Bank Account</span>
-              </button>
+              {data.bankAccounts && data.bankAccounts.length > 0 && (
+                <button
+                  onClick={() => setShowBankModal(true)}
+                  className="w-full p-3 rounded-2xl border-2 border-dashed border-kpugi-border hover:border-kpugi-blue text-kpugi-slate hover:text-kpugi-blue transition-colors flex items-center justify-center gap-2 font-bold text-xs bg-slate-50/50"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Another Bank Account</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -623,18 +592,20 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 )}
               </div>
 
+              <input type="hidden" name="bankCode" value={selectedBankCode} />
               <div>
                 <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
                   NUBAN Account Number (10 Digits)
                 </label>
                 <input
                   type="text"
+                  name="accountNumber"
                   maxLength={10}
                   placeholder="e.g. 0123456789"
                   value={accountNumber}
                   onChange={(e) => handleNubanChange(e.target.value)}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-mono text-sm focus:outline-none focus:border-kpugi-blue bg-slate-50"
+                  className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-sm text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
                 />
               </div>
 

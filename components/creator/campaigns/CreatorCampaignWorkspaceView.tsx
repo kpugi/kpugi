@@ -35,14 +35,17 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [copiedHashtag, setCopiedHashtag] = useState<string | null>(null);
-  const [secondsToNextAudit, setSecondsToNextAudit] = useState(284);
+  const hasSubmittedLink = Boolean(submission && submission.post_url && submission.post_url.trim().length > 0);
+  const [secondsToNextAudit, setSecondsToNextAudit] = useState(3600); // 60 minutes (3600s)
 
   React.useEffect(() => {
+    if (!hasSubmittedLink) return;
+
     const timer = setInterval(() => {
-      setSecondsToNextAudit((prev) => (prev > 0 ? prev - 1 : 300));
+      setSecondsToNextAudit((prev) => (prev > 0 ? prev - 1 : 3600));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [hasSubmittedLink]);
 
   const formatTimer = (totalSec: number) => {
     const m = Math.floor(totalSec / 60);
@@ -459,7 +462,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               <tr className="border-b border-kpugi-border text-kpugi-slate uppercase text-[10px] tracking-wider font-bold">
                 <th>TIMESTAMP</th>
                 <th>AUDIT TYPE</th>
-                <th>DELTA</th>
+                <th>DATA</th>
                 <th className="text-right">STATUS</th>
               </tr>
             </thead>

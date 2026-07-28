@@ -54,17 +54,23 @@ export interface CreatorCampaignItem {
   submittedAt?: string;
 }
 
+export interface BankAccountItem {
+  id: string;
+  bankName: string;
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  isPrimary: boolean;
+}
+
 export interface CreatorEarningsData {
   availableBalance: number;
   pendingEscrow: number;
   totalEarned: number;
-  bankDetails: {
-    bankCode?: string;
-    bankName?: string;
-    accountNumber?: string;
-    accountName?: string;
-    isVerified?: boolean;
-  } | null;
+  totalWithdrawn: number;
+  lastWithdrawalDate: string | null;
+  bankDetails: BankAccountItem | null;
+  bankAccounts: BankAccountItem[];
   transactions: any[];
 }
 
@@ -273,15 +279,19 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
   return { campaign, submission: null };
 }
 
+
+
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
 
+  // 1. Fetch creator profile
   const { data: creator } = await supabase
     .from('creator_profiles')
     .select('id, profile_id, total_earned, paystack_recipient_code')
     .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
     .maybeSingle();
 
+  // 2. Fetch wallet balance
   const { data: wallet } = await supabase
     .from('wallets')
     .select('balance')
@@ -289,12 +299,27 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     .eq('wallet_type', 'creator_earnings')
     .maybeSingle();
 
+  // 3. Fetch real transactions
   const { data: transactions } = await supabase
     .from('wallet_transactions')
     .select('*')
     .eq('profile_id', profileId)
     .order('created_at', { ascending: false });
 
+  // 4. Fetch real payout requests for totalWithdrawn & lastWithdrawalDate
+  const { data: payoutRequests } = await supabase
+    .from('payout_requests')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false });
+
+  const totalWithdrawn = (payoutRequests || [])
+    .filter((p) => p.status === 'success' || p.status === 'completed')
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  const lastWithdrawalDate = payoutRequests && payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
+
+  // 5. Calculate Pending Escrow from real active submissions
   const creatorProfileId = creator?.id;
   const creatorFilter = creatorProfileId
     ? `creator_id.eq.${profileId},creator_id.eq.${creatorProfileId}`
@@ -302,42 +327,56 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   const { data: rawSubmissions } = await supabase
     .from('submissions')
-    .select('reserved_amount, status')
+    .select('reserved_amount, payout_amount, status')
     .or(creatorFilter);
 
   const pendingEscrow = (rawSubmissions || [])
-    .filter((s: any) => s.status === 'reserved' || s.status === 'under_review' || s.status === 'pending')
-    .reduce((sum: number, s: any) => sum + (Number(s.reserved_amount) || 0), 0);
+    .filter((s: any) => s.status === 'reserved' || s.status === 'under_review' || s.status === 'pending' || s.status === 'auditing')
+    .reduce((sum: number, s: any) => sum + (Number(s.reserved_amount || s.payout_amount) || 0), 0);
 
-  let bankDetails: any = null;
-  if (creator?.paystack_recipient_code) {
+  // 6. Fetch saved bank accounts from bank_accounts table
+  const { data: dbBankAccounts } = await supabase
+    .from('bank_accounts')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('is_primary', { ascending: false });
+
+  const bankAccounts: BankAccountItem[] = (dbBankAccounts || []).map((b: any) => ({
+    id: b.id,
+    bankName: b.bank_name,
+    bankCode: b.bank_code,
+    accountNumber: b.account_number,
+    accountName: b.account_name,
+    isPrimary: Boolean(b.is_primary),
+  }));
+
+  // Fallback check on creator.paystack_recipient_code if bank_accounts table is empty
+  if (bankAccounts.length === 0 && creator?.paystack_recipient_code) {
     try {
       const parsed = JSON.parse(creator.paystack_recipient_code);
       if (parsed.account_number || parsed.accountNumber) {
-        bankDetails = {
+        bankAccounts.push({
+          id: 'primary-legacy',
           bankCode: parsed.bank_code || parsed.bankCode,
           bankName: parsed.bank_name || parsed.bankName,
           accountNumber: parsed.account_number || parsed.accountNumber,
           accountName: parsed.account_name || parsed.accountName,
-          isVerified: true,
-        };
+          isPrimary: true,
+        });
       }
-    } catch {
-      // not JSON string
-    }
+    } catch {}
   }
 
+  const primaryBank = bankAccounts.length > 0 ? bankAccounts[0] : null;
+
   return {
-    availableBalance: wallet?.balance || 0,
-    pendingEscrow: pendingEscrow > 0 ? pendingEscrow : 184300, // Default demo value if 0
-    totalEarned: creator?.total_earned || 4200150,
-    bankDetails: bankDetails || {
-      bankCode: '058',
-      bankName: 'Zenith Bank PLC',
-      accountNumber: '4492',
-      accountName: 'TUNDE KELANI',
-      isVerified: true,
-    },
+    availableBalance: Number(wallet?.balance || 0),
+    pendingEscrow: Number(pendingEscrow || 0),
+    totalEarned: Number(creator?.total_earned || 0),
+    totalWithdrawn: Number(totalWithdrawn || 0),
+    lastWithdrawalDate,
+    bankDetails: primaryBank,
+    bankAccounts,
     transactions: transactions || [],
   };
 }

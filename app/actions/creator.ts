@@ -172,8 +172,20 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
 
     const accountName = json.data.account_name;
 
-    // 2. Save permanently into database on creator_profiles using paystack_recipient_code column
+    // 2. Save into bank_accounts table & creator_profiles JSON
     const supabase = createAdminClient();
+    const profileId = userProfile.profile.id;
+
+    await supabase.from('bank_accounts').upsert({
+      profile_id: profileId,
+      bank_name: bankName || 'Bank',
+      bank_code: bankCode,
+      account_number: accountNumber,
+      account_name: accountName,
+      is_primary: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'profile_id,account_number,bank_code' });
+
     const bankDetailsJson = JSON.stringify({
       bank_code: bankCode,
       bank_name: bankName || 'Bank',
@@ -181,17 +193,12 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
       account_name: accountName,
     });
 
-    const { error } = await supabase
+    await supabase
       .from('creator_profiles')
       .update({
         paystack_recipient_code: bankDetailsJson,
       })
-      .eq('id', userProfile.creatorProfile.id);
-
-    if (error) {
-      console.error('Error saving bank details to creator_profiles:', error);
-      return { success: false, error: error.message };
-    }
+      .eq('profile_id', profileId);
 
     revalidatePath('/earnings');
     return { success: true, accountName };
