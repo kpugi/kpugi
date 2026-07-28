@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   Copy,
   Check,
   Clock,
+  X,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { submitCampaignVideoAction } from '@/app/actions/creator';
@@ -71,11 +73,15 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
     setTimeout(() => setCopiedHashtag(null), 2000);
   }
 
-  // Calculate analytics values
+  // Calculate analytics values strictly based on verified views
   const totalViews = submission?.final_view_count || 0;
   const targetThreshold = campaign.min_view_threshold || 1000;
   const viewsPct = Math.min(100, Math.round((totalViews / targetThreshold) * 100));
-  const earnedAmount = submission?.payout_amount || submission?.reserved_amount || 0;
+  
+  // FIXED: Earned Amount is strictly ₦0 when verified views are 0
+  const earnedAmount = totalViews > 0 
+    ? (submission?.payout_amount || Math.floor((totalViews / 1000) * campaign.cpm_rate)) 
+    : 0;
 
   const docUrl = campaign.requirements?.google_doc_url || campaign.requirements?.brand_guide_url || campaign.requirements?.doc_url;
   const driveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.asset_pack_url || campaign.requirements?.drive_url;
@@ -276,19 +282,19 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               </button>
             </div>
 
-            {submission ? (
+            {submission && submission.post_url ? (
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl border border-kpugi-border bg-slate-50/60 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 overflow-hidden">
                     <PlatformBadge platform={submission.social_account_id || 'instagram'} />
                     <div className="truncate">
                       <a
-                        href={submission.post_url || '#'}
+                        href={submission.post_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-mono text-xs font-bold text-kpugi-ink hover:text-kpugi-blue hover:underline truncate block"
                       >
-                        {submission.post_url || 'Submitted Post Link'}
+                        {submission.post_url}
                       </a>
                       <span className="text-[11px] text-kpugi-slate font-sans block mt-0.5">
                         Submitted {new Date(submission.submitted_at || Date.now()).toLocaleDateString()}
@@ -458,79 +464,110 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               </tr>
             </thead>
             <tbody>
-              {allSubmissions && allSubmissions.length > 0 ? (
-                allSubmissions.map((log: any, idx: number) => (
-                  <tr key={log.id || idx} className="border-b border-slate-100">
-                    <td className="font-mono text-kpugi-slate">
-                      {new Date().toLocaleTimeString()}
-                    </td>
-                    <td className="font-bold text-kpugi-ink">View Reach Audit</td>
-                    <td className="font-mono font-bold text-emerald-600">
-                      +{formatCompactNumber(log.final_view_count || 1240)}
-                    </td>
-                    <td className="text-right">
-                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold uppercase text-[10px]">
-                        SUCCESS
-                      </span>
+              {(() => {
+                const validLogs = (allSubmissions || []).filter(
+                  (log: any) => log.post_url && log.post_url.trim().length > 0
+                );
+                return validLogs.length > 0 ? (
+                  validLogs.map((log: any, idx: number) => (
+                    <tr key={log.id || idx} className="border-b border-slate-100">
+                      <td className="font-mono text-kpugi-slate">
+                        {new Date(log.created_at || Date.now()).toLocaleTimeString()}
+                      </td>
+                      <td className="font-bold text-kpugi-ink">View Reach Audit</td>
+                      <td className="font-mono font-bold text-emerald-600">
+                        +{formatCompactNumber(log.final_view_count || 0)}
+                      </td>
+                      <td className="text-right">
+                        <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold uppercase text-[10px]">
+                          {log.status || 'SUCCESS'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="text-center py-10">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-kpugi-slate mb-1">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <p className="font-bold text-sm text-kpugi-ink">No Audit Logs Generated Yet</p>
+                        <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                          Live scraper audit logs will appear here automatically every 5 minutes once you submit your video post link.
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr className="border-b border-slate-100">
-                  <td className="font-mono text-kpugi-slate">{new Date().toLocaleTimeString()}</td>
-                  <td className="font-bold text-kpugi-ink">Instagram Reach Verify</td>
-                  <td className="font-mono font-bold text-emerald-600">+1,240</td>
-                  <td className="text-right">
-                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold uppercase text-[10px]">
-                      SUCCESS
-                    </span>
-                  </td>
-                </tr>
-              )}
+                );
+              })()}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* SUBMIT VIDEO LINK MODAL */}
-      {showSubmitModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4">
-            <h3 className="font-display font-bold text-xl text-kpugi-ink">Submit Video Link</h3>
-            <p className="text-xs text-kpugi-slate">
-              Paste the public URL of your posted video (TikTok, Instagram Reels, YouTube Shorts).
-            </p>
-            <form onSubmit={handleSubmitVideo} className="space-y-4">
+      {/* SUBMIT VIDEO LINK MODAL (PORTALED WITH BLUR BACKDROP) */}
+      {showSubmitModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-slate-100 relative">
+            <button
+              onClick={() => setShowSubmitModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-kpugi-ink p-1 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-kpugi-blue text-[11px] font-bold font-mono uppercase tracking-wider mb-2">
+                Verification Pipeline
+              </div>
+              <h3 className="font-display font-bold text-2xl text-kpugi-ink">Submit Video Link</h3>
+              <p className="text-xs text-kpugi-slate mt-1 leading-relaxed">
+                Paste the public URL of your posted video (TikTok, Instagram Reels, YouTube Shorts).
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitVideo} className="space-y-4 pt-1">
               <input type="hidden" name="campaignId" value={campaign.id} />
               <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">Video URL</label>
+                <label className="block text-xs font-bold text-kpugi-slate mb-1.5 uppercase tracking-wider">
+                  Public Video URL
+                </label>
                 <input
                   type="url"
                   name="videoUrl"
                   placeholder="https://www.tiktok.com/@creator/video/..."
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-mono text-xs focus:outline-none focus:border-kpugi-blue"
+                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-mono text-xs focus:outline-none focus:border-kpugi-blue bg-slate-50"
                 />
               </div>
-              <div className="flex items-center gap-3 pt-2">
+
+              {msg && (
+                <div className={`p-3 rounded-xl text-xs font-bold ${msg.startsWith('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+                  {msg}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowSubmitModal(false)}
-                  className="w-1/2 py-2.5 rounded-xl border border-kpugi-border text-xs font-bold"
+                  className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-1/2 py-2.5 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 shadow-md shadow-kpugi-blue/20"
+                  className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20"
                 >
                   {loading ? 'Submitting...' : 'Submit Link'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
