@@ -27,6 +27,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
+import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
+
 interface CreatorAccountsViewProps {
   socialAccounts: Record<string, SocialAccountDetails | string>;
 }
@@ -235,9 +237,12 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
       ───────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-kpugi-border pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-kpugi-blue text-[11px] font-bold font-mono uppercase tracking-wider mb-2">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Verified Creator Social Matrix
+          <div className="flex items-center gap-2 flex-wrap mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-kpugi-blue text-[11px] font-bold font-mono uppercase tracking-wider">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Verified Creator Social Matrix
+            </div>
+            <CreatorLevelBadge variant="pill" />
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink tracking-tight">
             Social Accounts & OAuth Integration

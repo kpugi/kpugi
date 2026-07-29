@@ -19,6 +19,7 @@ import {
 import { CreatorDashboardData } from '@/lib/supabase/dashboard';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency } from '@/lib/utils/format';
+import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
 
 interface CreatorDashboardProps {
   displayName: string;
@@ -34,9 +35,12 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
       <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-md border border-slate-800">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 backdrop-blur-md text-[11px] font-sans font-bold uppercase tracking-wider mb-1 border border-white/10">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Creator Console Active
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 backdrop-blur-md text-[11px] font-sans font-bold uppercase tracking-wider border border-white/10">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Creator Console Active
+              </div>
+              <CreatorLevelBadge totalEarned={data.totalEarned || 0} variant="pill" />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
               Good day, {displayName}! 👋
@@ -59,6 +63,9 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
 
         <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-kpugi-blue/30 rounded-full blur-3xl pointer-events-none" />
       </div>
+
+      {/* Creator Level & Star Rank Widget */}
+      <CreatorLevelBadge totalEarned={data.totalEarned || 0} variant="widget" />
 
       {/* At a Glance Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
