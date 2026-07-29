@@ -57,7 +57,7 @@ export default function DashboardHeader({
   role,
   onMobileMenuToggle,
 }: DashboardHeaderProps) {
-  const displayTitle = 'CONSOLE';
+  const displayTitle = 'CREATOR CONSOLE';
 
   return (
     <header className="sticky top-0 z-30 border-b border-kpugi-border bg-white/95 backdrop-blur-md">

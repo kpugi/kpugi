@@ -68,7 +68,7 @@ export const ALL_SUPPORTED_PLATFORMS: PlatformConfig[] = [
     category: 'Shorts & Long-form',
     description: 'Google Data API v3 OAuth scope for YouTube Shorts & Videos.',
     oauthSupported: true,
-    docUrl: 'https://console.cloud.google.com/apis/credentials',
+    docUrl: 'https://.cloud.google.com/apis/credentials',
     envKeys: ['NEXT_PUBLIC_YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET'],
   },
   {

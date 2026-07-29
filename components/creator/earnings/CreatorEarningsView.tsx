@@ -354,19 +354,6 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             </div>
           </div>
 
-          {/* Card 2: Audited Earnings Level Badge Card */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-kpugi-blue via-blue-700 to-indigo-900 text-white shadow-lg space-y-4 border border-blue-600">
-            <h4 className="font-display font-bold text-lg text-white">Audited Earnings</h4>
-            <p className="font-sans text-xs text-blue-100 leading-relaxed">
-              Your accounts have been verified. You can now request instant payouts with no processing delays.
-            </p>
-            <div className="pt-2 flex items-center gap-2 text-xs font-bold">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
-                <ShieldCheck className="w-4 h-4 text-emerald-300" />
-              </div>
-              <span className="uppercase tracking-wider font-mono text-[11px] text-emerald-300">LEVEL 3 CREATOR</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -383,7 +370,6 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
           <div className="space-y-4 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold font-mono uppercase tracking-wider">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              Instant Payout Protection & Scraper Audited
             </div>
 
             <h3 className="font-display font-bold text-2xl sm:text-3xl text-white tracking-tight leading-tight">

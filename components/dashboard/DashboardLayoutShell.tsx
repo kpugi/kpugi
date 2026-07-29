@@ -204,26 +204,28 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
             </button>
           )}
 
-          {/* Trust / Escrow Banner */}
+          {/* Sidebar Footer Help / Escrow Banner */}
           {!isCollapsed ? (
-            <div className="p-3.5 rounded-xl bg-kpugi-blue/[0.06] border border-kpugi-blue/15">
-              <span className="font-sans font-bold text-xs text-kpugi-blue block mb-1">
-                {role === 'creator' ? '✓ Top Creator Tier' : '✓ Verified Escrow'}
-              </span>
-              <p className="font-sans text-kpugi-slate leading-relaxed text-[11px]">
-                {role === 'creator'
-                  ? 'Your trust score is 10/10. Instant payout release active.'
-                  : '100% campaign budgets ring-fenced upfront in escrow.'}
-              </p>
-            </div>
-          ) : (
-            <div
-              className="w-10 h-10 rounded-xl bg-kpugi-naira/10 text-kpugi-naira border border-kpugi-naira/20 flex items-center justify-center font-mono text-xs font-bold"
-              title="Trust Score: 10/10"
-            >
-              10
-            </div>
-          )}
+            role === 'creator' ? (
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-kpugi-border space-y-1.5">
+                <span className="font-sans font-bold text-xs text-kpugi-ink block flex items-center gap-1.5">
+                  💬 Creator Support
+                </span>
+                <p className="font-sans text-kpugi-slate leading-snug text-[11px]">
+                  Need help with campaign audits or payouts? Contact support anytime.
+                </p>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-kpugi-blue/[0.06] border border-kpugi-blue/15">
+                <span className="font-sans font-bold text-xs text-kpugi-blue block mb-1">
+                  ✓ Verified Escrow
+                </span>
+                <p className="font-sans text-kpugi-slate leading-relaxed text-[11px]">
+                  100% campaign budgets ring-fenced upfront in escrow.
+                </p>
+              </div>
+            )
+          ) : null}
         </div>
       </div>
     </aside>
