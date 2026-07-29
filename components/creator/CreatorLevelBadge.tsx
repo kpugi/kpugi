@@ -25,7 +25,7 @@ export default function CreatorLevelBadge({
   }, []);
 
   const levelData: CreatorLevelCalculated = getCreatorLevel(totalEarned);
-  const { levelInfo, nextLevelInfo, progressPercent, amountNeededForNextLevel, badgeLabel, cpmBonusPercent } = levelData;
+  const { levelInfo, nextLevelInfo, progressPercent, amountNeededForNextLevel, badgeLabel } = levelData;
 
   if (variant === 'pill') {
     return (
@@ -33,15 +33,10 @@ export default function CreatorLevelBadge({
         <button
           onClick={() => setShowMatrixModal(true)}
           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-mono font-bold transition-all shadow-2xs hover:scale-105 ${levelInfo.badgeBg} ${levelInfo.badgeText} ${levelInfo.badgeBorder} ${className}`}
-          title={`Click to view all 14 Creator Levels (Current: ${levelInfo.title})`}
+          title={`Click to view all 14 Creator Levels (Current Rank: ${levelInfo.title})`}
         >
           <span>{levelInfo.icon}</span>
           <span>{badgeLabel}</span>
-          {cpmBonusPercent > 0 && (
-            <span className="ml-0.5 px-1.5 py-0.2 rounded-md bg-white/80 text-[9px] font-extrabold uppercase text-emerald-700">
-              +{cpmBonusPercent}% CPM
-            </span>
-          )}
         </button>
 
         {showMatrixModal && mounted && <CreatorMatrixModal levelData={levelData} totalEarned={totalEarned} onClose={() => setShowMatrixModal(false)} />}
@@ -72,11 +67,6 @@ export default function CreatorLevelBadge({
                 <span className="text-[10px] font-bold text-kpugi-slate uppercase tracking-wider font-mono">
                   Creator Rank Level {levelInfo.level}
                 </span>
-                {cpmBonusPercent > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold font-mono">
-                    +{cpmBonusPercent}% CPM Boost
-                  </span>
-                )}
               </div>
               <h3 className="font-display font-extrabold text-xl text-kpugi-ink tracking-tight flex items-center gap-1.5 mt-0.5">
                 <span>{levelInfo.title}</span>
@@ -152,10 +142,10 @@ function CreatorMatrixModal({
                 Kpugi Creator Gamification Ranks
               </div>
               <h3 className="font-display font-extrabold text-2xl text-kpugi-ink">
-                14 Creator Levels & CPM Bonuses
+                14 Creator Levels & Platform Perks
               </h3>
               <p className="text-xs text-kpugi-slate mt-0.5">
-                Earn platform payouts to level up from <span className="font-bold text-kpugi-ink">Novice</span> to <span className="font-bold text-cyan-600">Diamond</span> and unlock up to +25% bonus CPM payouts.
+                Earn platform payouts to level up from <span className="font-bold text-kpugi-ink">Novice</span> to <span className="font-bold text-cyan-600">Diamond</span> and unlock priority audits, express payouts, and VIP brand retainers.
               </p>
             </div>
           </div>
@@ -177,8 +167,8 @@ function CreatorMatrixModal({
           </div>
 
           <div className="text-right">
-            <span className="px-3 py-1 rounded-full bg-emerald-600 text-white font-mono font-extrabold text-xs inline-block shadow-xs">
-              +{levelData.cpmBonusPercent}% CPM Boost
+            <span className="px-3 py-1 rounded-full bg-kpugi-blue text-white font-mono font-extrabold text-xs inline-block shadow-xs">
+              Rank Lvl {levelData.currentLevelNumber}
             </span>
           </div>
         </div>
@@ -226,16 +216,6 @@ function CreatorMatrixModal({
                         {lvl.description}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="shrink-0 text-right">
-                    {lvl.cpmBonusPercent > 0 ? (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-mono text-[10px] font-bold border border-emerald-200">
-                        +{lvl.cpmBonusPercent}%
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-mono">Standard</span>
-                    )}
                   </div>
                 </div>
               );

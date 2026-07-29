@@ -33,15 +33,8 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
     <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink">
       {/* Top Greeting Banner */}
       <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-md border border-slate-800">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 backdrop-blur-md text-[11px] font-sans font-bold uppercase tracking-wider border border-white/10">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Creator Console Active
-              </div>
-              <CreatorLevelBadge totalEarned={data.totalEarned || 0} variant="pill" />
-            </div>
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
+          <div className="space-y-2">
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
               Good day, {displayName}! 👋
             </h1>
@@ -50,10 +43,10 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center justify-end shrink-0 self-end sm:self-end">
             <Link
               href="/browse"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md"
             >
               <Compass className="w-4 h-4 text-kpugi-blue" />
               <span>Explore Campaigns</span>

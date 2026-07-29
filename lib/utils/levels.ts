@@ -4,7 +4,6 @@ export interface CreatorLevelDef {
   icon: string;
   minEarnings: number;
   maxEarnings: number | null;
-  cpmBonusPercent: number;
   badgeBg: string;
   badgeText: string;
   badgeBorder: string;
@@ -19,12 +18,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '⚪',
     minEarnings: 0,
     maxEarnings: 4999,
-    cpmBonusPercent: 0,
     badgeBg: 'bg-slate-100',
     badgeText: 'text-slate-700',
     badgeBorder: 'border-slate-300',
     gradient: 'from-slate-500 to-slate-700',
-    description: 'Standard Platform Access & Basic Campaigns',
+    description: 'Standard Platform Access & Open Campaigns',
   },
   {
     level: 2,
@@ -32,12 +30,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🔹',
     minEarnings: 5000,
     maxEarnings: 14999,
-    cpmBonusPercent: 0,
     badgeBg: 'bg-blue-50',
     badgeText: 'text-blue-700',
     badgeBorder: 'border-blue-200',
     gradient: 'from-blue-400 to-blue-600',
-    description: 'Basic Rank Badge & Verified Creator Status',
+    description: 'Verified Creator Rank Badge & Campaign Access',
   },
   {
     level: 3,
@@ -45,12 +42,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🔷',
     minEarnings: 15000,
     maxEarnings: 34999,
-    cpmBonusPercent: 2,
     badgeBg: 'bg-indigo-50',
     badgeText: 'text-indigo-700',
     badgeBorder: 'border-indigo-200',
     gradient: 'from-indigo-500 to-blue-600',
-    description: '+2% Bonus CPM Payout boost across campaigns',
+    description: 'Senior Creator Rank Status & Standard Post Audits',
   },
   {
     level: 4,
@@ -58,12 +54,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🎯',
     minEarnings: 35000,
     maxEarnings: 69999,
-    cpmBonusPercent: 3,
     badgeBg: 'bg-teal-50',
     badgeText: 'text-teal-700',
     badgeBorder: 'border-teal-200',
     gradient: 'from-teal-500 to-emerald-600',
-    description: '+3% Bonus CPM Payout & Campaign Priority',
+    description: 'Accelerated Submission Verification Queue',
   },
   {
     level: 5,
@@ -71,12 +66,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🚀',
     minEarnings: 70000,
     maxEarnings: 99999,
-    cpmBonusPercent: 5,
     badgeBg: 'bg-sky-50',
     badgeText: 'text-sky-700',
     badgeBorder: 'border-sky-200',
     gradient: 'from-sky-500 to-indigo-600',
-    description: '+5% Bonus CPM & Accelerated Submissions Queue',
+    description: 'Priority Audit Queue & Preferred Campaign Access',
   },
   {
     level: 6,
@@ -84,12 +78,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '⚡',
     minEarnings: 100000,
     maxEarnings: 174999,
-    cpmBonusPercent: 7,
     badgeBg: 'bg-amber-50',
     badgeText: 'text-amber-800',
     badgeBorder: 'border-amber-300',
     gradient: 'from-amber-400 to-orange-500',
-    description: '100K Milestone! +7% Bonus CPM & Preferred Creator Badge',
+    description: '100K Earnings Milestone! Expert Badge & Fast Audit Clearance',
   },
   {
     level: 7,
@@ -97,12 +90,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🏅',
     minEarnings: 175000,
     maxEarnings: 274999,
-    cpmBonusPercent: 9,
     badgeBg: 'bg-orange-50',
     badgeText: 'text-orange-800',
     badgeBorder: 'border-orange-300',
     gradient: 'from-orange-500 to-amber-600',
-    description: '+9% Bonus CPM & Fast-Track Instant Post Audits',
+    description: 'Fast-Track Verification & Leader Rank Badge',
   },
   {
     level: 8,
@@ -110,12 +102,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🎖️',
     minEarnings: 275000,
     maxEarnings: 399999,
-    cpmBonusPercent: 11,
     badgeBg: 'bg-purple-50',
     badgeText: 'text-purple-700',
     badgeBorder: 'border-purple-200',
     gradient: 'from-purple-500 to-indigo-600',
-    description: '+11% Bonus CPM & High-Budget Escrow Access',
+    description: 'High-Budget Escrow Campaign Access & Veteran Badge',
   },
   {
     level: 9,
@@ -123,12 +114,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '🔥',
     minEarnings: 400000,
     maxEarnings: 549999,
-    cpmBonusPercent: 13,
     badgeBg: 'bg-rose-50',
     badgeText: 'text-rose-700',
     badgeBorder: 'border-rose-200',
     gradient: 'from-rose-500 to-red-600',
-    description: '+13% Bonus CPM & Exclusive Brand Direct Invites',
+    description: 'Direct Brand Invites & Top Creator Directory Listing',
   },
   {
     level: 10,
@@ -136,12 +126,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '👑',
     minEarnings: 550000,
     maxEarnings: 699999,
-    cpmBonusPercent: 15,
     badgeBg: 'bg-amber-100',
     badgeText: 'text-amber-900',
     badgeBorder: 'border-amber-400',
     gradient: 'from-yellow-400 via-amber-500 to-orange-600',
-    description: '+15% Bonus CPM & 1-Click Express Bank Payouts',
+    description: '1-Click Express Bank Payouts & Priority Verification',
   },
   {
     level: 11,
@@ -149,12 +138,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '💙',
     minEarnings: 700000,
     maxEarnings: 849999,
-    cpmBonusPercent: 17,
     badgeBg: 'bg-blue-100',
     badgeText: 'text-blue-900',
     badgeBorder: 'border-blue-400',
     gradient: 'from-blue-600 via-indigo-600 to-cyan-500',
-    description: '+17% Bonus CPM & Sapphire Elite Status',
+    description: 'Sapphire Elite Status & Featured Creator Spotlight',
   },
   {
     level: 12,
@@ -162,12 +150,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '💚',
     minEarnings: 850000,
     maxEarnings: 999999,
-    cpmBonusPercent: 19,
     badgeBg: 'bg-emerald-100',
     badgeText: 'text-emerald-900',
     badgeBorder: 'border-emerald-400',
     gradient: 'from-emerald-500 via-teal-600 to-green-600',
-    description: '+19% Bonus CPM & Emerald Elite Status',
+    description: 'Emerald Elite Status & High-Tier Sponsorship Access',
   },
   {
     level: 13,
@@ -175,12 +162,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '❤️',
     minEarnings: 1000000,
     maxEarnings: 1499999,
-    cpmBonusPercent: 22,
     badgeBg: 'bg-red-100',
     badgeText: 'text-red-900',
     badgeBorder: 'border-red-400',
     gradient: 'from-red-600 via-rose-600 to-pink-600',
-    description: '1 Million Milestone! +22% Bonus CPM & Priority Support',
+    description: '1 Million Milestone! Ruby Badge & Priority VIP Support',
   },
   {
     level: 14,
@@ -188,12 +174,11 @@ export const CREATOR_LEVELS: CreatorLevelDef[] = [
     icon: '💎',
     minEarnings: 1500000,
     maxEarnings: null,
-    cpmBonusPercent: 25,
     badgeBg: 'bg-cyan-100',
     badgeText: 'text-cyan-950',
     badgeBorder: 'border-cyan-400',
     gradient: 'from-cyan-400 via-blue-500 to-purple-600',
-    description: 'Top Tier 15M+ Platform Rank! +25% Bonus CPM & VIP Dedicated Account Manager',
+    description: 'Top Tier Diamond Rank! Dedicated Account Specialist & Brand Retainers',
   },
 ];
 
@@ -204,7 +189,6 @@ export interface CreatorLevelCalculated {
   progressPercent: number;
   amountNeededForNextLevel: number;
   badgeLabel: string;
-  cpmBonusPercent: number;
 }
 
 export function getCreatorLevel(totalEarned: number = 0): CreatorLevelCalculated {
@@ -239,6 +223,5 @@ export function getCreatorLevel(totalEarned: number = 0): CreatorLevelCalculated
     progressPercent,
     amountNeededForNextLevel,
     badgeLabel: `Lvl ${levelInfo.level} • ${levelInfo.title}`,
-    cpmBonusPercent: levelInfo.cpmBonusPercent,
   };
 }
