@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ngrok": "C:\\Users\\HP\\Downloads\\ngrok-v3-stable-windows-amd64\\ngrok.exe http 3000 --host-header=rewrite",
+    "tunnel": "C:\\Users\\HP\\Downloads\\ngrok-v3-stable-windows-amd64\\ngrok.exe http 3000 --host-header=rewrite"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.9.0",

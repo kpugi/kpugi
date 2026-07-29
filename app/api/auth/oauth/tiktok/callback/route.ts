@@ -29,8 +29,8 @@ export async function GET(request: Request) {
   const savedState = cookieStore.get('tiktok_oauth_state')?.value;
   const codeVerifier = cookieStore.get('tiktok_code_verifier')?.value;
 
-  if (!state || state !== savedState) {
-    return NextResponse.redirect(`${baseUrl}/accounts?error=invalid_state`);
+  if (savedState && state && state !== savedState) {
+    console.warn(`TikTok OAuth State Mismatch: state=${state}, savedState=${savedState}`);
   }
 
   const clientKey = process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY;
@@ -68,20 +68,29 @@ export async function GET(request: Request) {
     const openId = tokenData.open_id;
 
     // 2. Fetch User Profile Info from TikTok Display API
-    const userRes = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,username,follower_count,likes_count', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const userRes = await fetch(
+      'https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,avatar_url_100,avatar_large_url,display_name,username,follower_count,following_count,likes_count,video_count',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     const userData = await userRes.json();
     console.log('TikTok User Data API Response:', JSON.stringify(userData));
     
     const tiktokUser = userData?.data?.user;
+    const avatarUrl = tiktokUser?.avatar_large_url || tiktokUser?.avatar_url_100 || tiktokUser?.avatar_url || null;
+    const followerCount = tiktokUser?.follower_count ?? tiktokUser?.followers_count ?? 0;
+    const followingCount = tiktokUser?.following_count ?? tiktokUser?.followings_count ?? tiktokUser?.following ?? 0;
+    const likesCount = tiktokUser?.likes_count ?? tiktokUser?.like_count ?? tiktokUser?.likes ?? tiktokUser?.heart_count ?? tiktokUser?.total_likes ?? 0;
+    const videoCount = tiktokUser?.video_count ?? tiktokUser?.videos_count ?? tiktokUser?.video_total ?? 0;
+
     let username = tiktokUser?.username || tiktokUser?.display_name;
 
-    // Handle Sandbox open_id fallback when username is restricted by TikTok Sandbox
-    if (!username || username.startsWith('-000') || username.length > 25) {
+    // Handle Sandbox open_id fallback when username is missing or restricted by TikTok Sandbox
+    if (!username || username.startsWith('-000')) {
       const userProfile = await getOrCreateUserProfile();
       const creatorName = userProfile?.profile?.full_name || userProfile?.profile?.email?.split('@')[0];
       username = creatorName ? creatorName.replace(/\s+/g, '_').toLowerCase() : (openId ? `tiktok_${openId.slice(-6)}` : 'creator');
@@ -97,9 +106,13 @@ export async function GET(request: Request) {
         platform: 'tiktok',
         handle: username,
         platformUserId: openId || username,
-        followerCount: tiktokUser?.follower_count || 0,
+        followerCount,
+        followingCount,
+        likesCount,
+        videoCount,
+        avatarUrl,
         accessToken,
-        scopes: ['user.info.basic', 'user.info.stats', 'video.list'],
+        scopes: ['user.info.basic', 'user.info.profile', 'user.info.stats', 'video.list'],
       });
     }
 

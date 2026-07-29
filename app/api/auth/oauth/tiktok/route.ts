@@ -26,12 +26,12 @@ export async function GET(request: Request) {
   const codeChallenge = generateCodeChallenge(codeVerifier);
 
   const cookieStore = await cookies();
-  cookieStore.set('tiktok_oauth_state', state, { httpOnly: true, secure: protocol === 'https', path: '/', maxAge: 600 });
-  cookieStore.set('tiktok_code_verifier', codeVerifier, { httpOnly: true, secure: protocol === 'https', path: '/', maxAge: 600 });
+  cookieStore.set('tiktok_oauth_state', state, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 600 });
+  cookieStore.set('tiktok_code_verifier', codeVerifier, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 600 });
 
   const authUrl = new URL('https://www.tiktok.com/v2/auth/authorize/');
   authUrl.searchParams.set('client_key', clientKey);
-  authUrl.searchParams.set('scope', 'user.info.basic,user.info.stats,video.list');
+  authUrl.searchParams.set('scope', 'user.info.basic,user.info.profile,user.info.stats,video.list');
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('state', state);

@@ -309,12 +309,19 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
           const handle = typeof accountData === 'string' ? accountData : accountData?.handle;
           const avatarUrl = typeof accountData === 'object' ? accountData?.avatarUrl : null;
           const followerCount = typeof accountData === 'object' ? accountData?.followerCount : null;
+          const followingCount = typeof accountData === 'object' ? accountData?.followingCount : null;
+          const likesCount = typeof accountData === 'object' ? accountData?.likesCount : null;
+          const videoCount = typeof accountData === 'object' ? accountData?.videoCount : null;
           const avgViews = typeof accountData === 'object' ? accountData?.avgViews : null;
           const engagementRate = typeof accountData === 'object' ? accountData?.engagementRate : null;
 
+          const hasExtraStats = platform.key === 'tiktok' || (likesCount !== null && likesCount !== undefined) || (followingCount !== null && followingCount !== undefined);
           const hasAvgViews = avgViews !== null && avgViews !== undefined && avgViews > 0;
           const followerLabel = platform.key === 'youtube' ? 'SUBSCRIBERS' : 'FOLLOWERS';
           const formattedFollowers = formatCompactNumber(followerCount);
+          const formattedLikes = formatCompactNumber(likesCount ?? 0);
+          const formattedFollowing = formatCompactNumber(followingCount ?? 0);
+          const formattedVideos = formatCompactNumber(videoCount ?? 0);
           const formattedViews = formatCompactNumber(avgViews);
           const formattedEngRate = getEngagementRate(engagementRate, avgViews, followerCount);
 
@@ -362,7 +369,7 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
                   </h3>
                   <p className="text-xs text-kpugi-slate leading-relaxed mt-1 max-w-xs mx-auto">
                     Your <span className="font-bold text-kpugi-ink">{platform.name}</span> account{' '}
-                    <span className="font-mono font-bold text-kpugi-blue">@{handle}</span> has been securely linked to Kpugi Creator.
+                    <span className="font-mono font-bold text-kpugi-blue">@{handle}</span> has been securely linked to Kpugi Creator Portal.
                   </p>
                 </div>
 
@@ -399,8 +406,38 @@ export default function CreatorAccountsView({ socialAccounts }: CreatorAccountsV
                       </span>
                     </div>
                   </div>
+                ) : hasExtraStats ? (
+                  /* Stats Grid when Likes & Following are available (TikTok style) */
+                  <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 max-w-sm mx-auto w-full">
+                    <div className="text-center">
+                      <span className="text-[9px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
+                        {followerLabel}
+                      </span>
+                      <span className="font-mono font-extrabold text-base text-kpugi-blue mt-0.5 block">
+                        {formattedFollowers}
+                      </span>
+                    </div>
+
+                    <div className="text-center border-x border-slate-200 px-1">
+                      <span className="text-[9px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
+                        LIKES
+                      </span>
+                      <span className="font-mono font-extrabold text-base text-kpugi-blue mt-0.5 block">
+                        {formattedLikes}
+                      </span>
+                    </div>
+
+                    <div className="text-center">
+                      <span className="text-[9px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
+                        FOLLOWING
+                      </span>
+                      <span className="font-mono font-extrabold text-base text-kpugi-blue mt-0.5 block">
+                        {formattedFollowing}
+                      </span>
+                    </div>
+                  </div>
                 ) : (
-                  /* Single Centered Followers/Subscribers Box if Avg Views is missing */
+                  /* Single Centered Followers/Subscribers Box if extra stats are missing */
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-center max-w-xs mx-auto w-full">
                     <span className="text-[10px] font-bold text-kpugi-slate block uppercase tracking-wider font-mono">
                       {followerLabel}

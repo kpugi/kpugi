@@ -386,6 +386,9 @@ export interface SocialAccountDetails {
   handle: string;
   avatarUrl?: string | null;
   followerCount?: number | null;
+  followingCount?: number | null;
+  likesCount?: number | null;
+  videoCount?: number | null;
   avgViews?: number | null;
   engagementRate?: number | null;
   platformUserId?: string | null;
@@ -422,6 +425,9 @@ export async function getCreatorSocialAccounts(
           handle: valObj.handle,
           avatarUrl: valObj.avatarUrl || valObj.avatar_url || null,
           followerCount: valObj.followerCount ?? valObj.follower_count ?? null,
+          followingCount: valObj.followingCount ?? valObj.following_count ?? null,
+          likesCount: valObj.likesCount ?? valObj.likes_count ?? null,
+          videoCount: valObj.videoCount ?? valObj.video_count ?? null,
           avgViews: valObj.avgViews ?? valObj.avg_views ?? null,
           engagementRate: valObj.engagementRate ?? valObj.engagement_rate ?? null,
         };
@@ -436,6 +442,9 @@ export async function getCreatorSocialAccounts(
           handle: acc.handle,
           avatarUrl: acc.avatar_url || result[acc.platform.toLowerCase()]?.avatarUrl || null,
           followerCount: acc.follower_count ?? result[acc.platform.toLowerCase()]?.followerCount ?? null,
+          followingCount: acc.following_count ?? result[acc.platform.toLowerCase()]?.followingCount ?? null,
+          likesCount: acc.likes_count ?? result[acc.platform.toLowerCase()]?.likesCount ?? null,
+          videoCount: acc.video_count ?? result[acc.platform.toLowerCase()]?.videoCount ?? null,
           avgViews: acc.avg_views ?? result[acc.platform.toLowerCase()]?.avgViews ?? null,
           engagementRate: acc.engagement_rate ?? result[acc.platform.toLowerCase()]?.engagementRate ?? null,
           platformUserId: acc.platform_user_id || null,
@@ -454,6 +463,9 @@ export async function saveSocialAccount({
   handle,
   platformUserId,
   followerCount = null,
+  followingCount = null,
+  likesCount = null,
+  videoCount = null,
   avatarUrl = null,
   avgViews = null,
   engagementRate = null,
@@ -465,6 +477,9 @@ export async function saveSocialAccount({
   handle: string;
   platformUserId?: string;
   followerCount?: number | null;
+  followingCount?: number | null;
+  likesCount?: number | null;
+  videoCount?: number | null;
   avatarUrl?: string | null;
   avgViews?: number | null;
   engagementRate?: number | null;
@@ -491,6 +506,9 @@ export async function saveSocialAccount({
   };
 
   if (followerCount !== undefined && followerCount !== null) updateData.follower_count = followerCount;
+  if (followingCount !== undefined && followingCount !== null) updateData.following_count = followingCount;
+  if (likesCount !== undefined && likesCount !== null) updateData.likes_count = likesCount;
+  if (videoCount !== undefined && videoCount !== null) updateData.video_count = videoCount;
   if (avatarUrl !== undefined && avatarUrl !== null) updateData.avatar_url = avatarUrl;
   if (avgViews !== undefined && avgViews !== null) updateData.avg_views = avgViews;
   if (engagementRate !== undefined && engagementRate !== null) updateData.engagement_rate = engagementRate;
@@ -509,6 +527,9 @@ export async function saveSocialAccount({
       handle: cleanHandle,
       platform_user_id: userId,
       follower_count: followerCount ?? 0,
+      following_count: followingCount,
+      likes_count: likesCount,
+      video_count: videoCount,
       avatar_url: avatarUrl,
       avg_views: avgViews,
       engagement_rate: engagementRate,
@@ -535,6 +556,9 @@ export async function saveSocialAccount({
           handle: cleanHandle,
           avatar_url: avatarUrl,
           follower_count: followerCount,
+          following_count: followingCount,
+          likes_count: likesCount,
+          video_count: videoCount,
           avg_views: avgViews,
           engagement_rate: engagementRate,
         },
