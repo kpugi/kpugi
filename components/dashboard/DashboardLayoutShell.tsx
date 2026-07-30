@@ -41,7 +41,7 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
       ),
     },
     {
-      label: 'Earnings',
+      label: 'Wallet',
       href: '/earnings',
       icon: (
         <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -199,10 +199,16 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
             <>
               <button
                 onClick={() => setIsChatOpen(true)}
-                className="w-10 h-10 rounded-xl bg-gradient-to-tr from-kpugi-blue to-indigo-600 hover:opacity-90 flex items-center justify-center text-white shadow-md shadow-kpugi-blue/20 transition-all group"
+                className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-white shadow-md shadow-kpugi-blue/20 transition-all group overflow-hidden border border-slate-700/60 p-1"
                 title="Open KpugiBot AI Support"
               >
-                <span className="text-base group-hover:scale-110 transition-transform">🤖</span>
+                <Image
+                  src="/kpugi_bot_avatar.png"
+                  alt="KpugiBot"
+                  width={32}
+                  height={32}
+                  className="rounded-lg object-contain group-hover:scale-110 transition-transform"
+                />
               </button>
               <button
                 onClick={() => setIsCollapsed(false)}
@@ -223,8 +229,15 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
               className="w-full text-left p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-900/20 transition-all border border-slate-700/60 group relative overflow-hidden"
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-sans font-bold text-xs text-white flex items-center gap-1.5">
-                  <span className="text-sm">🤖</span> KpugiBot Support
+                <span className="font-sans font-bold text-xs text-white flex items-center gap-2">
+                  <Image
+                    src="/kpugi_bot_avatar.png"
+                    alt="KpugiBot"
+                    width={22}
+                    height={22}
+                    className="rounded-md object-contain"
+                  />
+                  <span>KpugiBot Support</span>
                 </span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
@@ -317,7 +330,14 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
                 className="w-full text-left p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between"
               >
                 <div className="flex items-center gap-2 text-xs font-bold">
-                  <span>🤖 KpugiBot Support</span>
+                  <Image
+                    src="/kpugi_bot_avatar.png"
+                    alt="KpugiBot"
+                    width={20}
+                    height={20}
+                    className="rounded-md object-contain"
+                  />
+                  <span>KpugiBot Support</span>
                 </div>
                 <span className="text-[10px] text-kpugi-blue font-semibold">Chat now →</span>
               </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -19,39 +20,40 @@ interface MessageItem {
 
 function FormattedMarkdown({ content }: { content: string }) {
   return (
-    <div className="text-slate-800 space-y-1 font-sans">
+    <div className="text-slate-800 space-y-1 font-sans break-words min-w-0 max-w-full overflow-hidden">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
-          h1: ({ children }) => <h1 className="text-sm font-bold text-slate-900 mt-2 mb-1">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xs font-bold text-slate-900 mt-2 mb-1">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mt-2 mb-1">{children}</h3>,
-          p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 my-1.5 text-slate-700">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 my-1.5 text-slate-700">{children}</ol>,
-          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-          strong: ({ children }) => <strong className="font-bold text-slate-900">{children}</strong>,
-          code: ({ children }) => <code className="px-1.5 py-0.5 rounded bg-slate-100 text-[11px] font-mono text-slate-800 border border-slate-200">{children}</code>,
+          h1: ({ children }) => <h1 className="text-sm font-bold text-slate-900 mt-2 mb-1 break-words">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-xs font-bold text-slate-900 mt-2 mb-1 break-words">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mt-2 mb-1 break-words">{children}</h3>,
+          p: ({ children }) => <p className="my-1 leading-relaxed break-words">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 my-1.5 text-slate-700 break-words">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 my-1.5 text-slate-700 break-words">{children}</ol>,
+          li: ({ children }) => <li className="leading-relaxed break-words">{children}</li>,
+          strong: ({ children }) => <strong className="font-bold text-slate-900 break-words">{children}</strong>,
+          code: ({ children }) => <code className="px-1.5 py-0.5 rounded bg-slate-100 text-[11px] font-mono text-slate-800 border border-slate-200 break-all whitespace-pre-wrap">{children}</code>,
+          pre: ({ children }) => <pre className="p-2.5 my-2 rounded-xl bg-slate-900 text-slate-100 text-[11px] font-mono whitespace-pre-wrap break-all overflow-x-hidden max-w-full">{children}</pre>,
           a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="text-kpugi-blue font-semibold underline hover:text-blue-700 transition-colors">
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-kpugi-blue font-semibold underline hover:text-blue-700 transition-colors break-all">
               {children}
             </a>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-kpugi-blue pl-3 py-1 my-2 bg-kpugi-blue/[0.04] rounded-r-lg text-slate-700 font-medium italic">
+            <blockquote className="border-l-4 border-kpugi-blue pl-3 py-1 my-2 bg-kpugi-blue/[0.04] rounded-r-lg text-slate-700 font-medium italic break-words">
               {children}
             </blockquote>
           ),
           table: ({ children }) => (
-            <div className="overflow-x-auto my-2 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="overflow-x-auto max-w-full my-2 rounded-xl border border-slate-200 shadow-2xs">
               <table className="w-full text-left text-[11px] border-collapse bg-white">{children}</table>
             </div>
           ),
           thead: ({ children }) => <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">{children}</thead>,
           tr: ({ children }) => <tr className="border-b border-slate-100 last:border-0">{children}</tr>,
-          th: ({ children }) => <th className="px-2.5 py-1.5 font-bold text-slate-900">{children}</th>,
-          td: ({ children }) => <td className="px-2.5 py-1.5 text-slate-700">{children}</td>,
+          th: ({ children }) => <th className="px-2 py-1 font-bold text-slate-900 break-words">{children}</th>,
+          td: ({ children }) => <td className="px-2 py-1 text-slate-700 break-words">{children}</td>,
           hr: () => <hr className="my-2.5 border-slate-200" />,
         }}
       >
@@ -212,12 +214,12 @@ export default function KpugiBotChat({ isOpen, onClose, role }: KpugiBotChatProp
       />
 
       {/* Slide-over Chat Box */}
-      <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col z-10 border-l border-kpugi-border animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col z-10 border-l border-kpugi-border animate-in slide-in-from-right duration-300 overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-kpugi-blue to-indigo-600 shadow-md shadow-kpugi-blue/30 text-white font-bold text-lg">
-              🤖
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700/60 shadow-md text-white font-bold p-0.5 overflow-hidden">
+              <Image src="/kpugi_bot_avatar.png" alt="KpugiBot" width={36} height={36} className="object-contain" />
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
             </div>
             <div>
@@ -257,7 +259,7 @@ export default function KpugiBotChat({ isOpen, onClose, role }: KpugiBotChatProp
         </div>
 
         {/* Message Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 bg-slate-50/50 min-w-0">
           {/* Welcome Card if no messages */}
           {messages.length === 0 && !isFetchingHistory && (
             <div className="space-y-4 my-2">
@@ -313,15 +315,15 @@ export default function KpugiBotChat({ isOpen, onClose, role }: KpugiBotChatProp
                 className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 {/* Avatar */}
-                <div
-                  className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-xs font-bold ${
-                    isUser
-                      ? 'bg-slate-800 text-white'
-                      : 'bg-gradient-to-tr from-kpugi-blue to-indigo-600 text-white shadow-sm'
-                  }`}
-                >
-                  {isUser ? 'You' : '🤖'}
-                </div>
+                {isUser ? (
+                  <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-xs font-bold bg-slate-800 text-white">
+                    You
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center bg-slate-900 border border-slate-700/50 p-0.5 shadow-xs overflow-hidden">
+                    <Image src="/kpugi_bot_avatar.png" alt="KpugiBot" width={28} height={28} className="object-contain" />
+                  </div>
+                )}
 
                 {/* Bubble */}
                 <div
@@ -344,8 +346,8 @@ export default function KpugiBotChat({ isOpen, onClose, role }: KpugiBotChatProp
           {/* Typing Indicator while streaming */}
           {isLoading && (
             <div className="flex gap-3 flex-row">
-              <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-xs font-bold bg-gradient-to-tr from-kpugi-blue to-indigo-600 text-white">
-                🤖
+              <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center bg-slate-900 border border-slate-700/50 p-0.5 shadow-xs overflow-hidden">
+                <Image src="/kpugi_bot_avatar.png" alt="KpugiBot" width={28} height={28} className="object-contain" />
               </div>
               <div className="p-3.5 rounded-2xl bg-white border border-kpugi-border rounded-tl-none text-xs text-slate-400 flex items-center gap-1.5 shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-kpugi-blue animate-bounce" style={{ animationDelay: '0ms' }} />
