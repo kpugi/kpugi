@@ -11,6 +11,9 @@
     "tunnel": "C:\\Users\\HP\\Downloads\\ngrok-v3-stable-windows-amd64\\ngrok.exe http 3000 --host-header=rewrite"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.28",
+    "@ai-sdk/openai": "^4.0.24",
+    "@ai-sdk/react": "^4.0.45",
     "@clerk/nextjs": "^6.9.0",
     "@knocklabs/node": "^0.6.9",
     "@knocklabs/react": "^0.12.1",
@@ -18,11 +21,15 @@
     "@supabase/supabase-js": "^2.47.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "ai": "^7.0.42",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^4.0.1",
     "tailwind-merge": "^2.5.5",
     "zod": "^3.24.1"

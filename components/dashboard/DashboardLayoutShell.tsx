@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
+import KpugiBotChat from '../support/KpugiBotChat';
 
 interface DashboardLayoutShellProps {
   children: React.ReactNode;
@@ -17,6 +18,8 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
 
   const creatorNavItems = [
     {
@@ -190,42 +193,54 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
         </nav>
 
         {/* Bottom Section */}
-        <div className={`border-t border-kpugi-border shrink-0 ${isCollapsed ? 'p-3 flex flex-col items-center gap-3' : 'p-4 space-y-4'}`}>
-          {/* Expand toggle when collapsed */}
+        <div className={`border-t border-kpugi-border shrink-0 ${isCollapsed ? 'p-3 flex flex-col items-center gap-3' : 'p-4 space-y-3'}`}>
+          {/* Support Bot Trigger when Collapsed */}
           {isCollapsed && (
-            <button
-              onClick={() => setIsCollapsed(false)}
-              className="w-10 h-10 rounded-xl bg-kpugi-paper hover:bg-kpugi-border flex items-center justify-center text-kpugi-slate hover:text-kpugi-ink transition-colors"
-              title="Expand sidebar"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-            </button>
+            <>
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="w-10 h-10 rounded-xl bg-gradient-to-tr from-kpugi-blue to-indigo-600 hover:opacity-90 flex items-center justify-center text-white shadow-md shadow-kpugi-blue/20 transition-all group"
+                title="Open KpugiBot AI Support"
+              >
+                <span className="text-base group-hover:scale-110 transition-transform">🤖</span>
+              </button>
+              <button
+                onClick={() => setIsCollapsed(false)}
+                className="w-10 h-10 rounded-xl bg-kpugi-paper hover:bg-kpugi-border flex items-center justify-center text-kpugi-slate hover:text-kpugi-ink transition-colors"
+                title="Expand sidebar"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
           )}
 
-          {/* Sidebar Footer Help / Escrow Banner */}
-          {!isCollapsed ? (
-            role === 'creator' ? (
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-kpugi-border space-y-1.5">
-                <span className="font-sans font-bold text-xs text-kpugi-ink block flex items-center gap-1.5">
-                  💬 Creator Support
+          {/* Sidebar Footer KpugiBot AI Support Card (Expanded) */}
+          {!isCollapsed && (
+            <button
+              onClick={() => setIsChatOpen(true)}
+              className="w-full text-left p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-900/20 transition-all border border-slate-700/60 group relative overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-sans font-bold text-xs text-white flex items-center gap-1.5">
+                  <span className="text-sm">🤖</span> KpugiBot Support
                 </span>
-                <p className="font-sans text-kpugi-slate leading-snug text-[11px]">
-                  Need help with campaign audits or payouts? Contact support anytime.
-                </p>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
-            ) : (
-              <div className="p-3.5 rounded-xl bg-kpugi-blue/[0.06] border border-kpugi-blue/15">
-                <span className="font-sans font-bold text-xs text-kpugi-blue block mb-1">
-                  ✓ Verified Escrow
-                </span>
-                <p className="font-sans text-kpugi-slate leading-relaxed text-[11px]">
-                  100% campaign budgets ring-fenced upfront in escrow.
-                </p>
+              <p className="font-sans text-slate-300 leading-snug text-[11px]">
+                {role === 'creator'
+                  ? 'Ask about 1k view floors, submissions, or payouts.'
+                  : 'Ask about 100% escrow, CPMs, or global rules.'}
+              </p>
+              <div className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-kpugi-blue group-hover:translate-x-1 transition-transform">
+                <span>Start chat</span>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </div>
-            )
-          ) : null}
+            </button>
+          )}
         </div>
       </div>
     </aside>
@@ -292,18 +307,20 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
               })}
             </nav>
 
-            {/* Bottom Banner */}
-            <div className="border-t border-kpugi-border p-4">
-              <div className="p-3.5 rounded-xl bg-kpugi-blue/[0.06] border border-kpugi-blue/15">
-                <span className="font-sans font-bold text-xs text-kpugi-blue block mb-1">
-                  {role === 'creator' ? '✓ Top Creator Tier' : '✓ Verified Escrow'}
-                </span>
-                <p className="font-sans text-kpugi-slate leading-relaxed text-[11px]">
-                  {role === 'creator'
-                    ? 'Your trust score is 10/10. Instant payout release active.'
-                    : '100% campaign budgets ring-fenced upfront in escrow.'}
-                </p>
-              </div>
+            {/* Bottom Banner & KpugiBot Trigger */}
+            <div className="border-t border-kpugi-border p-4 space-y-2">
+              <button
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  setIsChatOpen(true);
+                }}
+                className="w-full text-left p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <span>🤖 KpugiBot Support</span>
+                </div>
+                <span className="text-[10px] text-kpugi-blue font-semibold">Chat now →</span>
+              </button>
             </div>
           </div>
         </aside>
@@ -325,6 +342,14 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
         </main>
         <DashboardFooter />
       </div>
+
+      {/* KpugiBot AI Support Chat Drawer */}
+      <KpugiBotChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        role={role}
+      />
     </div>
   );
 }
+
