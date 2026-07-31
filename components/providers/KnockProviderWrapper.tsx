@@ -27,7 +27,7 @@ export default function KnockProviderWrapper({ children }: KnockProviderWrapperP
       apiKey={KNOCK_PUBLIC_API_KEY}
       userId={user.id}
     >
-      <KnockFeedProvider feedId={KNOCK_FEED_CHANNEL_ID} autoMarkAsSeen={false}>
+      <KnockFeedProvider feedId={KNOCK_FEED_CHANNEL_ID}>
         {children}
       </KnockFeedProvider>
     </KnockProvider>

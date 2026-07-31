@@ -46,20 +46,24 @@ function KnockNotificationBell() {
     <div className="relative inline-block">
       <NotificationIconButton
         ref={buttonRef}
+        badgeCountType="unread"
         onClick={() => setIsVisible(!isVisible)}
       />
       <NotificationFeedPopover
         buttonRef={buttonRef}
         isVisible={isVisible}
         onClose={() => setIsVisible(false)}
-        onNotificationClick={(item) => {
+        onNotificationClick={() => {
+          // Do nothing on card body click — only action buttons are interactive
+        }}
+        onNotificationButtonClick={(item, action) => {
           setIsVisible(false);
           if (feedInstance && typeof (feedInstance as any).markAsRead === 'function') {
             (feedInstance as any).markAsRead(item);
           }
           const data = item.data as Record<string, any> | undefined;
-          const actionUrl = (item as any).action_url || data?.action_url;
-          if (actionUrl) {
+          const actionUrl = (item as any).action_url || data?.action_url || action?.action;
+          if (actionUrl && typeof actionUrl === 'string' && actionUrl.startsWith('/')) {
             router.push(actionUrl);
           } else if (data?.campaignId) {
             router.push(`/campaigns/${data.campaignId}`);
