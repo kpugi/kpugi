@@ -54,6 +54,9 @@ function KnockNotificationBell() {
         onClose={() => setIsVisible(false)}
         onNotificationClick={(item) => {
           setIsVisible(false);
+          if (feedInstance && typeof (feedInstance as any).markAsRead === 'function') {
+            (feedInstance as any).markAsRead(item);
+          }
           const data = item.data as Record<string, any> | undefined;
           const actionUrl = (item as any).action_url || data?.action_url;
           if (actionUrl) {
