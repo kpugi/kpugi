@@ -42,14 +42,11 @@ export async function triggerNotification({
       targetRecipients.push(profileId);
     }
 
-    console.log(`[Knock] Triggering workflow "${workflowKey}" for recipients:`, targetRecipients);
-
     const result = await knock.workflows.trigger(workflowKey, {
       recipients: targetRecipients,
       data,
     });
 
-    console.log(`[Knock] Workflow "${workflowKey}" trigger result:`, result);
     return { success: true, result };
   } catch (error) {
     console.error('[Knock] Error triggering workflow:', error);
