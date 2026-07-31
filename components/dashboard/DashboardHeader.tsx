@@ -16,9 +16,12 @@ interface DashboardHeaderProps {
   onMobileMenuToggle?: () => void;
 }
 
+import { useRouter } from 'next/navigation';
+
 function KnockNotificationBell() {
   const [isVisible, setIsVisible] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const router = useRouter();
 
   let feedInstance;
   try {
@@ -49,6 +52,18 @@ function KnockNotificationBell() {
         buttonRef={buttonRef}
         isVisible={isVisible}
         onClose={() => setIsVisible(false)}
+        onNotificationClick={(item) => {
+          setIsVisible(false);
+          const data = item.data as Record<string, any> | undefined;
+          const actionUrl = (item as any).action_url || data?.action_url;
+          if (actionUrl) {
+            router.push(actionUrl);
+          } else if (data?.campaignId) {
+            router.push(`/campaigns/${data.campaignId}`);
+          } else {
+            router.push('/dashboard');
+          }
+        }}
       />
     </div>
   );

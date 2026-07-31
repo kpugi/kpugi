@@ -11,8 +11,8 @@ interface KnockProviderWrapperProps {
   children: React.ReactNode;
 }
 
-const KNOCK_PUBLIC_API_KEY = process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY || '';
-const KNOCK_FEED_CHANNEL_ID = process.env.NEXT_PUBLIC_KNOCK_FEED_CHANNEL_ID || 'fc_in-app';
+const KNOCK_PUBLIC_API_KEY = process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY || 'pk_test_ebTRznjWO9-C1KZMr_dmMTq4EkAo0l9sqYH-EJV1Amo';
+const KNOCK_FEED_CHANNEL_ID = process.env.NEXT_PUBLIC_KNOCK_FEED_CHANNEL_ID || '8070d4af-f05a-4722-8472-98123478c5cf';
 
 export default function KnockProviderWrapper({ children }: KnockProviderWrapperProps) {
   const { user, isLoaded } = useUser();

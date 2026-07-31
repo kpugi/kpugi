@@ -135,6 +135,7 @@ export async function POST(req: Request) {
         clerkId: userProfile.profile.clerk_id,
         campaignTitle: campaign.title || 'Campaign',
         reservedAmount,
+        campaignId: campaign.id,
         profileId: userProfile.profile.id,
       }).catch(err => console.error('[Submissions API] Creator join notify error:', err));
 
@@ -153,6 +154,7 @@ export async function POST(req: Request) {
                 platform: socialAccount.platform || 'social',
                 campaignTitle: campaign.title || 'Campaign',
                 reservedAmount,
+                campaignId: campaign.id,
                 profileId: campaign.advertiser_id,
               }).catch(err => console.error('[Submissions API] Advertiser join notify error:', err));
             }
@@ -214,6 +216,7 @@ export async function POST(req: Request) {
         email: userProfile.profile.email,
         campaignTitle: campaignData?.title || 'Campaign',
         postUrl,
+        campaignId: submission.campaign_id,
         profileId: userProfile.profile.id,
       }).catch(err => console.error('[Submissions API] Creator submit link notify error:', err));
 
@@ -232,6 +235,7 @@ export async function POST(req: Request) {
                 platform: socialData?.platform || 'social',
                 postUrl,
                 campaignTitle: campaignData?.title || 'Campaign',
+                campaignId: submission.campaign_id,
                 profileId: campaignData.advertiser_id,
               }).catch(err => console.error('[Submissions API] Advertiser submit link notify error:', err));
             }

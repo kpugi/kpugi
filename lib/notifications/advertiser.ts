@@ -9,37 +9,39 @@ export async function notifyAdvertiserWelcome({
 }: {
   clerkId: string;
   email: string;
-  companyName?: string;
+  companyName: string;
   profileId?: string;
 }) {
-  const brandName = companyName || 'Partner Brand';
-
   await triggerNotification({
     workflowKey: 'advertiser-welcome',
     recipients: [clerkId],
-    data: { companyName: brandName },
+    data: { 
+      companyName,
+      action_url: '/dashboard',
+    },
     profileId,
   });
 
   await sendEmail({
     to: email,
-    subject: 'Welcome to Kpugi for Brands 🚀',
-    previewText: 'Launch viral campaigns and pay creators strictly on verified view milestones.',
+    subject: `Welcome to Kpugi Brand Console, ${companyName}! 🏢`,
+    previewText: 'Launch performance campaigns backed by 100% escrow protection.',
     html: `
-      <h2 style="margin-top:0;">Welcome to Kpugi, ${brandName}!</h2>
-      <p>Your brand console is set up. With Kpugi, your ad budget is locked in escrow and paid out to verified creators only when view thresholds are reached.</p>
+      <h2 style="margin-top:0;">Welcome to Kpugi Brand Console! 🏢</h2>
+      <p>Hello <strong>${companyName}</strong>,</p>
+      <p>Your brand partner account is ready. Fund your balance, launch performance video campaigns, and pay only for verified view milestones reached by creators.</p>
       
-      <div style="background:#f1f5f9; padding:16px; border-radius:8px; margin:20px 0;">
-        <h4 style="margin:0 0 8px 0; color:#0f172a;">How to launch your campaign:</h4>
-        <ol style="margin:0; padding-left:20px; color:#475569;">
-          <li>Fund your advertiser wallet via Paystack.</li>
-          <li>Set your CPM rate, minimum view floor, and upload ad copy/creatives.</li>
-          <li>Track live verified views in real time on your dashboard.</li>
-        </ol>
+      <div style="background:#f8fafc; border-left:4px solid #2563eb; padding:16px; margin:20px 0;">
+        <h4 style="margin:0 0 8px 0;">Why Brands Choose Kpugi:</h4>
+        <ul style="margin:0; padding-left:20px;">
+          <li><strong>Zero Waste:</strong> Funds stay in escrow until creators hit verified view floors.</li>
+          <li><strong>Automated Scraping:</strong> View count auditing runs automatically every 6 hours.</li>
+          <li><strong>Direct Creators:</strong> Top creators claim slots and deliver authentic short-form UGC videos.</li>
+        </ul>
       </div>
 
       <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/advertiser/campaigns/new" class="btn">Create Campaign</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/campaigns/new" class="btn">Create First Campaign</a>
       </p>
     `,
   });
@@ -49,15 +51,15 @@ export async function notifyAdvertiserWalletFunded({
   clerkId,
   email,
   amount,
-  reference,
   newBalance,
+  reference,
   profileId,
 }: {
   clerkId: string;
   email: string;
   amount: number;
-  reference: string;
   newBalance: number;
+  reference: string;
   profileId?: string;
 }) {
   await triggerNotification({
@@ -65,18 +67,20 @@ export async function notifyAdvertiserWalletFunded({
     recipients: [clerkId],
     data: {
       amount: `₦${amount.toLocaleString()}`,
-      reference,
       newBalance: `₦${newBalance.toLocaleString()}`,
+      reference,
+      action_url: '/wallet',
     },
     profileId,
   });
 
   await sendEmail({
     to: email,
-    subject: `💳 Payment Receipt: ₦${amount.toLocaleString()} deposited to Funding Balance`,
+    subject: `Deposit Confirmed: ₦${amount.toLocaleString()} added to your Kpugi balance`,
+    previewText: 'Your escrow wallet has been funded successfully.',
     html: `
-      <h2 style="margin-top:0;">Funding Deposit Successful 💳</h2>
-      <p>We have successfully processed your deposit via Paystack.</p>
+      <h2 style="margin-top:0; color:#16a34a;">Wallet Deposit Received 💳</h2>
+      <p>We received your deposit payment via Paystack.</p>
       
       <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px;">
         <tr style="border-bottom:1px solid #e2e8f0;">
@@ -102,6 +106,7 @@ export async function notifyAdvertiserCampaignLive({
   campaignTitle,
   totalBudget,
   cpmRate,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -109,8 +114,11 @@ export async function notifyAdvertiserCampaignLive({
   campaignTitle: string;
   totalBudget: number;
   cpmRate: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'campaign-funded',
     recipients: [clerkId],
@@ -118,6 +126,8 @@ export async function notifyAdvertiserCampaignLive({
       campaignTitle,
       totalBudget: `₦${totalBudget.toLocaleString()}`,
       cpmRate: `₦${cpmRate.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -141,7 +151,7 @@ export async function notifyAdvertiserCampaignLive({
       </table>
 
       <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/advertiser/campaigns" class="btn">View Campaign Dashboard</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}${actionUrl}" class="btn">View Campaign Dashboard</a>
       </p>
     `,
   });
@@ -153,6 +163,7 @@ export async function notifyAdvertiserCreatorJoined({
   platform,
   campaignTitle,
   reservedAmount,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -160,8 +171,11 @@ export async function notifyAdvertiserCreatorJoined({
   platform: string;
   campaignTitle: string;
   reservedAmount: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   // In-app notification only
   await triggerNotification({
     workflowKey: 'creator-joined',
@@ -171,6 +185,8 @@ export async function notifyAdvertiserCreatorJoined({
       platform,
       campaignTitle,
       reservedAmount: `₦${reservedAmount.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -183,6 +199,7 @@ export async function notifyAdvertiserCreatorSubmitted({
   platform,
   postUrl,
   campaignTitle,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -191,8 +208,11 @@ export async function notifyAdvertiserCreatorSubmitted({
   platform: string;
   postUrl: string;
   campaignTitle: string;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'creator-submitted-post',
     recipients: [clerkId],
@@ -201,6 +221,8 @@ export async function notifyAdvertiserCreatorSubmitted({
       platform,
       campaignTitle,
       postUrl,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -225,6 +247,7 @@ export async function notifyAdvertiserSubmissionVerified({
   campaignTitle,
   trackedViews,
   payoutAmount,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -232,8 +255,11 @@ export async function notifyAdvertiserSubmissionVerified({
   campaignTitle: string;
   trackedViews: number;
   payoutAmount: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'creator-verified',
     recipients: [clerkId],
@@ -242,6 +268,8 @@ export async function notifyAdvertiserSubmissionVerified({
       campaignTitle,
       trackedViews: trackedViews.toLocaleString(),
       payoutAmount: `₦${payoutAmount.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -253,6 +281,7 @@ export async function notifyAdvertiserSubmissionFailed({
   campaignTitle,
   failureReason,
   refundedAmount,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -260,8 +289,11 @@ export async function notifyAdvertiserSubmissionFailed({
   campaignTitle: string;
   failureReason: string;
   refundedAmount: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'creator-failed',
     recipients: [clerkId],
@@ -270,6 +302,8 @@ export async function notifyAdvertiserSubmissionFailed({
       campaignTitle,
       failureReason,
       refundedAmount: `₦${refundedAmount.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -279,17 +313,25 @@ export async function notifyAdvertiserBudgetDepleted({
   clerkId,
   email,
   campaignTitle,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
   email: string;
   campaignTitle: string;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'budget-depleted',
     recipients: [clerkId],
-    data: { campaignTitle },
+    data: { 
+      campaignTitle,
+      campaignId,
+      action_url: actionUrl,
+    },
     profileId,
   });
 
@@ -310,6 +352,7 @@ export async function notifyAdvertiserCampaignCompleted({
   campaignTitle,
   totalViews,
   totalSpent,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -317,8 +360,11 @@ export async function notifyAdvertiserCampaignCompleted({
   campaignTitle: string;
   totalViews: number;
   totalSpent: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'campaign-completed',
     recipients: [clerkId],
@@ -326,6 +372,8 @@ export async function notifyAdvertiserCampaignCompleted({
       campaignTitle,
       totalViews: totalViews.toLocaleString(),
       totalSpent: `₦${totalSpent.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });

@@ -11,7 +11,7 @@ export async function triggerNotification({
   profileId,
 }: {
   workflowKey: string;
-  recipients: string[];
+  recipients: (string | { id: string; name?: string; email?: string })[];
   data: Record<string, unknown>;
   profileId?: string;
 }) {
@@ -36,10 +36,20 @@ export async function triggerNotification({
   }
 
   try {
+    // If profileId is passed, ensure both profileId (UUID) and clerkId (string) are included as targets
+    const targetRecipients = [...recipients];
+    if (profileId && !targetRecipients.includes(profileId)) {
+      targetRecipients.push(profileId);
+    }
+
+    console.log(`[Knock] Triggering workflow "${workflowKey}" for recipients:`, targetRecipients);
+
     const result = await knock.workflows.trigger(workflowKey, {
-      recipients,
+      recipients: targetRecipients,
       data,
     });
+
+    console.log(`[Knock] Workflow "${workflowKey}" trigger result:`, result);
     return { success: true, result };
   } catch (error) {
     console.error('[Knock] Error triggering workflow:', error);

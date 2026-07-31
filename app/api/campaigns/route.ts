@@ -151,6 +151,7 @@ export async function POST(request: Request) {
               campaignTitle: newCampaign.title,
               totalBudget: Number(newCampaign.total_budget) || 0,
               cpmRate: Number(newCampaign.cpm_rate) || 2000,
+              campaignId: newCampaign.id,
               profileId: newCampaign.advertiser_id,
             }).catch(err => console.error('[Campaigns API] Campaign live notification error:', err));
           }

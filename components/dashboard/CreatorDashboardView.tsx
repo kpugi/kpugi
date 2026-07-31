@@ -160,7 +160,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                       <div className="mt-6 p-4 rounded-2xl bg-kpugi-paper border border-kpugi-border space-y-3">
                         <div className="flex items-center justify-between font-sans text-xs font-bold">
                           <span className="text-kpugi-ink flex items-center gap-1.5">
-                            <span>Verification View Threshold</span>
+                            <span> View Threshold</span>
                             {isGoalReached && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600" />

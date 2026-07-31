@@ -9,39 +9,39 @@ export async function notifyCreatorWelcome({
 }: {
   clerkId: string;
   email: string;
-  name?: string;
+  name: string;
   profileId?: string;
 }) {
-  const recipientName = name || 'Creator';
-  
-  // 1. In-App Knock Notification
   await triggerNotification({
     workflowKey: 'creator-welcome',
     recipients: [clerkId],
-    data: { name: recipientName },
+    data: { 
+      name,
+      action_url: '/dashboard',
+    },
     profileId,
   });
 
-  // 2. Resend Email
   await sendEmail({
     to: email,
-    subject: 'Welcome to Kpugi — Start Monetizing Your Content',
-    previewText: 'Start connecting your social channels and earning from video ad campaigns.',
+    subject: `Welcome to Kpugi, ${name}! 🚀`,
+    previewText: 'Start monetizing your short-form video views today.',
     html: `
-      <h2 style="margin-top:0;">Welcome to Kpugi, ${recipientName}! 🎉</h2>
-      <p>Your creator account is active. You're now ready to join brand campaigns, submit live post links, and earn based on verified views.</p>
+      <h2 style="margin-top:0;">Welcome to Kpugi, ${name}! 🎉</h2>
+      <p>Your creator account is active. Connect your TikTok or Instagram handle, browse available performance campaigns, and start earning per 1,000 verified views.</p>
       
-      <div style="background:#f1f5f9; padding:16px; border-radius:8px; margin:20px 0;">
-        <h4 style="margin:0 0 8px 0; color:#0f172a;">Next steps to start earning:</h4>
-        <ol style="margin:0; padding-left:20px; color:#475569;">
-          <li>Connect your Instagram, TikTok, or YouTube account in settings.</li>
-          <li>Browse active campaigns and claim your budget reservation slot.</li>
-          <li>Post the ad copy/creative and submit your live link within 72 hours.</li>
+      <div style="background:#f8fafc; border-left:4px solid #2563eb; padding:16px; margin:20px 0;">
+        <h4 style="margin:0 0 8px 0;">How it works:</h4>
+        <ol style="margin:0; padding-left:20px;">
+          <li>Claim a slot in an active brand campaign.</li>
+          <li>Post your video using the brand's brief and mandatory tags.</li>
+          <li>Submit your live video link within 72 hours.</li>
+          <li>Automated scrapers verify your view counts and release funds to your wallet.</li>
         </ol>
       </div>
 
       <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/creator/settings" class="btn">Connect Social Account</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/dashboard" class="btn">Explore Campaigns</a>
       </p>
     `,
   });
@@ -63,7 +63,11 @@ export async function notifyCreatorSocialConnected({
   await triggerNotification({
     workflowKey: 'social-connected',
     recipients: [clerkId],
-    data: { platform, handle },
+    data: { 
+      platform, 
+      handle,
+      action_url: '/accounts',
+    },
     profileId,
   });
 
@@ -82,13 +86,17 @@ export async function notifyCreatorJoinedCampaign({
   clerkId,
   campaignTitle,
   reservedAmount,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
   campaignTitle: string;
   reservedAmount: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  
   // In-app only for routine campaign joins to avoid inbox clutter
   await triggerNotification({
     workflowKey: 'campaign-joined',
@@ -96,6 +104,8 @@ export async function notifyCreatorJoinedCampaign({
     data: {
       campaignTitle,
       reservedAmount: `₦${reservedAmount.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -106,18 +116,27 @@ export async function notifyCreatorPostSubmitted({
   email,
   campaignTitle,
   postUrl,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
   email: string;
   campaignTitle: string;
   postUrl: string;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'post-submitted',
     recipients: [clerkId],
-    data: { campaignTitle, postUrl },
+    data: { 
+      campaignTitle, 
+      postUrl,
+      campaignId,
+      action_url: actionUrl,
+    },
     profileId,
   });
 
@@ -144,6 +163,7 @@ export async function notifyCreatorVerificationPassed({
   campaignTitle,
   trackedViews,
   payoutAmount,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -151,8 +171,11 @@ export async function notifyCreatorVerificationPassed({
   campaignTitle: string;
   trackedViews: number;
   payoutAmount: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'verification-passed',
     recipients: [clerkId],
@@ -160,6 +183,8 @@ export async function notifyCreatorVerificationPassed({
       campaignTitle,
       trackedViews: trackedViews.toLocaleString(),
       payoutAmount: `₦${payoutAmount.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -196,18 +221,27 @@ export async function notifyCreatorVerificationFailed({
   email,
   campaignTitle,
   failureReason,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
   email: string;
   campaignTitle: string;
   failureReason: string;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'verification-failed',
     recipients: [clerkId],
-    data: { campaignTitle, failureReason },
+    data: { 
+      campaignTitle, 
+      failureReason,
+      campaignId,
+      action_url: actionUrl,
+    },
     profileId,
   });
 
@@ -233,6 +267,7 @@ export async function notifyCreatorPayoutReleased({
   campaignTitle,
   amount,
   newBalance,
+  campaignId,
   profileId,
 }: {
   clerkId: string;
@@ -240,8 +275,11 @@ export async function notifyCreatorPayoutReleased({
   campaignTitle: string;
   amount: number;
   newBalance: number;
+  campaignId?: string;
   profileId?: string;
 }) {
+  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+
   await triggerNotification({
     workflowKey: 'payout-released',
     recipients: [clerkId],
@@ -249,6 +287,8 @@ export async function notifyCreatorPayoutReleased({
       campaignTitle,
       amount: `₦${amount.toLocaleString()}`,
       newBalance: `₦${newBalance.toLocaleString()}`,
+      campaignId,
+      action_url: actionUrl,
     },
     profileId,
   });
@@ -289,28 +329,29 @@ export async function notifyCreatorWithdrawalCompleted({
       bankName,
       accountMasked,
       reference,
+      action_url: '/earnings',
     },
     profileId,
   });
 
   await sendEmail({
     to: email,
-    subject: `🏦 Withdrawal Receipt: ₦${amount.toLocaleString()} transferred`,
+    subject: `Bank Transfer Dispatched: ₦${amount.toLocaleString()} to ${bankName}`,
     html: `
-      <h2 style="margin-top:0;">Bank Withdrawal Completed 🏦</h2>
-      <p>Your withdrawal request for <strong>₦${amount.toLocaleString()}</strong> has been processed and paid out via Paystack.</p>
+      <h2 style="margin-top:0; color:#2563eb;">Withdrawal Dispatched 🏧</h2>
+      <p>Your withdrawal request of <strong>₦${amount.toLocaleString()}</strong> has been processed and sent to your bank account via Paystack.</p>
       
       <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px;">
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Amount Paid:</td>
-          <td style="padding:10px 16px; font-weight:700; text-align:right;">₦${amount.toLocaleString()}</td>
+          <td style="padding:10px 16px; color:#64748b;">Destination Bank:</td>
+          <td style="padding:10px 16px; font-weight:700; text-align:right;">${bankName}</td>
         </tr>
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Destination:</td>
-          <td style="padding:10px 16px; font-weight:600; text-align:right;">${bankName} (${accountMasked})</td>
+          <td style="padding:10px 16px; color:#64748b;">Account Number:</td>
+          <td style="padding:10px 16px; font-family:monospace; text-align:right;">${accountMasked}</td>
         </tr>
         <tr>
-          <td style="padding:10px 16px; color:#64748b;">Paystack Ref:</td>
+          <td style="padding:10px 16px; color:#64748b;">Transfer Reference:</td>
           <td style="padding:10px 16px; font-family:monospace; text-align:right;">${reference}</td>
         </tr>
       </table>
