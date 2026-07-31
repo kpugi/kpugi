@@ -1,3 +1,4 @@
+@import "@knocklabs/react/dist/index.css";
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
@@ -35,4 +36,92 @@
 
 .animate-fade-in {
   animation: fadeIn 0.35s ease-out both;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   KNOCK NOTIFICATION POPOVER CUSTOM STYLING OVERRIDES
+   ───────────────────────────────────────────────────────────── */
+.rnf-popover-wrapper,
+[class*="rnf-popover"] {
+  z-index: 99999 !important;
+  background-color: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden !important;
+  color: #0f172a !important;
+  max-width: 380px !important;
+  width: 380px !important;
+}
+
+.rnf-notification-feed,
+.rnf-feed-provider {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.rnf-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 14px 18px !important;
+  background-color: #ffffff !important;
+}
+
+.rnf-header__title {
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  font-size: 15px !important;
+}
+
+.rnf-notification-cell {
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.rnf-notification-cell:hover {
+  background-color: #f8fafc !important;
+}
+
+.rnf-notification-cell--unread {
+  background-color: #eff6ff !important;
+}
+
+.rnf-notification-cell__title {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.rnf-notification-cell__content {
+  color: #334155 !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.rnf-notification-cell__timestamp {
+  color: #64748b !important;
+  font-size: 11px !important;
+  margin-top: 4px !important;
+}
+
+/* Knock Bell Icon Button */
+.rnf-notification-icon-button {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 8px !important;
+  border-radius: 12px !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.rnf-notification-icon-button:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.rnf-notification-icon-button__badge {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
 }

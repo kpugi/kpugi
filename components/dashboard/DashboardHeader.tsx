@@ -8,6 +8,8 @@ import {
   NotificationIconButton,
 } from '@knocklabs/react';
 
+import '@knocklabs/react/dist/index.css';
+
 interface DashboardHeaderProps {
   title?: string;
   role: 'creator' | 'advertiser';
@@ -38,7 +40,7 @@ function KnockNotificationBell() {
   }
 
   return (
-    <>
+    <div className="relative inline-block">
       <NotificationIconButton
         ref={buttonRef}
         onClick={() => setIsVisible(!isVisible)}
@@ -48,7 +50,7 @@ function KnockNotificationBell() {
         isVisible={isVisible}
         onClose={() => setIsVisible(false)}
       />
-    </>
+    </div>
   );
 }
 

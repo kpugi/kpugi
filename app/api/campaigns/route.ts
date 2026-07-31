@@ -135,6 +135,28 @@ export async function POST(request: Request) {
     // Invalidate Redis Public Campaigns Cache on new campaign creation
     await deleteRedisCache('campaigns:public');
 
+    // Trigger Campaign Live Notification if status is live
+    if (newCampaign && newCampaign.status === 'live' && newCampaign.advertiser_id) {
+      const { notifyAdvertiserCampaignLive } = await import('@/lib/notifications/advertiser');
+      supabase
+        .from('profiles')
+        .select('clerk_id, email')
+        .eq('id', newCampaign.advertiser_id)
+        .maybeSingle()
+        .then(({ data: advProfile }) => {
+          if (advProfile) {
+            notifyAdvertiserCampaignLive({
+              clerkId: advProfile.clerk_id,
+              email: advProfile.email,
+              campaignTitle: newCampaign.title,
+              totalBudget: Number(newCampaign.total_budget) || 0,
+              cpmRate: Number(newCampaign.cpm_rate) || 2000,
+              profileId: newCampaign.advertiser_id,
+            }).catch(err => console.error('[Campaigns API] Campaign live notification error:', err));
+          }
+        });
+    }
+
     return NextResponse.json({ campaign: newCampaign });
   } catch (err) {
     console.error('[Campaigns API POST Exception]:', err);

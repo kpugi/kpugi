@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       // 1. Fetch Campaign and lock/verify budget
       const { data: campaign, error: campErr } = await supabase
         .from('campaigns')
-        .select('id, cpm_rate, total_budget, reserved_budget, spent_budget, status')
+        .select('id, title, advertiser_id, cpm_rate, total_budget, reserved_budget, spent_budget, status')
         .eq('id', campaignId)
         .single();
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       // 2. Fetch Creator Social Account and verify connection
       const { data: socialAccount, error: accErr } = await supabase
         .from('social_accounts')
-        .select('id, follower_count')
+        .select('id, platform, follower_count')
         .eq('id', socialAccountId)
         .eq('creator_id', userProfile.profile.id)
         .single();
@@ -128,6 +128,37 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Failed to create join record' }, { status: 500 });
       }
 
+      // Trigger Join Notifications (Creator + Advertiser)
+      const { notifyCreatorJoinedCampaign, notifyAdvertiserCreatorJoined } = await import('@/lib/notifications');
+      
+      notifyCreatorJoinedCampaign({
+        clerkId: userProfile.profile.clerk_id,
+        campaignTitle: campaign.title || 'Campaign',
+        reservedAmount,
+        profileId: userProfile.profile.id,
+      }).catch(err => console.error('[Submissions API] Creator join notify error:', err));
+
+      // Fetch campaign advertiser for notification
+      if (campaign.advertiser_id) {
+        supabase
+          .from('profiles')
+          .select('clerk_id, email')
+          .eq('id', campaign.advertiser_id)
+          .maybeSingle()
+          .then(({ data: advProfile }) => {
+            if (advProfile) {
+              notifyAdvertiserCreatorJoined({
+                clerkId: advProfile.clerk_id,
+                creatorHandle: userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'Creator',
+                platform: socialAccount.platform || 'social',
+                campaignTitle: campaign.title || 'Campaign',
+                reservedAmount,
+                profileId: campaign.advertiser_id,
+              }).catch(err => console.error('[Submissions API] Advertiser join notify error:', err));
+            }
+          });
+      }
+
       return NextResponse.json({ success: true, action: 'join', submission });
     }
 
@@ -142,7 +173,7 @@ export async function POST(req: Request) {
       // Check if creator has a 'joined' status record for this campaign
       const { data: existingSub, error: findErr } = await supabase
         .from('submissions')
-        .select('id, status')
+        .select('id, status, campaign_id')
         .eq('campaign_id', campaignId)
         .eq('creator_id', userProfile.profile.id)
         .maybeSingle();
@@ -165,12 +196,46 @@ export async function POST(req: Request) {
           submitted_at: new Date().toISOString()
         })
         .eq('id', existingSub.id)
-        .select('*')
+        .select('*, campaigns(id, title, advertiser_id), social_accounts(platform)')
         .single();
 
       if (subErr) {
         console.error('[Submissions API] Error updating submission link:', subErr);
         return NextResponse.json({ error: 'Failed to submit post link.' }, { status: 500 });
+      }
+
+      // Trigger Submission Link Notifications (Creator + Advertiser)
+      const { notifyCreatorPostSubmitted, notifyAdvertiserCreatorSubmitted } = await import('@/lib/notifications');
+      const campaignData = (submission as any)?.campaigns;
+      const socialData = (submission as any)?.social_accounts;
+
+      notifyCreatorPostSubmitted({
+        clerkId: userProfile.profile.clerk_id,
+        email: userProfile.profile.email,
+        campaignTitle: campaignData?.title || 'Campaign',
+        postUrl,
+        profileId: userProfile.profile.id,
+      }).catch(err => console.error('[Submissions API] Creator submit link notify error:', err));
+
+      if (campaignData?.advertiser_id) {
+        supabase
+          .from('profiles')
+          .select('clerk_id, email')
+          .eq('id', campaignData.advertiser_id)
+          .maybeSingle()
+          .then(({ data: advProfile }) => {
+            if (advProfile) {
+              notifyAdvertiserCreatorSubmitted({
+                clerkId: advProfile.clerk_id,
+                email: advProfile.email,
+                creatorHandle: userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'Creator',
+                platform: socialData?.platform || 'social',
+                postUrl,
+                campaignTitle: campaignData?.title || 'Campaign',
+                profileId: campaignData.advertiser_id,
+              }).catch(err => console.error('[Submissions API] Advertiser submit link notify error:', err));
+            }
+          });
       }
 
       return NextResponse.json({ success: true, action: 'submit_link', submission });

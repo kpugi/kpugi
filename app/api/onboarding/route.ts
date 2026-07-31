@@ -87,6 +87,15 @@ export async function POST(req: Request) {
         // Safe fallback if wallets table is created in later phase
       }
 
+      // Trigger Advertiser Welcome Notifications
+      const { notifyAdvertiserWelcome } = await import('@/lib/notifications/advertiser');
+      notifyAdvertiserWelcome({
+        clerkId: userProfile.profile.clerk_id,
+        email: billing_email || userProfile.profile.email,
+        companyName: company_name,
+        profileId,
+      }).catch(err => console.error('[Onboarding] Error sending advertiser welcome notification:', err));
+
       return NextResponse.json({ success: true, redirect: '/dashboard' });
     }
 
@@ -131,6 +140,15 @@ export async function POST(req: Request) {
       } catch (e) {
         // Safe fallback if wallets table is created in later phase
       }
+
+      // Trigger Creator Welcome Notifications
+      const { notifyCreatorWelcome } = await import('@/lib/notifications/creator');
+      notifyCreatorWelcome({
+        clerkId: userProfile.profile.clerk_id,
+        email: userProfile.profile.email,
+        name: display_name || userProfile.profile.full_name,
+        profileId,
+      }).catch(err => console.error('[Onboarding] Error sending creator welcome notification:', err));
 
       return NextResponse.json({ success: true, redirect: '/dashboard' });
     }
