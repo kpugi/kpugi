@@ -88,9 +88,16 @@ export async function requestPayoutAction(formData: FormData) {
   // 1. Fetch creator profile & wallet
   const { data: creator } = await supabase
     .from('creator_profiles')
-    .select('id, bank_account_number, bank_code, bank_name')
+    .select('id, bank_account_number, bank_code, bank_name, kyc_status')
     .eq('id', userProfile.creatorProfile.id)
     .single();
+
+  if (creator?.kyc_status !== 'verified') {
+    return {
+      success: false,
+      error: 'Identity Verification Required: You must verify your government ID (NIN, Voter Card, or Passport) on the Settings page before initiating earnings withdrawals.',
+    };
+  }
 
   const { data: wallet } = await supabase
     .from('wallets')
@@ -257,16 +264,63 @@ export async function updateCreatorProfileAction(formData: FormData) {
   }
 
   const displayName = formData.get('displayName') as string;
+  const rawHandle = (formData.get('creatorHandle') as string) || '';
+  const creatorHandle = rawHandle.trim().replace(/^@/, '');
   const bio = formData.get('bio') as string;
   const niches = formData.getAll('niches') as string[];
+  const avatarUrl = (formData.get('avatarUrl') as string) || null;
+
+  const supabase = createAdminClient();
+
+  // 1. Update creator_profiles
+  const updatePayload: any = {
+    display_name: displayName,
+    bio,
+    niche_categories: niches,
+  };
+
+  if (creatorHandle) updatePayload.creator_handle = creatorHandle;
+  if (avatarUrl) updatePayload.avatar_url = avatarUrl;
+
+  const { error } = await supabase
+    .from('creator_profiles')
+    .update(updatePayload)
+    .eq('id', userProfile.creatorProfile.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // 2. Also sync avatar & name to base profiles table if changed
+  if (avatarUrl || displayName) {
+    await supabase
+      .from('profiles')
+      .update({
+        ...(displayName ? { full_name: displayName } : {}),
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+      })
+      .eq('id', userProfile.profile.id);
+  }
+
+  revalidatePath('/settings');
+  return { success: true };
+}
+
+export async function updateNotificationPreferencesAction(prefs: {
+  notify_email: boolean;
+  notify_payouts: boolean;
+  notify_campaigns: boolean;
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized' };
+  }
 
   const supabase = createAdminClient();
   const { error } = await supabase
     .from('creator_profiles')
     .update({
-      display_name: displayName,
-      bio,
-      niche_categories: niches,
+      notification_preferences: prefs,
     })
     .eq('id', userProfile.creatorProfile.id);
 

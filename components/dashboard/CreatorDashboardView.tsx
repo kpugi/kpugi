@@ -57,6 +57,36 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
         <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-kpugi-blue/30 rounded-full blur-3xl pointer-events-none" />
       </div>
 
+      {/* KYC Verification Reminder Banner (Shown if kycStatus !== 'verified') */}
+      {data.kycStatus !== 'verified' && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50 border border-amber-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-md">
+              🛡️
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
+                <span>Identity Verification Required</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900">
+                  {data.kycStatus === 'pending' ? 'Verification Pending' : 'Action Needed'}
+                </span>
+              </h3>
+              <p className="font-sans text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                To protect campaign payouts and comply with platform regulations, creators must verify their official government ID (NIN, Voter Card, or Passport) before requesting withdrawals.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/settings"
+            className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all flex items-center gap-1.5 self-start sm:self-center"
+          >
+            <span>Complete Verification</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
       {/* Creator Level & Star Rank Widget */}
       <CreatorLevelBadge totalEarned={data.totalEarned || 0} variant="widget" />
 

@@ -35,6 +35,7 @@ export interface CreatorOverviewData {
   featuredSubmission?: CreatorSubmission;
   recentNotifications: any[];
   recentActivity: any[];
+  kycStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
 }
 
 export interface CreatorCampaignItem {
@@ -72,6 +73,7 @@ export interface CreatorEarningsData {
   bankDetails: BankAccountItem | null;
   bankAccounts: BankAccountItem[];
   transactions: any[];
+  kycStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
 }
 
 export async function getCreatorOverviewData(profileId: string): Promise<CreatorOverviewData> {
@@ -79,7 +81,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
 
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
-    .select('id, total_earned')
+    .select('id, total_earned, kyc_status')
     .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
     .maybeSingle();
 
@@ -173,6 +175,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     featuredSubmission: featured,
     recentNotifications: notifications || [],
     recentActivity: submissions.slice(0, 5),
+    kycStatus: (creatorProfile?.kyc_status as any) || 'unverified',
   };
 }
 
@@ -287,7 +290,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   // 1. Fetch creator profile
   const { data: creator } = await supabase
     .from('creator_profiles')
-    .select('id, profile_id, total_earned, paystack_recipient_code')
+    .select('id, profile_id, total_earned, paystack_recipient_code, kyc_status')
     .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
     .maybeSingle();
 
@@ -379,6 +382,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     bankDetails: primaryBank,
     bankAccounts,
     transactions: transactions || [],
+    kycStatus: (creator?.kyc_status as any) || 'unverified',
   };
 }
 
@@ -569,18 +573,132 @@ export async function saveSocialAccount({
   return { success: true };
 }
 
-export async function getCreatorProfileSettings(profileId: string) {
+export interface CreatorSettingsPayload {
+  profile: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    phone: string | null;
+    clerk_id: string;
+  };
+  creator: {
+    id: string;
+    display_name: string | null;
+    creator_handle: string | null;
+    bio: string | null;
+    niche_categories: string[];
+    total_earned: number;
+    notification_preferences: {
+      notify_email: boolean;
+      notify_payouts: boolean;
+      notify_campaigns: boolean;
+    };
+    kyc_status: 'unverified' | 'pending' | 'verified' | 'rejected';
+    kyc_didit_session_id: string | null;
+    kyc_verified_at: string | null;
+  };
+  socialAccounts: Record<string, SocialAccountDetails>;
+  primaryBank: BankAccountItem | null;
+  completeness: {
+    score: number;
+    steps: {
+      id: string;
+      label: string;
+      isComplete: boolean;
+      shortcutUrl?: string;
+    }[];
+  };
+}
+
+export async function getCreatorProfileSettings(profileId: string): Promise<CreatorSettingsPayload> {
   const supabase = createAdminClient();
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select(`
-      *,
-      creator_profiles!creator_profiles_profile_id_fkey (*)
-    `)
+
+  // 1. Fetch base profile from profiles table
+  let { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
     .eq('id', profileId)
     .maybeSingle();
 
-  return profile;
+  if (!profile) {
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', profileId)
+      .maybeSingle();
+    profile = userProfile;
+  }
+
+  // 2. Fetch creator profile details
+  const { data: creator } = await supabase
+    .from('creator_profiles')
+    .select('*')
+    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .maybeSingle();
+
+  // 3. Fetch connected social accounts
+  const socialAccounts = await getCreatorSocialAccounts(profileId);
+
+  // 4. Fetch bank details
+  const earningsData = await getCreatorEarningsData(profileId);
+  const primaryBank = earningsData.bankDetails;
+
+  // Notification preferences default
+  const rawNotifs = creator?.notification_preferences || {};
+  const notificationPreferences = {
+    notify_email: typeof rawNotifs.notify_email === 'boolean' ? rawNotifs.notify_email : true,
+    notify_payouts: typeof rawNotifs.notify_payouts === 'boolean' ? rawNotifs.notify_payouts : true,
+    notify_campaigns: typeof rawNotifs.notify_campaigns === 'boolean' ? rawNotifs.notify_campaigns : true,
+  };
+
+  const hasName = Boolean((creator?.display_name || profile?.full_name || '').trim());
+  const hasBio = Boolean((creator?.bio || '').trim());
+  const hasNiches = Boolean(creator?.niche_categories && creator.niche_categories.length > 0);
+  const hasConnectedSocial = Object.keys(socialAccounts).length > 0;
+  const hasBank = Boolean(primaryBank);
+  const isKycVerified = creator?.kyc_status === 'verified';
+
+  const steps = [
+    { id: 'name', label: 'Display Name & Handle', isComplete: hasName },
+    { id: 'bio', label: 'Creator Statement & Bio', isComplete: hasBio },
+    { id: 'niches', label: 'Content Niches Selected', isComplete: hasNiches },
+    { id: 'social', label: 'Connect Social Media Account', isComplete: hasConnectedSocial, shortcutUrl: '/accounts' },
+    { id: 'bank', label: 'Add Nigerian Bank Payout Account', isComplete: hasBank, shortcutUrl: '/earnings' },
+    { id: 'kyc', label: 'Identity Verification (Didit KYC)', isComplete: isKycVerified },
+  ];
+
+  const completedCount = steps.filter((s) => s.isComplete).length;
+  const score = Math.round((completedCount / steps.length) * 100);
+
+  return {
+    profile: {
+      id: profileId,
+      email: profile?.email || '',
+      full_name: profile?.full_name || null,
+      avatar_url: creator?.avatar_url || profile?.avatar_url || null,
+      phone: profile?.phone || null,
+      clerk_id: profile?.clerk_id || '',
+    },
+    creator: {
+      id: creator?.id || profileId,
+      display_name: creator?.display_name || profile?.full_name || null,
+      creator_handle: creator?.creator_handle || null,
+      bio: creator?.bio || null,
+      niche_categories: creator?.niche_categories || [],
+      total_earned: Number(creator?.total_earned || 0),
+      notification_preferences: notificationPreferences,
+      kyc_status: (creator?.kyc_status as any) || 'unverified',
+      kyc_didit_session_id: creator?.kyc_didit_session_id || null,
+      kyc_verified_at: creator?.kyc_verified_at || null,
+    },
+    socialAccounts,
+    primaryBank,
+    completeness: {
+      score,
+      steps,
+    },
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────

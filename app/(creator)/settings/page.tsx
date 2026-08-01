@@ -13,5 +13,5 @@ export default async function SettingsPage() {
 
   const profile = await getCreatorProfileSettings(userProfile.profile.id);
 
-  return <CreatorSettingsView profile={profile} />;
+  return <CreatorSettingsView payload={profile} />;
 }

@@ -54,6 +54,13 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+
+    if (data.kycStatus !== 'verified') {
+      setErrorMsg('Identity Verification Required: Please verify your government ID on the Settings page before requesting withdrawals.');
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
     const amountVal = Number(formData.get('amount'));
     if (amountVal < 10000) {
@@ -443,6 +450,23 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               </p>
             </div>
 
+            {data.kycStatus !== 'verified' && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+                <div className="font-bold flex items-center gap-2 text-xs">
+                  <span>🛡️ Identity Verification Required</span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  To comply with platform regulations and release earnings withdrawals, you must verify your official government ID (NIN, Voter Card, or Passport).
+                </p>
+                <a
+                  href="/settings"
+                  className="inline-block px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors"
+                >
+                  Verify Identity in Settings →
+                </a>
+              </div>
+            )}
+
             {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{errorMsg}</p>}
 
             <form onSubmit={handlePayoutSubmit} className="space-y-4 font-sans text-xs">
@@ -485,8 +509,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20"
+                  disabled={loading || data.kycStatus !== 'verified'}
+                  className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20 disabled:opacity-50 disabled:bg-slate-400"
                 >
                   {loading ? 'Processing...' : 'Confirm Payout'}
                 </button>

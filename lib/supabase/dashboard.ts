@@ -43,17 +43,18 @@ export interface CreatorDashboardData {
     payload: Record<string, unknown> | null;
     sent_at: string;
   }[];
+  kycStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
 }
 
 export async function getCreatorDashboardData(profileId: string): Promise<CreatorDashboardData> {
   const supabase = createAdminClient();
 
-  // Fetch creator profile for total_earned
+  // Fetch creator profile for total_earned & kyc_status
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
-    .select('total_earned')
-    .eq('profile_id', profileId)
-    .single();
+    .select('total_earned, kyc_status')
+    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .maybeSingle();
 
   // Fetch wallet balance
   const { data: wallet } = await supabase
@@ -61,7 +62,7 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
     .select('balance')
     .eq('profile_id', profileId)
     .eq('wallet_type', 'creator_earnings')
-    .single();
+    .maybeSingle();
 
   // Fetch submissions with joined campaign data
   const { data: submissions } = await supabase
@@ -88,7 +89,7 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
         updated_at
       )
     `)
-    .eq('creator_id', profileId)
+    .or(`creator_id.eq.${profileId}`)
     .order('submitted_at', { ascending: false })
     .limit(20);
 
@@ -110,6 +111,7 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
     completedCampaigns: subs.filter((s) => s.status === 'paid' || s.status === 'verified_pass').length,
     submissions: subs,
     recentNotifications: notifications || [],
+    kycStatus: (creatorProfile?.kyc_status as any) || 'unverified',
   };
 }
 
