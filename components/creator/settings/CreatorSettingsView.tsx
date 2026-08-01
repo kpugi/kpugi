@@ -3,8 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { CreatorSettingsPayload } from '@/lib/supabase/creator';
 import { updateCreatorProfileAction, updateNotificationPreferencesAction } from '@/app/actions/creator';
+import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
+import { getCreatorLevel } from '@/lib/utils/levels';
+import {
+  User,
+  FileText,
+  Tag,
+  Link2,
+  CreditCard,
+  ShieldCheck,
+  Lock,
+  Award,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  ChevronRight,
+  Send,
+} from 'lucide-react';
 
 interface CreatorSettingsViewProps {
   payload: CreatorSettingsPayload;
@@ -32,6 +50,7 @@ const ALL_NICHES = [
 ];
 
 export default function CreatorSettingsView({ payload }: CreatorSettingsViewProps) {
+  const router = useRouter();
   const { profile, creator, socialAccounts, primaryBank, completeness } = payload;
 
   const [displayName, setDisplayName] = useState(creator.display_name || profile.full_name || '');
@@ -53,6 +72,9 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
   // Live Identity Verification (KYC) State
   const [kycStatus, setKycStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>(creator.kyc_status);
   const [startingKyc, setStartingKyc] = useState(false);
+
+  // Calculate Creator Rank Level Info
+  const levelData = getCreatorLevel(creator.total_earned || 0);
 
   const connectedAccountsList = Object.entries(socialAccounts).map(([platform, data]) => ({
     platform,
@@ -110,7 +132,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
     const res = await updateNotificationPreferencesAction(updated);
     setSavingNotifs(false);
     if (res.success) {
-      setNotifMsg({ type: 'success', text: 'Notification preferences updated live in database!' });
+      setNotifMsg({ type: 'success', text: 'Notification preferences updated successfully!' });
       setTimeout(() => setNotifMsg(null), 3000);
     } else {
       setNotifs(notifs);
@@ -143,6 +165,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
     if (res.success) {
       setProfileMsg({ type: 'success', text: 'Creator control panel updated successfully!' });
+      router.refresh();
       setTimeout(() => setProfileMsg(null), 4000);
     } else {
       setProfileMsg({ type: 'error', text: res.error || 'Failed to save settings.' });
@@ -169,7 +192,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12 font-sans text-kpugi-ink">
-      {/* Header Banner & Profile Summary */}
+      {/* Top Hero Banner & Profile Overview */}
       <div className="relative rounded-3xl bg-slate-900 text-white p-6 sm:p-8 overflow-hidden shadow-xl border border-slate-800">
         <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-kpugi-blue/20 blur-3xl pointer-events-none" />
         <div className="absolute right-1/3 -bottom-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
@@ -187,88 +210,114 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             </div>
 
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-white">
                   {displayName || 'Creator Control Panel'}
                 </h1>
-                {kycStatus === 'verified' ? (
+
+                {/* User Creator Rank Badge (Replaced generic "Pro Creator Hub") */}
+                <div className={`px-3 py-1 rounded-full text-xs font-mono font-extrabold border flex items-center gap-1.5 shadow-sm ${levelData.levelInfo.badgeBg} ${levelData.levelInfo.badgeText} ${levelData.levelInfo.badgeBorder}`}>
+                  <span>{levelData.levelInfo.icon}</span>
+                  <span>Rank Lvl {levelData.levelInfo.level}: {levelData.levelInfo.title}</span>
+                </div>
+
+                {kycStatus === 'verified' && (
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                    <span>✓</span> Verified Creator
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Pro Creator Hub
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Identity Verified
                   </span>
                 )}
               </div>
 
-              <p className="text-slate-400 text-xs mt-1">
+              <p className="text-slate-400 text-xs mt-1.5">
                 {creatorHandle ? `@${creatorHandle}` : profile.email} • Control center for public profile, payouts, accounts & identity verification
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/campaigns"
-              className="px-4 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/30 transition-all flex items-center gap-1.5"
-            >
-              <span>Explore Campaigns</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
-          </div>
         </div>
 
-        {/* Profile Completeness Score Bar */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          <div className="md:col-span-4 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">Control Panel Setup</span>
-              <span className="font-bold text-kpugi-blue">{completeness.score}% Complete</span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden p-0.5 border border-slate-700">
-              <div
-                className="bg-gradient-to-r from-kpugi-blue via-indigo-400 to-emerald-400 h-full rounded-full transition-all duration-500"
-                style={{ width: `${completeness.score}%` }}
-              />
-            </div>
+        {/* Profile Completeness Meter & Small Card Checklist Icons Grid */}
+        <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-semibold uppercase tracking-wider text-[11px] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-kpugi-blue" />
+              <span>Control Panel Setup Progress</span>
+            </span>
+            <span className="font-bold text-kpugi-blue font-mono text-sm">{completeness.score}% Complete</span>
           </div>
 
-          <div className="md:col-span-8 flex flex-wrap gap-2 text-[11px]">
-            {completeness.steps.map((step) => (
-              <div
-                key={step.id}
-                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 font-medium ${
-                  step.isComplete
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                    : 'bg-slate-800/60 border-slate-700 text-slate-400'
-                }`}
-              >
-                <span>{step.isComplete ? '✓' : '○'}</span>
-                <span>{step.label}</span>
-                {!step.isComplete && step.shortcutUrl && (
-                  <Link href={step.shortcutUrl} className="underline text-kpugi-blue hover:text-white font-bold ml-1">
-                    Fix →
-                  </Link>
-                )}
-              </div>
-            ))}
+          <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700">
+            <div
+              className="bg-gradient-to-r from-kpugi-blue via-indigo-400 to-emerald-400 h-full rounded-full transition-all duration-500"
+              style={{ width: `${completeness.score}%` }}
+            />
+          </div>
+
+          {/* Small Cards Grid with Icons */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+            {completeness.steps.map((step) => {
+              let IconComponent = User;
+              if (step.id === 'handle' || step.id === 'profile') IconComponent = User;
+              else if (step.id === 'bio') IconComponent = FileText;
+              else if (step.id === 'niches') IconComponent = Tag;
+              else if (step.id === 'social') IconComponent = Link2;
+              else if (step.id === 'bank') IconComponent = CreditCard;
+              else if (step.id === 'kyc') IconComponent = ShieldCheck;
+
+              const cleanLabel = step.label
+                .replace(/\s*\(Didit KYC\)/i, '')
+                .replace(/\s*\(Didit\)/i, '')
+                .replace(/Nigerian Bank Payout Account/i, 'Payout Bank Account');
+
+              return (
+                <div
+                  key={step.id}
+                  className={`p-3 rounded-2xl border transition-all flex flex-col justify-between space-y-2 ${
+                    step.isComplete
+                      ? 'bg-slate-900/90 border-emerald-500/30 text-white shadow-xs'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
+                      step.isComplete ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}>
+                      <IconComponent className="w-4 h-4" />
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
+                      step.isComplete ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {step.isComplete ? '✓ Done' : '○ Pending'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-bold text-white leading-tight truncate">
+                      {cleanLabel}
+                    </div>
+                    {!step.isComplete && step.shortcutUrl && (
+                      <Link href={step.shortcutUrl} className="text-[10px] font-bold text-kpugi-blue hover:text-white transition-colors inline-block mt-1">
+                        Fix →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Quick Control Shortcuts Hub (Accounts, Payouts, Clean Identity Verification Card) */}
+      {/* Creator Level & Rank Progress Widget Card */}
+      <CreatorLevelBadge totalEarned={creator.total_earned || 0} variant="widget" />
+
+      {/* Quick Control Shortcuts Hub (Social Accounts, Payout Bank, Clean Identity Card) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Social Accounts Status Card */}
         <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
+                <Link2 className="w-4 h-4" />
                 <span>Social Accounts</span>
               </div>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
@@ -304,23 +353,21 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
           </Link>
         </div>
 
-        {/* Bank Payouts Status Card */}
+        {/* Bank Payouts Status Card (Cleaned of Paystack branding) */}
         <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-wider">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                <CreditCard className="w-4 h-4" />
                 <span>Payout Bank Account</span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${primaryBank ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
-                {primaryBank ? 'Paystack Ready' : 'Unset'}
+                {primaryBank ? 'Ready' : 'Unset'}
               </span>
             </div>
 
             <p className="text-slate-600 text-xs mt-2 leading-relaxed">
-              Nigerian NUBAN account where verified campaign earnings are transferred automatically.
+              Verified NUBAN bank account where campaign view earnings are transferred directly.
             </p>
 
             <div className="mt-3">
@@ -352,9 +399,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+                <ShieldCheck className="w-4 h-4" />
                 <span>Identity Verification</span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -375,7 +420,8 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             <div className="mt-4">
               {kycStatus === 'verified' ? (
                 <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                  <span>✓ Official Government ID Verified</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Official Government ID Verified</span>
                 </div>
               ) : kycStatus === 'pending' ? (
                 <div className="p-3 rounded-2xl bg-amber-50 border border-amber-100 text-amber-900 text-xs space-y-1">
@@ -476,7 +522,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               </div>
             </div>
 
-            {/* Display Name & Handle */}
+            {/* Display Name & Handle (Immutable Username enforcement) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -493,19 +539,35 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Creator Handle
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Creator Handle</span>
+                  {creator.creator_handle && (
+                    <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-slate-400" /> Locked
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-2.5 text-xs font-bold text-slate-400">@</span>
                   <input
                     type="text"
                     value={creatorHandle}
+                    disabled={!!creator.creator_handle}
                     onChange={(e) => setCreatorHandle(e.target.value.replace(/^@/, ''))}
                     placeholder="tobi_creates"
-                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900"
+                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   />
                 </div>
+                {creator.creator_handle ? (
+                  <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 font-medium">
+                    <Lock className="w-3 h-3 text-amber-600 shrink-0" />
+                    Usernames are permanent and cannot be changed once created.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                    Choose your permanent creator username. This cannot be changed later.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -560,9 +622,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                 ) : (
                   <>
                     <span>Save Control Panel Settings</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Send className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -577,7 +637,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             <div>
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-lg font-bold text-slate-900">Notification Preferences</h2>
-                {savingNotifs && <span className="text-[10px] font-bold text-kpugi-blue animate-pulse">Syncing DB...</span>}
+                {savingNotifs && <span className="text-[10px] font-bold text-kpugi-blue animate-pulse">Saving...</span>}
               </div>
               <p className="text-slate-500 text-xs mt-0.5">Control live email and payout alert triggers stored in your database record.</p>
             </div>
@@ -614,7 +674,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               <div className="pt-3 flex items-center justify-between gap-4">
                 <div>
                   <div className="font-bold text-xs text-slate-900">Payout & 1k View Floor Alerts</div>
-                  <div className="text-[11px] text-slate-500">Get notified immediately when posts reach 1,000 views or Paystack transfers complete.</div>
+                  <div className="text-[11px] text-slate-500">Get notified immediately when posts reach 1,000 views or bank payouts complete.</div>
                 </div>
                 <button
                   type="button"

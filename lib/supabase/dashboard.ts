@@ -53,7 +53,7 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
     .select('total_earned, kyc_status')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   // Fetch wallet balance

@@ -82,7 +82,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
     .select('id, total_earned, kyc_status')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   const { data: wallet } = await supabase
@@ -290,8 +290,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   // 1. Fetch creator profile
   const { data: creator } = await supabase
     .from('creator_profiles')
-    .select('id, profile_id, total_earned, paystack_recipient_code, kyc_status')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .select('profile_id, total_earned, paystack_recipient_code, kyc_status')
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   // 2. Fetch wallet balance
@@ -323,7 +323,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   const lastWithdrawalDate = payoutRequests && payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
 
   // 5. Calculate Pending Escrow from real active submissions
-  const creatorProfileId = creator?.id;
+  const creatorProfileId = creator?.profile_id;
   const creatorFilter = creatorProfileId
     ? `creator_id.eq.${profileId},creator_id.eq.${creatorProfileId}`
     : `creator_id.eq.${profileId}`;
@@ -634,7 +634,7 @@ export async function getCreatorProfileSettings(profileId: string): Promise<Crea
   const { data: creator } = await supabase
     .from('creator_profiles')
     .select('*')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   // 3. Fetch connected social accounts

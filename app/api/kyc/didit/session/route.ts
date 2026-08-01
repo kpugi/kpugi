@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const creatorId = userProfile.creatorProfile.id;
+    const creatorId = userProfile.profile.id;
     const email = userProfile.profile.email;
 
     // Create session on Didit API
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         kyc_status: 'pending',
         kyc_didit_session_id: session.sessionId,
       })
-      .eq('id', creatorId);
+      .eq('profile_id', creatorId);
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { saveSocialAccount } from '@/lib/supabase/creator';
@@ -88,9 +89,9 @@ export async function requestPayoutAction(formData: FormData) {
   // 1. Fetch creator profile & wallet
   const { data: creator } = await supabase
     .from('creator_profiles')
-    .select('id, bank_account_number, bank_code, bank_name, kyc_status')
-    .eq('id', userProfile.creatorProfile.id)
-    .single();
+    .select('profile_id, bank_account_number, bank_code, bank_name, kyc_status')
+    .eq('profile_id', userProfile.profile.id)
+    .maybeSingle();
 
   if (creator?.kyc_status !== 'verified') {
     return {
@@ -125,7 +126,7 @@ export async function requestPayoutAction(formData: FormData) {
   const refCode = `KP-WTR-${Date.now().toString().slice(-6)}`;
   await supabase.from('wallet_transactions').insert({
     profile_id: userProfile.profile.id,
-    creator_id: creator?.id || userProfile.creatorProfile.id,
+    creator_id: creator?.profile_id || userProfile.profile.id,
     wallet_type: 'creator_earnings',
     transaction_type: 'withdrawal',
     amount: amount,
@@ -272,20 +273,29 @@ export async function updateCreatorProfileAction(formData: FormData) {
 
   const supabase = createAdminClient();
 
-  // 1. Update creator_profiles
+  // 1. Fetch current creator profile to check if handle is already set
+  const { data: currentCreator } = await supabase
+    .from('creator_profiles')
+    .select('creator_handle')
+    .eq('profile_id', userProfile.profile.id)
+    .maybeSingle();
+
   const updatePayload: any = {
     display_name: displayName,
     bio,
     niche_categories: niches,
   };
 
-  if (creatorHandle) updatePayload.creator_handle = creatorHandle;
+  // Creator handles are permanent usernames once set
+  if (!currentCreator?.creator_handle && creatorHandle) {
+    updatePayload.creator_handle = creatorHandle;
+  }
   if (avatarUrl) updatePayload.avatar_url = avatarUrl;
 
   const { error } = await supabase
     .from('creator_profiles')
     .update(updatePayload)
-    .eq('id', userProfile.creatorProfile.id);
+    .eq('profile_id', userProfile.profile.id);
 
   if (error) {
     return { success: false, error: error.message };
@@ -300,6 +310,23 @@ export async function updateCreatorProfileAction(formData: FormData) {
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       })
       .eq('id', userProfile.profile.id);
+
+    // 3. Sync profile changes to Clerk account
+    if (userProfile.profile.clerk_id) {
+      try {
+        const client = await clerkClient();
+        const nameParts = displayName ? displayName.trim().split(' ') : [];
+        const firstName = nameParts[0] || displayName || undefined;
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+
+        await client.users.updateUser(userProfile.profile.clerk_id, {
+          ...(firstName ? { firstName } : {}),
+          ...(lastName !== undefined ? { lastName } : {}),
+        });
+      } catch (clerkErr) {
+        console.warn('[Clerk User Sync Warning]:', clerkErr);
+      }
+    }
   }
 
   revalidatePath('/settings');
@@ -322,7 +349,7 @@ export async function updateNotificationPreferencesAction(prefs: {
     .update({
       notification_preferences: prefs,
     })
-    .eq('id', userProfile.creatorProfile.id);
+    .eq('profile_id', userProfile.profile.id);
 
   if (error) {
     return { success: false, error: error.message };

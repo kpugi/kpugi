@@ -11,13 +11,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const creatorId = userProfile.creatorProfile.id;
+    const creatorId = userProfile.profile.id;
     const supabase = createAdminClient();
 
     const { data: creator } = await supabase
       .from('creator_profiles')
       .select('kyc_status, kyc_didit_session_id, kyc_verified_at')
-      .or(`id.eq.${creatorId},profile_id.eq.${creatorId}`)
+      .eq('profile_id', creatorId)
       .maybeSingle();
 
     let currentStatus = (creator?.kyc_status as any) || 'unverified';
@@ -33,13 +33,13 @@ export async function GET() {
             kyc_status: 'verified',
             kyc_verified_at: new Date().toISOString(),
           })
-          .or(`id.eq.${creatorId},profile_id.eq.${creatorId}`);
+          .eq('profile_id', creatorId);
       } else if (decisionData.status === 'rejected') {
         currentStatus = 'rejected';
         await supabase
           .from('creator_profiles')
           .update({ kyc_status: 'rejected' })
-          .or(`id.eq.${creatorId},profile_id.eq.${creatorId}`);
+          .eq('profile_id', creatorId);
       }
     }
 
