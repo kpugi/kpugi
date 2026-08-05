@@ -530,7 +530,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink">Link Bank Account</h3>
               <p className="font-sans text-xs text-kpugi-slate mt-1">
-                Enter your 10-digit NUBAN account number. We will verify your official account name instantly.
+                Enter your Bank Account number. We will verify your account name instantly.
               </p>
             </div>
 
