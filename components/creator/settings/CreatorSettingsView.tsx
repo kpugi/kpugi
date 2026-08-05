@@ -76,11 +76,54 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
   // Calculate Creator Rank Level Info
   const levelData = getCreatorLevel(creator.total_earned || 0);
 
-  const connectedAccountsList = Object.entries(socialAccounts).map(([platform, data]) => ({
-    platform,
-    handle: data.handle,
-    followers: data.followerCount,
-  }));
+  const connectedAccountsList = React.useMemo(() => {
+    const list: { id?: string; platform: string; handle: string; followerCount?: number | null }[] = [];
+    const seenHandles = new Set<string>();
+
+    Object.entries(socialAccounts || {}).forEach(([platformKey, val]) => {
+      const pKey = platformKey === 'twitter' ? 'x' : platformKey;
+      if (Array.isArray(val)) {
+        val.forEach((acc) => {
+          if (acc?.handle) {
+            const uniqueKey = `${acc.platform || pKey}:${acc.handle.toLowerCase()}`;
+            if (!seenHandles.has(uniqueKey)) {
+              seenHandles.add(uniqueKey);
+              list.push({
+                id: acc.id,
+                platform: acc.platform || pKey,
+                handle: acc.handle,
+                followerCount: acc.followerCount,
+              });
+            }
+          }
+        });
+      } else if (val && typeof val === 'object' && 'handle' in val && (val as any).handle) {
+        const h = (val as any).handle;
+        const uniqueKey = `${pKey}:${h.toLowerCase()}`;
+        if (!seenHandles.has(uniqueKey)) {
+          seenHandles.add(uniqueKey);
+          list.push({
+            platform: pKey,
+            handle: h,
+            followerCount: (val as any).followerCount,
+          });
+        }
+      } else if (typeof val === 'string' && (val as string).trim()) {
+        const strVal = (val as string).trim();
+        const uniqueKey = `${pKey}:${strVal.toLowerCase()}`;
+        if (!seenHandles.has(uniqueKey)) {
+          seenHandles.add(uniqueKey);
+          list.push({
+            platform: pKey,
+            handle: strVal,
+            followerCount: null,
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [socialAccounts]);
 
   // Real-time Event Listener & Polling for Verification Results
   useEffect(() => {
@@ -367,7 +410,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             </div>
 
             <p className="text-slate-600 text-xs mt-2 leading-relaxed">
-              Verified NUBAN bank account where campaign view earnings are transferred directly.
+              Verified bank account where campaign view earnings are transferred directly.
             </p>
 
             <div className="mt-3">

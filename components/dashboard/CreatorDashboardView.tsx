@@ -297,33 +297,45 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
             )}
           </div>
 
-          {/* Sidebar Alerts */}
+          {/* Sidebar Payout & Submission Rules Guide */}
           <div className="space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm">
-              <h4 className="font-display font-bold text-sm text-kpugi-ink uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-kpugi-blue" />
-                Recent Alerts
+            <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+              <h4 className="font-display font-bold text-sm text-kpugi-ink uppercase tracking-wider flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-kpugi-blue" />
+                Payout & Submission Rules
               </h4>
 
-              {data?.recentNotifications && data.recentNotifications.length > 0 ? (
-                <div className="space-y-3 text-xs">
-                  {data.recentNotifications.map((notif) => (
-                    <div key={notif.id} className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-start gap-3">
-                      <span className="text-base text-kpugi-blue shrink-0">ℹ️</span>
-                      <div>
-                        <span className="font-sans font-bold text-kpugi-ink block capitalize">
-                          {notif.knock_workflow_key.replace(/-/g, ' ')}
-                        </span>
-                        <p className="font-sans text-kpugi-slate mt-0.5">
-                          {typeof notif.payload?.message === 'string' ? notif.payload.message : 'Notification received.'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 space-y-1">
+                  <span className="font-bold text-kpugi-blue block flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5" />
+                    1,000 Minimum Views
+                  </span>
+                  <p className="text-kpugi-slate text-[11px] leading-relaxed">
+                    Submissions require at least 1,000 verified public views to clear CPM earnings.
+                  </p>
                 </div>
-              ) : (
-                <p className="font-sans text-xs text-kpugi-slate">No new notifications.</p>
-              )}
+
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <span className="font-bold text-kpugi-ink block flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    72-Hour Public Retention
+                  </span>
+                  <p className="text-kpugi-slate text-[11px] leading-relaxed">
+                    Submitted posts must remain active and public for a minimum of 72 hours.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-1">
+                  <span className="font-bold text-emerald-700 block flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                    Direct Bank Payouts
+                  </span>
+                  <p className="text-emerald-800 text-[11px] leading-relaxed">
+                    Cleared earnings are transferred directly into your verified Nigerian bank account.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import {
   useKnockFeed,
@@ -16,7 +17,26 @@ interface DashboardHeaderProps {
   onMobileMenuToggle?: () => void;
 }
 
-import { useRouter } from 'next/navigation';
+function getHeaderTitle(pathname: string, passedTitle?: string, role: string = 'creator'): string {
+  if (passedTitle) return passedTitle.toUpperCase();
+
+  if (pathname.startsWith('/browse') || pathname.startsWith('/catalogue')) {
+    if (pathname.split('/').length > 2) return 'CAMPAIGN DETAILS';
+    return 'CAMPAIGNS CATALOGUE';
+  }
+  if (pathname.startsWith('/dashboard') || pathname === '/') return 'OVERVIEW';
+  if (pathname.startsWith('/wallet') || pathname.startsWith('/earnings')) return 'WALLET & EARNINGS';
+  if (pathname.startsWith('/submissions') || pathname.startsWith('/audits')) return 'AUDITS & SUBMISSIONS';
+  if (pathname.startsWith('/accounts')) return 'CONNECTED ACCOUNTS';
+  if (pathname.startsWith('/settings')) return 'ACCOUNT SETTINGS';
+  if (pathname.startsWith('/campaigns')) {
+    if (pathname.includes('/new')) return 'CREATE CAMPAIGN';
+    if (pathname.split('/').length > 2) return 'CAMPAIGN MANAGE';
+    return 'CAMPAIGN MANAGEMENT';
+  }
+
+  return role === 'creator' ? 'CREATOR CONSOLE' : 'ADVERTISER CONSOLE';
+}
 
 function KnockNotificationBell() {
   const [isVisible, setIsVisible] = useState(false);
@@ -28,7 +48,6 @@ function KnockNotificationBell() {
     const knockFeed = useKnockFeed();
     feedInstance = knockFeed?.feedClient;
   } catch {
-    // KnockFeedProvider not available — render a static bell
     feedInstance = null;
   }
 
@@ -53,9 +72,7 @@ function KnockNotificationBell() {
         buttonRef={buttonRef}
         isVisible={isVisible}
         onClose={() => setIsVisible(false)}
-        onNotificationClick={() => {
-          // Do nothing on card body click — only action buttons are interactive
-        }}
+        onNotificationClick={() => {}}
         onNotificationButtonClick={(item, action) => {
           setIsVisible(false);
           if (feedInstance && typeof (feedInstance as any).markAsRead === 'function') {
@@ -81,13 +98,14 @@ export default function DashboardHeader({
   role,
   onMobileMenuToggle,
 }: DashboardHeaderProps) {
-  const displayTitle = 'CREATOR CONSOLE';
+  const pathname = usePathname() || '/';
+  const displayTitle = getHeaderTitle(pathname, title, role);
 
   return (
     <header className="sticky top-0 z-30 border-b border-kpugi-border bg-white/95 backdrop-blur-md">
       <div className="px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-4">
 
-        {/* Left: Mobile menu + Title */}
+        {/* Left: Mobile menu + Dynamic Header Title */}
         <div className="flex items-center gap-3">
           <button
             onClick={onMobileMenuToggle}
@@ -98,7 +116,7 @@ export default function DashboardHeader({
             </svg>
           </button>
 
-          <h1 className="font-display font-extrabold uppercase tracking-[0.15em] text-kpugi-blue text-lg sm:text-xl leading-none">
+          <h1 className="font-display font-extrabold uppercase tracking-[0.15em] text-kpugi-blue text-base sm:text-lg leading-none">
             {displayTitle}
           </h1>
         </div>

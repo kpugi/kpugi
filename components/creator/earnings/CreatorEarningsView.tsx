@@ -337,7 +337,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   <Building2 className="w-8 h-8 text-kpugi-slate mx-auto opacity-60" />
                   <h4 className="font-display font-bold text-sm text-kpugi-ink">No Bank Account Linked Yet</h4>
                   <p className="text-xs text-kpugi-slate max-w-xs mx-auto">
-                    Link your NUBAN bank account to receive automatic withdrawals via Paystack.
+                    Link your bank account to receive automatic withdrawals via Paystack.
                   </p>
                   <button
                     onClick={() => setShowBankModal(true)}
