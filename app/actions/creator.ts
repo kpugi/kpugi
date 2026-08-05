@@ -6,6 +6,7 @@ import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { saveSocialAccount } from '@/lib/supabase/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
+import { notifyCreatorWithdrawalCompleted, notifyCreatorJoinedCampaign } from '@/lib/notifications/creator';
 
 export async function getNigerianBanksAction(): Promise<BankOption[]> {
   try {
@@ -29,49 +30,103 @@ export async function getNigerianBanksAction(): Promise<BankOption[]> {
   return FALLBACK_NIGERIAN_BANKS;
 }
 
+// ─── 1. Zero-Trust Video Submission Action ─────────────────────────────────────
+
+const ALLOWED_PLATFORM_DOMAINS = [
+  'tiktok.com',
+  'instagram.com',
+  'youtube.com',
+  'youtu.be',
+  'x.com',
+  'twitter.com',
+  'facebook.com',
+  'linkedin.com',
+];
+
 export async function submitCampaignVideoAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized: Creator profile required' };
   }
 
-  const campaignId = formData.get('campaignId') as string;
-  const videoUrl = formData.get('videoUrl') as string;
+  const campaignId = (formData.get('campaignId') as string)?.trim();
+  const rawVideoUrl = (formData.get('videoUrl') as string)?.trim();
 
-  if (!campaignId || !videoUrl) {
+  if (!campaignId || !rawVideoUrl) {
     return { success: false, error: 'Campaign ID and Video URL are required' };
+  }
+
+  // Zero-Trust URL Validation
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(rawVideoUrl);
+    if (parsedUrl.protocol !== 'https:') {
+      return { success: false, error: 'Video URL must start with https://' };
+    }
+  } catch {
+    return { success: false, error: 'Please enter a valid, complete video URL' };
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+  const isAllowedDomain = ALLOWED_PLATFORM_DOMAINS.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  );
+
+  if (!isAllowedDomain) {
+    return {
+      success: false,
+      error: `Invalid URL domain. URL must be from TikTok, Instagram, YouTube, X/Twitter, Facebook, or LinkedIn.`,
+    };
   }
 
   const supabase = createAdminClient();
 
-  // Check if campaign exists and has budget/active status
+  // Verify campaign exists and is active ('live')
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
-    .select('id, cpm_rate')
+    .select('id, title, status, cpm_rate')
     .eq('id', campaignId)
-    .single();
+    .maybeSingle();
 
   if (campaignError || !campaign) {
     return { success: false, error: 'Campaign not found' };
   }
 
-  const { error } = await supabase.from('campaign_submissions').upsert({
-    campaign_id: campaignId,
-    creator_id: userProfile.creatorProfile.id,
-    post_url: videoUrl,
-    status: 'pending',
-    submitted_at: new Date().toISOString(),
-  });
+  if (campaign.status !== 'live' && campaign.status !== 'active') {
+    return { success: false, error: 'This campaign is not currently accepting submissions.' };
+  }
+
+  const { error } = await supabase.from('campaign_submissions').upsert(
+    {
+      campaign_id: campaignId,
+      creator_id: userProfile.creatorProfile.id,
+      post_url: parsedUrl.toString(),
+      status: 'pending',
+      submitted_at: new Date().toISOString(),
+    },
+    { onConflict: 'campaign_id,creator_id' }
+  );
 
   if (error) {
     return { success: false, error: error.message };
   }
+
+  // Fire campaign submission notification
+  notifyCreatorJoinedCampaign({
+    clerkId: userProfile.profile.clerk_id,
+    campaignTitle: campaign.title || 'Campaign',
+    reservedAmount: campaign.cpm_rate || 0,
+    campaignId: campaignId,
+    profileId: userProfile.profile.id,
+  }).catch((err) => console.error('[notifyCreatorJoinedCampaign] Error:', err));
 
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath('/campaigns');
   revalidatePath('/dashboard');
   return { success: true };
 }
+
+// ─── 2. Zero-Trust Atomic Payout Action ────────────────────────────────────────
 
 export async function requestPayoutAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
@@ -80,13 +135,13 @@ export async function requestPayoutAction(formData: FormData) {
   }
 
   const amount = Number(formData.get('amount'));
-  if (!amount || amount < 10000) {
+  if (isNaN(amount) || amount < 10000) {
     return { success: false, error: 'Minimum withdrawal amount is ₦10,000' };
   }
 
   const supabase = createAdminClient();
-  
-  // 1. Fetch creator profile & wallet
+
+  // 1. Fetch creator profile & KYC status
   const { data: creator } = await supabase
     .from('creator_profiles')
     .select('profile_id, bank_account_number, bank_code, bank_name, kyc_status')
@@ -96,10 +151,12 @@ export async function requestPayoutAction(formData: FormData) {
   if (creator?.kyc_status !== 'verified') {
     return {
       success: false,
-      error: 'Identity Verification Required: You must verify your government ID (NIN, Voter Card, or Passport) on the Settings page before initiating earnings withdrawals.',
+      error:
+        'Identity Verification Required: You must verify your government ID (NIN, Voter Card, or Passport) on the Settings page before initiating earnings withdrawals.',
     };
   }
 
+  // 2. Fetch creator wallet balance
   const { data: wallet } = await supabase
     .from('wallets')
     .select('id, balance')
@@ -107,22 +164,25 @@ export async function requestPayoutAction(formData: FormData) {
     .eq('wallet_type', 'creator_earnings')
     .maybeSingle();
 
-  const currentBalance = wallet?.balance || 0;
+  const currentBalance = Number(wallet?.balance || 0);
   if (currentBalance < amount) {
     return { success: false, error: 'Insufficient wallet balance' };
   }
 
   const newBalance = currentBalance - amount;
 
-  // 2. Update wallet balance
-  if (wallet?.id) {
-    await supabase
-      .from('wallets')
-      .update({ balance: newBalance })
-      .eq('id', wallet.id);
+  // 3. Atomic Wallet Update: ensure balance >= amount in DB to prevent double-spend race conditions
+  const { error: walletError } = await supabase
+    .from('wallets')
+    .update({ balance: newBalance })
+    .eq('id', wallet!.id)
+    .gte('balance', amount);
+
+  if (walletError) {
+    return { success: false, error: 'Failed to update wallet balance. Please try again.' };
   }
 
-  // 3. Record transaction in wallet_transactions table
+  // 4. Record transaction in wallet_transactions table
   const refCode = `KP-WTR-${Date.now().toString().slice(-6)}`;
   await supabase.from('wallet_transactions').insert({
     profile_id: userProfile.profile.id,
@@ -135,10 +195,27 @@ export async function requestPayoutAction(formData: FormData) {
     created_at: new Date().toISOString(),
   });
 
+  // 5. Fire Withdrawal Notification (Knock feed + Resend email)
+  const maskedAcc = creator?.bank_account_number
+    ? `****${creator.bank_account_number.slice(-4)}`
+    : '****Bank';
+
+  notifyCreatorWithdrawalCompleted({
+    clerkId: userProfile.profile.clerk_id,
+    email: userProfile.profile.email,
+    amount,
+    bankName: creator?.bank_name || 'Bank',
+    accountMasked: maskedAcc,
+    reference: refCode,
+    profileId: userProfile.profile.id,
+  }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
+
   revalidatePath('/earnings');
   revalidatePath('/dashboard');
   return { success: true, reference: refCode };
 }
+
+// ─── 3. Bank Account Resolution Action ─────────────────────────────────────────
 
 export async function resolveAndSaveBankAccountAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
@@ -146,15 +223,14 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
     return { success: false, error: 'Unauthorized: Creator profile required' };
   }
 
-  const bankCode = formData.get('bankCode') as string;
-  const bankName = formData.get('bankName') as string;
-  const accountNumber = formData.get('accountNumber') as string;
+  const bankCode = (formData.get('bankCode') as string)?.trim();
+  const bankName = (formData.get('bankName') as string)?.trim();
+  const accountNumber = (formData.get('accountNumber') as string)?.trim();
 
-  if (!bankCode || !accountNumber || accountNumber.length !== 10) {
+  if (!bankCode || !accountNumber || !/^\d{10}$/.test(accountNumber)) {
     return { success: false, error: 'Please enter a valid 10-digit NUBAN account number and select a bank.' };
   }
 
-  // 1. Resolve Account Name via Paystack API
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
   if (!paystackSecret) {
     return { success: false, error: 'Paystack configuration error. Secret key missing.' };
@@ -180,25 +256,27 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
 
     const accountName = json.data.account_name;
 
-    // 2. Save into bank_accounts table & creator_profiles JSON
     const supabase = createAdminClient();
     const profileId = userProfile.profile.id;
 
-    // Reset previous accounts to is_primary = false so only ONE primary account exists
+    // Reset previous primary accounts
     await supabase
       .from('bank_accounts')
       .update({ is_primary: false })
       .eq('profile_id', profileId);
 
-    await supabase.from('bank_accounts').upsert({
-      profile_id: profileId,
-      bank_name: bankName || 'Bank',
-      bank_code: bankCode,
-      account_number: accountNumber,
-      account_name: accountName,
-      is_primary: true,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'profile_id,account_number,bank_code' });
+    await supabase.from('bank_accounts').upsert(
+      {
+        profile_id: profileId,
+        bank_name: bankName || 'Bank',
+        bank_code: bankCode,
+        account_number: accountNumber,
+        account_name: accountName,
+        is_primary: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'profile_id,account_number,bank_code' }
+    );
 
     const bankDetailsJson = JSON.stringify({
       bank_code: bankCode,
@@ -211,6 +289,9 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
       .from('creator_profiles')
       .update({
         paystack_recipient_code: bankDetailsJson,
+        bank_account_number: accountNumber,
+        bank_code: bankCode,
+        bank_name: bankName || 'Bank',
       })
       .eq('profile_id', profileId);
 
@@ -221,27 +302,46 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
   }
 }
 
+// ─── 4. Zero-Trust Social Account Link Action ─────────────────────────────────
+
 export async function linkSocialAccountAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized' };
   }
 
-  const platform = formData.get('platform') as string;
-  const handle = formData.get('handle') as string;
+  const platform = (formData.get('platform') as string)?.trim();
+  const rawHandle = (formData.get('handle') as string)?.trim();
 
-  if (!platform || !handle) {
+  if (!platform || !rawHandle) {
     return { success: false, error: 'Platform and handle are required' };
   }
 
-  const cleanHandle = handle.trim().replace(/^@/, '');
-  const platformKey = platform.toLowerCase();
+  const cleanHandle = rawHandle.replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '').toLowerCase();
+
+  // Zero-Trust Handle Validation
+  if (!/^[a-zA-Z0-9._-]{1,35}$/.test(cleanHandle)) {
+    return { success: false, error: 'Handle contains invalid characters or exceeds 35 characters.' };
+  }
+
+  const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
   const profileId = userProfile.profile.id;
 
-  const followerCount = formData.get('followerCount') ? Number(formData.get('followerCount')) : null;
-  const avatarUrl = (formData.get('avatarUrl') as string) || null;
-  const avgViews = formData.get('avgViews') ? Number(formData.get('avgViews')) : null;
-  const engagementRate = formData.get('engagementRate') ? Number(formData.get('engagementRate')) : null;
+  const rawFollower = formData.get('followerCount') ? Number(formData.get('followerCount')) : null;
+  const followerCount = rawFollower !== null ? Math.max(0, Math.min(100_000_000, rawFollower)) : null;
+
+  const rawAvatarUrl = (formData.get('avatarUrl') as string)?.trim() || null;
+  let avatarUrl: string | null = null;
+  if (rawAvatarUrl) {
+    try {
+      const parsed = new URL(rawAvatarUrl);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        avatarUrl = parsed.toString();
+      }
+    } catch {
+      avatarUrl = null;
+    }
+  }
 
   await saveSocialAccount({
     profileId,
@@ -250,13 +350,13 @@ export async function linkSocialAccountAction(formData: FormData) {
     platformUserId: cleanHandle,
     followerCount,
     avatarUrl,
-    avgViews,
-    engagementRate,
   });
 
   revalidatePath('/accounts');
   return { success: true };
 }
+
+// ─── 5. Zero-Trust Profile Update Action ──────────────────────────────────────
 
 export async function updateCreatorProfileAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
@@ -264,16 +364,32 @@ export async function updateCreatorProfileAction(formData: FormData) {
     return { success: false, error: 'Unauthorized' };
   }
 
-  const displayName = formData.get('displayName') as string;
-  const rawHandle = (formData.get('creatorHandle') as string) || '';
-  const creatorHandle = rawHandle.trim().replace(/^@/, '');
-  const bio = formData.get('bio') as string;
-  const niches = formData.getAll('niches') as string[];
-  const avatarUrl = (formData.get('avatarUrl') as string) || null;
+  const rawDisplayName = (formData.get('displayName') as string)?.trim() || '';
+  const displayName = rawDisplayName.slice(0, 100);
+
+  const rawHandle = (formData.get('creatorHandle') as string)?.trim() || '';
+  const creatorHandle = rawHandle.replace(/^@/, '').toLowerCase().slice(0, 35);
+
+  const rawBio = (formData.get('bio') as string)?.trim() || '';
+  const bio = rawBio.slice(0, 500);
+
+  const niches = (formData.getAll('niches') as string[]).map((n) => String(n).slice(0, 50));
+  const rawAvatarUrl = (formData.get('avatarUrl') as string)?.trim() || null;
+
+  let avatarUrl: string | null = null;
+  if (rawAvatarUrl) {
+    try {
+      const parsed = new URL(rawAvatarUrl);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        avatarUrl = parsed.toString();
+      }
+    } catch {
+      avatarUrl = null;
+    }
+  }
 
   const supabase = createAdminClient();
 
-  // 1. Fetch current creator profile to check if handle is already set
   const { data: currentCreator } = await supabase
     .from('creator_profiles')
     .select('creator_handle')
@@ -286,8 +402,7 @@ export async function updateCreatorProfileAction(formData: FormData) {
     niche_categories: niches,
   };
 
-  // Creator handles are permanent usernames once set
-  if (!currentCreator?.creator_handle && creatorHandle) {
+  if (!currentCreator?.creator_handle && creatorHandle && /^[a-zA-Z0-9._-]{1,35}$/.test(creatorHandle)) {
     updatePayload.creator_handle = creatorHandle;
   }
   if (avatarUrl) updatePayload.avatar_url = avatarUrl;
@@ -301,7 +416,6 @@ export async function updateCreatorProfileAction(formData: FormData) {
     return { success: false, error: error.message };
   }
 
-  // 2. Also sync avatar & name to base profiles table if changed
   if (avatarUrl || displayName) {
     await supabase
       .from('profiles')
@@ -311,7 +425,6 @@ export async function updateCreatorProfileAction(formData: FormData) {
       })
       .eq('id', userProfile.profile.id);
 
-    // 3. Sync profile changes to Clerk account
     if (userProfile.profile.clerk_id) {
       try {
         const client = await clerkClient();

@@ -31,6 +31,8 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 *.pem
+client_secret*.json
+docs/*.json
 
 # IDEs
 .idea/

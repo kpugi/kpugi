@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { saveSocialAccount } from '@/lib/supabase/creator';
+import { notifyCreatorSocialConnected } from '@/lib/notifications/creator';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -114,6 +115,15 @@ export async function GET(request: Request) {
         accessToken,
         scopes: ['user.info.basic', 'user.info.profile', 'user.info.stats', 'video.list'],
       });
+
+      // Fire in-app + email notification (non-blocking)
+      notifyCreatorSocialConnected({
+        clerkId: userProfile.profile.clerk_id,
+        email: userProfile.profile.email,
+        platform: 'TikTok',
+        handle: username,
+        profileId: userProfile.profile.id,
+      }).catch(() => {});
     }
 
     // Return auto-close HTML response for popup window

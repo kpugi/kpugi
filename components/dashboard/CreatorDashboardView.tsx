@@ -66,7 +66,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
             </div>
             <div>
               <h3 className="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
-                <span>Identity Verification Required</span>
+                <span>ID Verification Required</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900">
                   {data.kycStatus === 'pending' ? 'Verification Pending' : 'Action Needed'}
                 </span>

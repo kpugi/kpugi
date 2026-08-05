@@ -1,7 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
-import { getCreatorSocialAccounts } from '@/lib/supabase/creator';
+import { getCreatorSocialAccountsGrouped } from '@/lib/supabase/creator';
 import CreatorAccountsView from '@/components/creator/accounts/CreatorAccountsView';
 
 export default async function AccountsPage() {
@@ -11,7 +11,7 @@ export default async function AccountsPage() {
     redirect('/sign-in');
   }
 
-  const socialAccounts = await getCreatorSocialAccounts(userProfile.profile.id);
+  const groupedAccounts = await getCreatorSocialAccountsGrouped(userProfile.profile.id);
 
-  return <CreatorAccountsView socialAccounts={socialAccounts} />;
+  return <CreatorAccountsView groupedAccounts={groupedAccounts} />;
 }

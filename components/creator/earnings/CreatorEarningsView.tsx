@@ -453,7 +453,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             {data.kycStatus !== 'verified' && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
                 <div className="font-bold flex items-center gap-2 text-xs">
-                  <span>🛡️ Identity Verification Required</span>
+                  <span>🛡️ ID Verification Required</span>
                 </div>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
                   To comply with platform regulations and release earnings withdrawals, you must verify your official government ID (NIN, Voter Card, or Passport).

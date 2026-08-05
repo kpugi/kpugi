@@ -387,6 +387,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 }
 
 export interface SocialAccountDetails {
+  id?: string;
+  platform?: string;
   handle: string;
   avatarUrl?: string | null;
   followerCount?: number | null;
@@ -397,66 +399,69 @@ export interface SocialAccountDetails {
   engagementRate?: number | null;
   platformUserId?: string | null;
   lastSyncedAt?: string | null;
+  verificationStatus?: 'unverified' | 'pending' | 'verified' | 'failed';
+  verificationCode?: string | null;
+  verificationMethod?: string | null;
+  verifiedAt?: string | null;
 }
 
 export async function getCreatorSocialAccounts(
   profileId: string
 ): Promise<Record<string, SocialAccountDetails>> {
+  const grouped = await getCreatorSocialAccountsGrouped(profileId);
+  const result: Record<string, SocialAccountDetails> = {};
+  Object.keys(grouped).forEach((key) => {
+    if (grouped[key] && grouped[key].length > 0) {
+      // Pick the first account or verified account as primary
+      const verified = grouped[key].find((a) => a.verificationStatus === 'verified');
+      result[key] = verified || grouped[key][0];
+    }
+  });
+  return result;
+}
+
+export async function getCreatorSocialAccountsGrouped(
+  profileId: string
+): Promise<Record<string, SocialAccountDetails[]>> {
   const supabase = createAdminClient();
   
-  // 1. Fetch from social_accounts table (creator_id column)
   const { data: accounts } = await supabase
     .from('social_accounts')
     .select('*')
     .eq('creator_id', profileId);
 
-  // 2. Fetch from creator_profiles.social_links as fallback
-  const { data: creator } = await supabase
-    .from('creator_profiles')
-    .select('social_links')
-    .eq('profile_id', profileId)
-    .maybeSingle();
-
-  const result: Record<string, SocialAccountDetails> = {};
-
-  if (creator?.social_links) {
-    Object.entries(creator.social_links).forEach(([key, value]) => {
-      if (typeof value === 'string' && value) {
-        result[key.toLowerCase()] = { handle: value };
-      } else if (typeof value === 'object' && value && (value as any).handle) {
-        const valObj = value as any;
-        result[key.toLowerCase()] = {
-          handle: valObj.handle,
-          avatarUrl: valObj.avatarUrl || valObj.avatar_url || null,
-          followerCount: valObj.followerCount ?? valObj.follower_count ?? null,
-          followingCount: valObj.followingCount ?? valObj.following_count ?? null,
-          likesCount: valObj.likesCount ?? valObj.likes_count ?? null,
-          videoCount: valObj.videoCount ?? valObj.video_count ?? null,
-          avgViews: valObj.avgViews ?? valObj.avg_views ?? null,
-          engagementRate: valObj.engagementRate ?? valObj.engagement_rate ?? null,
-        };
-      }
-    });
-  }
+  const result: Record<string, SocialAccountDetails[]> = {};
 
   if (accounts) {
     accounts.forEach((acc: any) => {
       if (acc.platform && acc.handle) {
-        result[acc.platform.toLowerCase()] = {
+        const key = acc.platform.toLowerCase();
+        if (!result[key]) result[key] = [];
+        result[key].push({
+          id: acc.id,
+          platform: key,
           handle: acc.handle,
-          avatarUrl: acc.avatar_url || result[acc.platform.toLowerCase()]?.avatarUrl || null,
-          followerCount: acc.follower_count ?? result[acc.platform.toLowerCase()]?.followerCount ?? null,
-          followingCount: acc.following_count ?? result[acc.platform.toLowerCase()]?.followingCount ?? null,
-          likesCount: acc.likes_count ?? result[acc.platform.toLowerCase()]?.likesCount ?? null,
-          videoCount: acc.video_count ?? result[acc.platform.toLowerCase()]?.videoCount ?? null,
-          avgViews: acc.avg_views ?? result[acc.platform.toLowerCase()]?.avgViews ?? null,
-          engagementRate: acc.engagement_rate ?? result[acc.platform.toLowerCase()]?.engagementRate ?? null,
+          avatarUrl: acc.avatar_url || null,
+          followerCount: acc.follower_count ?? null,
+          followingCount: acc.following_count ?? null,
+          likesCount: acc.likes_count ?? null,
+          videoCount: acc.video_count ?? null,
+          avgViews: acc.avg_views ?? null,
+          engagementRate: acc.engagement_rate ?? null,
           platformUserId: acc.platform_user_id || null,
           lastSyncedAt: acc.last_synced_at || null,
-        };
+          verificationStatus: acc.verification_status || (acc.oauth_access_token ? 'verified' : 'unverified'),
+          verificationCode: acc.verification_code || null,
+          verificationMethod: acc.verification_method || (acc.oauth_access_token ? 'oauth' : null),
+          verifiedAt: acc.verified_at || null,
+        });
       }
     });
   }
+
+  // Alias twitter & x for uniform key lookup across views
+  if (result.twitter && !result.x) result.x = result.twitter;
+  if (result.x && !result.twitter) result.twitter = result.x;
 
   return result;
 }
@@ -492,15 +497,19 @@ export async function saveSocialAccount({
 }) {
   const supabase = createAdminClient();
   const cleanHandle = handle.trim().replace(/^@/, '');
-  const platformKey = platform.toLowerCase();
+  let platformKey = platform.toLowerCase();
+  if (platformKey === 'twitter') {
+    platformKey = 'x';
+  }
   const userId = platformUserId || cleanHandle;
 
-  // 1. Check if social account record already exists for this creator & platform
+  // 1. Check if social account record already exists for this creator, platform, AND handle
   const { data: existing } = await supabase
     .from('social_accounts')
     .select('id')
     .eq('creator_id', profileId)
     .eq('platform', platformKey)
+    .ilike('handle', cleanHandle)
     .maybeSingle();
 
   const updateData: any = {
@@ -509,6 +518,13 @@ export async function saveSocialAccount({
     last_synced_at: new Date().toISOString(),
   };
 
+  if (accessToken) {
+    updateData.verification_status = 'verified';
+    updateData.verification_method = 'oauth';
+    updateData.verified_at = new Date().toISOString();
+  }
+
+  // Only set columns that exist in the social_accounts schema
   if (followerCount !== undefined && followerCount !== null) updateData.follower_count = followerCount;
   if (followingCount !== undefined && followingCount !== null) updateData.following_count = followingCount;
   if (likesCount !== undefined && likesCount !== null) updateData.likes_count = likesCount;
@@ -531,44 +547,20 @@ export async function saveSocialAccount({
       handle: cleanHandle,
       platform_user_id: userId,
       follower_count: followerCount ?? 0,
-      following_count: followingCount,
-      likes_count: likesCount,
-      video_count: videoCount,
+      following_count: followingCount ?? 0,
+      likes_count: likesCount ?? 0,
+      video_count: videoCount ?? 0,
       avatar_url: avatarUrl,
       avg_views: avgViews,
       engagement_rate: engagementRate,
       oauth_access_token: accessToken,
       oauth_scopes: scopes,
+      verification_status: accessToken ? 'verified' : 'unverified',
+      verification_method: accessToken ? 'oauth' : null,
+      verified_at: accessToken ? new Date().toISOString() : null,
       connected_at: new Date().toISOString(),
     });
   }
-
-  // 2. Dual-sync to creator_profiles.social_links JSON object
-  const { data: creator } = await supabase
-    .from('creator_profiles')
-    .select('social_links')
-    .eq('profile_id', profileId)
-    .maybeSingle();
-
-  const currentLinks = creator?.social_links || {};
-  await supabase
-    .from('creator_profiles')
-    .update({
-      social_links: {
-        ...currentLinks,
-        [platformKey]: {
-          handle: cleanHandle,
-          avatar_url: avatarUrl,
-          follower_count: followerCount,
-          following_count: followingCount,
-          likes_count: likesCount,
-          video_count: videoCount,
-          avg_views: avgViews,
-          engagement_rate: engagementRate,
-        },
-      },
-    })
-    .eq('profile_id', profileId);
 
   return { success: true };
 }
