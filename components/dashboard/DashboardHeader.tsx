@@ -82,6 +82,21 @@ function getHeaderTitle(pathname: string, passedTitle?: string, role: string = '
   return role === 'creator' ? 'CREATOR OVERVIEW' : 'BRAND OVERVIEW';
 }
 
+function formatMobileTitle(title: string): { mobile: string; desktop: string } {
+  switch (title) {
+    case 'CREATOR OVERVIEW': return { mobile: 'OVERVIEW', desktop: 'CREATOR OVERVIEW' };
+    case 'BRAND OVERVIEW': return { mobile: 'OVERVIEW', desktop: 'BRAND OVERVIEW' };
+    case 'CREATOR CAMPAIGNS': return { mobile: 'CAMPAIGNS', desktop: 'CREATOR CAMPAIGNS' };
+    case 'BRAND CAMPAIGNS': return { mobile: 'CAMPAIGNS', desktop: 'BRAND CAMPAIGNS' };
+    case 'CAMPAIGNS CATALOGUE': return { mobile: 'CATALOGUE', desktop: 'CAMPAIGNS CATALOGUE' };
+    case 'WALLET & EARNINGS': return { mobile: 'WALLET', desktop: 'WALLET & EARNINGS' };
+    case 'AUDITS & SUBMISSIONS': return { mobile: 'AUDITS', desktop: 'AUDITS & SUBMISSIONS' };
+    case 'CONNECTED ACCOUNTS': return { mobile: 'ACCOUNTS', desktop: 'CONNECTED ACCOUNTS' };
+    case 'ACCOUNT SETTINGS': return { mobile: 'SETTINGS', desktop: 'ACCOUNT SETTINGS' };
+    default: return { mobile: title, desktop: title };
+  }
+}
+
 function KnockNotificationBell() {
   const [isVisible, setIsVisible] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -144,24 +159,26 @@ export default function DashboardHeader({
 }: DashboardHeaderProps) {
   const pathname = usePathname() || '';
   const displayTitle = getHeaderTitle(pathname, title, role);
+  const titleFormatted = formatMobileTitle(displayTitle);
 
   return (
     <header className="sticky top-0 z-30 border-b border-kpugi-border bg-white/95 backdrop-blur-md">
-      <div className="px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-4">
+      <div className="px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-3">
 
         {/* Left: Mobile menu + Dynamic Header Title */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={onMobileMenuToggle}
-            className="lg:hidden p-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink hover:bg-kpugi-paper transition-colors"
+            className="lg:hidden p-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink hover:bg-kpugi-paper transition-colors shrink-0"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
 
-          <h1 className="font-display font-extrabold uppercase tracking-[0.15em] text-kpugi-blue text-base sm:text-lg leading-none">
-            {displayTitle}
+          <h1 className="font-display font-extrabold uppercase tracking-wider text-kpugi-blue text-xs sm:text-base leading-none whitespace-nowrap truncate">
+            <span className="sm:hidden">{titleFormatted.mobile}</span>
+            <span className="hidden sm:inline">{titleFormatted.desktop}</span>
           </h1>
         </div>
 
