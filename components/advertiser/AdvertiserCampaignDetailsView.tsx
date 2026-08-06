@@ -22,6 +22,9 @@ import {
   DollarSign,
   Eye,
   TrendingUp,
+  Activity,
+  Award,
+  Zap,
 } from 'lucide-react';
 import { BrandCampaignDetails } from '@/lib/supabase/advertiser';
 import { updateCampaignStatusAction, reviewCreatorSubmissionAction } from '@/app/actions/advertiser';
@@ -166,51 +169,81 @@ export default function AdvertiserCampaignDetailsView({
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs space-y-1">
+      {/* 6 Core Live Reach Metrics Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+
+        {/* 1. Total Views */}
+        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-kpugi-blue">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-kpugi-slate">Views Delivered</span>
-            <Eye className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Total Views</span>
+            <Eye className="w-3.5 h-3.5 text-kpugi-blue" />
           </div>
-          <p className="font-display text-xl sm:text-2xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
             {metrics.totalViews.toLocaleString()}
           </p>
-          <span className="text-[10px] text-emerald-600 font-medium block">100% Verified Views</span>
+          <span className="text-[9px] text-emerald-600 font-medium block">Real-time aggregate</span>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs space-y-1">
+        {/* 2. Total Payouts */}
+        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-kpugi-slate">Spent Budget</span>
-            <DollarSign className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Total Payouts</span>
+            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <p className="font-display text-xl sm:text-2xl font-black text-kpugi-ink">
-            ₦{campaign.spent_budget.toLocaleString()}
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+            ₦{metrics.totalPayouts.toLocaleString()}
           </p>
-          <span className="text-[10px] text-slate-500 font-medium block">of ₦{campaign.total_budget.toLocaleString()} Total</span>
+          <span className="text-[9px] text-slate-500 font-medium block">Released from Escrow</span>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-amber-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-kpugi-slate">Pending Audits</span>
-            <Clock className="w-4 h-4" />
-          </div>
-          <p className="font-display text-xl sm:text-2xl font-black text-kpugi-ink">
-            {metrics.pendingAudits}
-          </p>
-          <span className="text-[10px] text-amber-600 font-medium block">Awaiting Verification</span>
-        </div>
-
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs space-y-1">
+        {/* 3. Creators Joined */}
+        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-indigo-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-kpugi-slate">CPM Efficiency</span>
-            <TrendingUp className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Creators Joined</span>
+            <Users className="w-3.5 h-3.5 text-indigo-600" />
           </div>
-          <p className="font-display text-xl sm:text-2xl font-black text-kpugi-ink">
-            ₦{Math.round(metrics.cpmEfficiency).toLocaleString()}
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+            {metrics.creatorsJoined}
           </p>
-          <span className="text-[10px] text-indigo-600 font-medium block">per 1,000 Views</span>
+          <span className="text-[9px] text-indigo-600 font-medium block">Active slots locked</span>
         </div>
+
+        {/* 4. Submissions */}
+        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-amber-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Submissions</span>
+            <Video className="w-3.5 h-3.5 text-amber-600" />
+          </div>
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+            {metrics.totalSubmissions}
+          </p>
+          <span className="text-[9px] text-amber-600 font-medium block">Verified & Pending</span>
+        </div>
+
+        {/* 5. Engagement */}
+        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-rose-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Engagement</span>
+            <Activity className="w-3.5 h-3.5 text-rose-600" />
+          </div>
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+            {metrics.engagementRate}%
+          </p>
+          <span className="text-[9px] text-slate-500 font-medium block">Like & Comment ratio</span>
+        </div>
+
+        {/* 6. Avg Watch Time */}
+        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-cyan-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Avg Watch Time</span>
+            <Zap className="w-3.5 h-3.5 text-cyan-600" />
+          </div>
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+            {metrics.avgWatchTime}s
+          </p>
+          <span className="text-[9px] text-cyan-600 font-medium block">Retention benchmark</span>
+        </div>
+
       </div>
 
       {/* Tabs Bar */}
@@ -255,9 +288,16 @@ export default function AdvertiserCampaignDetailsView({
       {/* Tab 1: Overview */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Budget & Escrow Allocation */}
           <div className="lg:col-span-2 space-y-6">
             <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-              <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget & Escrow Allocation</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget & Escrow Allocation</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  🛡️ SECURED IN ESCROW
+                </span>
+              </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold text-kpugi-slate">
@@ -269,31 +309,51 @@ export default function AdvertiserCampaignDetailsView({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
                 <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-500 block">Rate CPM</span>
-                  <span className="font-bold text-slate-900 text-sm">₦{campaign.cpm_rate.toLocaleString()} / 1k views</span>
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Rate CPM</span>
+                  <span className="font-bold text-slate-900 text-xs">₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-500 block">Min Threshold</span>
-                  <span className="font-bold text-slate-900 text-sm">{campaign.min_view_threshold.toLocaleString()} views</span>
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Min Threshold</span>
+                  <span className="font-bold text-slate-900 text-xs">{campaign.min_view_threshold.toLocaleString()} views</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Reserved</span>
+                  <span className="font-bold text-amber-700 text-xs">₦{metrics.reservedBudget.toLocaleString()}</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Audit Duration</span>
+                  <span className="font-bold text-slate-900 text-xs">{metrics.auditDurationHours}h</span>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Right Column: Platform Channels & Verification Specs */}
           <div className="space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-3">
-              <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels</h3>
+            <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+              <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels & Specs</h3>
               <div className="flex flex-wrap gap-2">
                 {campaign.channels.map((ch) => (
-                  <span key={ch} className="px-3 py-1 rounded-xl bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase">
-                    {ch}
+                  <span key={ch} className="px-3 py-1.5 rounded-xl bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase flex items-center gap-1.5">
+                    <span>{ch}</span>
                   </span>
                 ))}
               </div>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Required Live Retention:</span>
+                  <span className="font-bold text-slate-900">{campaign.required_live_duration_hours}h</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Verification Grace Window:</span>
+                  <span className="font-bold text-slate-900">{campaign.verification_grace_hours}h</span>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
       )}
 

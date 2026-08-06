@@ -123,8 +123,8 @@ export default function AdvertiserCampaignsView({ campaigns }: AdvertiserCampaig
                   {/* Budget & Views Bar */}
                   <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
                     <div className="flex items-center justify-between text-slate-600">
-                      <span>Spent: ₦{formatCompactCurrency(c.spent_budget || 0)}</span>
-                      <span className="font-mono font-bold text-slate-900">Total: ₦{formatCompactCurrency(c.total_budget || 0)}</span>
+                      <span>Spent: {formatCompactCurrency(c.spent_budget || 0)}</span>
+                      <span className="font-mono font-bold text-slate-900">Total:{formatCompactCurrency(c.total_budget || 0)}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, progress)}%` }} />
@@ -140,7 +140,7 @@ export default function AdvertiserCampaignsView({ campaigns }: AdvertiserCampaig
                   href={`/b/campaigns/${c.id}`}
                   className="block w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-sans text-xs font-bold text-center rounded-xl transition-colors mt-2"
                 >
-                  Manage Command Center →
+                  Manage →
                 </Link>
               </div>
             );

@@ -845,12 +845,16 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Engagement</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">8.4%</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">
+                        {(campaign as any)?.target_engagement_rate ? `${(campaign as any).target_engagement_rate}%` : '8.4%'}
+                      </div>
                       <div className="text-[9px] text-slate-400">Like & Comment ratio</div>
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">24.5s</div>
+                      <div className="font-mono text-2xl font-extrabold text-white">
+                        {(campaign as any)?.avg_watch_time_seconds ? `${(campaign as any).avg_watch_time_seconds}s` : '24.5s'}
+                      </div>
                       <div className="text-[9px] text-slate-400">Retention benchmark</div>
                     </div>
                   </div>
