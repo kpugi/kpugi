@@ -355,7 +355,7 @@ export async function getBrandCampaignDetails(
       )
     `)
     .eq('campaign_id', realCampaignId)
-    .order('created_at', { ascending: false });
+    .order('submitted_at', { ascending: false });
 
   let totalViews = 0;
   let totalLikes = 0;
