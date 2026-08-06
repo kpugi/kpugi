@@ -18,61 +18,57 @@ interface DashboardHeaderProps {
 }
 
 function getHeaderTitle(pathname: string, passedTitle?: string, role: string = 'creator'): string {
-  const cleanPath = (pathname || '/').toLowerCase();
+  const cleanPath = (pathname || '').toLowerCase();
+
+  // If an explicit, non-generic title was passed (e.g. specific campaign name), use it immediately
+  if (
+    passedTitle &&
+    !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
+  ) {
+    return passedTitle.toUpperCase();
+  }
 
   // 1. Creator compact routes (/c/*)
-  if (cleanPath.startsWith('/c')) {
-    if (cleanPath === '/c/dashboard' || cleanPath === '/c' || cleanPath === '/c/') return 'CREATOR OVERVIEW';
-    if (cleanPath.startsWith('/c/campaigns')) {
+  if (cleanPath.startsWith('/c') || role === 'creator') {
+    if (cleanPath === '/c/dashboard' || cleanPath === '/c' || cleanPath === '/c/' || cleanPath === '/dashboard' || !cleanPath || cleanPath === '/') {
+      return 'CREATOR OVERVIEW';
+    }
+    if (cleanPath.startsWith('/c/campaigns') || cleanPath.startsWith('/campaigns')) {
       if (cleanPath.includes('/new')) return 'CREATE CAMPAIGN';
-      if (cleanPath.split('/').filter(Boolean).length > 2) {
-        if (
-          passedTitle &&
-          !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
-        ) {
-          return passedTitle.toUpperCase();
-        }
-        return 'CAMPAIGN DETAILS';
-      }
+      if (cleanPath.split('/').filter(Boolean).length > 2) return 'CAMPAIGN DETAILS';
       return 'CREATOR CAMPAIGNS';
     }
-    if (cleanPath.startsWith('/c/wallet') || cleanPath.startsWith('/c/earnings')) {
+    if (cleanPath.startsWith('/c/wallet') || cleanPath.startsWith('/c/earnings') || cleanPath.startsWith('/wallet') || cleanPath.startsWith('/earnings')) {
       return 'WALLET & EARNINGS';
     }
-    if (cleanPath.startsWith('/c/submissions') || cleanPath.startsWith('/c/audits')) {
+    if (cleanPath.startsWith('/c/submissions') || cleanPath.startsWith('/c/audits') || cleanPath.startsWith('/submissions')) {
       return 'AUDITS & SUBMISSIONS';
     }
-    if (cleanPath.startsWith('/c/accounts')) {
+    if (cleanPath.startsWith('/c/accounts') || cleanPath.startsWith('/accounts')) {
       return 'CONNECTED ACCOUNTS';
     }
-    if (cleanPath.startsWith('/c/settings')) {
+    if (cleanPath.startsWith('/c/settings') || cleanPath.startsWith('/settings')) {
       return 'ACCOUNT SETTINGS';
     }
-    if (cleanPath.startsWith('/c/browse') || cleanPath.startsWith('/c/catalogue')) {
+    if (cleanPath.startsWith('/c/browse') || cleanPath.startsWith('/c/catalogue') || cleanPath.startsWith('/browse')) {
       return 'CAMPAIGNS CATALOGUE';
     }
   }
 
   // 2. Brand / Advertiser compact routes (/b/*)
-  if (cleanPath.startsWith('/b')) {
-    if (cleanPath === '/b/dashboard' || cleanPath === '/b' || cleanPath === '/b/') return 'BRAND OVERVIEW';
-    if (cleanPath.startsWith('/b/campaigns')) {
+  if (cleanPath.startsWith('/b') || role === 'advertiser') {
+    if (cleanPath === '/b/dashboard' || cleanPath === '/b' || cleanPath === '/b/' || cleanPath === '/dashboard' || !cleanPath || cleanPath === '/') {
+      return 'BRAND OVERVIEW';
+    }
+    if (cleanPath.startsWith('/b/campaigns') || cleanPath.startsWith('/campaigns')) {
       if (cleanPath.includes('/new')) return 'CREATE CAMPAIGN';
-      if (cleanPath.split('/').filter(Boolean).length > 2) {
-        if (
-          passedTitle &&
-          !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
-        ) {
-          return passedTitle.toUpperCase();
-        }
-        return 'CAMPAIGN MANAGEMENT';
-      }
+      if (cleanPath.split('/').filter(Boolean).length > 2) return 'CAMPAIGN MANAGEMENT';
       return 'BRAND CAMPAIGNS';
     }
-    if (cleanPath.startsWith('/b/wallet')) {
+    if (cleanPath.startsWith('/b/wallet') || cleanPath.startsWith('/wallet')) {
       return 'BRAND WALLET';
     }
-    if (cleanPath.startsWith('/b/settings')) {
+    if (cleanPath.startsWith('/b/settings') || cleanPath.startsWith('/settings')) {
       return 'BRAND SETTINGS';
     }
   }
@@ -83,22 +79,7 @@ function getHeaderTitle(pathname: string, passedTitle?: string, role: string = '
     return 'CAMPAIGNS CATALOGUE';
   }
 
-  if (cleanPath.includes('/dashboard') || cleanPath === '/') {
-    return role === 'creator' ? 'CREATOR OVERVIEW' : 'BRAND OVERVIEW';
-  }
-
-  if (cleanPath.includes('/campaigns')) {
-    return role === 'creator' ? 'CREATOR CAMPAIGNS' : 'BRAND CAMPAIGNS';
-  }
-
-  if (
-    passedTitle &&
-    !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
-  ) {
-    return passedTitle.toUpperCase();
-  }
-
-  return role === 'creator' ? 'CREATOR CONSOLE' : 'BRAND CONSOLE';
+  return role === 'creator' ? 'CREATOR OVERVIEW' : 'BRAND OVERVIEW';
 }
 
 function KnockNotificationBell() {
@@ -161,7 +142,7 @@ export default function DashboardHeader({
   role,
   onMobileMenuToggle,
 }: DashboardHeaderProps) {
-  const pathname = usePathname() || '/';
+  const pathname = usePathname() || '';
   const displayTitle = getHeaderTitle(pathname, title, role);
 
   return (
