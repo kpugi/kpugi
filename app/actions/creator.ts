@@ -210,8 +210,8 @@ export async function requestPayoutAction(formData: FormData) {
     profileId: userProfile.profile.id,
   }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
 
-  revalidatePath('/earnings');
-  revalidatePath('/dashboard');
+  revalidatePath('/c/wallet');
+  revalidatePath('/c/dashboard');
   return { success: true, reference: refCode };
 }
 
@@ -295,7 +295,7 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
       })
       .eq('profile_id', profileId);
 
-    revalidatePath('/earnings');
+    revalidatePath('/c/wallet');
     return { success: true, accountName };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to resolve account via Paystack.' };
