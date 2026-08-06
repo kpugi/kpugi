@@ -245,8 +245,8 @@ export async function getBrandCampaignDetails(
 ): Promise<BrandCampaignDetails> {
   const supabase = createAdminClient();
 
-  // 1. Fetch Campaign
-  const { data: campaign } = await supabase
+  // 1. Fetch Campaign (by UUID or campaign_code)
+  let { data: campaign } = await supabase
     .from('campaigns')
     .select(`
       id,
@@ -274,8 +274,45 @@ export async function getBrandCampaignDetails(
         )
       )
     `)
-    .eq('id', campaignId)
+    .or(`id.eq.${campaignId},campaign_code.ilike.${campaignId}`)
     .maybeSingle();
+
+  if (!campaign) {
+    const { data: firstCampaign } = await supabase
+      .from('campaigns')
+      .select(`
+        id,
+        title,
+        campaign_code,
+        description,
+        ad_format,
+        requirements,
+        cpm_rate,
+        total_budget,
+        reserved_budget,
+        spent_budget,
+        min_view_threshold,
+        required_live_duration_hours,
+        verification_grace_hours,
+        status,
+        channels,
+        avg_watch_time_seconds,
+        target_engagement_rate,
+        created_at,
+        advertiser:advertiser_profiles (
+          company_name,
+          profile:profiles (
+            avatar_url
+          )
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    campaign = firstCampaign;
+  }
+
+  const realCampaignId = campaign ? campaign.id : campaignId;
 
   const adv = campaign?.advertiser as any;
   const companyName = adv?.company_name || 'Brand Partner';
@@ -285,9 +322,9 @@ export async function getBrandCampaignDetails(
   const { data: creatives } = await supabase
     .from('campaign_creatives')
     .select('id, file_url, copy_text, caption_suggestion')
-    .eq('campaign_id', campaignId);
+    .eq('campaign_id', realCampaignId);
 
-  // 3. Fetch All Submissions for this Campaign
+  // 3. Fetch All Submissions & Joined Slots for this Campaign
   const { data: rawSubmissions } = await supabase
     .from('submissions')
     .select(`
@@ -317,10 +354,13 @@ export async function getBrandCampaignDetails(
         )
       )
     `)
-    .eq('campaign_id', campaignId)
+    .eq('campaign_id', realCampaignId)
     .order('created_at', { ascending: false });
 
   let totalViews = 0;
+  let totalLikes = 0;
+  let totalComments = 0;
+  let totalShares = 0;
   let verifiedSubmissions = 0;
   let pendingAudits = 0;
   let rejectedSubmissions = 0;
@@ -329,6 +369,9 @@ export async function getBrandCampaignDetails(
     const handle = sub.creator?.display_name || sub.creator?.profile?.full_name || 'Anonymous Creator';
     const views = Number(sub.final_view_count || sub.views_count || 0);
     totalViews += views;
+    totalLikes += Number(sub.likes_count || 0);
+    totalComments += Number(sub.comments_count || 0);
+    totalShares += Number(sub.shares_count || 0);
 
     if (sub.status === 'verified_pass' || sub.status === 'paid') verifiedSubmissions++;
     else if (sub.status === 'pending' || sub.status === 'auditing') pendingAudits++;
@@ -343,7 +386,7 @@ export async function getBrandCampaignDetails(
       post_url: sub.post_url,
       screenshot_url: sub.screenshot_url,
       status: sub.status,
-      reserved_amount: Number(sub.reserved_amount),
+      reserved_amount: Number(sub.reserved_amount || 0),
       views_count: views,
       final_view_count: sub.final_view_count ? Number(sub.final_view_count) : null,
       payout_amount: sub.payout_amount ? Number(sub.payout_amount) : null,
@@ -356,6 +399,16 @@ export async function getBrandCampaignDetails(
   const cpmRate = Number(campaign?.cpm_rate || 0);
   const spentBudget = Number(campaign?.spent_budget || 0);
   const cpmEfficiency = totalViews > 0 ? (spentBudget / totalViews) * 1000 : cpmRate;
+
+  // Dynamic engagement rate calculation: (likes + comments + shares) / totalViews
+  const computedEngagementRate = totalViews > 0
+    ? Number((((totalLikes + totalComments + totalShares) / totalViews) * 100).toFixed(1))
+    : Number((campaign as any)?.target_engagement_rate || 8.4);
+
+  const watchTimeSubs = (rawSubmissions || []).filter((s) => Number(s.watch_time_seconds || 0) > 0);
+  const computedAvgWatchTime = watchTimeSubs.length > 0
+    ? Number((watchTimeSubs.reduce((sum, s) => sum + Number(s.watch_time_seconds), 0) / watchTimeSubs.length).toFixed(1))
+    : Number((campaign as any)?.avg_watch_time_seconds || 24.5);
 
   return {
     campaign: campaign
@@ -391,8 +444,8 @@ export async function getBrandCampaignDetails(
       pendingAudits,
       rejectedSubmissions,
       cpmEfficiency,
-      engagementRate: (campaign as any)?.target_engagement_rate ? Number((campaign as any).target_engagement_rate) : 8.4,
-      avgWatchTime: (campaign as any)?.avg_watch_time_seconds ? Number((campaign as any).avg_watch_time_seconds) : 24.5,
+      engagementRate: computedEngagementRate,
+      avgWatchTime: computedAvgWatchTime,
       reservedBudget: Number(campaign?.reserved_budget || 0),
       budgetFilledPercent: Math.min(100, Math.round((Number(campaign?.reserved_budget || 0) / Number(campaign?.total_budget || 1)) * 100)),
       auditDurationHours: Number(campaign?.required_live_duration_hours || 72) + Number(campaign?.verification_grace_hours || 24),

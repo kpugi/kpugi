@@ -296,9 +296,9 @@ export default function AdvertiserCampaignDetailsView({
             <div className="lg:col-span-2 space-y-6">
               <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget & Escrow Allocation</h3>
+                  <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget Allocation</h3>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    🛡️ SECURED IN ESCROW
+                    🛡️ SECURED
                   </span>
                 </div>
 
@@ -336,7 +336,7 @@ export default function AdvertiserCampaignDetailsView({
             {/* Right Column: Target Channels & Specs */}
             <div className="space-y-6">
               <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-                <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels & Specs</h3>
+                <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels</h3>
                 <div className="flex flex-wrap gap-2">
                   {campaign.channels.map((ch) => (
                     <span key={ch} className="px-3 py-1.5 rounded-xl bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase flex items-center gap-1.5">
@@ -365,7 +365,7 @@ export default function AdvertiserCampaignDetailsView({
               <div>
                 <h3 className="font-display font-bold text-lg text-kpugi-ink flex items-center gap-2">
                   <Users className="w-5 h-5 text-kpugi-blue" />
-                  <span>Joined Creators & Reserved Escrow Allocations</span>
+                  <span>Joined Creators</span>
                 </h3>
                 <p className="text-xs text-kpugi-slate mt-0.5">
                   Detailed ledger of all creators who locked a slot, accounting for the reserved campaign balance.
