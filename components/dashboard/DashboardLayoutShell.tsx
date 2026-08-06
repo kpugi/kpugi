@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import KpugiBotChat from '../support/KpugiBotChat';
+import NetworkStatusToast from '@/components/ui/NetworkStatusToast';
 
 interface DashboardLayoutShellProps {
   children: React.ReactNode;
@@ -369,6 +370,9 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
         onClose={() => setIsChatOpen(false)}
         role={role}
       />
+
+      {/* Network Online / Offline Status Toast */}
+      <NetworkStatusToast />
     </div>
   );
 }
