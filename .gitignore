@@ -40,3 +40,4 @@ docs/*.json
 
 # Antigravity IDE / local tool artifacts
 .antigravity
+scratch/

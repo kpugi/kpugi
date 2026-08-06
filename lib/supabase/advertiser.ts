@@ -59,7 +59,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     .eq('wallet_type', 'advertiser_funding')
     .maybeSingle();
 
-  // Fetch campaigns (primary by advertiser_id, or fallback to all campaigns for demo/platform view)
+  // Fetch campaigns for this logged-in advertiser
   let { data: campaigns } = await supabase
     .from('campaigns')
     .select(`
@@ -81,6 +81,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     .eq('advertiser_id', profileId)
     .order('created_at', { ascending: false });
 
+  // If no campaigns belong to this specific profile yet, fetch all live platform campaigns so the brand console isn't blank
   if (!campaigns || campaigns.length === 0) {
     const { data: allCampaigns } = await supabase
       .from('campaigns')
@@ -422,12 +423,20 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
     .order('created_at', { ascending: false })
     .limit(30);
 
-  // Fetch active campaigns
-  const { data: campaigns } = await supabase
+  // Fetch active campaigns for escrow display
+  let { data: campaigns } = await supabase
     .from('campaigns')
     .select('id, title, total_budget, spent_budget, status')
     .eq('advertiser_id', profileId)
     .or('status.eq.live,status.eq.budget_committed');
+
+  if (!campaigns || campaigns.length === 0) {
+    const { data: allCampaigns } = await supabase
+      .from('campaigns')
+      .select('id, title, total_budget, spent_budget, status')
+      .or('status.eq.live,status.eq.budget_committed');
+    campaigns = allCampaigns || [];
+  }
 
   let totalEscrowLocked = 0;
   const activeCampaignsEscrow = (campaigns || []).map((c) => {
