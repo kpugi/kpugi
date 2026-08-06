@@ -65,6 +65,12 @@ function getHeaderTitle(pathname: string, passedTitle?: string, role: string = '
       if (cleanPath.split('/').filter(Boolean).length > 2) return 'CAMPAIGN MANAGEMENT';
       return 'BRAND CAMPAIGNS';
     }
+    if (cleanPath.startsWith('/b/creators')) {
+      return 'CREATOR DIRECTORY';
+    }
+    if (cleanPath.startsWith('/b/analytics')) {
+      return 'ROI ANALYTICS';
+    }
     if (cleanPath.startsWith('/b/wallet') || cleanPath.startsWith('/wallet')) {
       return 'BRAND WALLET';
     }
@@ -90,9 +96,13 @@ function formatMobileTitle(title: string): { mobile: string; desktop: string } {
     case 'BRAND CAMPAIGNS': return { mobile: 'CAMPAIGNS', desktop: 'BRAND CAMPAIGNS' };
     case 'CAMPAIGNS CATALOGUE': return { mobile: 'CATALOGUE', desktop: 'CAMPAIGNS CATALOGUE' };
     case 'WALLET & EARNINGS': return { mobile: 'WALLET', desktop: 'WALLET & EARNINGS' };
+    case 'BRAND WALLET': return { mobile: 'WALLET', desktop: 'BRAND WALLET' };
     case 'AUDITS & SUBMISSIONS': return { mobile: 'AUDITS', desktop: 'AUDITS & SUBMISSIONS' };
     case 'CONNECTED ACCOUNTS': return { mobile: 'ACCOUNTS', desktop: 'CONNECTED ACCOUNTS' };
     case 'ACCOUNT SETTINGS': return { mobile: 'SETTINGS', desktop: 'ACCOUNT SETTINGS' };
+    case 'BRAND SETTINGS': return { mobile: 'SETTINGS', desktop: 'BRAND SETTINGS' };
+    case 'CREATOR DIRECTORY': return { mobile: 'CREATORS', desktop: 'CREATOR DIRECTORY' };
+    case 'ROI ANALYTICS': return { mobile: 'ANALYTICS', desktop: 'ROI ANALYTICS' };
     default: return { mobile: title, desktop: title };
   }
 }

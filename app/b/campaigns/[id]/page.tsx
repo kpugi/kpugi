@@ -1,8 +1,8 @@
 import React from 'react';
 import { redirect, notFound } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
-import CreatorCampaignDetailsView from '@/components/dashboard/CreatorCampaignDetailsView';
-import { getCampaignDetailsForCreator } from '@/lib/supabase/dashboard';
+import AdvertiserCampaignDetailsView from '@/components/advertiser/AdvertiserCampaignDetailsView';
+import { getBrandCampaignDetails } from '@/lib/supabase/advertiser';
 
 export default async function BrandSingleCampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const userProfile = await getOrCreateUserProfile();
@@ -12,17 +12,11 @@ export default async function BrandSingleCampaignPage({ params }: { params: Prom
   }
 
   const { id } = await params;
-  const campaignData = await getCampaignDetailsForCreator(id, userProfile.profile.id);
+  const data = await getBrandCampaignDetails(id, userProfile.profile.id);
 
-  if (!campaignData || !campaignData.campaign) {
+  if (!data || !data.campaign) {
     notFound();
   }
 
-  return (
-    <CreatorCampaignDetailsView
-      data={campaignData}
-      campaignId={id}
-      userRole="advertiser"
-    />
-  );
+  return <AdvertiserCampaignDetailsView data={data} campaignId={id} />;
 }

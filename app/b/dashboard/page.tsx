@@ -2,7 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import AdvertiserDashboardView from '@/components/dashboard/AdvertiserDashboardView';
-import { getAdvertiserDashboardData } from '@/lib/supabase/dashboard';
+import { getAdvertiserDashboardData } from '@/lib/supabase/advertiser';
 
 export default async function BrandDashboardPage() {
   const userProfile = await getOrCreateUserProfile();
@@ -19,8 +19,7 @@ export default async function BrandDashboardPage() {
     redirect('/c/dashboard');
   }
 
-  const companyName = userProfile.advertiserProfile?.company_name || 'Brand Partner';
   const data = await getAdvertiserDashboardData(userProfile.profile.id);
 
-  return <AdvertiserDashboardView companyName={companyName} data={data} />;
+  return <AdvertiserDashboardView companyName={data.companyName} data={data} />;
 }

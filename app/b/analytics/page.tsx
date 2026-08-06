@@ -1,21 +1,17 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
-import AdvertiserCampaignsView from '@/components/advertiser/AdvertiserCampaignsView';
+import AdvertiserAnalyticsView from '@/components/advertiser/AdvertiserAnalyticsView';
 import { getAdvertiserDashboardData } from '@/lib/supabase/advertiser';
 
-export default async function BrandCampaignsPage() {
+export default async function BrandAnalyticsPage() {
   const userProfile = await getOrCreateUserProfile();
 
   if (!userProfile || !userProfile.profile) {
     redirect('/sign-in');
   }
 
-  if (!userProfile.onboardingComplete) {
-    redirect('/onboarding/role');
-  }
-
   const data = await getAdvertiserDashboardData(userProfile.profile.id);
 
-  return <AdvertiserCampaignsView campaigns={data.campaigns} />;
+  return <AdvertiserAnalyticsView data={data} />;
 }

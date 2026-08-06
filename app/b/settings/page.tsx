@@ -1,8 +1,21 @@
-export default function BrandSettingsPage() {
+import React from 'react';
+import { redirect } from 'next/navigation';
+import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import AdvertiserSettingsView from '@/components/advertiser/AdvertiserSettingsView';
+
+export default async function BrandSettingsPage() {
+  const userProfile = await getOrCreateUserProfile();
+
+  if (!userProfile || !userProfile.profile) {
+    redirect('/sign-in');
+  }
+
+  const companyName = userProfile.advertiserProfile?.company_name || userProfile.profile.full_name || 'Brand Partner';
+
   return (
-    <div>
-      <h1 className="font-display text-2xl font-bold mb-4">Brand Settings</h1>
-      <p className="text-kpugi-slate text-sm">Manage company profile, team access, and invoice billing details.</p>
-    </div>
+    <AdvertiserSettingsView
+      companyName={companyName}
+      advertiserAvatarUrl={userProfile.profile.avatar_url}
+    />
   );
 }
