@@ -397,6 +397,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
         </div>
 
         {/* Bank Payouts Status Card (Cleaned of Paystack branding) */}
+        {/* Bank Account Details Card */}
         <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
@@ -416,24 +417,24 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             <div className="mt-3">
               {primaryBank ? (
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
-                  <div className="font-bold text-slate-900 text-xs">{primaryBank.accountName}</div>
+                  <div className="font-bold text-slate-900 text-xs">{(primaryBank as any).accountName || (primaryBank as any).account_name}</div>
                   <div className="text-[11px] text-slate-500">
-                    {primaryBank.bankName} • •••• {primaryBank.accountNumber.slice(-4)}
+                    {(primaryBank as any).bankName || (primaryBank as any).bank_name} • {((primaryBank as any).accountNumber || (primaryBank as any).account_number || '').slice(-4)}
                   </div>
                 </div>
               ) : (
                 <div className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
-                  Enter bank details on Earnings page to enable payouts.
+                  Enter bank details on Wallet page to enable payouts.
                 </div>
               )}
             </div>
           </div>
 
           <Link
-            href="/earnings"
+            href="/c/wallet"
             className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs text-center transition-colors block"
           >
-            Manage Payout Details →
+            Update Bank & Payouts →
           </Link>
         </div>
 

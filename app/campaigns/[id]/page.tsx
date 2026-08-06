@@ -1,12 +1,7 @@
-import React from 'react';
-import { redirect, notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
-import DashboardLayoutShell from '@/components/dashboard/DashboardLayoutShell';
-import CreatorCampaignDetailsView from '@/components/dashboard/CreatorCampaignDetailsView';
-import CreatorCampaignWorkspaceView from '@/components/creator/campaigns/CreatorCampaignWorkspaceView';
-import { getCampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 
-export default async function SingleCampaignPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function LegacySingleCampaignRedirect({ params }: { params: Promise<{ id: string }> }) {
   const userProfile = await getOrCreateUserProfile();
 
   if (!userProfile || !userProfile.profile) {
@@ -14,28 +9,10 @@ export default async function SingleCampaignPage({ params }: { params: Promise<{
   }
 
   const { id } = await params;
-  const campaignData = await getCampaignDetailsForCreator(id, userProfile.profile.id);
 
-  if (!campaignData || !campaignData.campaign) {
-    notFound();
+  if (userProfile.role === 'advertiser' || userProfile.advertiserProfile) {
+    redirect(`/b/campaigns/${id}`);
   }
 
-  const isAdvertiser = userProfile.role === 'advertiser';
-
-  return (
-    <DashboardLayoutShell role={isAdvertiser ? 'advertiser' : 'creator'} title={campaignData.campaign.title}>
-      {isAdvertiser ? (
-        <CreatorCampaignDetailsView
-          data={campaignData}
-          campaignId={id}
-          userRole="advertiser"
-        />
-      ) : (
-        <CreatorCampaignWorkspaceView
-          data={campaignData}
-          campaignId={id}
-        />
-      )}
-    </DashboardLayoutShell>
-  );
+  redirect(`/c/campaigns/${id}`);
 }

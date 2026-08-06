@@ -419,7 +419,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
           {/* Right Column: CTA Buttons */}
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 justify-center">
             <a
-              href="/campaigns"
+              href="/c/campaigns"
               className="px-6 py-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-lg shadow-kpugi-blue/30 flex items-center justify-center gap-2 group"
             >
               <span>Browse Active Campaigns</span>
@@ -459,7 +459,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   To comply with platform regulations and release earnings withdrawals, you must verify your official government ID (NIN, Voter Card, or Passport).
                 </p>
                 <a
-                  href="/settings"
+                  href="/c/settings"
                   className="inline-block px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors"
                 >
                   Verify Identity in Settings →

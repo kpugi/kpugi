@@ -12,6 +12,8 @@ const ratelimit = isRedisConfigured && redis
   : null;
 
 const isProtectedRoute = createRouteMatcher([
+  '/c/(.*)',
+  '/b/(.*)',
   '/dashboard(.*)',
   '/campaigns(.*)',
   '/wallet(.*)',

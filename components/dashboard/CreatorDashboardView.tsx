@@ -78,7 +78,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </div>
 
           <Link
-            href="/settings"
+            href="/c/settings"
             className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all flex items-center gap-1.5 self-start sm:self-center"
           >
             <span>Complete Verification</span>
@@ -347,7 +347,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
       <div className="pt-6 border-t border-kpugi-border/60 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-display font-bold text-xl text-kpugi-ink">Your Campaigns</h3>
-          <Link href="/campaigns" className="text-xs font-bold text-kpugi-blue hover:underline flex items-center gap-1">
+          <Link href="/c/campaigns" className="text-xs font-bold text-kpugi-blue hover:underline flex items-center gap-1">
             <span>View All Campaigns</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
