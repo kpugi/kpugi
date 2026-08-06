@@ -59,8 +59,8 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     .eq('wallet_type', 'advertiser_funding')
     .maybeSingle();
 
-  // Fetch campaigns
-  const { data: campaigns } = await supabase
+  // Fetch campaigns (primary by advertiser_id, or fallback to all campaigns for demo/platform view)
+  let { data: campaigns } = await supabase
     .from('campaigns')
     .select(`
       id, 
@@ -80,6 +80,29 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     `)
     .eq('advertiser_id', profileId)
     .order('created_at', { ascending: false });
+
+  if (!campaigns || campaigns.length === 0) {
+    const { data: allCampaigns } = await supabase
+      .from('campaigns')
+      .select(`
+        id, 
+        title, 
+        campaign_code,
+        description, 
+        ad_format, 
+        cpm_rate, 
+        total_budget, 
+        reserved_budget, 
+        spent_budget, 
+        status, 
+        channels,
+        created_at, 
+        updated_at,
+        submissions:submissions(id, status, views_count, final_view_count)
+      `)
+      .order('created_at', { ascending: false });
+    campaigns = allCampaigns || [];
+  }
 
   const campaignIds = (campaigns || []).map((c) => c.id);
   let pendingSubmissions = 0;
@@ -241,7 +264,6 @@ export async function getBrandCampaignDetails(
       )
     `)
     .eq('id', campaignId)
-    .eq('advertiser_id', advertiserProfileId)
     .maybeSingle();
 
   const adv = campaign?.advertiser as any;
