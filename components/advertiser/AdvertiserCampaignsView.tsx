@@ -131,7 +131,7 @@ export default function AdvertiserCampaignsView({ campaigns }: AdvertiserCampaig
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
                       <span>CPM: ₦{c.cpm_rate.toLocaleString()} / 1k</span>
-                      <span className="font-bold text-emerald-600">{c.creators_count || 0} Submissions</span>
+                      <span className="font-bold text-emerald-600">{c.creators_count || 0} Joined Creators</span>
                     </div>
                   </div>
                 </div>

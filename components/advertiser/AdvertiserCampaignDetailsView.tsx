@@ -25,6 +25,7 @@ import {
   Activity,
   Award,
   Zap,
+  Lock,
 } from 'lucide-react';
 import { BrandCampaignDetails } from '@/lib/supabase/advertiser';
 import { updateCampaignStatusAction, reviewCreatorSubmissionAction } from '@/app/actions/advertiser';
@@ -102,6 +103,7 @@ export default function AdvertiserCampaignDetailsView({
   };
 
   const progressPercent = Math.min(100, Math.round((campaign.spent_budget / campaign.total_budget) * 100));
+  const totalReservedAmount = submissions.reduce((sum, s) => sum + (s.reserved_amount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -203,7 +205,7 @@ export default function AdvertiserCampaignDetailsView({
             <Users className="w-3.5 h-3.5 text-indigo-600" />
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
-            {metrics.creatorsJoined}
+            {submissions.length}
           </p>
           <span className="text-[9px] text-indigo-600 font-medium block">Active slots locked</span>
         </div>
@@ -215,7 +217,7 @@ export default function AdvertiserCampaignDetailsView({
             <Video className="w-3.5 h-3.5 text-amber-600" />
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
-            {metrics.totalSubmissions}
+            {submissions.filter((s) => s.post_url != null || s.status !== 'joined').length}
           </p>
           <span className="text-[9px] text-amber-600 font-medium block">Verified & Pending</span>
         </div>
@@ -287,73 +289,149 @@ export default function AdvertiserCampaignDetailsView({
 
       {/* Tab 1: Overview */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Budget & Escrow Allocation */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget & Escrow Allocation</h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  🛡️ SECURED IN ESCROW
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold text-kpugi-slate">
-                  <span>Spent: ₦{campaign.spent_budget.toLocaleString()}</span>
-                  <span>Total Budget: ₦{campaign.total_budget.toLocaleString()}</span>
-                </div>
-                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Rate CPM</span>
-                  <span className="font-bold text-slate-900 text-xs">₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
-                </div>
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Min Threshold</span>
-                  <span className="font-bold text-slate-900 text-xs">{campaign.min_view_threshold.toLocaleString()} views</span>
-                </div>
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Reserved</span>
-                  <span className="font-bold text-amber-700 text-xs">₦{metrics.reservedBudget.toLocaleString()}</span>
-                </div>
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-500 block text-[10px] font-bold uppercase">Audit Duration</span>
-                  <span className="font-bold text-slate-900 text-xs">{metrics.auditDurationHours}h</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Platform Channels & Verification Specs */}
-          <div className="space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-              <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels & Specs</h3>
-              <div className="flex flex-wrap gap-2">
-                {campaign.channels.map((ch) => (
-                  <span key={ch} className="px-3 py-1.5 rounded-xl bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase flex items-center gap-1.5">
-                    <span>{ch}</span>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Budget & Escrow Allocation */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget & Escrow Allocation</h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    🛡️ SECURED IN ESCROW
                   </span>
-                ))}
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Required Live Retention:</span>
-                  <span className="font-bold text-slate-900">{campaign.required_live_duration_hours}h</span>
                 </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Verification Grace Window:</span>
-                  <span className="font-bold text-slate-900">{campaign.verification_grace_hours}h</span>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-kpugi-slate">
+                    <span>Spent: ₦{campaign.spent_budget.toLocaleString()}</span>
+                    <span>Total Budget: ₦{campaign.total_budget.toLocaleString()}</span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Rate CPM</span>
+                    <span className="font-bold text-slate-900 text-xs">₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Min Threshold</span>
+                    <span className="font-bold text-slate-900 text-xs">{campaign.min_view_threshold.toLocaleString()} views</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Reserved Balance</span>
+                    <span className="font-bold text-amber-700 text-xs">₦{(campaign.reserved_budget || totalReservedAmount).toLocaleString()}</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Audit Duration</span>
+                    <span className="font-bold text-slate-900 text-xs">{metrics.auditDurationHours}h</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Right Column: Target Channels & Specs */}
+            <div className="space-y-6">
+              <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+                <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels & Specs</h3>
+                <div className="flex flex-wrap gap-2">
+                  {campaign.channels.map((ch) => (
+                    <span key={ch} className="px-3 py-1.5 rounded-xl bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase flex items-center gap-1.5">
+                      <span>{ch}</span>
+                    </span>
+                  ))}
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Required Live Retention:</span>
+                    <span className="font-bold text-slate-900">{campaign.required_live_duration_hours}h</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Verification Grace Window:</span>
+                    <span className="font-bold text-slate-900">{campaign.verification_grace_hours}h</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
+          {/* Dedicated Section: Joined Creators & Reserved Escrow Breakdown */}
+          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-display font-bold text-lg text-kpugi-ink flex items-center gap-2">
+                  <Users className="w-5 h-5 text-kpugi-blue" />
+                  <span>Joined Creators & Reserved Escrow Allocations</span>
+                </h3>
+                <p className="text-xs text-kpugi-slate mt-0.5">
+                  Detailed ledger of all creators who locked a slot, accounting for the reserved campaign balance.
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-mono text-xs font-bold shrink-0">
+                Total Reserved: ₦{(campaign.reserved_budget || totalReservedAmount).toLocaleString()}
+              </span>
+            </div>
+
+            {submissions.length === 0 ? (
+              <div className="py-8 text-center text-kpugi-slate space-y-2">
+                <Users className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="text-xs font-bold">No creators have joined this campaign slot yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                      <th className="py-3 px-3">Joined Creator</th>
+                      <th className="py-3 px-3">Platform</th>
+                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3">Views Delivered</th>
+                      <th className="py-3 px-3 text-right">Reserved Escrow Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {submissions.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                          {sub.creator_avatar_url ? (
+                            <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center">
+                              {sub.creator_handle[1]?.toUpperCase() || 'C'}
+                            </div>
+                          )}
+                          <span>{sub.creator_handle}</span>
+                        </td>
+                        <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
+                          {sub.social_account_platform}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            sub.status === 'verified_pass' || sub.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
+                            sub.status === 'joined' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                            sub.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {sub.status === 'joined' ? 'Slot Locked (Joined)' : sub.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono font-bold text-slate-800">
+                          {sub.views_count ? sub.views_count.toLocaleString() : '0'}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-bold text-amber-700">
+                          ₦{(sub.reserved_amount || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -362,7 +440,7 @@ export default function AdvertiserCampaignDetailsView({
         <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-display font-bold text-lg text-kpugi-ink">Creator Submissions Stream</h3>
-            <span className="text-xs text-kpugi-slate font-medium">{submissions.length} total posts submitted</span>
+            <span className="text-xs text-kpugi-slate font-medium">{submissions.length} total active creator slots</span>
           </div>
 
           {submissions.length === 0 ? (
@@ -411,28 +489,33 @@ export default function AdvertiserCampaignDetailsView({
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         ) : (
-                          <span className="text-slate-400">No URL</span>
+                          <span className="text-slate-400 italic">Slot Locked (No Link Yet)</span>
                         )}
                       </td>
                       <td className="py-3 px-3 font-mono font-bold text-slate-800">
-                        {sub.views_count.toLocaleString()}
+                        {sub.views_count ? sub.views_count.toLocaleString() : '0'}
                       </td>
                       <td className="py-3 px-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                           sub.status === 'verified_pass' || sub.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
+                          sub.status === 'joined' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
                           sub.status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-amber-100 text-amber-800'
                         }`}>
-                          {sub.status}
+                          {sub.status === 'joined' ? 'Slot Locked' : sub.status}
                         </span>
                       </td>
                       <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => setSelectedSubmission(sub)}
-                          className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
-                        >
-                          Review
-                        </button>
+                        {sub.post_url ? (
+                          <button
+                            onClick={() => setSelectedSubmission(sub)}
+                            className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
+                          >
+                            Review
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-medium italic">Awaiting Post</span>
+                        )}
                       </td>
                     </tr>
                   ))}

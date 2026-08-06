@@ -76,7 +76,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       channels,
       created_at, 
       updated_at,
-      submissions:submissions(id, status, final_view_count)
+      submissions:submissions!left(id, status, final_view_count)
     `)
     .eq('advertiser_id', profileId)
     .order('created_at', { ascending: false });
@@ -99,7 +99,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         channels,
         created_at, 
         updated_at,
-        submissions:submissions(id, status, final_view_count)
+        submissions:submissions!left(id, status, final_view_count)
       `)
       .order('created_at', { ascending: false });
     campaigns = allCampaigns || [];
@@ -300,19 +300,19 @@ export async function getBrandCampaignDetails(
       submitted_at,
       verified_at,
       rejection_reason,
-      social_account:social_accounts (
+      social_account:social_accounts!left (
         platform
       ),
-      creator:creator_profiles (
+      creator:creator_profiles!left (
         display_name,
-        profile:profiles (
+        profile:profiles!left (
           full_name,
           avatar_url
         )
       )
     `)
     .eq('campaign_id', campaignId)
-    .order('submitted_at', { ascending: false });
+    .order('created_at', { ascending: false });
 
   let totalViews = 0;
   let verifiedSubmissions = 0;
