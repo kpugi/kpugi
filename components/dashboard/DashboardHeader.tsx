@@ -18,24 +18,49 @@ interface DashboardHeaderProps {
 }
 
 function getHeaderTitle(pathname: string, passedTitle?: string, role: string = 'creator'): string {
-  if (passedTitle) return passedTitle.toUpperCase();
+  const cleanPath = (pathname || '/').toLowerCase();
 
-  if (pathname.startsWith('/browse') || pathname.startsWith('/catalogue')) {
-    if (pathname.split('/').length > 2) return 'CAMPAIGN DETAILS';
+  // Route-based dynamic title mapping
+  if (cleanPath === '/dashboard' || cleanPath === '/') {
+    return role === 'creator' ? 'CREATOR OVERVIEW' : 'BRAND OVERVIEW';
+  }
+  if (cleanPath.startsWith('/browse') || cleanPath.startsWith('/catalogue')) {
+    if (cleanPath.split('/').filter(Boolean).length > 1) return 'CAMPAIGN DETAILS';
     return 'CAMPAIGNS CATALOGUE';
   }
-  if (pathname.startsWith('/dashboard') || pathname === '/') return 'OVERVIEW';
-  if (pathname.startsWith('/wallet') || pathname.startsWith('/earnings')) return 'WALLET & EARNINGS';
-  if (pathname.startsWith('/submissions') || pathname.startsWith('/audits')) return 'AUDITS & SUBMISSIONS';
-  if (pathname.startsWith('/accounts')) return 'CONNECTED ACCOUNTS';
-  if (pathname.startsWith('/settings')) return 'ACCOUNT SETTINGS';
-  if (pathname.startsWith('/campaigns')) {
-    if (pathname.includes('/new')) return 'CREATE CAMPAIGN';
-    if (pathname.split('/').length > 2) return 'CAMPAIGN MANAGE';
-    return 'CAMPAIGN MANAGEMENT';
+  if (cleanPath.startsWith('/campaigns')) {
+    if (cleanPath.includes('/new')) return 'CREATE CAMPAIGN';
+    if (
+      cleanPath.split('/').filter(Boolean).length > 1 &&
+      passedTitle &&
+      !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
+    ) {
+      return passedTitle.toUpperCase();
+    }
+    return role === 'creator' ? 'CREATOR CAMPAIGNS' : 'BRAND CAMPAIGNS';
+  }
+  if (cleanPath.startsWith('/wallet') || cleanPath.startsWith('/earnings')) {
+    return 'WALLET & EARNINGS';
+  }
+  if (cleanPath.startsWith('/submissions') || cleanPath.startsWith('/audits')) {
+    return 'AUDITS & SUBMISSIONS';
+  }
+  if (cleanPath.startsWith('/accounts')) {
+    return 'CONNECTED ACCOUNTS';
+  }
+  if (cleanPath.startsWith('/settings')) {
+    return 'ACCOUNT SETTINGS';
   }
 
-  return role === 'creator' ? 'CREATOR CONSOLE' : 'ADVERTISER CONSOLE';
+  // If a non-generic custom title was passed (e.g. specific campaign name), use it
+  if (
+    passedTitle &&
+    !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
+  ) {
+    return passedTitle.toUpperCase();
+  }
+
+  return role === 'creator' ? 'CREATOR CONSOLE' : 'BRAND CONSOLE';
 }
 
 function KnockNotificationBell() {
