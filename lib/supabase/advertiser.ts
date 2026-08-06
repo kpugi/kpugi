@@ -76,7 +76,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       channels,
       created_at, 
       updated_at,
-      submissions:submissions(id, status, views_count, final_view_count)
+      submissions:submissions(id, status, final_view_count)
     `)
     .eq('advertiser_id', profileId)
     .order('created_at', { ascending: false });
@@ -99,7 +99,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         channels,
         created_at, 
         updated_at,
-        submissions:submissions(id, status, views_count, final_view_count)
+        submissions:submissions(id, status, final_view_count)
       `)
       .order('created_at', { ascending: false });
     campaigns = allCampaigns || [];
@@ -287,7 +287,6 @@ export async function getBrandCampaignDetails(
       screenshot_url,
       status,
       reserved_amount,
-      views_count,
       final_view_count,
       payout_amount,
       submitted_at,
@@ -519,8 +518,7 @@ export async function getBrandCreatorsDirectory(): Promise<DirectoryCreator[]> {
       submissions:submissions (
         id,
         status,
-        final_view_count,
-        views_count
+        final_view_count
       )
     `)
     .limit(40);
@@ -536,7 +534,7 @@ export async function getBrandCreatorsDirectory(): Promise<DirectoryCreator[]> {
       }));
 
     const subs = c.submissions || [];
-    const totalViews = subs.reduce((sum: number, s: any) => sum + Number(s.final_view_count || s.views_count || 0), 0);
+    const totalViews = subs.reduce((sum: number, s: any) => sum + Number(s.final_view_count || 0), 0);
     const completed = subs.filter((s: any) => s.status === 'verified_pass' || s.status === 'paid').length;
 
     return {
