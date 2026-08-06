@@ -20,39 +20,77 @@ interface DashboardHeaderProps {
 function getHeaderTitle(pathname: string, passedTitle?: string, role: string = 'creator'): string {
   const cleanPath = (pathname || '/').toLowerCase();
 
-  // Route-based dynamic title mapping
-  if (cleanPath === '/dashboard' || cleanPath === '/') {
-    return role === 'creator' ? 'CREATOR OVERVIEW' : 'BRAND OVERVIEW';
+  // 1. Creator compact routes (/c/*)
+  if (cleanPath.startsWith('/c')) {
+    if (cleanPath === '/c/dashboard' || cleanPath === '/c' || cleanPath === '/c/') return 'CREATOR OVERVIEW';
+    if (cleanPath.startsWith('/c/campaigns')) {
+      if (cleanPath.includes('/new')) return 'CREATE CAMPAIGN';
+      if (cleanPath.split('/').filter(Boolean).length > 2) {
+        if (
+          passedTitle &&
+          !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
+        ) {
+          return passedTitle.toUpperCase();
+        }
+        return 'CAMPAIGN DETAILS';
+      }
+      return 'CREATOR CAMPAIGNS';
+    }
+    if (cleanPath.startsWith('/c/wallet') || cleanPath.startsWith('/c/earnings')) {
+      return 'WALLET & EARNINGS';
+    }
+    if (cleanPath.startsWith('/c/submissions') || cleanPath.startsWith('/c/audits')) {
+      return 'AUDITS & SUBMISSIONS';
+    }
+    if (cleanPath.startsWith('/c/accounts')) {
+      return 'CONNECTED ACCOUNTS';
+    }
+    if (cleanPath.startsWith('/c/settings')) {
+      return 'ACCOUNT SETTINGS';
+    }
+    if (cleanPath.startsWith('/c/browse') || cleanPath.startsWith('/c/catalogue')) {
+      return 'CAMPAIGNS CATALOGUE';
+    }
   }
+
+  // 2. Brand / Advertiser compact routes (/b/*)
+  if (cleanPath.startsWith('/b')) {
+    if (cleanPath === '/b/dashboard' || cleanPath === '/b' || cleanPath === '/b/') return 'BRAND OVERVIEW';
+    if (cleanPath.startsWith('/b/campaigns')) {
+      if (cleanPath.includes('/new')) return 'CREATE CAMPAIGN';
+      if (cleanPath.split('/').filter(Boolean).length > 2) {
+        if (
+          passedTitle &&
+          !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
+        ) {
+          return passedTitle.toUpperCase();
+        }
+        return 'CAMPAIGN MANAGEMENT';
+      }
+      return 'BRAND CAMPAIGNS';
+    }
+    if (cleanPath.startsWith('/b/wallet')) {
+      return 'BRAND WALLET';
+    }
+    if (cleanPath.startsWith('/b/settings')) {
+      return 'BRAND SETTINGS';
+    }
+  }
+
+  // 3. Fallback & Public Discovery Routes
   if (cleanPath.startsWith('/browse') || cleanPath.startsWith('/catalogue')) {
     if (cleanPath.split('/').filter(Boolean).length > 1) return 'CAMPAIGN DETAILS';
     return 'CAMPAIGNS CATALOGUE';
   }
-  if (cleanPath.startsWith('/campaigns')) {
-    if (cleanPath.includes('/new')) return 'CREATE CAMPAIGN';
-    if (
-      cleanPath.split('/').filter(Boolean).length > 1 &&
-      passedTitle &&
-      !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
-    ) {
-      return passedTitle.toUpperCase();
-    }
-    return role === 'creator' ? 'CREATOR CAMPAIGNS' : 'BRAND CAMPAIGNS';
-  }
-  if (cleanPath.startsWith('/wallet') || cleanPath.startsWith('/earnings')) {
-    return 'WALLET & EARNINGS';
-  }
-  if (cleanPath.startsWith('/submissions') || cleanPath.startsWith('/audits')) {
-    return 'AUDITS & SUBMISSIONS';
-  }
-  if (cleanPath.startsWith('/accounts')) {
-    return 'CONNECTED ACCOUNTS';
-  }
-  if (cleanPath.startsWith('/settings')) {
-    return 'ACCOUNT SETTINGS';
+
+  if (cleanPath.includes('/dashboard') || cleanPath === '/') {
+    return role === 'creator' ? 'CREATOR OVERVIEW' : 'BRAND OVERVIEW';
   }
 
-  // If a non-generic custom title was passed (e.g. specific campaign name), use it
+  if (cleanPath.includes('/campaigns')) {
+    return role === 'creator' ? 'CREATOR CAMPAIGNS' : 'BRAND CAMPAIGNS';
+  }
+
   if (
     passedTitle &&
     !['creator console', 'brand console', 'creator campaigns', 'brand campaigns'].includes(passedTitle.toLowerCase())
@@ -108,9 +146,9 @@ function KnockNotificationBell() {
           if (actionUrl && typeof actionUrl === 'string' && actionUrl.startsWith('/')) {
             router.push(actionUrl);
           } else if (data?.campaignId) {
-            router.push(`/campaigns/${data.campaignId}`);
+            router.push(`/c/campaigns/${data.campaignId}`);
           } else {
-            router.push('/dashboard');
+            router.push('/c/dashboard');
           }
         }}
       />
