@@ -460,6 +460,31 @@ export async function getBrandCampaignDetails(
     };
   });
 
+  // Ensure all settled submissions (verified_pass, paid, rejected) populate in audits list if missing from submission_audits table
+  const existingAuditSubIds = new Set(mappedAudits.map((a) => a.submission_id));
+  const fallbackAudits = mappedSubmissions
+    .filter(
+      (sub) =>
+        (sub.status === 'verified_pass' || sub.status === 'paid' || sub.status === 'rejected') &&
+        !existingAuditSubIds.has(sub.id)
+    )
+    .map((sub) => ({
+      id: `audit-fallback-${sub.id}`,
+      submission_id: sub.id,
+      creator_handle: sub.creator_handle,
+      creator_avatar_url: sub.creator_avatar_url,
+      views_scraped: Number(sub.views_count || sub.final_view_count || 0),
+      views_delta: Number(sub.views_count || sub.final_view_count || 0),
+      payout_amount: Number(sub.payout_amount || 0),
+      status: sub.status === 'rejected' ? 'rejected' : 'approved',
+      settled_at: sub.verified_at || sub.submitted_at || new Date().toISOString(),
+      failure_reason: sub.failure_reason || null,
+    }));
+
+  const allAudits = [...mappedAudits, ...fallbackAudits].sort(
+    (a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime()
+  );
+
   const cpmRate = Number(campaign?.cpm_rate || 0);
   const spentBudget = Number(campaign?.spent_budget || 0);
   const cpmEfficiency = totalViews > 0 ? (spentBudget / totalViews) * 1000 : cpmRate;
@@ -467,12 +492,12 @@ export async function getBrandCampaignDetails(
   // Dynamic engagement rate calculation: (likes + comments + shares) / totalViews
   const computedEngagementRate = totalViews > 0
     ? Number((((totalLikes + totalComments + totalShares) / totalViews) * 100).toFixed(1))
-    : Number((campaign as any)?.target_engagement_rate || 8.4);
+    : 0;
 
   const watchTimeSubs = (rawSubmissions || []).filter((s) => Number(s.watch_time_seconds || 0) > 0);
   const computedAvgWatchTime = watchTimeSubs.length > 0
     ? Number((watchTimeSubs.reduce((sum, s) => sum + Number(s.watch_time_seconds), 0) / watchTimeSubs.length).toFixed(1))
-    : Number((campaign as any)?.avg_watch_time_seconds || 24.5);
+    : 0;
 
   return {
     campaign: campaign
@@ -499,7 +524,7 @@ export async function getBrandCampaignDetails(
       : null,
     creatives: creatives || [],
     submissions: mappedSubmissions,
-    audits: mappedAudits,
+    audits: allAudits,
     metrics: {
       totalViews,
       totalPayouts: spentBudget,

@@ -5,12 +5,12 @@
 export function calculateBudgetReservation(
   followerCount: number = 5000,
   cpmRate: number = 2000,
-  remainingBudget: number
+  remainingBudget: number = 100000,
+  minViewThreshold: number = 1000
 ): number {
-  // Estimate baseline expected views (minimum 1,000 views)
-  const estimatedViews = Math.max(1000, Math.min(10000, Math.round(followerCount * 0.2)));
-  const estimatedAmount = (estimatedViews / 1000) * cpmRate;
+  // Base reservation for first-joiners is the minimum view threshold payout insurance
+  const baseReservation = Math.max(cpmRate, Math.round((minViewThreshold / 1000) * cpmRate));
 
   // Cap reservation at the campaign's remaining unreserved budget
-  return Math.min(estimatedAmount, remainingBudget);
+  return Math.min(baseReservation, remainingBudget);
 }

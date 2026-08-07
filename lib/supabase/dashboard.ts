@@ -310,6 +310,7 @@ export interface CampaignDetailsForCreator {
     final_view_count: number | null;
     creator_handle: string;
     creator_avatar_url: string | null;
+    social_account_platform?: string | null;
   }[];
   audits?: {
     id: string;
@@ -443,6 +444,7 @@ export async function getCampaignDetailsForCreator(
       comments_count,
       shares_count,
       watch_time_seconds,
+      social_accounts:social_accounts!left(platform),
       creator:creator_profiles!left(
         display_name,
         profile:profiles!left(
@@ -477,17 +479,18 @@ export async function getCampaignDetailsForCreator(
       final_view_count: sub.final_view_count ? Number(sub.final_view_count) : null,
       creator_handle: creatorHandle.startsWith('@') ? creatorHandle : `@${creatorHandle}`,
       creator_avatar_url: creatorAvatar,
+      social_account_platform: sub.social_accounts?.platform || null,
     };
   });
 
   const computedEngagementRate = totalViews > 0
     ? Number((((totalLikes + totalComments + totalShares) / totalViews) * 100).toFixed(1))
-    : Number((campaign as any)?.target_engagement_rate || 8.4);
+    : 0;
 
   const watchTimeSubs = (allSubs || []).filter((s: any) => Number(s.watch_time_seconds || 0) > 0);
   const computedAvgWatchTime = watchTimeSubs.length > 0
     ? Number((watchTimeSubs.reduce((sum: number, s: any) => sum + Number(s.watch_time_seconds), 0) / watchTimeSubs.length).toFixed(1))
-    : Number((campaign as any)?.avg_watch_time_seconds || 24.5);
+    : 0;
 
   // 6. Fetch Settled Audits for this Campaign
   const { data: rawAudits } = await supabase

@@ -60,6 +60,49 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       ? (campaign.channels as ('Instagram' | 'TikTok' | 'YouTube' | 'Facebook' | 'LinkedIn' | 'X')[])
       : ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'LinkedIn', 'X'];
 
+  // Normalize platform string helper
+  const normalizePlatform = (name: string) => {
+    const lower = (name || '').toLowerCase();
+    if (lower.includes('tiktok')) return 'TikTok';
+    if (lower.includes('instagram')) return 'Instagram';
+    if (lower.includes('youtube')) return 'YouTube';
+    if (lower.includes('facebook')) return 'Facebook';
+    if (lower.includes('linkedin')) return 'LinkedIn';
+    if (lower.includes('twitter') || lower === 'x') return 'X';
+    return name || 'Other';
+  };
+
+  const getPlatformGradient = (platform: string) => {
+    const p = platform.toLowerCase();
+    if (p === 'tiktok') return 'from-red-500 via-pink-500 to-cyan-500';
+    if (p === 'instagram') return 'from-purple-500 to-pink-500';
+    if (p === 'youtube') return 'from-red-600 to-red-400';
+    if (p === 'facebook') return 'from-blue-600 to-indigo-600';
+    if (p === 'linkedin') return 'from-blue-500 to-cyan-500';
+    return 'from-slate-400 to-slate-200';
+  };
+
+  // Dynamic Platform Channel Share Calculation
+  const channelMap: Record<string, number> = {};
+  acceptedPlatforms.forEach(p => {
+    channelMap[normalizePlatform(p)] = 0;
+  });
+
+  allSubmissions.forEach(sub => {
+    const platform = normalizePlatform(sub.social_account_platform || (sub as any).social_accounts?.platform || '');
+    const views = Number(sub.final_view_count || (sub as any).views_count || 0);
+    channelMap[platform] = (channelMap[platform] || 0) + views;
+  });
+
+  const totalChannelViews = Object.values(channelMap).reduce((a, b) => a + b, 0);
+
+  const platformShareList = Object.entries(channelMap)
+    .map(([platform, views]) => {
+      const share = totalChannelViews > 0 ? Math.round((views / totalChannelViews) * 100) : 0;
+      return { platform, views, share };
+    })
+    .sort((a, b) => b.views - a.views);
+
   const renderPlatformIcon = (platform: string, className = "w-4 h-4") => {
     const p = platform.toLowerCase();
     if (p === 'tiktok') {
@@ -846,14 +889,14 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Engagement</div>
                       <div className="font-mono text-2xl font-extrabold text-white">
-                        {(campaign as any)?.target_engagement_rate ? `${(campaign as any).target_engagement_rate}%` : '8.4%'}
+                        {(campaign as any)?.target_engagement_rate != null ? `${(campaign as any).target_engagement_rate}%` : '0%'}
                       </div>
                       <div className="text-[9px] text-slate-400">Like & Comment ratio</div>
                     </div>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
                       <div className="font-mono text-2xl font-extrabold text-white">
-                        {(campaign as any)?.avg_watch_time_seconds ? `${(campaign as any).avg_watch_time_seconds}s` : '24.5s'}
+                        {(campaign as any)?.avg_watch_time_seconds != null ? `${(campaign as any).avg_watch_time_seconds}s` : '0s'}
                       </div>
                       <div className="text-[9px] text-slate-400">Retention benchmark</div>
                     </div>
@@ -868,53 +911,25 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   </div>
 
                   <div className="space-y-4">
-                    {/* TikTok Share */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5 font-bold text-white">
-                          {renderPlatformIcon('TikTok', 'w-3.5 h-3.5')}
-                          <span>TikTok</span>
+                    {platformShareList.map(({ platform, views, share }) => (
+                      <div key={platform} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1.5 font-bold text-white">
+                            {renderPlatformIcon(platform, 'w-3.5 h-3.5')}
+                            <span>{platform === 'X' ? 'X (Twitter)' : platform}</span>
+                          </div>
+                          <span className="font-mono text-slate-300">
+                            {formatCompactNumber(views)} views ({share}%)
+                          </span>
                         </div>
-                        <span className="font-mono text-slate-300">
-                          {formatCompactNumber(Math.round(dbViews * 0.6))} views (60%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                        <div className="bg-gradient-to-r from-red-500 via-pink-500 to-cyan-500 h-full rounded-full" style={{ width: '60%' }} />
-                      </div>
-                    </div>
-
-                    {/* Instagram Share */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5 font-bold text-white">
-                          {renderPlatformIcon('Instagram', 'w-3.5 h-3.5')}
-                          <span>Instagram</span>
+                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`bg-gradient-to-r ${getPlatformGradient(platform)} h-full rounded-full transition-all duration-500`}
+                            style={{ width: `${share}%` }}
+                          />
                         </div>
-                        <span className="font-mono text-slate-300">
-                          {formatCompactNumber(Math.round(dbViews * 0.3))} views (30%)
-                        </span>
                       </div>
-                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full" style={{ width: '30%' }} />
-                      </div>
-                    </div>
-
-                    {/* X Share */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5 font-bold text-white">
-                          {renderPlatformIcon('X', 'w-3.5 h-3.5')}
-                          <span>X (Twitter)</span>
-                        </div>
-                        <span className="font-mono text-slate-300">
-                          {formatCompactNumber(Math.round(dbViews * 0.1))} views (10%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                        <div className="bg-white/40 h-full rounded-full" style={{ width: '10%' }} />
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 

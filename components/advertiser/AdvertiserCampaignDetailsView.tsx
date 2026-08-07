@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   BarChart3,
   Users,
@@ -39,6 +40,7 @@ export default function AdvertiserCampaignDetailsView({
   data,
   campaignId,
 }: AdvertiserCampaignDetailsViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'submissions' | 'creatives' | 'leaderboard'>('overview');
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -75,6 +77,7 @@ export default function AdvertiserCampaignDetailsView({
         text: `Campaign status updated to ${newStatus.toUpperCase()}.${newStatus === 'completed' ? ' Remaining unspent budget refunded to wallet.' : ''}`,
         type: 'success',
       });
+      router.refresh();
     } else {
       setMsg({ text: res.error || 'Failed to update status', type: 'error' });
     }
@@ -97,13 +100,25 @@ export default function AdvertiserCampaignDetailsView({
 
     if (res.success) {
       setMsg({ text: `Submission ${decision === 'approve' ? 'Approved & Paid' : 'Rejected'}.`, type: 'success' });
+      router.refresh();
     } else {
       setMsg({ text: res.error || 'Failed to process submission review', type: 'error' });
     }
   };
 
   const progressPercent = Math.min(100, Math.round((campaign.spent_budget / campaign.total_budget) * 100));
-  const totalReservedAmount = submissions.reduce((sum, s) => sum + (s.reserved_amount || 0), 0);
+  const minThreshold = campaign.min_view_threshold || 1000;
+  const baseSlotReserve = Math.round((minThreshold / 1000) * campaign.cpm_rate);
+
+  // Reserves are strictly for first-joiners awaiting minimum view threshold
+  const totalReservedAmount = submissions.reduce((sum, s) => {
+    const subViews = Number(s.views_count || s.final_view_count || 0);
+    const totalPaid = Number(s.payout_amount || 0);
+    const hasPassed = subViews >= minThreshold || totalPaid > 0;
+    if (hasPassed) return sum;
+
+    return sum + baseSlotReserve;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -368,11 +383,11 @@ export default function AdvertiserCampaignDetailsView({
                   <span>Joined Creators</span>
                 </h3>
                 <p className="text-xs text-kpugi-slate mt-0.5">
-                  Detailed ledger of all creators who locked a slot, accounting for the reserved campaign balance.
+                  Central ledger of joined creators, tracking cumulative verified views delivered and total payout released.
                 </p>
               </div>
               <span className="px-3 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-mono text-xs font-bold shrink-0">
-                Total Reserved: ₦{(campaign.reserved_budget || totalReservedAmount).toLocaleString()}
+                Total Reserved: ₦{totalReservedAmount.toLocaleString()}
               </span>
             </div>
 
@@ -388,45 +403,54 @@ export default function AdvertiserCampaignDetailsView({
                     <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
                       <th className="py-3 px-3">Joined Creator</th>
                       <th className="py-3 px-3">Platform</th>
-                      <th className="py-3 px-3">Status</th>
-                      <th className="py-3 px-3">Views Delivered</th>
-                      <th className="py-3 px-3 text-right">Reserved Escrow Amount</th>
+                      <th className="py-3 px-3">Cumulative Verified Views</th>
+                      <th className="py-3 px-3 text-right">Total Earned / Payout Released</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {submissions.map((sub) => (
-                      <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
-                          {sub.creator_avatar_url ? (
-                            <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover" />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center">
-                              {sub.creator_handle[1]?.toUpperCase() || 'C'}
-                            </div>
-                          )}
-                          <span>{sub.creator_handle}</span>
-                        </td>
-                        <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
-                          {sub.social_account_platform}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            sub.status === 'verified_pass' || sub.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                            sub.status === 'joined' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                            sub.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-amber-100 text-amber-800'
-                          }`}>
-                            {sub.status === 'joined' ? 'Slot Locked (Joined)' : sub.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 font-mono font-bold text-slate-800">
-                          {sub.views_count ? sub.views_count.toLocaleString() : '0'}
-                        </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-amber-700">
-                          ₦{(sub.reserved_amount || 0).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
+                    {submissions.map((sub) => {
+                      const verifiedViews = Number(sub.views_count || sub.final_view_count || 0);
+                      const totalPaid = Number(sub.payout_amount || 0);
+                      const hasPassedMin = verifiedViews >= minThreshold || totalPaid > 0;
+
+                      // Reserve applies strictly to first-joiners prior to passing minimum view threshold
+                      const slotReserve = hasPassedMin ? 0 : baseSlotReserve;
+
+                      return (
+                        <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                            {sub.creator_avatar_url ? (
+                              <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center">
+                                {sub.creator_handle[1]?.toUpperCase() || 'C'}
+                              </div>
+                            )}
+                            <span>{sub.creator_handle}</span>
+                          </td>
+                          <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
+                            {sub.social_account_platform}
+                          </td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-800">
+                            {verifiedViews.toLocaleString()} views
+                          </td>
+                          <td className="py-3 px-3 text-right font-mono font-bold">
+                            {totalPaid > 0 ? (
+                              <span className="text-emerald-600 font-extrabold">
+                                ₦{totalPaid.toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 font-medium">
+                                ₦0{' '}
+                                <span className="text-[10px] text-amber-700 font-mono ml-1">
+                                  (₦{slotReserve.toLocaleString()} reserved)
+                                </span>
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -436,267 +460,309 @@ export default function AdvertiserCampaignDetailsView({
       )}
 
       {/* Tab 2: Submissions Stream */}
-      {activeTab === 'submissions' && (
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display font-bold text-lg text-kpugi-ink">Creator Submissions Stream</h3>
-            <span className="text-xs text-kpugi-slate font-medium">{submissions.length} total active creator slots</span>
-          </div>
+      {activeTab === 'submissions' && (() => {
+        const activeSubmissions = submissions.filter(
+          (s) =>
+            s.status === 'joined' ||
+            s.status === 'pending' ||
+            s.status === 'auditing' ||
+            Number(s.pending_payout_amount || 0) > 0
+        );
 
-          {submissions.length === 0 ? (
-            <div className="py-12 text-center text-kpugi-slate space-y-2">
-              <Video className="w-8 h-8 mx-auto text-slate-300" />
-              <p className="text-xs font-bold">No submissions yet for this campaign.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
-                    <th className="py-3 px-3">Creator</th>
-                    <th className="py-3 px-3">Platform</th>
-                    <th className="py-3 px-3">Post Link</th>
-                    <th className="py-3 px-3">Views Count</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {submissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
-                        {sub.creator_avatar_url ? (
-                          <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center">
-                            {sub.creator_handle[1]?.toUpperCase() || 'C'}
-                          </div>
-                        )}
-                        <span>{sub.creator_handle}</span>
-                      </td>
-                      <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
-                        {sub.social_account_platform}
-                      </td>
-                      <td className="py-3 px-3">
-                        {sub.post_url ? (
-                          <a
-                            href={sub.post_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-kpugi-blue hover:underline font-medium flex items-center gap-1 max-w-[180px] truncate"
-                          >
-                            <span>View Video</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 italic">Slot Locked (No Link Yet)</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-slate-800">
-                        {sub.views_count ? sub.views_count.toLocaleString() : '0'}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          sub.status === 'verified_pass' || sub.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                          sub.status === 'joined' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                          sub.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-amber-100 text-amber-800'
-                        }`}>
-                          {sub.status === 'joined' ? 'Slot Locked' : sub.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        {sub.post_url ? (
-                          <button
-                            onClick={() => setSelectedSubmission(sub)}
-                            className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
-                          >
-                            Review
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-slate-400 font-medium italic">Awaiting Post</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Settled Audit Cycles History */}
-          <div className="pt-6 border-t border-slate-100 space-y-3">
+        return (
+          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-display font-bold text-sm text-kpugi-ink flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Settled Audit Cycles History</span>
-              </h4>
-              <span className="text-[11px] font-mono font-bold text-slate-500">
-                {data.audits?.length || 0} Settled Runs
+              <h3 className="font-display font-bold text-lg text-kpugi-ink">Creator Submissions Stream</h3>
+              <span className="text-xs text-kpugi-slate font-medium">
+                {activeSubmissions.length} active creator runs ({submissions.length} total slots)
               </span>
             </div>
 
-            {(!data.audits || data.audits.length === 0) ? (
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center text-xs text-kpugi-slate">
-                No settled audit runs yet for this campaign. As 60-min audit cycles complete or receive approval, settled runs will populate here.
+            {activeSubmissions.length === 0 ? (
+              <div className="py-12 text-center text-kpugi-slate space-y-2">
+                <Video className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="text-xs font-bold">No active creator submissions currently pending audit or review.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
-                      <th className="py-2.5 px-3">Creator</th>
-                      <th className="py-2.5 px-3">Views Scraped</th>
-                      <th className="py-2.5 px-3">Net New Views</th>
-                      <th className="py-2.5 px-3">Payout Released</th>
-                      <th className="py-2.5 px-3">Settlement Type</th>
-                      <th className="py-2.5 px-3 text-right">Settled At</th>
+                      <th className="py-3 px-3">Creator</th>
+                      <th className="py-3 px-3">Platform</th>
+                      <th className="py-3 px-3">Post Link</th>
+                      <th className="py-3 px-3">Views Count</th>
+                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-sans">
-                    {data.audits.map((audit) => (
-                      <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3 font-bold text-slate-900 flex items-center gap-2">
-                          {audit.creator_avatar_url ? (
-                            <Image src={audit.creator_avatar_url} alt="" width={20} height={20} className="rounded-full object-cover" />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[9px] font-bold flex items-center justify-center">
-                              {audit.creator_handle[1]?.toUpperCase() || 'C'}
-                            </div>
-                          )}
-                          <span>{audit.creator_handle}</span>
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
-                          {audit.views_scraped.toLocaleString()}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
-                          +{audit.views_delta.toLocaleString()}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                          ₦{audit.payout_amount.toLocaleString()}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                            audit.status === 'auto_approved'
-                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                              : audit.status === 'approved'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                              : 'bg-red-100 text-red-800 border border-red-200'
-                          }`}>
-                            {audit.status === 'auto_approved' ? '⚡ 60-Min Auto-Credited' : audit.status}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-mono text-[11px] text-slate-500">
-                          {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-slate-100">
+                    {activeSubmissions.map((sub) => {
+                      const subViews = Number(sub.views_count || sub.final_view_count || 0);
+                      const minThreshold = campaign.min_view_threshold || 1000;
+                      const isBelowMin = sub.status === 'pending' && subViews < minThreshold;
+
+                      return (
+                        <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                            {sub.creator_avatar_url ? (
+                              <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center">
+                                {sub.creator_handle[1]?.toUpperCase() || 'C'}
+                              </div>
+                            )}
+                            <span>{sub.creator_handle}</span>
+                          </td>
+                          <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
+                            {sub.social_account_platform}
+                          </td>
+                          <td className="py-3 px-3">
+                            {sub.post_url ? (
+                              <a
+                                href={sub.post_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-kpugi-blue hover:underline font-medium flex items-center gap-1 max-w-[180px] truncate"
+                              >
+                                <span>View Video</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 italic">Slot Locked (No Link Yet)</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-800">
+                            {subViews.toLocaleString()}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              sub.status === 'auditing' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                              sub.status === 'joined' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                              isBelowMin ? 'bg-slate-100 text-slate-700 border border-slate-200' :
+                              'bg-emerald-100 text-emerald-800'
+                            }`}>
+                              {sub.status === 'joined' ? 'Slot Locked' :
+                               isBelowMin ? 'Awaiting Min Views' :
+                               sub.status === 'auditing' ? 'Auditing Run' : sub.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            {sub.post_url ? (
+                              <button
+                                onClick={() => setSelectedSubmission(sub)}
+                                className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
+                              >
+                                Review
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-medium italic">Awaiting Post</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
-          </div>
-        </div>
-      )}
 
-      {/* Review Modal */}
-      {selectedSubmission && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-kpugi-border">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-lg text-kpugi-ink">Review Creator Submission</h3>
-              <button
-                onClick={() => setSelectedSubmission(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-kpugi-slate">
-              Creator <span className="font-bold text-kpugi-ink">{selectedSubmission.creator_handle}</span> delivered{' '}
-              <span className="font-bold text-kpugi-ink">{(selectedSubmission.views_count || selectedSubmission.final_view_count || 0).toLocaleString()} views</span>.
-            </p>
-
-            {/* 60-Minute Countdown Review Timer */}
-            <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-amber-800">
-                  <Clock className="w-4 h-4 text-amber-600 animate-spin" />
-                  <span>60-Min Review Window</span>
-                </span>
-                <span className="font-mono text-xs font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md border border-amber-300">
-                  {selectedSubmission.auto_approve_at ? (
-                    (() => {
-                      const diff = Math.max(0, Math.floor((new Date(selectedSubmission.auto_approve_at).getTime() - Date.now()) / 1000));
-                      const m = Math.floor(diff / 60);
-                      const s = diff % 60;
-                      return `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
-                    })()
-                  ) : (
-                    '59m 59s'
-                  )}
+            {/* Settled Audit Cycles History */}
+            <div className="pt-6 border-t border-slate-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-display font-bold text-sm text-kpugi-ink flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Settled Audit Cycles History</span>
+                </h4>
+                <span className="text-[11px] font-mono font-bold text-slate-500">
+                  {data.audits?.length || 0} Settled Runs
                 </span>
               </div>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                Views are verified every 60 mins. If you do not manually reject or approve within this 60-min audit run, payout will <strong>auto-credit to the creator&apos;s balance</strong> automatically.
-              </p>
-              {selectedSubmission.pending_payout_amount > 0 && (
-                <div className="pt-1 flex items-center justify-between text-xs font-bold text-emerald-800 border-t border-amber-200">
-                  <span>Audit Run Pending Payout:</span>
-                  <span className="font-mono text-sm">₦{Number(selectedSubmission.pending_payout_amount).toLocaleString()}</span>
+
+              {(!data.audits || data.audits.length === 0) ? (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center text-xs text-kpugi-slate">
+                  No settled audit runs yet for this campaign. As 60-min audit cycles complete or receive approval, settled runs will populate here.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                        <th className="py-2.5 px-3">Creator</th>
+                        <th className="py-2.5 px-3">Views Scraped</th>
+                        <th className="py-2.5 px-3">Net New Views</th>
+                        <th className="py-2.5 px-3">Payout Released</th>
+                        <th className="py-2.5 px-3">Settlement Type</th>
+                        <th className="py-2.5 px-3 text-right">Settled At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-sans">
+                      {data.audits.map((audit) => (
+                        <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-2.5 px-3 font-bold text-slate-900 flex items-center gap-2">
+                            {audit.creator_avatar_url ? (
+                              <Image src={audit.creator_avatar_url} alt="" width={20} height={20} className="rounded-full object-cover" />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[9px] font-bold flex items-center justify-center">
+                                {audit.creator_handle[1]?.toUpperCase() || 'C'}
+                              </div>
+                            )}
+                            <span>{audit.creator_handle}</span>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
+                            {audit.views_scraped.toLocaleString()}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
+                            +{audit.views_delta.toLocaleString()}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                            ₦{audit.payout_amount.toLocaleString()}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                              audit.status === 'auto_approved'
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                : audit.status === 'approved'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : 'bg-red-100 text-red-800 border border-red-200'
+                            }`}>
+                              {audit.status === 'auto_approved' ? '⚡ 60-Min Auto-Credited' : audit.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-[11px] text-slate-500">
+                            {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
-
-            {selectedSubmission.post_url && (
-              <a
-                href={selectedSubmission.post_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 rounded-2xl bg-slate-50 border border-slate-200 block text-xs font-bold text-kpugi-blue hover:underline flex items-center justify-between"
-              >
-                <span>Open Video Link in New Tab</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
-
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700">Rejection Reason (if rejecting)</label>
-              <textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Specify why submission is invalid (e.g. video removed, missing sound track)..."
-                className="w-full p-3 rounded-xl border border-kpugi-border text-xs focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => handleReviewDecision('approve')}
-                disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-sm"
-              >
-                Approve & Pay Now
-              </button>
-              <button
-                onClick={() => handleReviewDecision('reject')}
-                disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow-sm"
-              >
-                Reject Submission
-              </button>
-            </div>
-            <button
-              onClick={() => setSelectedSubmission(null)}
-              className="w-full py-2 text-xs text-slate-500 font-bold hover:underline"
-            >
-              Cancel
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+      {/* Review Modal */}
+      {selectedSubmission && (() => {
+        const selectedViews = Number(selectedSubmission.views_count || selectedSubmission.final_view_count || 0);
+        const minThreshold = campaign.min_view_threshold || 1000;
+        const isBelowMinViews = selectedViews < minThreshold || selectedViews === 0;
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-kpugi-border">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-lg text-kpugi-ink">Review Creator Submission</h3>
+                <button
+                  onClick={() => setSelectedSubmission(null)}
+                  className="text-slate-400 hover:text-slate-600 font-bold text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-xs text-kpugi-slate">
+                Creator <span className="font-bold text-kpugi-ink">{selectedSubmission.creator_handle}</span> delivered{' '}
+                <span className="font-bold text-kpugi-ink">{selectedViews.toLocaleString()} views</span>.
+              </p>
+
+              {isBelowMinViews ? (
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-1">
+                  <div className="flex items-center gap-2 font-bold text-xs">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Awaiting Minimum View Threshold ({selectedViews.toLocaleString()} / {minThreshold.toLocaleString()} views)</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    This submission has not reached the campaign minimum threshold of <strong>{minThreshold.toLocaleString()} views</strong> required for payout approval. Payout verification activates automatically once views reach the minimum threshold.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="flex items-center gap-1.5 text-amber-800">
+                      <Clock className="w-4 h-4 text-amber-600 animate-spin" />
+                      <span>60-Min Review Window</span>
+                    </span>
+                    <span className="font-mono text-xs font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md border border-amber-300">
+                      {selectedSubmission.auto_approve_at ? (
+                        (() => {
+                          const diff = Math.max(0, Math.floor((new Date(selectedSubmission.auto_approve_at).getTime() - Date.now()) / 1000));
+                          const m = Math.floor(diff / 60);
+                          const s = diff % 60;
+                          return `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+                        })()
+                      ) : (
+                        '59m 59s'
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Views are verified every 60 mins. If you do not manually reject or approve within this 60-min audit run, payout will <strong>auto-credit to the creator&apos;s balance</strong> automatically.
+                  </p>
+                  {selectedSubmission.pending_payout_amount > 0 && (
+                    <div className="pt-1 flex items-center justify-between text-xs font-bold text-emerald-800 border-t border-amber-200">
+                      <span>Audit Run Pending Payout:</span>
+                      <span className="font-mono text-sm">₦{Number(selectedSubmission.pending_payout_amount).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedSubmission.post_url && (
+                <a
+                  href={selectedSubmission.post_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-2xl bg-slate-50 border border-slate-200 block text-xs font-bold text-kpugi-blue hover:underline flex items-center justify-between"
+                >
+                  <span>Open Video Link in New Tab</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">Rejection Reason (if rejecting)</label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Specify why submission is invalid (e.g. video removed, missing sound track)..."
+                  className="w-full p-3 rounded-xl border border-kpugi-border text-xs focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => handleReviewDecision('approve')}
+                  disabled={isSubmitting || isBelowMinViews}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-colors shadow-sm ${
+                    isBelowMinViews
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                  title={isBelowMinViews ? 'Cannot approve payout for 0 or sub-threshold views' : undefined}
+                >
+                  Approve & Pay Now
+                </button>
+                <button
+                  onClick={() => handleReviewDecision('reject')}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow-sm"
+                >
+                  Reject Submission
+                </button>
+              </div>
+              <button
+                onClick={() => setSelectedSubmission(null)}
+                className="w-full py-2 text-xs text-slate-500 font-bold hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tab 3: Creatives */}
       {activeTab === 'creatives' && (

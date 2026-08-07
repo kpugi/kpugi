@@ -254,10 +254,15 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
   const currentReservedBudget = Number(campaign.reserved_budget || 0);
   const maxVerifiedViews = Math.max(Number(sub.max_verified_views || 0), Number(sub.last_paid_view_count || 0));
 
-  // IDEMPOTENCY GUARD: If 0 pending payout and views <= maxVerifiedViews and status is settled, prevent duplicate approval
+  // IDEMPOTENCY GUARD: Prevent approving 0 views or 0 payout submissions
   const pendingPayout = Number(sub.pending_payout_amount || 0);
-  if (decision === 'approve' && pendingPayout <= 0 && views <= maxVerifiedViews && (sub.status === 'verified_pass' || sub.status === 'paid')) {
-    return { success: false, error: 'This audit cycle has already been approved and settled.' };
+  if (decision === 'approve') {
+    if (views <= 0) {
+      return { success: false, error: 'Cannot approve payout for a submission with 0 views. Submission requires verified views to process payout.' };
+    }
+    if (pendingPayout <= 0 && views <= maxVerifiedViews && (sub.status === 'verified_pass' || sub.status === 'paid')) {
+      return { success: false, error: 'This audit cycle has already been approved and settled.' };
+    }
   }
 
   // Calculate incremental payout for this cycle based on net-new verified views
@@ -266,12 +271,12 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
   const now = new Date().toISOString();
 
   if (decision === 'approve') {
-    if (payout <= 0 && views <= maxVerifiedViews && sub.status === 'verified_pass') {
-      return { success: false, error: 'No new views delivered since last settled audit run.' };
+    if (payout <= 0) {
+      return { success: false, error: 'No new payable views delivered since last settled audit run.' };
     }
 
     const newTotalPayout = Number(sub.payout_amount || 0) + payout;
-    const newReservedBudget = Math.max(0, currentReservedBudget - reservedAmount);
+    const newReservedBudget = Math.max(0, currentReservedBudget - payout);
 
     // 1. Update submission
     await supabase

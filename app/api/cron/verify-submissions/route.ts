@@ -24,13 +24,14 @@ export async function GET() {
     for (const sub of submissions || []) {
       const { data: campaign } = await supabase
         .from('campaigns')
-        .select('id, title, cpm_rate')
+        .select('id, title, cpm_rate, min_view_threshold')
         .eq('id', sub.campaign_id)
         .maybeSingle();
 
       if (!campaign) continue;
 
       const cpmRate = Number(campaign.cpm_rate || 2000);
+      const minViewThreshold = Number(campaign.min_view_threshold || 1000);
       const currentPaidViews = Math.max(
         Number(sub.last_paid_view_count || 0),
         Number(sub.max_verified_views || 0)
@@ -40,6 +41,22 @@ export async function GET() {
         currentPaidViews + 5000,
         Number(sub.final_view_count || 0)
       );
+
+      // Require meeting minimum view threshold before queuing for audit/verification
+      if (scrapedViews < minViewThreshold) {
+        // Keep in pending status without pending payout or auto approval timer
+        await supabase
+          .from('submissions')
+          .update({
+            final_view_count: scrapedViews,
+            pending_payout_amount: 0,
+            auto_approve_at: null,
+            last_scraped_at: now.toISOString(),
+            status: 'pending',
+          })
+          .eq('id', sub.id);
+        continue;
+      }
 
       const newViews = Math.max(0, scrapedViews - currentPaidViews);
 
