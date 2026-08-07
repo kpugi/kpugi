@@ -1,7 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
-import { CampaignForm } from '@/components/campaign/CampaignForm';
+import { BrandCampaignWizardView } from '@/components/campaign/BrandCampaignWizardView';
 
 export default async function BrandNewCampaignPage() {
   const userProfile = await getOrCreateUserProfile();
@@ -15,14 +15,14 @@ export default async function BrandNewCampaignPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-6 space-y-6">
-      <div className="border-b border-kpugi-border pb-4">
-        <h1 className="font-display text-2xl font-bold text-kpugi-ink">Launch New Campaign</h1>
-        <p className="font-sans text-xs text-kpugi-slate mt-1">Set campaign budget, view payout rate, and deliverables for creators.</p>
+    <div className="max-w-5xl mx-auto py-6 space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-extrabold text-kpugi-ink">Launch New Ad Campaign</h1>
+        <p className="font-sans text-xs text-kpugi-slate mt-1">
+          Provide ready-to-post creatives, set CPM payout rates, and configure escrow budget allocation.
+        </p>
       </div>
-      <div className="p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm">
-        <CampaignForm />
-      </div>
+      <BrandCampaignWizardView />
     </div>
   );
 }
