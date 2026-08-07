@@ -1,45 +1,43 @@
 import { NextResponse } from 'next/server';
+import { DeepgramClient } from '@deepgram/sdk';
 
 export async function POST(req: Request) {
   try {
-    const deepgramKey = process.env.DEEPGRAM_SECRET;
+    const apiKey = process.env.DEEPGRAM_API_KEY || process.env.DEEPGRAM_SECRET;
 
-    if (!deepgramKey) {
-      return NextResponse.json({ error: 'Deepgram API key not configured' }, { status: 500 });
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Deepgram API key missing. Please add DEEPGRAM_API_KEY or DEEPGRAM_SECRET to .env.local.' },
+        { status: 500 }
+      );
     }
 
-    const contentType = req.headers.get('content-type') || 'audio/webm';
+    const deepgram = new DeepgramClient({ apiKey });
     const audioBuffer = await req.arrayBuffer();
 
     if (!audioBuffer || audioBuffer.byteLength === 0) {
-      return NextResponse.json({ error: 'No audio data received' }, { status: 400 });
+      return NextResponse.json({ error: 'No audio recorded' }, { status: 400 });
     }
 
-    const response = await fetch(
-      'https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&punctuate=true',
+    const response = await deepgram.listen.v1.media.transcribeFile(
+      Buffer.from(audioBuffer),
       {
-        method: 'POST',
-        headers: {
-          Authorization: `Token ${deepgramKey}`,
-          'Content-Type': contentType,
-        },
-        body: audioBuffer,
+        model: 'nova-2',
+        smart_format: true,
+        punctuate: true,
       }
     );
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('[Deepgram STT] Deepgram API error:', errText);
-      return NextResponse.json({ error: 'Failed to transcribe audio' }, { status: response.status });
-    }
-
-    const data = await response.json();
+    const resObj = response as any;
     const transcript =
-      data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+      resObj?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
 
     return NextResponse.json({ transcript });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Deepgram STT] Server error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || 'Internal server error during audio transcription' },
+      { status: 500 }
+    );
   }
 }

@@ -1,7 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mic, MicOff, Sparkles, AlertCircle, Info, Calculator } from 'lucide-react';
+import {
+  Mic,
+  MicOff,
+  Sparkles,
+  AlertCircle,
+  Calculator,
+  Eye,
+  MousePointerClick,
+  ShoppingBag,
+  Smartphone,
+  Calendar,
+  Loader2,
+} from 'lucide-react';
 import { generateAICampaignPolishAction } from '@/app/actions/campaign';
 
 interface Step1Props {
@@ -11,6 +23,7 @@ interface Step1Props {
 
 export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -37,7 +50,7 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
 
       recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        setIsAiLoading(true);
+        setIsTranscribing(true);
 
         try {
           const res = await fetch('/api/ai/deepgram-stt', {
@@ -47,20 +60,21 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
           });
 
           const data = await res.json();
-          setIsAiLoading(false);
+          setIsTranscribing(false);
 
           if (data.transcript) {
+            const currentDesc = formData.description || '';
+            const combined = currentDesc
+              ? `${currentDesc} ${data.transcript}`.trim()
+              : data.transcript;
             updateFormData({
-              voice_transcript: data.transcript,
-              description: formData.description
-                ? `${formData.description}\n\n[Voice Narration]: ${data.transcript}`
-                : data.transcript,
+              description: combined.slice(0, 500),
             });
           } else if (data.error) {
             setAiError(data.error);
           }
         } catch (err) {
-          setIsAiLoading(false);
+          setIsTranscribing(false);
           setAiError('Failed to process audio narration.');
         }
 
@@ -82,63 +96,100 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
     }
   };
 
-  // AI Prompt Polish for Title or Description
+  // AI Prompt Polish for Title or Description (Requires Campaign Title & Goal context)
   const handleAiPolish = async (targetField: 'title' | 'description') => {
-    const textToPolish =
-      targetField === 'title' ? formData.title : formData.description || formData.title;
+    setAiError('');
 
-    if (!textToPolish) {
-      setAiError('Please enter a topic or voice prompt first.');
+    if (targetField === 'description') {
+      if (!formData.title || !formData.title.trim()) {
+        setAiError('Please enter a Campaign Title first so AI has context to generate your brief.');
+        return;
+      }
+
+      if (!formData.objective) {
+        setAiError('Please select a Primary Goal for your campaign first.');
+        return;
+      }
+
+      const promptContext = `Campaign Title: ${formData.title.trim()}\nPrimary Goal: ${
+        formData.objective
+      }\nUser Draft / Voice Notes: ${formData.description || 'No draft provided'}`;
+
+      setIsAiLoading(true);
+      const res = await generateAICampaignPolishAction(promptContext, 'description');
+      setIsAiLoading(false);
+
+      if (res.success && res.text) {
+        updateFormData({ description: res.text.slice(0, 500) });
+      } else {
+        setAiError(res.error || 'AI generation failed');
+      }
       return;
     }
 
-    setIsAiLoading(true);
-    setAiError('');
+    // Title polish mode
+    if (!formData.title && !formData.description) {
+      setAiError('Please enter a topic or narrate with voice first to generate an AI title.');
+      return;
+    }
 
-    const res = await generateAICampaignPolishAction(textToPolish, targetField);
+    const promptContext = formData.title || formData.description || '';
+    setIsAiLoading(true);
+    const res = await generateAICampaignPolishAction(promptContext, 'title');
     setIsAiLoading(false);
 
     if (res.success && res.text) {
-      updateFormData({ [targetField]: res.text });
+      updateFormData({ title: res.text.slice(0, 100) });
     } else {
       setAiError(res.error || 'AI generation failed');
     }
   };
 
-  const objectives = [
-    'Brand Awareness',
-    'Product Launch',
-    'Sales & Conversions',
-    'App Downloads',
-    'Event Promotion',
+  const primaryGoals = [
+    {
+      id: 'Brand Awareness',
+      title: 'Brand Awareness',
+      desc: 'Maximize reach and impressions to introduce your brand.',
+      icon: Eye,
+    },
+    {
+      id: 'Lead Generation',
+      title: 'Lead Generation',
+      desc: 'Drive clicks and form submissions for targeted offers.',
+      icon: MousePointerClick,
+    },
+    {
+      id: 'Sales & Conversions',
+      title: 'Direct Sales',
+      desc: 'Optimize for immediate conversions and ROI.',
+      icon: ShoppingBag,
+    },
+    {
+      id: 'App Downloads',
+      title: 'App Downloads',
+      desc: 'Drive installs and active users for your mobile app.',
+      icon: Smartphone,
+    },
+    {
+      id: 'Event Promotion',
+      title: 'Event Promotion',
+      desc: 'Build hype and ticket sales for your upcoming event.',
+      icon: Calendar,
+    },
   ];
+
+  const currentDescLength = (formData.description || '').length;
 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-        <div>
-          <h2 className="font-display text-xl font-bold text-kpugi-ink">
-            Step 1: Campaign Basics & AI Briefing
-          </h2>
-          <p className="text-xs text-kpugi-slate mt-0.5">
-            Define core campaign goals, voice prompt narration, budget, and CPM payout rates.
-          </p>
-        </div>
-
-        {/* Deepgram Voice Narration Mic Button */}
-        <button
-          type="button"
-          onClick={isRecording ? stopRecording : startRecording}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-sans text-xs font-bold transition-all shadow-sm ${
-            isRecording
-              ? 'bg-red-500 text-white animate-pulse'
-              : 'bg-kpugi-blue/10 text-kpugi-blue hover:bg-kpugi-blue/20'
-          }`}
-        >
-          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-          <span>{isRecording ? 'Stop Voice Narration' : 'Narrate with Voice'}</span>
-        </button>
+      <div className="border-b border-slate-100 pb-4">
+        <h2 className="font-display text-xl font-bold text-kpugi-ink">
+          Step 1: Campaign Basics & AI Briefing
+        </h2>
+        <p className="text-xs text-kpugi-slate mt-0.5">
+          Define core campaign goals, voice prompt narration, budget, and CPM payout rates.
+        </p>
       </div>
 
       {aiError && (
@@ -148,28 +199,17 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
         </div>
       )}
 
-      {/* Voice Transcript Display */}
-      {formData.voice_transcript && (
-        <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs space-y-1">
-          <div className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-kpugi-blue">
-            <Mic className="w-3.5 h-3.5" />
-            <span>Deepgram Transcribed Voice Narration</span>
-          </div>
-          <p className="italic">"{formData.voice_transcript}"</p>
-        </div>
-      )}
-
       {/* Campaign Title */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-kpugi-ink">Campaign Title *</label>
           <button
             type="button"
-            disabled={isAiLoading}
+            disabled={isAiLoading || isTranscribing}
             onClick={() => handleAiPolish('title')}
-            className="text-[11px] font-bold text-kpugi-blue hover:underline flex items-center gap-1"
+            className="text-[11px] font-bold text-kpugi-blue hover:underline flex items-center gap-1 disabled:opacity-50"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>✨ AI Title Polish</span>
           </button>
         </div>
@@ -182,48 +222,136 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
         />
       </div>
 
-      {/* Campaign Objective */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-kpugi-ink">Campaign Objective *</label>
-        <div className="flex flex-wrap gap-2">
-          {objectives.map((obj) => (
-            <button
-              key={obj}
-              type="button"
-              onClick={() => updateFormData({ objective: obj })}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                formData.objective === obj
-                  ? 'bg-kpugi-blue text-white border-kpugi-blue shadow-sm'
-                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              {obj}
-            </button>
-          ))}
+      {/* Primary Goal / Campaign Objective */}
+      <div className="space-y-3 p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
+        <div>
+          <h3 className="font-display text-base font-extrabold text-kpugi-ink">Primary Goal</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Select the main objective for this campaign to optimize delivery.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {primaryGoals.map((goal) => {
+            const Icon = goal.icon;
+            const isSelected = (formData.objective || 'Brand Awareness') === goal.id;
+
+            return (
+              <div
+                key={goal.id}
+                onClick={() => updateFormData({ objective: goal.id })}
+                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${
+                  isSelected
+                    ? 'bg-blue-50/40 border-blue-600 ring-1 ring-blue-600 shadow-sm'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100/70 text-blue-600'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-slate-900">{goal.title}</h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-snug">{goal.desc}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Campaign Description & Briefing */}
+      {/* Campaign Description & Briefing with Max Characters & Clear Loading State */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="text-xs font-bold text-kpugi-ink">Campaign Briefing & Description *</label>
-          <button
-            type="button"
-            disabled={isAiLoading}
-            onClick={() => handleAiPolish('description')}
-            className="text-[11px] font-bold text-kpugi-blue hover:underline flex items-center gap-1"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>✨ AI Expand Brief</span>
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Deepgram Voice Narration Mic Button with Clear Loading & Recording UX */}
+            <button
+              type="button"
+              disabled={isTranscribing}
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-sans text-xs font-bold transition-all shadow-sm ${
+                isRecording
+                  ? 'bg-red-500 text-white animate-pulse'
+                  : isTranscribing
+                  ? 'bg-kpugi-blue/10 text-kpugi-blue cursor-wait'
+                  : 'bg-kpugi-blue/10 text-kpugi-blue hover:bg-kpugi-blue/20'
+              }`}
+            >
+              {isTranscribing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-kpugi-blue" />
+              ) : isRecording ? (
+                <MicOff className="w-3.5 h-3.5" />
+              ) : (
+                <Mic className="w-3.5 h-3.5" />
+              )}
+              <span>
+                {isTranscribing
+                  ? 'Transcribing Audio...'
+                  : isRecording
+                  ? 'Recording... Stop & Insert'
+                  : 'Narrate with Voice'}
+              </span>
+            </button>
+
+            {/* AI Expand Brief Button using Title + Goal + Description Context */}
+            <button
+              type="button"
+              disabled={isAiLoading || isTranscribing}
+              onClick={() => handleAiPolish('description')}
+              className="text-[11px] font-bold text-kpugi-blue hover:underline flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 disabled:opacity-50"
+            >
+              {isAiLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              )}
+              <span>{isAiLoading ? 'Generating Brief...' : '✨ AI Expand Brief'}</span>
+            </button>
+          </div>
         </div>
-        <textarea
-          rows={4}
-          value={formData.description || ''}
-          onChange={(e) => updateFormData({ description: e.target.value })}
-          placeholder="Explain your product, campaign goals, key selling points, and target audience for creators..."
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-kpugi-blue focus:border-transparent outline-none font-medium leading-relaxed"
-        />
+
+        <div className="relative">
+          <textarea
+            rows={5}
+            maxLength={500}
+            value={formData.description || ''}
+            onChange={(e) => updateFormData({ description: e.target.value.slice(0, 500) })}
+            placeholder={
+              isTranscribing
+                ? 'Transcribing your voice narration with Deepgram...'
+                : isAiLoading
+                ? 'NVIDIA NIM AI is crafting your creator briefing...'
+                : 'Explain your product, campaign goals, key selling points, and target audience for creators...'
+            }
+            className={`w-full px-4 py-3 rounded-xl border text-xs focus:ring-2 focus:ring-kpugi-blue focus:border-transparent outline-none font-medium leading-relaxed transition-all ${
+              isTranscribing || isAiLoading
+                ? 'border-blue-300 bg-blue-50/20 text-slate-700'
+                : 'border-slate-200'
+            }`}
+          />
+
+          {(isTranscribing || isAiLoading) && (
+            <div className="absolute inset-0 bg-white/60 rounded-xl flex items-center justify-center gap-2 backdrop-blur-[1px]">
+              <Loader2 className="w-4 h-4 animate-spin text-kpugi-blue" />
+              <span className="text-xs font-bold text-kpugi-ink">
+                {isTranscribing ? 'Transcribing voice audio...' : 'AI enhancing creator brief...'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Character Limit Counter */}
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+          <span>Concise briefing for creators (max 500 characters)</span>
+          <span className={currentDescLength >= 480 ? 'text-amber-600 font-bold' : ''}>
+            {currentDescLength} / 500
+          </span>
+        </div>
       </div>
 
       {/* Financials & Budget Math Card */}
@@ -252,9 +380,9 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
             />
           </div>
 
-          {/* CPM Rate */}
+          {/* CPM Payout Rate */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-300">CPM Payout Rate (₦ / 1k views)</label>
+            <label className="text-[11px] font-bold text-slate-300">CPM Rate (₦ per 1,000 views) *</label>
             <input
               type="number"
               min={1000}
@@ -265,9 +393,9 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
             />
           </div>
 
-          {/* Minimum View Threshold */}
+          {/* Minimum View Floor */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-300">Min View Threshold</label>
+            <label className="text-[11px] font-bold text-slate-300">Min View Floor (Threshold) *</label>
             <input
               type="number"
               min={500}
@@ -279,38 +407,23 @@ export function CampaignStep1Basics({ formData, updateFormData }: Step1Props) {
           </div>
         </div>
 
-        {/* Real-time Math Summary */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/10 text-center font-mono text-xs">
-          <div className="bg-white/5 p-2 rounded-lg">
-            <div className="text-[10px] text-slate-400">Available Creator Slots</div>
-            <div className="text-base font-extrabold text-amber-400">{creatorSlots} Slots</div>
+        {/* Calculated Stats Banner */}
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/10 text-center text-xs font-mono">
+          <div className="p-2 rounded bg-white/5">
+            <div className="text-[10px] text-slate-400">Slots Created</div>
+            <div className="font-bold text-amber-400 text-sm mt-0.5">{creatorSlots} Slots</div>
           </div>
-          <div className="bg-white/5 p-2 rounded-lg">
-            <div className="text-[10px] text-slate-400">Est. Total View Cap</div>
-            <div className="text-base font-extrabold text-emerald-400">{potentialViews.toLocaleString()} views</div>
+          <div className="p-2 rounded bg-white/5">
+            <div className="text-[10px] text-slate-400">View Cap Potential</div>
+            <div className="font-bold text-emerald-400 text-sm mt-0.5">
+              {potentialViews.toLocaleString()} Views
+            </div>
           </div>
-          <div className="bg-white/5 p-2 rounded-lg">
-            <div className="text-[10px] text-slate-400">Slot Base Reserve</div>
-            <div className="text-base font-extrabold text-cyan-400">₦{baseReserve.toLocaleString()} / slot</div>
+          <div className="p-2 rounded bg-white/5">
+            <div className="text-[10px] text-slate-400">Base Reserve / Slot</div>
+            <div className="font-bold text-blue-300 text-sm mt-0.5">₦{baseReserve.toLocaleString()}</div>
           </div>
         </div>
-      </div>
-
-      {/* Required Live Duration */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-bold text-kpugi-ink">
-          Required Live Post Duration (Hours)
-        </label>
-        <select
-          value={formData.required_live_duration_hours || 72}
-          onChange={(e) => updateFormData({ required_live_duration_hours: Number(e.target.value) })}
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-kpugi-blue outline-none"
-        >
-          <option value={24}>24 Hours (Minimum)</option>
-          <option value={48}>48 Hours</option>
-          <option value={72}>72 Hours (Recommended)</option>
-          <option value={168}>7 Days (Max Exposure)</option>
-        </select>
       </div>
     </div>
   );
