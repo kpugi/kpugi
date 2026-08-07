@@ -523,6 +523,79 @@ export default function AdvertiserCampaignDetailsView({
               </table>
             </div>
           )}
+
+          {/* Settled Audit Cycles History */}
+          <div className="pt-6 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-display font-bold text-sm text-kpugi-ink flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Settled Audit Cycles History</span>
+              </h4>
+              <span className="text-[11px] font-mono font-bold text-slate-500">
+                {data.audits?.length || 0} Settled Runs
+              </span>
+            </div>
+
+            {(!data.audits || data.audits.length === 0) ? (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center text-xs text-kpugi-slate">
+                No settled audit runs yet for this campaign. As 60-min audit cycles complete or receive approval, settled runs will populate here.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                      <th className="py-2.5 px-3">Creator</th>
+                      <th className="py-2.5 px-3">Views Scraped</th>
+                      <th className="py-2.5 px-3">Net New Views</th>
+                      <th className="py-2.5 px-3">Payout Released</th>
+                      <th className="py-2.5 px-3">Settlement Type</th>
+                      <th className="py-2.5 px-3 text-right">Settled At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-sans">
+                    {data.audits.map((audit) => (
+                      <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3 font-bold text-slate-900 flex items-center gap-2">
+                          {audit.creator_avatar_url ? (
+                            <Image src={audit.creator_avatar_url} alt="" width={20} height={20} className="rounded-full object-cover" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[9px] font-bold flex items-center justify-center">
+                              {audit.creator_handle[1]?.toUpperCase() || 'C'}
+                            </div>
+                          )}
+                          <span>{audit.creator_handle}</span>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
+                          {audit.views_scraped.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
+                          +{audit.views_delta.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                          ₦{audit.payout_amount.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                            audit.status === 'auto_approved'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : audit.status === 'approved'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            {audit.status === 'auto_approved' ? '⚡ 60-Min Auto-Credited' : audit.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-[11px] text-slate-500">
+                          {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -530,10 +603,51 @@ export default function AdvertiserCampaignDetailsView({
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-kpugi-border">
-            <h3 className="font-display font-bold text-lg text-kpugi-ink">Review Creator Submission</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-bold text-lg text-kpugi-ink">Review Creator Submission</h3>
+              <button
+                onClick={() => setSelectedSubmission(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
             <p className="text-xs text-kpugi-slate">
-              Creator <span className="font-bold text-kpugi-ink">{selectedSubmission.creator_handle}</span> submitted a post with {selectedSubmission.views_count.toLocaleString()} views.
+              Creator <span className="font-bold text-kpugi-ink">{selectedSubmission.creator_handle}</span> delivered{' '}
+              <span className="font-bold text-kpugi-ink">{(selectedSubmission.views_count || selectedSubmission.final_view_count || 0).toLocaleString()} views</span>.
             </p>
+
+            {/* 60-Minute Countdown Review Timer */}
+            <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="flex items-center gap-1.5 text-amber-800">
+                  <Clock className="w-4 h-4 text-amber-600 animate-spin" />
+                  <span>60-Min Review Window</span>
+                </span>
+                <span className="font-mono text-xs font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md border border-amber-300">
+                  {selectedSubmission.auto_approve_at ? (
+                    (() => {
+                      const diff = Math.max(0, Math.floor((new Date(selectedSubmission.auto_approve_at).getTime() - Date.now()) / 1000));
+                      const m = Math.floor(diff / 60);
+                      const s = diff % 60;
+                      return `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+                    })()
+                  ) : (
+                    '59m 59s'
+                  )}
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                Views are verified every 60 mins. If you do not manually reject or approve within this 60-min audit run, payout will <strong>auto-credit to the creator&apos;s balance</strong> automatically.
+              </p>
+              {selectedSubmission.pending_payout_amount > 0 && (
+                <div className="pt-1 flex items-center justify-between text-xs font-bold text-emerald-800 border-t border-amber-200">
+                  <span>Audit Run Pending Payout:</span>
+                  <span className="font-mono text-sm">₦{Number(selectedSubmission.pending_payout_amount).toLocaleString()}</span>
+                </div>
+              )}
+            </div>
 
             {selectedSubmission.post_url && (
               <a
@@ -562,14 +676,14 @@ export default function AdvertiserCampaignDetailsView({
               <button
                 onClick={() => handleReviewDecision('approve')}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-sm"
               >
-                Approve & Pay
+                Approve & Pay Now
               </button>
               <button
                 onClick={() => handleReviewDecision('reject')}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow-sm"
               >
                 Reject Submission
               </button>

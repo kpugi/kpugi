@@ -82,8 +82,8 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const viewsPct = Math.min(100, Math.round((totalViews / targetThreshold) * 100));
   
   // FIXED: Earned Amount is strictly ₦0 when verified views are 0
-  const earnedAmount = totalViews > 0 
-    ? (submission?.payout_amount || Math.floor((totalViews / 1000) * campaign.cpm_rate)) 
+  const earnedAmount = (submission?.status === 'verified_pass' || submission?.status === 'paid' || totalViews > 0)
+    ? (submission?.payout_amount || (totalViews > 0 ? Math.floor((totalViews / 1000) * campaign.cpm_rate) : 0)) 
     : 0;
 
   const docUrl = campaign.requirements?.google_doc_url || campaign.requirements?.brand_guide_url || campaign.requirements?.doc_url;
@@ -461,49 +461,56 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             <thead>
               <tr className="border-b border-kpugi-border text-kpugi-slate uppercase text-[10px] tracking-wider font-bold">
                 <th>TIMESTAMP</th>
-                <th>AUDIT TYPE</th>
-                <th>DATA</th>
-                <th className="text-right">STATUS</th>
+                <th>AUDIT CYCLE</th>
+                <th>NET NEW VIEWS</th>
+                <th>EARNED PAYOUT</th>
+                <th className="text-right">SETTLEMENT STATUS</th>
               </tr>
             </thead>
             <tbody>
-              {(() => {
-                const validLogs = (allSubmissions || []).filter(
-                  (log: any) => log.post_url && log.post_url.trim().length > 0
-                );
-                return validLogs.length > 0 ? (
-                  validLogs.map((log: any, idx: number) => (
-                    <tr key={log.id || idx} className="border-b border-slate-100">
-                      <td className="font-mono text-kpugi-slate">
-                        {new Date(log.created_at || Date.now()).toLocaleTimeString()}
-                      </td>
-                      <td className="font-bold text-kpugi-ink">View Reach Audit</td>
-                      <td className="font-mono font-bold text-emerald-600">
-                        +{formatCompactNumber(log.final_view_count || 0)}
-                      </td>
-                      <td className="text-right">
-                        <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono font-bold uppercase text-[10px]">
-                          {log.status || 'SUCCESS'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="text-center py-10">
-                      <div className="flex flex-col items-center justify-center space-y-2">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-kpugi-slate mb-1">
-                          <Clock className="w-5 h-5" />
-                        </div>
-                        <p className="font-bold text-sm text-kpugi-ink">No Audit Logs Generated Yet</p>
-                        <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
-                          Live scraper audit logs will appear here automatically every 5 minutes once you submit your video post link.
-                        </p>
-                      </div>
+              {data.audits && data.audits.length > 0 ? (
+                data.audits.map((audit, idx) => (
+                  <tr key={audit.id || idx} className="border-b border-slate-100">
+                    <td className="font-mono text-kpugi-slate">
+                      {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td className="font-bold text-kpugi-ink">
+                      Cycle #{data.audits!.length - idx}
+                    </td>
+                    <td className="font-mono font-bold text-emerald-600">
+                      +{formatCompactNumber(audit.views_delta)}
+                    </td>
+                    <td className="font-mono font-bold text-kpugi-blue">
+                      {formatCompactCurrency(audit.payout_amount)}
+                    </td>
+                    <td className="text-right">
+                      <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold uppercase text-[10px] ${
+                        audit.status === 'auto_approved'
+                          ? 'bg-amber-100 text-amber-800'
+                          : audit.status === 'approved'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {audit.status === 'auto_approved' ? '⚡ Auto-Credited' : audit.status}
+                      </span>
                     </td>
                   </tr>
-                );
-              })()}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-10">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-kpugi-slate mb-1">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <p className="font-bold text-sm text-kpugi-ink">No Settled Audit Runs Yet</p>
+                      <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                        Hourly view scraper audits will settle payouts into your available balance automatically after the 60-min review window.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

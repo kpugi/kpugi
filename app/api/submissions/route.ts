@@ -188,6 +188,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Post link has already been submitted for this campaign.' }, { status: 400 });
       }
 
+      const now = new Date();
+      const autoApproveAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+
       // Update the submission record
       const { data: submission, error: subErr } = await supabase
         .from('submissions')
@@ -195,7 +198,8 @@ export async function POST(req: Request) {
           post_url: postUrl,
           screenshot_url: screenshotUrl || 'https://via.placeholder.com/150',
           status: 'pending',
-          submitted_at: new Date().toISOString()
+          auto_approve_at: autoApproveAt,
+          submitted_at: now.toISOString()
         })
         .eq('id', existingSub.id)
         .select('*, campaigns(id, title, advertiser_id), social_accounts(platform)')

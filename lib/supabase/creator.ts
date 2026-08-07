@@ -897,7 +897,7 @@ export async function getCreatorSubmissionsData(
     submissions = rawSubmissions.map((sub: any) => {
       const campaign = sub.campaign || sub.campaigns || {};
       const platform = (campaign.channels?.[0] || extractPlatformFromUrl(sub.post_url) || 'tiktok').toLowerCase();
-      const views = sub.final_view_count || sub.views_count || 0;
+      const views = sub.final_view_count || 0;
       const cpmRate = campaign.cpm_rate || 3500;
       const earned = sub.payout_amount || (views > 0 ? (views / 1000) * cpmRate : 0);
 
@@ -915,7 +915,7 @@ export async function getCreatorSubmissionsData(
         status: normalizeSubmissionStatus(sub.status),
         submittedAt: sub.submitted_at || sub.created_at || new Date().toISOString(),
         verifiedAt: sub.verified_at,
-        rejectionReason: sub.rejection_reason,
+        rejectionReason: sub.failure_reason,
       };
     });
   }

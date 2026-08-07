@@ -292,6 +292,8 @@ export interface CampaignDetailsForCreator {
     paid_at: string | null;
     payout_amount: number | null;
     submitted_at?: string | null;
+    auto_approve_at?: string | null;
+    pending_payout_amount?: number | null;
   } | null;
   socialAccounts: {
     id: string;
@@ -308,6 +310,18 @@ export interface CampaignDetailsForCreator {
     final_view_count: number | null;
     creator_handle: string;
     creator_avatar_url: string | null;
+  }[];
+  audits?: {
+    id: string;
+    submission_id: string;
+    creator_handle: string;
+    creator_avatar_url: string | null;
+    views_scraped: number;
+    views_delta: number;
+    payout_amount: number;
+    status: string;
+    settled_at: string;
+    failure_reason?: string | null;
   }[];
 }
 
@@ -400,7 +414,7 @@ export async function getCampaignDetailsForCreator(
   const { data: submission } = creatorProfileId
     ? await supabase
         .from('submissions')
-        .select('id, social_account_id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount')
+        .select('id, social_account_id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount, auto_approve_at, pending_payout_amount, last_paid_view_count, last_scraped_at')
         .eq('campaign_id', realCampaignId)
         .eq('creator_id', creatorProfileId)
         .maybeSingle()
@@ -475,6 +489,46 @@ export async function getCampaignDetailsForCreator(
     ? Number((watchTimeSubs.reduce((sum: number, s: any) => sum + Number(s.watch_time_seconds), 0) / watchTimeSubs.length).toFixed(1))
     : Number((campaign as any)?.avg_watch_time_seconds || 24.5);
 
+  // 6. Fetch Settled Audits for this Campaign
+  const { data: rawAudits } = await supabase
+    .from('submission_audits')
+    .select(`
+      id,
+      submission_id,
+      creator_id,
+      views_scraped,
+      views_delta,
+      payout_amount,
+      status,
+      settled_at,
+      failure_reason,
+      creator:creator_profiles!left (
+        display_name,
+        profile:profiles!left (
+          full_name,
+          avatar_url
+        )
+      )
+    `)
+    .eq('campaign_id', realCampaignId)
+    .order('settled_at', { ascending: false });
+
+  const mappedAudits = (rawAudits || []).map((audit: any) => {
+    const handle = audit.creator?.display_name || audit.creator?.profile?.full_name || 'Creator';
+    return {
+      id: audit.id,
+      submission_id: audit.submission_id,
+      creator_handle: handle.startsWith('@') ? handle : `@${handle}`,
+      creator_avatar_url: audit.creator?.profile?.avatar_url || null,
+      views_scraped: Number(audit.views_scraped || 0),
+      views_delta: Number(audit.views_delta || 0),
+      payout_amount: Number(audit.payout_amount || 0),
+      status: audit.status,
+      settled_at: audit.settled_at,
+      failure_reason: audit.failure_reason || null,
+    };
+  });
+
   return {
     campaign: campaign
       ? {
@@ -513,10 +567,13 @@ export async function getCampaignDetailsForCreator(
           verified_at: submission.verified_at,
           paid_at: submission.paid_at,
           payout_amount: submission.payout_amount ? Number(submission.payout_amount) : null,
+          auto_approve_at: (submission as any).auto_approve_at || null,
+          pending_payout_amount: (submission as any).pending_payout_amount ? Number((submission as any).pending_payout_amount) : 0,
         }
       : null,
     socialAccounts: socialAccounts || [],
     allSubmissions: mappedAllSubs,
+    audits: mappedAudits,
   };
 }
 

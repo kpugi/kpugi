@@ -224,14 +224,21 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
       id,
       creator_id,
       campaign_id,
-      views_count,
+      reserved_amount,
       final_view_count,
+      pending_payout_amount,
+      payout_amount,
+      last_paid_view_count,
+      max_verified_views,
+      status,
+      auto_approve_at,
       campaign:campaigns (
         id,
         advertiser_id,
         cpm_rate,
         spent_budget,
-        total_budget
+        total_budget,
+        reserved_budget
       )
     `)
     .eq('id', submissionId)
@@ -242,31 +249,56 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
   }
 
   const campaign = sub.campaign as any;
-  const views = Number(sub.final_view_count || sub.views_count || 1000);
+  const views = Number(sub.final_view_count || 0);
+  const reservedAmount = Number(sub.reserved_amount || 0);
+  const currentReservedBudget = Number(campaign.reserved_budget || 0);
+  const maxVerifiedViews = Math.max(Number(sub.max_verified_views || 0), Number(sub.last_paid_view_count || 0));
+
+  // IDEMPOTENCY GUARD: If 0 pending payout and views <= maxVerifiedViews and status is settled, prevent duplicate approval
+  const pendingPayout = Number(sub.pending_payout_amount || 0);
+  if (decision === 'approve' && pendingPayout <= 0 && views <= maxVerifiedViews && (sub.status === 'verified_pass' || sub.status === 'paid')) {
+    return { success: false, error: 'This audit cycle has already been approved and settled.' };
+  }
+
+  // Calculate incremental payout for this cycle based on net-new verified views
+  const netNewViews = Math.max(0, views - maxVerifiedViews);
+  const payout = pendingPayout > 0 ? pendingPayout : Math.round((netNewViews / 1000) * Number(campaign.cpm_rate));
+  const now = new Date().toISOString();
 
   if (decision === 'approve') {
-    const payout = Math.round((views / 1000) * Number(campaign.cpm_rate));
+    if (payout <= 0 && views <= maxVerifiedViews && sub.status === 'verified_pass') {
+      return { success: false, error: 'No new views delivered since last settled audit run.' };
+    }
 
-    // Update submission
+    const newTotalPayout = Number(sub.payout_amount || 0) + payout;
+    const newReservedBudget = Math.max(0, currentReservedBudget - reservedAmount);
+
+    // 1. Update submission
     await supabase
       .from('submissions')
       .update({
         status: 'verified_pass',
-        payout_amount: payout,
-        verified_at: new Date().toISOString(),
+        payout_amount: newTotalPayout,
+        last_paid_view_count: views,
+        max_verified_views: Math.max(views, maxVerifiedViews),
+        pending_payout_amount: 0,
+        auto_approve_at: null,
+        paid_at: now,
+        verified_at: now,
       })
       .eq('id', submissionId);
 
-    // Update campaign spent_budget
+    // 2. Update campaign spent_budget and deduct from reserved_budget
     await supabase
       .from('campaigns')
       .update({
         spent_budget: Number(campaign.spent_budget || 0) + payout,
-        updated_at: new Date().toISOString(),
+        reserved_budget: newReservedBudget,
+        updated_at: now,
       })
       .eq('id', campaign.id);
 
-    // Update creator wallet & total_earned
+    // 3. Update creator wallet & total_earned
     const { data: creatorWallet } = await supabase
       .from('wallets')
       .select('id, balance')
@@ -288,7 +320,7 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
         amount: payout,
         status: 'completed',
         reference: `KP-PAY-${Date.now().toString().slice(-6)}`,
-        created_at: new Date().toISOString(),
+        created_at: now,
       });
     }
 
@@ -304,20 +336,68 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
         .update({ total_earned: Number(creatorProf.total_earned || 0) + payout })
         .eq('profile_id', sub.creator_id);
     }
+
+    // 4. Log immutable Audit History Record
+    await supabase.from('submission_audits').insert({
+      submission_id: sub.id,
+      campaign_id: campaign.id,
+      creator_id: sub.creator_id,
+      views_scraped: views,
+      views_delta: netNewViews,
+      payout_amount: payout,
+      status: 'approved',
+      settled_at: now,
+    });
   } else {
-    // Reject submission
+    // Reject submission & release reserved_budget
+    const newReservedBudget = Math.max(0, currentReservedBudget - reservedAmount);
+
     await supabase
       .from('submissions')
       .update({
         status: 'rejected',
-        rejection_reason: rejectionReason || 'Content did not meet brand requirements.',
-        verified_at: new Date().toISOString(),
+        pending_payout_amount: 0,
+        auto_approve_at: null,
+        failure_reason: rejectionReason || 'Content did not meet brand requirements.',
+        verified_at: now,
       })
       .eq('id', submissionId);
+
+    await supabase
+      .from('campaigns')
+      .update({
+        reserved_budget: newReservedBudget,
+        updated_at: now,
+      })
+      .eq('id', campaign.id);
+
+    // Log immutable Audit History Record
+    await supabase.from('submission_audits').insert({
+      submission_id: sub.id,
+      campaign_id: campaign.id,
+      creator_id: sub.creator_id,
+      views_scraped: views,
+      views_delta: 0,
+      payout_amount: 0,
+      status: 'rejected',
+      failure_reason: rejectionReason || 'Content did not meet brand requirements.',
+      settled_at: now,
+    });
   }
 
+  // Revalidate advertiser and creator views so changes reflect across the platform immediately
   revalidatePath(`/b/campaigns/${campaign.id}`);
+  revalidatePath('/b/campaigns');
   revalidatePath('/b/dashboard');
+  revalidatePath('/b/analytics');
+  revalidatePath('/b/wallet');
+  revalidatePath(`/c/campaigns/${campaign.id}`);
+  revalidatePath('/c/campaigns');
+  revalidatePath('/c/dashboard');
+  revalidatePath('/c/earnings');
+  revalidatePath('/c/wallet');
+  revalidatePath(`/campaigns/${campaign.id}`);
+  revalidatePath('/browse');
   return { success: true };
 }
 

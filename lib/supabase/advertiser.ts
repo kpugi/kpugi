@@ -130,7 +130,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
   const camps = (campaigns || []).map((c: any) => {
     const subs = c.submissions || [];
     const campaignViews = subs.reduce(
-      (sum: number, s: any) => sum + Number(s.final_view_count || s.views_count || 0),
+      (sum: number, s: any) => sum + Number(s.final_view_count || 0),
       0
     );
     totalViewsDelivered += campaignViews;
@@ -220,7 +220,23 @@ export interface BrandCampaignDetails {
     payout_amount: number | null;
     submitted_at: string;
     verified_at: string | null;
-    rejection_reason?: string | null;
+    failure_reason?: string | null;
+    auto_approve_at?: string | null;
+    pending_payout_amount?: number | null;
+    last_paid_view_count?: number | null;
+    last_scraped_at?: string | null;
+  }[];
+  audits: {
+    id: string;
+    submission_id: string;
+    creator_handle: string;
+    creator_avatar_url: string | null;
+    views_scraped: number;
+    views_delta: number;
+    payout_amount: number;
+    status: string;
+    settled_at: string;
+    failure_reason?: string | null;
   }[];
   metrics: {
     totalViews: number;
@@ -342,7 +358,11 @@ export async function getBrandCampaignDetails(
       watch_time_seconds,
       submitted_at,
       verified_at,
-      rejection_reason,
+      failure_reason,
+      auto_approve_at,
+      pending_payout_amount,
+      last_paid_view_count,
+      last_scraped_at,
       social_account:social_accounts!left (
         platform
       ),
@@ -367,7 +387,7 @@ export async function getBrandCampaignDetails(
 
   const mappedSubmissions = (rawSubmissions || []).map((sub: any) => {
     const handle = sub.creator?.display_name || sub.creator?.profile?.full_name || 'Anonymous Creator';
-    const views = Number(sub.final_view_count || sub.views_count || 0);
+    const views = Number(sub.final_view_count || 0);
     totalViews += views;
     totalLikes += Number(sub.likes_count || 0);
     totalComments += Number(sub.comments_count || 0);
@@ -392,7 +412,51 @@ export async function getBrandCampaignDetails(
       payout_amount: sub.payout_amount ? Number(sub.payout_amount) : null,
       submitted_at: sub.submitted_at,
       verified_at: sub.verified_at,
-      rejection_reason: sub.rejection_reason || null,
+      failure_reason: sub.failure_reason || null,
+      auto_approve_at: sub.auto_approve_at || null,
+      pending_payout_amount: sub.pending_payout_amount ? Number(sub.pending_payout_amount) : 0,
+      last_paid_view_count: sub.last_paid_view_count ? Number(sub.last_paid_view_count) : 0,
+      last_scraped_at: sub.last_scraped_at || null,
+    };
+  });
+
+  // 4. Fetch All Settled Audit Cycles for this Campaign
+  const { data: rawAudits } = await supabase
+    .from('submission_audits')
+    .select(`
+      id,
+      submission_id,
+      creator_id,
+      views_scraped,
+      views_delta,
+      payout_amount,
+      status,
+      settled_at,
+      failure_reason,
+      creator:creator_profiles!left (
+        display_name,
+        profile:profiles!left (
+          full_name,
+          avatar_url
+        )
+      )
+    `)
+    .eq('campaign_id', realCampaignId)
+    .order('settled_at', { ascending: false });
+
+  const mappedAudits = (rawAudits || []).map((audit: any) => {
+    const handle = audit.creator?.display_name || audit.creator?.profile?.full_name || 'Creator';
+    return {
+      id: audit.id,
+      submission_id: audit.submission_id,
+      creator_handle: handle.startsWith('@') ? handle : `@${handle}`,
+      creator_avatar_url: audit.creator?.profile?.avatar_url || null,
+      views_scraped: Number(audit.views_scraped || 0),
+      views_delta: Number(audit.views_delta || 0),
+      payout_amount: Number(audit.payout_amount || 0),
+      status: audit.status,
+      settled_at: audit.settled_at,
+      failure_reason: audit.failure_reason || null,
     };
   });
 
@@ -435,6 +499,7 @@ export async function getBrandCampaignDetails(
       : null,
     creatives: creatives || [],
     submissions: mappedSubmissions,
+    audits: mappedAudits,
     metrics: {
       totalViews,
       totalPayouts: spentBudget,
