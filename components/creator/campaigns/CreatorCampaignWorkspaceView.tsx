@@ -80,10 +80,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const totalViews = submission?.final_view_count || 0;
   const targetThreshold = campaign.min_view_threshold || 1000;
   const viewsPct = Math.min(100, Math.round((totalViews / targetThreshold) * 100));
+  const baseReserve = Math.round((targetThreshold / 1000) * campaign.cpm_rate);
   
-  // FIXED: Earned Amount is strictly ₦0 when verified views are 0
-  const earnedAmount = (submission?.status === 'verified_pass' || submission?.status === 'paid' || totalViews > 0)
-    ? (submission?.payout_amount || (totalViews > 0 ? Math.floor((totalViews / 1000) * campaign.cpm_rate) : 0)) 
+  // Reserve is met when verified views reach target threshold or payout is released
+  const isReserveMet = totalViews >= targetThreshold || Number(submission?.payout_amount || 0) > 0 || submission?.status === 'paid';
+  const earnedAmount = isReserveMet
+    ? (submission?.payout_amount || Math.floor((totalViews / 1000) * campaign.cpm_rate)) 
     : 0;
 
   const docUrl = campaign.requirements?.google_doc_url || campaign.requirements?.brand_guide_url || campaign.requirements?.doc_url;
@@ -230,11 +232,19 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             <Wallet className="w-5 h-5 text-kpugi-blue" />
           </div>
           <div>
-            <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue">
-              {formatCompactCurrency(earnedAmount)}
+            <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue flex items-baseline gap-2 flex-wrap">
+              <span>{formatCompactCurrency(earnedAmount)}</span>
+              {!isReserveMet && (
+                <span className="text-[11px] font-mono font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                  (₦{baseReserve.toLocaleString()} reserved)
+                </span>
+              )}
             </div>
             <span className="text-[11px] text-kpugi-slate block mt-1">
-              Est. Payout in {campaign.verification_grace_hours || 48} hours after audit
+              {isReserveMet 
+                ? `Est. Payout in ${campaign.verification_grace_hours || 48} hours after audit`
+                : `Initial slot reserve held in escrow until minimum view threshold (${targetThreshold.toLocaleString()} views) is reached.`
+              }
             </span>
           </div>
           <span className="text-[11px] text-kpugi-slate font-medium">
