@@ -27,9 +27,13 @@ import {
   Award,
   Zap,
   Lock,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { BrandCampaignDetails } from '@/lib/supabase/advertiser';
 import { updateCampaignStatusAction, reviewCreatorSubmissionAction } from '@/app/actions/advertiser';
+import { EditCampaignModal } from '@/components/campaign/EditCampaignModal';
+import { DeleteCampaignModal } from '@/components/campaign/DeleteCampaignModal';
 
 interface AdvertiserCampaignDetailsViewProps {
   data: BrandCampaignDetails;
@@ -45,6 +49,8 @@ export default function AdvertiserCampaignDetailsView({
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const { campaign, creatives, submissions, metrics } = data;
@@ -147,7 +153,7 @@ export default function AdvertiserCampaignDetailsView({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {campaign.status === 'live' ? (
             <button
               onClick={() => handleStatusToggle('paused')}
@@ -177,6 +183,26 @@ export default function AdvertiserCampaignDetailsView({
               Complete & Refund
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-kpugi-blue transition-colors flex items-center gap-1.5 text-xs font-bold"
+            title="Edit Campaign Details"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Edit</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsDeleting(true)}
+            className="p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            title="Delete / Cancel Campaign"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Delete</span>
+          </button>
         </div>
       </div>
 
@@ -650,7 +676,7 @@ export default function AdvertiserCampaignDetailsView({
         const isBelowMinViews = selectedViews < minThreshold || selectedViews === 0;
 
         return (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 min-h-screen w-screen">
             <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-kpugi-border">
               <div className="flex items-center justify-between">
                 <h3 className="font-display font-bold text-lg text-kpugi-ink">Review Creator Submission</h3>
@@ -804,6 +830,23 @@ export default function AdvertiserCampaignDetailsView({
         </div>
       )}
 
+      {/* Edit Modal */}
+      {isEditing && (
+        <EditCampaignModal
+          campaign={campaign}
+          onClose={() => setIsEditing(false)}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+
+      {/* Delete Modal */}
+      {isDeleting && (
+        <DeleteCampaignModal
+          campaign={campaign}
+          onClose={() => setIsDeleting(false)}
+          onSuccess={() => router.push('/b/campaigns')}
+        />
+      )}
     </div>
   );
 }

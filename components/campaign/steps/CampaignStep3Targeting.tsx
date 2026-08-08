@@ -1,7 +1,28 @@
 'use client';
 
 import React from 'react';
-import { Globe, Users, Check, Target } from 'lucide-react';
+import {
+  Check,
+  Target,
+  Users,
+  Sparkles,
+  Laptop,
+  Shirt,
+  Activity,
+  Gamepad2,
+  TrendingUp,
+  Smile,
+  Utensils,
+} from 'lucide-react';
+import {
+  TikTokIcon,
+  InstagramIcon,
+  YouTubeIcon,
+  FacebookIcon,
+  TwitterXIcon,
+  LinkedInIcon,
+  ThreadsIcon,
+} from '@/components/ui/SocialIcons';
 
 interface Step3Props {
   formData: any;
@@ -10,12 +31,42 @@ interface Step3Props {
 
 export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props) {
   const platforms = [
-    { id: 'TikTok', name: 'TikTok', color: 'bg-cyan-50 text-cyan-800 border-cyan-300' },
-    { id: 'Instagram', name: 'Instagram', color: 'bg-pink-50 text-pink-800 border-pink-300' },
-    { id: 'YouTube', name: 'YouTube', color: 'bg-red-50 text-red-800 border-red-300' },
-    { id: 'Facebook', name: 'Facebook', color: 'bg-blue-50 text-blue-800 border-blue-300' },
-    { id: 'X', name: 'X (Twitter)', color: 'bg-slate-100 text-slate-800 border-slate-300' },
-    { id: 'LinkedIn', name: 'LinkedIn', color: 'bg-indigo-50 text-indigo-800 border-indigo-300' },
+    {
+      id: 'TikTok',
+      name: 'TikTok',
+      desc: 'Short-form viral video posts.',
+      icon: TikTokIcon,
+    },
+    {
+      id: 'Instagram',
+      name: 'Instagram',
+      desc: 'Reels, Stories & photo posts.',
+      icon: InstagramIcon,
+    },
+    {
+      id: 'YouTube',
+      name: 'YouTube Shorts',
+      desc: 'Long-tail viral shorts stream.',
+      icon: YouTubeIcon,
+    },
+    {
+      id: 'Facebook',
+      name: 'Facebook',
+      desc: 'Feed videos & brand posts.',
+      icon: FacebookIcon,
+    },
+    {
+      id: 'X',
+      name: 'X (Twitter)',
+      desc: 'Text copy & video posts.',
+      icon: TwitterXIcon,
+    },
+    {
+      id: 'LinkedIn',
+      name: 'LinkedIn',
+      desc: 'Professional & B2B content.',
+      icon: LinkedInIcon,
+    },
   ];
 
   const selectedChannels: string[] = formData.channels || ['TikTok', 'Instagram'];
@@ -31,82 +82,91 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
   };
 
   const niches = [
-    'Lifestyle',
-    'Tech & Innovation',
-    'Beauty & Fashion',
-    'Fitness & Health',
-    'Gaming & Esports',
-    'Finance & Crypto',
-    'Comedy & Entertainment',
-    'Food & Cooking',
-    'Education & Business',
+    { id: 'Lifestyle', label: 'Lifestyle', icon: Sparkles },
+    { id: 'Tech & Innovation', label: 'Tech & Innovation', icon: Laptop },
+    { id: 'Beauty & Fashion', label: 'Beauty & Fashion', icon: Shirt },
+    { id: 'Fitness & Health', label: 'Fitness & Health', icon: Activity },
+    { id: 'Gaming & Esports', label: 'Gaming & Esports', icon: Gamepad2 },
+    { id: 'Finance & Crypto', label: 'Finance & Crypto', icon: TrendingUp },
+    { id: 'Comedy & Entertainment', label: 'Comedy & Skits', icon: Smile },
+    { id: 'Food & Cooking', label: 'Food & Cooking', icon: Utensils },
   ];
 
-  const selectedNiches: string[] = formData.requirements?.target_niche || ['Lifestyle', 'Tech & Innovation'];
+  const selectedNiches: string[] = formData.requirements?.target_niche || [
+    'Lifestyle',
+    'Tech & Innovation',
+  ];
 
-  const toggleNiche = (niche: string) => {
-    if (selectedNiches.includes(niche)) {
+  const toggleNiche = (nicheId: string) => {
+    if (selectedNiches.includes(nicheId)) {
       updateFormData({
         requirements: {
           ...formData.requirements,
-          target_niche: selectedNiches.filter((n) => n !== niche),
+          target_niche: selectedNiches.filter((n) => n !== nicheId),
         },
       });
     } else {
       updateFormData({
         requirements: {
           ...formData.requirements,
-          target_niche: [...selectedNiches, niche],
+          target_niche: [...selectedNiches, nicheId],
         },
       });
     }
   };
 
   const followerRanges = [
-    { label: '1,000+ Followers (Micro)', value: 1000 },
-    { label: '5,000+ Followers (Mid-tier)', value: 5000 },
-    { label: '25,000+ Followers (Macro)', value: 25000 },
-    { label: '100,000+ Followers (VIP)', value: 100000 },
+    { label: '1,000+ Followers (Micro Creators)', value: 1000 },
+    { label: '5,000+ Followers (Mid-Tier Creators)', value: 5000 },
+    { label: '25,000+ Followers (Macro Performers)', value: 25000 },
+    { label: '100,000+ Followers (VIP Ambassadors)', value: 100000 },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="border-b border-slate-100 pb-4">
-        <h2 className="font-display text-xl font-bold text-kpugi-ink">
-          Step 3: Platform Channels & Creator Targeting
-        </h2>
-        <p className="text-xs text-kpugi-slate mt-0.5">
+    <div className="space-y-8 font-sans">
+      {/* Title & Subtitle Section - Step 1 & 2 Style */}
+      <div className="text-center space-y-2">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+          Let me reach the right audience.
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
           Select target social media platforms, creator niches, and follower qualification filters.
         </p>
       </div>
 
-      {/* Target Social Networks */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-kpugi-ink flex items-center gap-1.5">
-          <Target className="w-3.5 h-3.5 text-kpugi-blue" />
-          <span>Target Social Networks *</span>
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {/* Target Platforms Grid (Official SVG Brand Icons) */}
+      <div className="space-y-4 pt-2">
+        <h3 className="font-display font-extrabold text-base text-slate-900 text-center">
+          Select Target Platforms
+        </h3>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5">
           {platforms.map((p) => {
+            const Icon = p.icon;
             const isSelected = selectedChannels.includes(p.id);
+
             return (
               <div
                 key={p.id}
                 onClick={() => toggleChannel(p.id)}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                className={`p-4.5 rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center space-y-2.5 min-h-[140px] justify-center ${
                   isSelected
-                    ? 'bg-kpugi-blue/5 border-kpugi-blue ring-1 ring-kpugi-blue'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
+                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
                 }`}
               >
-                <span className="text-xs font-bold text-kpugi-ink">{p.name}</span>
                 <div
-                  className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                    isSelected ? 'bg-kpugi-blue text-white' : 'bg-slate-100 text-transparent'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
                   }`}
                 >
-                  <Check className="w-3 h-3" />
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-display font-extrabold text-sm text-slate-900 leading-tight">
+                    {p.name}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">{p.desc}</p>
                 </div>
               </div>
             );
@@ -114,39 +174,57 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
         </div>
       </div>
 
-      {/* Target Creator Niches */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-kpugi-ink flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5 text-kpugi-blue" />
-          <span>Creator Niche & Categories *</span>
-        </label>
-        <div className="flex flex-wrap gap-2">
+      {/* Creator Niche & Categories Grid with Icons */}
+      <div className="space-y-4 pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">Creator Niche & Categories</h4>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Select one or more creator content niches.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
+            {selectedNiches.length} Selected
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {niches.map((niche) => {
-            const isSelected = selectedNiches.includes(niche);
+            const Icon = niche.icon;
+            const isSelected = selectedNiches.includes(niche.id);
+
             return (
-              <button
-                key={niche}
-                type="button"
-                onClick={() => toggleNiche(niche)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+              <div
+                key={niche.id}
+                onClick={() => toggleNiche(niche.id)}
+                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-2.5 ${
                   isSelected
-                    ? 'bg-kpugi-blue text-white border-kpugi-blue shadow-sm'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
+                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
                 }`}
               >
-                {niche}
-              </button>
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-slate-900 truncate">{niche.label}</span>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* Creator Follower Filter */}
-      <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-        <label className="text-xs font-bold text-kpugi-ink">
-          Minimum Creator Follower Count
+      {/* Minimum Creator Follower Filter */}
+      <div className="space-y-3 p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb]">
+        <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
+          <span>Minimum Creator Follower Requirement</span>
+          <span className="text-[10px] font-mono text-slate-500">Qualification Filter</span>
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {followerRanges.map((range) => {
             const isSelected = (formData.requirements?.min_followers || 1000) === range.value;
             return (
@@ -157,14 +235,14 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
                     requirements: { ...formData.requirements, min_followers: range.value },
                   })
                 }
-                className={`p-3 rounded-xl border cursor-pointer text-xs font-bold flex items-center justify-between transition-all ${
+                className={`p-3.5 rounded-xl border cursor-pointer text-xs font-bold flex items-center justify-between transition-all ${
                   isSelected
-                    ? 'bg-white border-kpugi-blue text-kpugi-blue shadow-sm'
-                    : 'bg-slate-100/70 border-transparent text-slate-700 hover:bg-slate-100'
+                    ? 'bg-white border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
                 <span>{range.label}</span>
-                {isSelected && <Check className="w-4 h-4 text-kpugi-blue" />}
+                {isSelected && <Check className="w-4 h-4 text-[#4338ca]" />}
               </div>
             );
           })}

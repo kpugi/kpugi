@@ -1,7 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, Video, Image as ImageIcon, FileText, Sparkles, Plus, X, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import {
+  Video,
+  Image as ImageIcon,
+  FileText,
+  Sparkles,
+  Plus,
+  X,
+  Link as LinkIcon,
+  Play,
+  CheckCircle2,
+} from 'lucide-react';
 import { generateAICampaignPolishAction } from '@/app/actions/campaign';
 
 interface Step2Props {
@@ -15,13 +25,30 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const adFormats = [
-    { id: 'Dedicated Video', title: 'Dedicated Video', desc: 'Full standalone video dedicated to brand product/service' },
-    { id: 'Integrated Mention', title: 'Integrated Mention', desc: 'Sponsorship segment inside creator daily vlog/content' },
-    { id: 'Product Review', title: 'Product Review', desc: 'Unboxing or honest product review & demonstration' },
-    { id: 'Live Stream Feature', title: 'Live Stream Feature', desc: 'Live shoutout & product placement during creator live stream' },
+    {
+      id: 'Video Asset',
+      title: 'Video Creative',
+      desc: 'Ready-to-post video file for creators to download & publish.',
+      icon: Video,
+    },
+    {
+      id: 'Image Banner',
+      title: 'Image & Banner',
+      desc: 'Ready-to-post photo or graphic banner for creators to grab.',
+      icon: ImageIcon,
+    },
+    {
+      id: 'Text Caption',
+      title: 'Text Copy & Caption',
+      desc: 'Approved post copy, text caption & promo link for creators to post.',
+      icon: FileText,
+    },
   ];
 
-  const hashtags: string[] = formData.requirements?.hashtags || ['#KpugiLaunch', `#${(formData.title || 'Brand').replace(/\s+/g, '')}`];
+  const hashtags: string[] = formData.requirements?.hashtags || [
+    '#KpugiLaunch',
+    `#${(formData.title || 'Brand').replace(/\s+/g, '')}`,
+  ];
   const mentions: string[] = formData.requirements?.mentions || ['@KpugiApp'];
 
   const addHashtag = () => {
@@ -98,43 +125,52 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="border-b border-slate-100 pb-4">
-        <h2 className="font-display text-xl font-bold text-kpugi-ink">
-          Step 2: Brand Ready-to-Post Creatives & Media
-        </h2>
-        <p className="text-xs text-kpugi-slate mt-0.5">
-          Brands provide ready-made text, images, or video assets. Creators grab approved creatives and post directly.
+    <div className="space-y-8 font-sans">
+      {/* Title & Subtitle Section - Step 1 Style */}
+      <div className="text-center space-y-2">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+          Let's configure requirements.
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+          Specify ad format, mandatory hashtags, brand mentions, and creative assets for creators.
         </p>
       </div>
 
-      {/* Ad Format Selection */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-kpugi-ink">Ad Format *</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Ad Format Selection Grid (Same as Step 1 Goal Selection) */}
+      <div className="space-y-4 pt-2">
+        <h3 className="font-display font-extrabold text-base text-slate-900 text-center">
+          Select Ad Format
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           {adFormats.map((format) => {
-            const isSelected = formData.ad_format === format.id;
+            const Icon = format.icon;
+            const isSelected = (formData.ad_format || 'Video Asset') === format.id;
+
             return (
               <div
                 key={format.id}
                 onClick={() => updateFormData({ ad_format: format.id })}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                className={`p-5 rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center space-y-2.5 min-h-[140px] justify-center ${
                   isSelected
-                    ? 'bg-kpugi-blue/5 border-kpugi-blue ring-1 ring-kpugi-blue shadow-sm'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
+                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
                 }`}
               >
                 <div
-                  className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                    isSelected ? 'border-kpugi-blue bg-kpugi-blue text-white' : 'border-slate-300'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
                   }`}
                 >
-                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                  <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-kpugi-ink">{format.title}</h4>
-                  <p className="text-[11px] text-kpugi-slate mt-0.5">{format.desc}</p>
+                  <h4 className="font-display font-extrabold text-sm text-slate-900 leading-tight">
+                    {format.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">
+                    {format.desc}
+                  </p>
                 </div>
               </div>
             );
@@ -142,20 +178,17 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
         </div>
       </div>
 
-      {/* Ready-to-Post Text Copy / Caption */}
-      <div className="space-y-1.5 p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70">
+      {/* Ready-to-Post Text Copy / Caption (Grab & Post) */}
+      <div className="space-y-2 pt-2 border-t border-slate-100">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-            <FileText className="w-4 h-4 text-amber-700" />
-            <span>Ready-to-Post Text Copy / Caption (Grab & Post) *</span>
+          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <FileText className="w-4 h-4 text-[#4338ca]" />
+            <span>Ready-to-Post Caption (Grab & Post) *</span>
           </label>
-          <span className="text-[10px] font-mono font-bold text-amber-800 uppercase bg-amber-100 px-2 py-0.5 rounded">
+          <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
             Creators Copy Directly
           </span>
         </div>
-        <p className="text-[11px] text-amber-800">
-          Enter the exact caption text creators will copy and paste when sharing your creative on their accounts.
-        </p>
         <textarea
           rows={3}
           value={formData.requirements?.creative_text_copy || ''}
@@ -165,15 +198,15 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             })
           }
           placeholder="e.g. 🔥 Exciting news! Kpugi platform is officially launching in Nigeria. Join thousands of creators today! Link in bio #KpugiLaunch"
-          className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 text-xs font-mono text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none leading-relaxed bg-white"
+          className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none leading-relaxed transition-all"
         />
       </div>
 
       {/* Asset Pack & Google Drive Links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-kpugi-ink flex items-center gap-1.5">
-            <LinkIcon className="w-3.5 h-3.5 text-kpugi-blue" />
+          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <LinkIcon className="w-3.5 h-3.5 text-[#4338ca]" />
             <span>Google Drive Asset Pack URL</span>
           </label>
           <input
@@ -185,14 +218,14 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               })
             }
             placeholder="https://drive.google.com/drive/folders/..."
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-kpugi-blue outline-none"
+            className="w-full px-4 py-3 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none transition-all"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-kpugi-ink flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-kpugi-blue" />
-            <span>Google Doc Brief URL</span>
+          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-[#4338ca]" />
+            <span>Google Doc Guidelines Brief URL</span>
           </label>
           <input
             type="url"
@@ -203,26 +236,26 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               })
             }
             placeholder="https://docs.google.com/document/d/..."
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-kpugi-blue outline-none"
+            className="w-full px-4 py-3 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none transition-all"
           />
         </div>
       </div>
 
-      {/* Hashtags & Mentions */}
-      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+      {/* Mandatory Hashtags & Mentions */}
+      <div className="p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-bold text-kpugi-ink">Mandatory Hashtags & Brand Mentions</h4>
-            <p className="text-[11px] text-kpugi-slate">Creators must include these in their post captions.</p>
+            <h4 className="text-xs font-bold text-slate-900">Mandatory Hashtags & Brand Mentions</h4>
+            <p className="text-[11px] text-slate-500 mt-0.5">Creators must include these in their post captions.</p>
           </div>
           <button
             type="button"
             disabled={isAiLoading}
             onClick={handleAiTags}
-            className="text-[11px] font-bold text-kpugi-blue hover:underline flex items-center gap-1"
+            className="text-[11px] font-bold text-[#4f46e5] bg-white border border-[#dcd8fc] px-3 py-1 rounded-full hover:bg-slate-50 transition-all flex items-center gap-1"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>✨ AI Auto-Suggest Tags</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>✨ Auto-Suggest</span>
           </button>
         </div>
 
@@ -233,14 +266,14 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
-              placeholder="Add hashtag (e.g. #KpugiFit)..."
+              placeholder="Add hashtag (e.g. #KpugiLaunch)..."
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addHashtag())}
-              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none"
+              className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#4338ca]"
             />
             <button
               type="button"
               onClick={addHashtag}
-              className="px-3 py-1.5 rounded-lg bg-kpugi-blue text-white text-xs font-bold"
+              className="px-4 py-2 rounded-xl bg-[#4338ca] text-white text-xs font-bold hover:bg-[#3730a3]"
             >
               Add
             </button>
@@ -249,11 +282,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             {hashtags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-kpugi-blue text-xs font-mono font-bold"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#eeedfd] text-[#4338ca] text-xs font-mono font-bold border border-[#dcd8fc]"
               >
                 <span>{tag}</span>
                 <button type="button" onClick={() => removeHashtag(tag)}>
-                  <X className="w-3 h-3 hover:text-red-500" />
+                  <X className="w-3.5 h-3.5 hover:text-red-500" />
                 </button>
               </span>
             ))}
@@ -261,20 +294,20 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
         </div>
 
         {/* Mentions */}
-        <div className="space-y-2 pt-2 border-t border-slate-200">
+        <div className="space-y-2 pt-3 border-t border-slate-200">
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={mentionInput}
               onChange={(e) => setMentionInput(e.target.value)}
-              placeholder="Add brand mention (e.g. @BrandOfficial)..."
+              placeholder="Add brand mention (e.g. @KpugiApp)..."
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMention())}
-              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none"
+              className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#4338ca]"
             />
             <button
               type="button"
               onClick={addMention}
-              className="px-3 py-1.5 rounded-lg bg-kpugi-blue text-white text-xs font-bold"
+              className="px-4 py-2 rounded-xl bg-[#4338ca] text-white text-xs font-bold hover:bg-[#3730a3]"
             >
               Add
             </button>
@@ -283,11 +316,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             {mentions.map((m) => (
               <span
                 key={m}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-mono font-bold"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-mono font-bold border border-purple-200"
               >
                 <span>{m}</span>
                 <button type="button" onClick={() => removeMention(m)}>
-                  <X className="w-3 h-3 hover:text-red-500" />
+                  <X className="w-3.5 h-3.5 hover:text-red-500" />
                 </button>
               </span>
             ))}

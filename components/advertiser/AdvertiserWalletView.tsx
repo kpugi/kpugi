@@ -189,7 +189,7 @@ export default function AdvertiserWalletView({ data }: AdvertiserWalletViewProps
                 disabled={isSubmitting}
                 className="flex-1 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs transition-colors"
               >
-                Deposit via Paystack →
+                Add Funds →
               </button>
               <button
                 type="button"

@@ -4,30 +4,6 @@ import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export interface CampaignWizardPayload {
-  title: string;
-  description: string;
-  ad_format: string;
-  cpm_rate: number;
-  total_budget: number;
-  min_view_threshold: number;
-  required_live_duration_hours: number;
-  channels: string[];
-  requirements: {
-    objective?: string;
-    target_niche?: string[];
-    min_followers?: number;
-    hashtags?: string[];
-    mentions?: string[];
-    google_doc_url?: string;
-    google_drive_url?: string;
-    script_do_and_donts?: string;
-    creative_text_copy?: string;
-    creative_assets?: string[];
-    voice_narration_transcript?: string;
-  };
-}
-
 /**
  * AI Prompt Polish using NVIDIA NIM AI API
  */
@@ -109,8 +85,132 @@ export async function generateAICampaignPolishAction(
   }
 }
 
+export interface CampaignWizardPayload {
+  id?: string;
+  title: string;
+  description: string;
+  cover_image_url?: string;
+  ad_format: string;
+  cpm_rate: number;
+  total_budget: number;
+  min_view_threshold: number;
+  required_live_duration_hours: number;
+  channels: string[];
+  is_featured?: boolean;
+  payment_method?: 'paystack' | 'wallet';
+  paystack_reference?: string;
+  requirements: {
+    objective?: string;
+    target_niche?: string[];
+    min_followers?: number;
+    hashtags?: string[];
+    mentions?: string[];
+    google_doc_url?: string;
+    google_drive_url?: string;
+    script_do_and_donts?: string;
+    creative_text_copy?: string;
+    creative_assets?: string[];
+    voice_narration_transcript?: string;
+    display_ad_format?: string;
+  };
+}
+
 /**
- * Server action to publish new brand campaign with escrow budget lock
+ * Server action to save a draft campaign
+ */
+export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPayload>) {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    if (!userProfile.advertiserProfile) {
+      return { success: false, error: 'Only registered advertisers can save drafts.' };
+    }
+
+    const advertiserId = userProfile.profile.id;
+    const supabase = createAdminClient();
+
+    const normalizeAdFormat = (fmt?: string): 'video' | 'image' | 'text' => {
+      if (!fmt) return 'video';
+      const lower = fmt.toLowerCase();
+      if (lower.includes('image') || lower.includes('photo')) return 'image';
+      if (lower.includes('text') || lower.includes('post copy')) return 'text';
+      return 'video';
+    };
+
+    const campaignCode = `KPG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+    if (payload.id) {
+      // Update existing draft
+      const { error: updateErr } = await supabase
+        .from('campaigns')
+        .update({
+          title: payload.title || 'Untitled Draft',
+          description: payload.description || '',
+          cover_image_url: payload.cover_image_url || null,
+          ad_format: normalizeAdFormat(payload.ad_format),
+          cpm_rate: payload.cpm_rate || 2000,
+          total_budget: payload.total_budget || 100000,
+          min_view_threshold: payload.min_view_threshold || 1000,
+          required_live_duration_hours: payload.required_live_duration_hours || 72,
+          channels: payload.channels || ['TikTok', 'Instagram'],
+          is_featured: Boolean(payload.is_featured),
+          status: 'draft',
+          requirements: payload.requirements || {},
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.id)
+        .eq('advertiser_id', advertiserId);
+
+      if (updateErr) {
+        return { success: false, error: `Draft update failed: ${updateErr.message}` };
+      }
+
+      revalidatePath('/b/campaigns');
+      return { success: true, campaignId: payload.id };
+    }
+
+    // Create new draft
+    const { data: campaign, error: insertErr } = await supabase
+      .from('campaigns')
+      .insert({
+        advertiser_id: advertiserId,
+        title: payload.title || 'Untitled Draft',
+        campaign_code: campaignCode,
+        description: payload.description || '',
+        cover_image_url: payload.cover_image_url || null,
+        ad_format: normalizeAdFormat(payload.ad_format),
+        cpm_rate: payload.cpm_rate || 2000,
+        total_budget: payload.total_budget || 100000,
+        reserved_budget: 0,
+        spent_budget: 0,
+        min_view_threshold: payload.min_view_threshold || 1000,
+        required_live_duration_hours: payload.required_live_duration_hours || 72,
+        verification_grace_hours: 24,
+        channels: payload.channels || ['TikTok', 'Instagram'],
+        is_featured: Boolean(payload.is_featured),
+        status: 'draft',
+        requirements: payload.requirements || {},
+      })
+      .select('*')
+      .single();
+
+    if (insertErr) {
+      return { success: false, error: `Draft save failed: ${insertErr.message}` };
+    }
+
+    revalidatePath('/b/campaigns');
+    return { success: true, campaignId: campaign.id };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Server error saving draft' };
+  }
+}
+
+/**
+ * Server action to publish new brand campaign with escrow budget lock & receipts
  */
 export async function createCampaignWizardAction(payload: CampaignWizardPayload) {
   try {
@@ -127,16 +227,16 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
     const advertiserId = userProfile.profile.id;
     const supabase = createAdminClient();
 
-    // 1. Calculate base slot reserve
+    // 1. Calculate base slot reserve & total checkout
     const cpmRate = Number(payload.cpm_rate || 2000);
     const minThreshold = Number(payload.min_view_threshold || 1000);
     const baseSlotReserve = Math.round((minThreshold / 1000) * cpmRate);
     const totalBudget = Number(payload.total_budget || 100000);
+    const isFeatured = Boolean(payload.is_featured);
+    const featuredFee = isFeatured ? 2500 : 0;
 
-    // Initial reserved budget starts at 0 (or baseline slot commitment)
     const initialReservedBudget = Math.min(baseSlotReserve, totalBudget);
 
-    // Generate campaign code (e.g. KPG-X9A2M)
     const normalizeAdFormat = (fmt?: string): 'video' | 'image' | 'text' => {
       if (!fmt) return 'video';
       const lower = fmt.toLowerCase();
@@ -155,6 +255,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
         title: payload.title,
         campaign_code: campaignCode,
         description: payload.description,
+        cover_image_url: payload.cover_image_url || null,
         ad_format: normalizeAdFormat(payload.ad_format),
         cpm_rate: cpmRate,
         total_budget: totalBudget,
@@ -164,6 +265,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
         required_live_duration_hours: payload.required_live_duration_hours || 72,
         verification_grace_hours: 24,
         channels: payload.channels || ['TikTok', 'Instagram'],
+        is_featured: isFeatured,
         status: 'live',
         requirements: {
           ...(payload.requirements || {}),
@@ -178,12 +280,220 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       return { success: false, error: `Database insert failed: ${insertErr.message}` };
     }
 
-    revalidatePath('/b/campaigns');
-    revalidatePath('/(marketing)/browse');
+    // 3. Generate Receipt Record
+    const receiptNumber = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random()
+      .toString(36)
+      .substring(2, 6)
+      .toUpperCase()}`;
 
-    return { success: true, campaignId: campaign.id, campaignCode: campaign.campaign_code };
+    const totalPaid = totalBudget + featuredFee;
+
+    try {
+      await supabase.from('payment_receipts').insert({
+        receipt_number: receiptNumber,
+        advertiser_id: advertiserId,
+        campaign_id: campaign.id,
+        total_amount: totalPaid,
+        escrow_budget: totalBudget,
+        featured_fee: featuredFee,
+        is_featured: isFeatured,
+        payment_method: payload.payment_method || 'wallet',
+        paystack_reference: payload.paystack_reference || `WALLET-${Date.now()}`,
+        status: 'paid',
+      });
+    } catch (e) {
+      // Table may be migrating, continue cleanly
+    }
+
+    // 4. Trigger Knock notifications and Resend emails to all creators
+    try {
+      await notifyCreatorsNewCampaign(campaign);
+    } catch (e) {
+      console.error('[Campaign Action] Error dispatching creator notifications:', e);
+    }
+
+    revalidatePath('/b/campaigns');
+    revalidatePath('/browse');
+
+    return {
+      success: true,
+      campaignId: campaign.id,
+      receipt: {
+        receipt_number: receiptNumber,
+        total_amount: totalPaid,
+        escrow_budget: totalBudget,
+        featured_fee: featuredFee,
+        is_featured: isFeatured,
+        payment_method: payload.payment_method || 'wallet',
+      },
+    };
   } catch (err: any) {
-    console.error('[Campaign Action] Server error:', err);
-    return { success: false, error: err?.message || 'Failed to create campaign' };
+    console.error('[Campaign Action] Exception launching campaign:', err);
+    return { success: false, error: err?.message || 'Server error launching campaign' };
+  }
+}
+
+/**
+ * Helper to notify creators about a new live campaign via Knock & Resend
+ */
+export async function notifyCreatorsNewCampaign(campaign: any) {
+  try {
+    const supabase = createAdminClient();
+
+    // Fetch active creator profiles
+    const { data: creators } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .eq('role', 'creator')
+      .limit(100);
+
+    if (!creators || creators.length === 0) return;
+
+    const resendKey = process.env.RESEND_API_KEY;
+    const cpmFormatted = Number(campaign.cpm_rate || 2000).toLocaleString();
+
+    for (const creator of creators) {
+      if (!creator.email) continue;
+      try {
+        // Send email via Resend API
+        if (resendKey) {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${resendKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: process.env.RESEND_FROM_EMAIL || 'Kpugi <onboarding@resend.dev>',
+              to: creator.email,
+              subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e0fb; border-radius: 16px; background-color: #ffffff;">
+                  <h2 style="color: #4338ca; margin-top: 0;">🚀 New Campaign Live on Kpugi!</h2>
+                  <p style="color: #334155; font-size: 14px;">Hi ${creator.full_name || 'Creator'},</p>
+                  <p style="color: #334155; font-size: 14px;">A new brand campaign is live on Kpugi with ready-to-post creatives!</p>
+                  <div style="background-color: #f8f7ff; border: 1px solid #e2e0fb; padding: 18px; border-radius: 12px; margin: 16px 0;">
+                    <h3 style="margin: 0 0 8px 0; color: #1e1b4b; font-size: 16px;">${campaign.title}</h3>
+                    <p style="margin: 0; color: #4338ca; font-weight: bold; font-size: 15px;">Payout Rate: ₦${cpmFormatted} per 1,000 views</p>
+                  </div>
+                  <p style="color: #475569; font-size: 13px;">Log in to your Kpugi Creator Dashboard, grab the approved creative asset, and publish to start earning!</p>
+                </div>
+              `,
+            }),
+          });
+        }
+      } catch (e) {
+        // Suppress individual creator email error
+      }
+    }
+  } catch (err) {
+    console.error('[Notification Helper] Error notifying creators:', err);
+  }
+}
+
+/**
+ * Server action to archive a campaign (Drafts & Live campaigns are marked status='archived' to preserve history)
+ */
+export async function archiveCampaignAction(campaignId: string) {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    if (!userProfile.advertiserProfile) {
+      return { success: false, error: 'Only registered advertisers can archive campaigns.' };
+    }
+
+    const advertiserId = userProfile.profile.id;
+    const supabase = createAdminClient();
+
+    // Check existing campaign status
+    const { data: campaign, error: fetchErr } = await supabase
+      .from('campaigns')
+      .select('id, status, is_featured, total_budget')
+      .eq('id', campaignId)
+      .eq('advertiser_id', advertiserId)
+      .single();
+
+    if (fetchErr || !campaign) {
+      return { success: false, error: 'Campaign not found or access denied.' };
+    }
+
+    // Set status to 'archived' in database to preserve history
+    const { error: archiveErr } = await supabase
+      .from('campaigns')
+      .update({
+        status: 'archived',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', campaignId);
+
+    if (archiveErr) {
+      return { success: false, error: `Failed to archive campaign: ${archiveErr.message}` };
+    }
+
+    revalidatePath('/b/campaigns');
+    revalidatePath('/b/dashboard');
+    revalidatePath('/browse');
+
+    return {
+      success: true,
+      message: 'Campaign archived successfully. History preserved on dashboard.',
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Server error archiving campaign' };
+  }
+}
+
+// Backwards compatibility alias
+export const deleteCampaignAction = archiveCampaignAction;
+
+/**
+ * Server action to update existing campaign details
+ */
+export async function updateCampaignDetailsAction(payload: {
+  campaignId: string;
+  title: string;
+  description: string;
+  channels?: string[];
+  is_featured?: boolean;
+  requirements?: any;
+}) {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    const advertiserId = userProfile.profile.id;
+    const supabase = createAdminClient();
+
+    const { error: updateErr } = await supabase
+      .from('campaigns')
+      .update({
+        title: payload.title,
+        description: payload.description,
+        channels: payload.channels || ['TikTok', 'Instagram'],
+        is_featured: Boolean(payload.is_featured),
+        requirements: payload.requirements || {},
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payload.campaignId)
+      .eq('advertiser_id', advertiserId);
+
+    if (updateErr) {
+      return { success: false, error: `Failed to update campaign: ${updateErr.message}` };
+    }
+
+    revalidatePath('/b/campaigns');
+    revalidatePath(`/b/campaigns/${payload.campaignId}`);
+    revalidatePath('/browse');
+
+    return { success: true, message: 'Campaign updated successfully.' };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Server error updating campaign' };
   }
 }

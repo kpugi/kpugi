@@ -1,59 +1,45 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ShieldCheck,
-  Rocket,
-  Eye,
-  CheckCircle2,
   Lock,
-  FileText,
   Sparkles,
   Wallet,
   CreditCard,
-  Target,
   FileCheck,
   Coins,
   TrendingUp,
+  CheckCircle2,
 } from 'lucide-react';
-import { PlatformBadge } from '@/components/ui/SocialIcons';
 
 interface Step4Props {
   formData: any;
-  updateFormData?: (fields: Partial<any>) => void;
+  updateFormData: (fields: Partial<any>) => void;
   walletBalance?: number;
   isSubmitting: boolean;
-  onSubmit: () => void;
+  onInitiatePayment: () => void;
 }
 
-export function CampaignStep4Review({
+export function CampaignStep4Payment({
   formData,
   updateFormData,
   walletBalance = 0,
   isSubmitting,
-  onSubmit,
+  onInitiatePayment,
 }: Step4Props) {
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'paystack'>('wallet');
-
   const cpmRate = Math.max(2000, Number(formData.cpm_rate || 2000));
-  const minThreshold = Number(formData.min_view_threshold || 1000);
   const totalBudget = Math.max(10000, Number(formData.total_budget || 100000));
 
   const creatorSlots = cpmRate > 0 ? Math.floor(totalBudget / cpmRate) : 0;
   const potentialViews = cpmRate > 0 ? Math.floor((totalBudget / cpmRate) * 1000) : 0;
 
-  const channels: string[] = formData.channels || ['TikTok', 'Instagram'];
-  const hashtags: string[] = formData.requirements?.hashtags || ['#KpugiLaunch'];
-  const mentions: string[] = formData.requirements?.mentions || ['@KpugiApp'];
-
   const isFeatured = Boolean(formData.is_featured);
   const featuredFee = isFeatured ? 2500 : 0;
   const totalPayable = totalBudget + featuredFee;
+  const paymentMethod = formData.payment_method || 'wallet';
 
   const toggleFeatured = () => {
-    if (updateFormData) {
-      updateFormData({ is_featured: !isFeatured });
-    }
+    updateFormData({ is_featured: !isFeatured });
   };
 
   const cpmPresets = [2000, 2500, 3500, 5000, 7500, 10000];
@@ -66,126 +52,14 @@ export function CampaignStep4Review({
 
   return (
     <div className="space-y-8 font-sans">
-      {/* Title & Subtitle Section */}
+      {/* Step Header */}
       <div className="text-center space-y-2">
         <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-          Let's review and launch.
+          Step 4: Escrow Payment & Funding
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-          Set your custom CPM payout rate, configure total escrow budget, and launch your campaign.
+          Set your custom CPM payout rate, configure escrow budget, and complete payment to proceed to final launch.
         </p>
-      </div>
-
-      {/* Live Creator Briefing Card Preview */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <Eye className="w-4 h-4 text-[#4338ca]" />
-            <span>Live Creator Briefing Preview (How Creators See It)</span>
-          </label>
-          <div className="flex items-center gap-2">
-            {isFeatured && (
-              <span className="text-[10px] font-mono font-bold text-amber-900 bg-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-700" />
-                <span>FEATURED CAMPAIGN</span>
-              </span>
-            )}
-            <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Grab & Post Enabled
-            </span>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-slate-900 text-white shadow-xl border border-slate-800 overflow-hidden">
-          {formData.cover_image_url && (
-            <div className="w-full h-44 sm:h-56 overflow-hidden relative border-b border-white/10">
-              <img
-                src={formData.cover_image_url}
-                alt="Campaign Banner"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
-            </div>
-          )}
-
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span>READY TO LAUNCH</span>
-                </div>
-                <h3 className="font-display text-2xl font-extrabold text-white">
-                  {formData.title || 'Untitled Campaign'}
-                </h3>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed max-w-2xl">
-                  {formData.description || 'No description provided.'}
-                </p>
-              </div>
-              <div className="text-right shrink-0 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/10">
-                <div className="font-mono text-xl font-extrabold text-amber-400">
-                  ₦{cpmRate.toLocaleString()}{' '}
-                  <span className="text-xs text-slate-400 font-normal">/ 1k views</span>
-                </div>
-                <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                  Min View Goal: {minThreshold.toLocaleString()} views
-                </div>
-              </div>
-            </div>
-
-            {/* Target Social Platforms Bar */}
-            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/10 text-xs">
-              <span className="text-slate-400 font-bold text-[11px] flex items-center gap-1">
-                <Target className="w-3.5 h-3.5 text-[#818cf8]" />
-                <span>Target Platforms:</span>
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                {channels.map((ch: string) => (
-                  <PlatformBadge key={ch} platform={ch} showLabel={true} className="!py-1 !px-2.5" />
-                ))}
-              </div>
-            </div>
-
-            {/* Grab & Post Creative Box */}
-            {formData.requirements?.creative_text_copy && (
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-amber-300">
-                  <span className="flex items-center gap-1.5">
-                    <FileText className="w-4 h-4" />
-                    <span>Approved Post Caption (Creators Copy This)</span>
-                  </span>
-                  <span className="text-[10px] font-mono bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full">
-                    Ready to Post
-                  </span>
-                </div>
-                <p className="text-xs text-slate-200 font-mono italic leading-relaxed bg-black/40 p-3 rounded-xl border border-white/5">
-                  "{formData.requirements.creative_text_copy}"
-                </p>
-              </div>
-            )}
-
-            {/* Mandatory Hashtags & Mentions */}
-            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/10 text-xs">
-              <span className="text-slate-400 font-bold text-[11px]">Mandatory Tags:</span>
-              {hashtags.map((tag: string) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 font-mono text-[10px] font-bold border border-blue-500/30"
-                >
-                  {tag}
-                </span>
-              ))}
-              {mentions.map((m: string) => (
-                <span
-                  key={m}
-                  className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold border border-purple-500/30"
-                >
-                  {m}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Interactive Custom CPM Rate & Campaign Budget Setup */}
@@ -231,7 +105,7 @@ export function CampaignStep4Review({
                 step={250}
                 value={formData.cpm_rate || 2000}
                 onChange={(e) =>
-                  updateFormData && updateFormData({ cpm_rate: Math.max(2000, Number(e.target.value)) })
+                  updateFormData({ cpm_rate: Math.max(2000, Number(e.target.value)) })
                 }
                 placeholder="2000"
                 className="w-full pl-9 pr-4 py-3 rounded-xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none"
@@ -242,7 +116,7 @@ export function CampaignStep4Review({
                 <button
                   key={preset}
                   type="button"
-                  onClick={() => updateFormData && updateFormData({ cpm_rate: preset })}
+                  onClick={() => updateFormData({ cpm_rate: preset })}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all border ${
                     cpmRate === preset
                       ? 'bg-[#4338ca] text-white border-[#4338ca]'
@@ -274,7 +148,7 @@ export function CampaignStep4Review({
                 step={5000}
                 value={formData.total_budget || 100000}
                 onChange={(e) =>
-                  updateFormData && updateFormData({ total_budget: Math.max(10000, Number(e.target.value)) })
+                  updateFormData({ total_budget: Math.max(10000, Number(e.target.value)) })
                 }
                 placeholder="100000"
                 className="w-full pl-9 pr-4 py-3 rounded-xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none"
@@ -285,7 +159,7 @@ export function CampaignStep4Review({
                 <button
                   key={preset}
                   type="button"
-                  onClick={() => updateFormData && updateFormData({ total_budget: preset })}
+                  onClick={() => updateFormData({ total_budget: preset })}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all border ${
                     totalBudget === preset
                       ? 'bg-[#4338ca] text-white border-[#4338ca]'
@@ -299,7 +173,7 @@ export function CampaignStep4Review({
           </div>
         </div>
 
-        {/* 4 Key Financial Metric Cards (Live Calculated) */}
+        {/* Live Calculated Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-center pt-2 border-t border-[#e2e0fb]">
           <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -335,7 +209,7 @@ export function CampaignStep4Review({
           </div>
         </div>
 
-        {/* Enhanced Itemized Checkout Table */}
+        {/* Itemized Checkout Table */}
         <div className="p-5 rounded-2xl bg-white border border-[#e2e0fb] space-y-3.5 shadow-2xs">
           <div className="text-xs font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 uppercase tracking-wide">
             Itemized Payment Breakdown
@@ -395,10 +269,6 @@ export function CampaignStep4Review({
             </div>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
               Get sticky top placement on the creator catalogue with a golden <strong>FEATURED</strong> badge.
-              <br />
-              <span className="text-[11px] font-medium text-amber-800">
-                Note: The ₦2,500 fee is billed separately as a platform service fee and is NOT deducted from your campaign escrow budget.
-              </span>
             </p>
           </div>
         </div>
@@ -411,14 +281,14 @@ export function CampaignStep4Review({
         />
       </div>
 
-      {/* Escrow Deposit Method (Prominent Cards with Wallet Balance) */}
+      {/* Escrow Deposit Method Selection Cards */}
       <div className="space-y-3">
         <label className="text-xs font-bold text-slate-900">Escrow Payment & Funding Method</label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Option 1: Kpugi Escrow Wallet */}
           <div
-            onClick={() => setPaymentMethod('wallet')}
+            onClick={() => updateFormData({ payment_method: 'wallet' })}
             className={`p-5 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
               paymentMethod === 'wallet'
                 ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-sm'
@@ -441,7 +311,7 @@ export function CampaignStep4Review({
                     Wallet Balance
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Instantly lock ₦{totalPayable.toLocaleString()} from brand balance
+                    Lock ₦{totalPayable.toLocaleString()} from brand balance
                   </p>
                 </div>
               </div>
@@ -466,7 +336,7 @@ export function CampaignStep4Review({
 
           {/* Option 2: Instant Card & Bank Transfer */}
           <div
-            onClick={() => setPaymentMethod('paystack')}
+            onClick={() => updateFormData({ payment_method: 'paystack' })}
             className={`p-5 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
               paymentMethod === 'paystack'
                 ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-sm'
@@ -505,7 +375,7 @@ export function CampaignStep4Review({
             </div>
 
             <div className="pt-2 border-t border-[#dcd8fc]/60 flex items-center justify-between text-xs text-slate-500 font-medium">
-              <span>Instant Escrow Funding</span>
+              <span>Paystack Checkout</span>
               <span className="font-mono text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                 Instant Activation
               </span>
@@ -518,11 +388,11 @@ export function CampaignStep4Review({
       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3 text-xs text-slate-600">
         <FileCheck className="w-4 h-4 text-[#4338ca] shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          By launching this campaign, you agree to Kpugi's{' '}
+          By proceeding with payment, you agree to Kpugi's{' '}
           <a href="#" className="text-[#4338ca] font-bold underline">
             Brand Terms of Service
           </a>
-          , Escrow Budget Allocation Policy, and Creator Payout Verification Guidelines. Creator payouts are released strictly upon verified CPM view deliverables.
+          , Escrow Budget Allocation Policy, and Creator Payout Verification Guidelines.
         </p>
       </div>
     </div>
