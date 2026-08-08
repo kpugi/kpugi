@@ -141,8 +141,8 @@ export function CampaignPaymentBridgeModal({
           <Rocket className="w-5 h-5 text-amber-300 animate-bounce" />
           <span>
             {isLaunching
-              ? 'Publishing Campaign & Notifying Creators...'
-              : '🚀 Launch Campaign to Catalogue'}
+              ? 'Publishing Campaign...'
+              : 'PUBLISH!'}
           </span>
         </button>
       </div>

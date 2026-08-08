@@ -14,9 +14,10 @@ import { createCampaignWizardAction, saveCampaignDraftAction } from '@/app/actio
 
 interface BrandCampaignWizardViewProps {
   walletBalance?: number;
+  initialData?: any;
 }
 
-export function BrandCampaignWizardView({ walletBalance = 0 }: BrandCampaignWizardViewProps) {
+export function BrandCampaignWizardView({ walletBalance = 0, initialData }: BrandCampaignWizardViewProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,29 +32,29 @@ export function BrandCampaignWizardView({ walletBalance = 0 }: BrandCampaignWiza
   const [verifiedPaymentRef, setVerifiedPaymentRef] = useState('');
 
   const [formData, setFormData] = useState({
-    id: '',
-    title: '',
-    objective: 'Brand Awareness',
-    description: '',
-    cover_image_url: '',
-    voice_transcript: '',
-    cpm_rate: 2000,
-    min_view_threshold: 1000,
-    total_budget: 100000,
-    required_live_duration_hours: 72,
-    ad_format: 'Video Asset',
-    channels: ['TikTok', 'Instagram'],
-    is_featured: false,
-    payment_method: 'wallet' as 'wallet' | 'paystack',
-    paystack_reference: '',
+    id: initialData?.id || '',
+    title: initialData?.title || '',
+    objective: initialData?.objective || 'Brand Awareness',
+    description: initialData?.description || '',
+    cover_image_url: initialData?.cover_image_url || '',
+    voice_transcript: initialData?.voice_transcript || '',
+    cpm_rate: initialData?.cpm_rate || 2000,
+    min_view_threshold: initialData?.min_view_threshold || 1000,
+    total_budget: initialData?.total_budget || 100000,
+    required_live_duration_hours: initialData?.required_live_duration_hours || 72,
+    ad_format: initialData?.ad_format || 'Video Asset',
+    channels: initialData?.channels || ['TikTok', 'Instagram'],
+    is_featured: Boolean(initialData?.is_featured),
+    payment_method: (initialData?.payment_method || 'wallet') as 'wallet' | 'paystack',
+    paystack_reference: initialData?.paystack_reference || '',
     requirements: {
-      creative_text_copy: '',
-      google_drive_url: '',
-      google_doc_url: '',
-      target_niche: ['Lifestyle', 'Tech & Innovation'],
-      min_followers: 1000,
-      hashtags: ['#KpugiLaunch'],
-      mentions: ['@KpugiApp'],
+      creative_text_copy: initialData?.requirements?.creative_text_copy || '',
+      google_drive_url: initialData?.requirements?.google_drive_url || '',
+      google_doc_url: initialData?.requirements?.google_doc_url || '',
+      target_niche: initialData?.requirements?.target_niche || ['Lifestyle', 'Tech & Innovation'],
+      min_followers: initialData?.requirements?.min_followers || 1000,
+      hashtags: initialData?.requirements?.hashtags || ['#KpugiLaunch'],
+      mentions: initialData?.requirements?.mentions || ['@KpugiApp'],
     },
   });
 

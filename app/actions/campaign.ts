@@ -451,12 +451,17 @@ export async function archiveCampaignAction(campaignId: string) {
 export const deleteCampaignAction = archiveCampaignAction;
 
 /**
- * Server action to update existing campaign details
+ * Server action to update existing campaign details (all parameters)
  */
 export async function updateCampaignDetailsAction(payload: {
   campaignId: string;
   title: string;
   description: string;
+  ad_format?: string;
+  cpm_rate?: number;
+  min_view_threshold?: number;
+  total_budget?: number;
+  required_live_duration_hours?: number;
   channels?: string[];
   is_featured?: boolean;
   requirements?: any;
@@ -471,16 +476,24 @@ export async function updateCampaignDetailsAction(payload: {
     const advertiserId = userProfile.profile.id;
     const supabase = createAdminClient();
 
+    const updateData: any = {
+      title: payload.title,
+      description: payload.description,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (payload.ad_format) updateData.ad_format = payload.ad_format;
+    if (payload.cpm_rate !== undefined) updateData.cpm_rate = Math.max(2000, Number(payload.cpm_rate));
+    if (payload.min_view_threshold !== undefined) updateData.min_view_threshold = Number(payload.min_view_threshold);
+    if (payload.total_budget !== undefined) updateData.total_budget = Number(payload.total_budget);
+    if (payload.required_live_duration_hours !== undefined) updateData.required_live_duration_hours = Number(payload.required_live_duration_hours);
+    if (payload.channels) updateData.channels = payload.channels;
+    if (payload.is_featured !== undefined) updateData.is_featured = Boolean(payload.is_featured);
+    if (payload.requirements) updateData.requirements = payload.requirements;
+
     const { error: updateErr } = await supabase
       .from('campaigns')
-      .update({
-        title: payload.title,
-        description: payload.description,
-        channels: payload.channels || ['TikTok', 'Instagram'],
-        is_featured: Boolean(payload.is_featured),
-        requirements: payload.requirements || {},
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', payload.campaignId)
       .eq('advertiser_id', advertiserId);
 

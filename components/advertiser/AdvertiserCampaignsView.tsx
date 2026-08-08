@@ -229,16 +229,22 @@ export default function AdvertiserCampaignsView({ campaigns }: AdvertiserCampaig
 
                   <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2 mt-2">
                     <Link
-                      href={`/b/campaigns/${c.id}`}
+                      href={c.status === 'draft' ? `/b/campaigns/new?draftId=${c.id}` : `/b/campaigns/${c.id}`}
                       className="flex-1 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 font-sans text-xs font-bold text-center rounded-xl transition-colors shadow-2xs"
                     >
-                      Manage →
+                      {c.status === 'draft' ? 'Resume Draft →' : 'Manage →'}
                     </Link>
 
                     <button
                       type="button"
-                      onClick={() => setEditingCampaign(c)}
-                      title="Edit Campaign Details"
+                      onClick={() => {
+                        if (c.status === 'draft') {
+                          router.push(`/b/campaigns/new?draftId=${c.id}`);
+                        } else {
+                          setEditingCampaign(c);
+                        }
+                      }}
+                      title={c.status === 'draft' ? 'Continue Creation Wizard' : 'Edit Live Campaign Details'}
                       className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-kpugi-blue transition-colors shadow-2xs"
                     >
                       <Pencil className="w-4 h-4" />

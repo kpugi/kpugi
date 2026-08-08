@@ -50,7 +50,7 @@ export function CampaignStep5Launch({
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold mx-auto mb-1">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>PAYMENT VERIFIED & ESCROW LOCKED</span>
+          <span>PAYMENT VERIFIED!</span>
         </div>
         <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
           Step 5: Publish & Launch Campaign
@@ -234,8 +234,8 @@ export function CampaignStep5Launch({
           <Rocket className="w-5 h-5 text-amber-300 animate-bounce" />
           <span>
             {isPublishing
-              ? 'Publishing Campaign & Notifying Creators...'
-              : '🚀 Publish & Launch Campaign to Catalogue'}
+              ? 'Publishing Campaign...'
+              : 'PUBLISH!'}
           </span>
         </button>
       </div>
