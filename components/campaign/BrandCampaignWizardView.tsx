@@ -152,7 +152,7 @@ export function BrandCampaignWizardView({ walletBalance = 0 }: BrandCampaignWiza
     if (res.success && res.campaignId) {
       setFormData((prev) => ({ ...prev, id: res.campaignId! }));
       setSuccessMessage('Draft saved successfully! You can resume editing anytime.');
-      setTimeout(() => setSuccessMessage(''), 4000);
+      setTimeout(() => setSuccessMessage(''), 5000);
     } else {
       setErrorMessage(res.error || 'Failed to save draft.');
     }
@@ -275,7 +275,7 @@ export function BrandCampaignWizardView({ walletBalance = 0 }: BrandCampaignWiza
   const isValid = isCurrentStepValid();
 
   return (
-    <div className="min-h-screen bg-[#f4f3ff] py-6 sm:py-8 px-4 sm:px-8 font-sans">
+    <div className="min-h-screen bg-[#f4f3ff] py-6 sm:py-8 px-4 sm:px-8 font-sans relative">
       <div className="w-full max-w-6xl mx-auto space-y-8">
         
         {/* Stepper Progress Indicator */}
@@ -324,30 +324,6 @@ export function BrandCampaignWizardView({ walletBalance = 0 }: BrandCampaignWiza
           })}
         </div>
 
-        {/* Error / Success Notifications */}
-        {errorMessage && (
-          <div className="w-full max-w-6xl mx-auto p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-              <span>{errorMessage}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setErrorMessage('')}
-              className="text-red-500 hover:text-red-700 font-bold text-base"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="w-full max-w-6xl mx-auto p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0 text-emerald-600" />
-            <span>{successMessage}</span>
-          </div>
-        )}
-
         {/* Main Card Container */}
         <div className="w-full max-w-6xl mx-auto bg-white rounded-3xl p-6 sm:p-12 shadow-sm border border-[#e8e6fd] space-y-8">
           {currentStep === 1 && (
@@ -384,62 +360,122 @@ export function BrandCampaignWizardView({ walletBalance = 0 }: BrandCampaignWiza
             />
           )}
 
-          {/* Centered Action Navigation Bar */}
-          <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4">
-            {currentStep > 1 && (
-              <button
-                type="button"
-                onClick={handleBack}
-                className="px-6 py-3 rounded-full border border-slate-300 bg-white text-slate-700 text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back</span>
-              </button>
+          {/* Action Bar Section: Error & Success Messages Render Directly Above Buttons */}
+          <div className="pt-6 border-t border-slate-100 space-y-4">
+            {errorMessage && (
+              <div className="w-full p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between gap-2 animate-fadeIn shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{errorMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setErrorMessage('')}
+                  className="text-red-500 hover:text-red-700 font-bold text-base"
+                >
+                  ×
+                </button>
+              </div>
             )}
 
-            <button
-              type="button"
-              disabled={isDrafting}
-              onClick={handleSaveDraft}
-              className="px-7 py-3 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-bold transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
-            >
-              {isDrafting ? (
-                <Loader2 className="w-4 h-4 animate-spin text-[#4338ca]" />
-              ) : (
-                <Save className="w-4 h-4 text-slate-600" />
+            {successMessage && (
+              <div className="w-full p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between gap-2 animate-fadeIn shadow-2xs">
+                <div className="flex items-center gap-2 font-bold">
+                  <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{successMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSuccessMessage('')}
+                  className="text-emerald-600 hover:text-emerald-800 font-bold text-base"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {/* Centered Action Navigation Bar */}
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="px-6 py-3 rounded-full border border-slate-300 bg-white text-slate-700 text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
               )}
-              <span>{isDrafting ? 'Saving Draft...' : 'Save Draft'}</span>
-            </button>
 
-            {currentStep < 4 && (
               <button
                 type="button"
-                disabled={!isValid}
-                onClick={handleNext}
-                className="px-8 py-3 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4338ca]"
+                disabled={isDrafting}
+                onClick={handleSaveDraft}
+                className="px-7 py-3 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-bold transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
               >
-                <span>Continue to {steps[currentStep]?.title || 'Next Step'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {isDrafting ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#4338ca]" />
+                ) : (
+                  <Save className="w-4 h-4 text-slate-600" />
+                )}
+                <span>{isDrafting ? 'Saving Draft...' : 'Save Draft'}</span>
               </button>
-            )}
 
-            {currentStep === 4 && (
-              <button
-                type="button"
-                disabled={isSubmitting || !isValid}
-                onClick={handleExecutePaymentStep4}
-                className="px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center gap-2.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4338ca]"
-              >
-                <Lock className="w-4.5 h-4.5 text-amber-300" />
-                <span>
-                  {isSubmitting
-                    ? 'Processing Payment...'
-                    : `Pay ₦${totalPayableAmount.toLocaleString()} & Proceed to Step 5`}
-                </span>
-              </button>
-            )}
+              {currentStep < 4 && (
+                <button
+                  type="button"
+                  disabled={!isValid}
+                  onClick={handleNext}
+                  className="px-8 py-3 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4338ca]"
+                >
+                  <span>Continue to {steps[currentStep]?.title || 'Next Step'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+
+              {currentStep === 4 && (
+                <button
+                  type="button"
+                  disabled={isSubmitting || !isValid}
+                  onClick={handleExecutePaymentStep4}
+                  className="px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center gap-2.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4338ca]"
+                >
+                  <Lock className="w-4.5 h-4.5 text-amber-300" />
+                  <span>
+                    {isSubmitting
+                      ? 'Processing Payment...'
+                      : `Pay ₦${totalPayableAmount.toLocaleString()} & Proceed to Step 5`}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Floating Fixed Toast Notification (Ensures 100% visibility anywhere on screen) */}
+        {(errorMessage || successMessage) && (
+          <div className="fixed bottom-6 right-6 z-[9999] max-w-md animate-fadeIn">
+            {errorMessage && (
+              <div className="p-4 rounded-2xl bg-red-900 text-white border border-red-700 shadow-2xl text-xs font-medium flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0 text-red-300" />
+                <span className="flex-1">{errorMessage}</span>
+                <button onClick={() => setErrorMessage('')} className="font-bold text-slate-300 hover:text-white">
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-700 shadow-2xl text-xs font-medium flex items-center gap-3">
+                <Check className="w-5 h-5 shrink-0 text-emerald-400" />
+                <span className="flex-1 font-bold">{successMessage}</span>
+                <button onClick={() => setSuccessMessage('')} className="font-bold text-slate-300 hover:text-white">
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Printable Receipt Modal */}
         {activeReceipt && (
