@@ -178,9 +178,9 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
       <div className="space-y-4 pt-2 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-bold text-slate-900">Creator Niche & Categories</h4>
+            <h4 className="text-xs font-bold text-slate-900">Niche & Categories</h4>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Select one or more creator content niches.
+              Select one or more niches.
             </p>
           </div>
           <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
@@ -220,8 +220,7 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
       {/* Minimum Creator Follower Filter */}
       <div className="space-y-3 p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb]">
         <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
-          <span>Minimum Creator Follower Requirement</span>
-          <span className="text-[10px] font-mono text-slate-500">Qualification Filter</span>
+          <span>Minimum Follower Requirement</span>
         </label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

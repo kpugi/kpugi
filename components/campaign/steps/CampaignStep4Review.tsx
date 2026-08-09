@@ -218,7 +218,7 @@ export function CampaignStep4Review({
                 <span>CPM Payout Rate (₦ / 1k Views) *</span>
               </span>
               <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Baseline Min: ₦2,000
+                Min: ₦2,000
               </span>
             </label>
             <div className="relative">
@@ -352,14 +352,14 @@ export function CampaignStep4Review({
             <div className="flex justify-between items-center text-xs text-amber-900 bg-amber-50/80 px-3.5 py-2.5 rounded-xl border border-amber-200/80">
               <span className="flex items-center gap-1.5 font-bold">
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Featured Campaign Promotion Add-On</span>
+                <span>Add-On</span>
               </span>
-              <span className="font-mono font-bold text-sm text-amber-900">+₦2,500</span>
+              <span className="font-mono font-bold text-sm text-amber-600">+₦2,500</span>
             </div>
           )}
 
           <div className="flex justify-between items-center text-sm font-extrabold text-slate-900 pt-3 border-t border-slate-200">
-            <span className="font-display text-base">Total Payable Amount</span>
+            <span className="font-display text-base">Total</span>
             <span className="font-mono text-xl font-extrabold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs">
               ₦{totalPayable.toLocaleString()}
             </span>
@@ -387,10 +387,10 @@ export function CampaignStep4Review({
           <div>
             <div className="flex items-center gap-2.5">
               <h4 className="font-display font-extrabold text-sm text-slate-900">
-                Promote as Featured Campaign
+                Promote
               </h4>
               <span className="text-[10px] font-mono font-bold bg-amber-200 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300">
-                +₦2,500 Add-On Fee
+                +₦2,500 Add-On
               </span>
             </div>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">

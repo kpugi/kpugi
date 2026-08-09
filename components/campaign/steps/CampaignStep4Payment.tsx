@@ -168,16 +168,13 @@ export function CampaignStep4Payment({
             </div>
             <div>
               <h3 className="font-display font-extrabold text-base text-slate-900">
-                Custom CPM Payout Rate & Campaign Budget
+                CPM & Budget
               </h3>
               <p className="text-[11px] text-slate-500">
                 Set what you are willing to pay per 1,000 views.
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-3 py-1.5 rounded-full border border-[#dcd8fc]">
-            Custom Pricing
-          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -186,10 +183,10 @@ export function CampaignStep4Payment({
             <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Coins className="w-4 h-4 text-[#4338ca]" />
-                <span>CPM Rate (₦ / 1k Views) *</span>
+                <span>CPM*</span>
               </span>
               <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Baseline Min: ₦2,000
+                Min: ₦2,000
               </span>
             </label>
             <div className="relative">
@@ -233,7 +230,6 @@ export function CampaignStep4Payment({
                 <TrendingUp className="w-4 h-4 text-[#4338ca]" />
                 <span>Total Campaign Budget (₦) *</span>
               </span>
-              <span className="text-[10px] font-mono text-slate-500">Campaign Pool</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-extrabold text-slate-400">
@@ -323,14 +319,14 @@ export function CampaignStep4Payment({
             <div className="flex justify-between items-center text-xs text-amber-900 bg-amber-50/80 px-3.5 py-2.5 rounded-xl border border-amber-200/80">
               <span className="flex items-center gap-1.5 font-bold">
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Featured Campaign Promotion Add-On</span>
+                <span>Add-On</span>
               </span>
               <span className="font-mono font-bold text-sm text-amber-900">+₦2,500</span>
             </div>
           )}
 
           <div className="flex justify-between items-center text-sm font-extrabold text-slate-900 pt-3 border-t border-slate-200">
-            <span className="font-display text-base">Total Payable Amount</span>
+            <span className="font-display text-base">Total :</span>
             <span className="font-mono text-xl font-extrabold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs">
               ₦{totalPayable.toLocaleString()}
             </span>
@@ -358,10 +354,10 @@ export function CampaignStep4Payment({
           <div>
             <div className="flex items-center gap-2.5">
               <h4 className="font-display font-extrabold text-sm text-slate-900">
-                Promote as Featured Campaign
+                Promote
               </h4>
               <span className="text-[10px] font-mono font-bold bg-amber-200 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300">
-                +₦2,500 Add-On Fee
+                Add-On
               </span>
             </div>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
@@ -380,7 +376,7 @@ export function CampaignStep4Payment({
 
       {/* Escrow Deposit Method Selection Cards */}
       <div className="space-y-3">
-        <label className="text-xs font-bold text-slate-900">Payment & Funding Method</label>
+        <label className="text-xs font-bold text-slate-900">Payment Method</label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Option 1: Kpugi Escrow Wallet */}

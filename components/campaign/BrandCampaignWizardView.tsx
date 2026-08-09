@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, ArrowRight, ArrowLeft, AlertCircle, Save, Loader2, Rocket, Lock, CheckCircle2 } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, AlertCircle, Save, Loader2, Rocket, Lock, CheckCircle2, X } from 'lucide-react';
 import { CampaignStep1Basics } from './steps/CampaignStep1Basics';
 import { CampaignStep2Creatives } from './steps/CampaignStep2Creatives';
 import { CampaignStep3Targeting } from './steps/CampaignStep3Targeting';
@@ -379,10 +379,30 @@ export function BrandCampaignWizardView({
 
   return (
     <div className="min-h-screen bg-[#f4f3ff] py-6 sm:py-8 px-4 sm:px-8 font-sans relative">
-      <div className="w-full max-w-6xl mx-auto space-y-8">
+      <div className="w-full max-w-6xl mx-auto space-y-6">
         
+        {/* Subtle Wizard Navigation Bar with Exit Button */}
+        <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span className="text-slate-400">Campaign Creation</span>
+            <span>•</span>
+            <span className="text-slate-900 font-extrabold truncate max-w-[200px] sm:max-w-xs">
+              {formData.title || 'Untitled Campaign'}
+            </span>
+          </div>
+
+          <Link
+            href="/b/campaigns"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-200/70 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs font-bold transition-all shrink-0"
+            title="Exit Campaign Wizard"
+          >
+            <span>Exit</span>
+            <X className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
         {/* Stepper Progress Indicator */}
-        <div className="flex items-center justify-center gap-2 sm:gap-4 my-4">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 my-2">
           {steps.map((step, idx) => {
             const isCompleted = currentStep > step.number || (step.number === 4 && isPaymentCompleted);
             const isCurrent = currentStep === step.number;
@@ -562,7 +582,7 @@ export function BrandCampaignWizardView({
                       ? 'Verifying Payment...'
                       : isPaymentCompleted
                       ? 'Publish'
-                      : `Pay ₦${totalPayableAmount.toLocaleString()} & Proceed to Step 5`}
+                      : `Pay`}
                   </span>
                 </button>
               )}

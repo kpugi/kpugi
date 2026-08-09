@@ -270,10 +270,10 @@ export function CampaignStep1Basics({
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <ImageIcon className="w-4 h-4 text-[#4338ca]" />
-            <span>Campaign Cover Banner (Rectangular 16:9)</span>
+            <span>Cover Banner</span>
           </label>
           <span className="text-[10px] font-mono font-bold text-slate-500 bg-[#f8f7ff] border border-[#e2e0fb] px-2.5 py-0.5 rounded-full">
-            JPG, PNG, WEBP (Max 5MB)
+            JPG, PNG (Max 5MB)
           </span>
         </div>
 
@@ -455,7 +455,7 @@ export function CampaignStep1Basics({
         </div>
 
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span>Concise briefing for creators (max 500 chars)</span>
+          <span>Campaign Brief (max 500 chars)</span>
           <span className={currentDescLength >= 480 ? 'text-amber-600 font-bold' : ''}>
             {currentDescLength} / 500
           </span>
