@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -25,6 +26,11 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const [selectedSocialId, setSelectedSocialId] = useState<string>('');
   const [postUrl, setPostUrl] = useState<string>('');
   const [screenshotUrl, setScreenshotUrl] = useState<string>('');
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Interaction states
   const [isJoinModalOpen, setIsJoinModalOpen] = useState<boolean>(false);
@@ -1133,71 +1139,75 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       {/* ─────────────────────────────────────────────────────
          4. GLASSMORPHIC JOIN MODAL OVERLAY
       ───────────────────────────────────────────────────── */}
-      {isJoinModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-all">
-          <div className="bg-[#0B1026] border border-white/10 rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative">
-            
-            <button
-              onClick={() => setIsJoinModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white font-bold"
-            >
-              ✕
-            </button>
-
-            <div className="space-y-1">
-              <h3 className="font-display font-extrabold text-xl text-white">Join Campaign</h3>
-              <p className="text-xs text-slate-400">Select the social handle you will use to post for this campaign.</p>
-            </div>
-
-            <form onSubmit={handleJoinCampaign} className="space-y-4">
+      {isJoinModalOpen && (() => {
+        const modalContent = (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all overflow-y-auto min-h-screen w-screen">
+            <div className="bg-[#0B1026] border border-white/10 rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative my-auto">
               
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Connect placement profile</label>
-                {socialAccounts.length > 0 ? (
-                  <select
-                    value={selectedSocialId}
-                    onChange={(e) => setSelectedSocialId(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
-                    required
-                  >
-                    <option value="" disabled>Select Connected Handle</option>
-                    {socialAccounts.map((account) => (
-                      <option key={account.id} value={account.id} className="bg-[#0B1026]">
-                        @{account.handle} ({account.platform.toUpperCase()})
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 font-sans">
-                    No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-white">Accounts Settings</Link> to connect handles before joining.
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-white/5 pt-4 space-y-2 text-xs font-sans text-slate-400">
-                <div className="flex justify-between">
-                  <span>Base Payout Rate</span>
-                  <span className="text-kpugi-blue font-mono font-bold">{formatCompactCurrency(campaign.cpm_rate)} / 1k Views</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Minimum Threshold</span>
-                  <span className="text-white font-mono">{formatCompactNumber(campaign.min_view_threshold)} views</span>
-                </div>
-              </div>
-
               <button
-                type="submit"
-                disabled={isJoining || socialAccounts.length === 0}
-                className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
+                onClick={() => setIsJoinModalOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white font-bold"
               >
-                {isJoining ? 'Joining Campaign...' : 'Confirm Join'}
+                ✕
               </button>
 
-            </form>
+              <div className="space-y-1">
+                <h3 className="font-display font-extrabold text-xl text-white">Join Campaign</h3>
+                <p className="text-xs text-slate-400">Select the social handle you will use to post for this campaign.</p>
+              </div>
 
+              <form onSubmit={handleJoinCampaign} className="space-y-4">
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Connect placement profile</label>
+                  {socialAccounts.length > 0 ? (
+                    <select
+                      value={selectedSocialId}
+                      onChange={(e) => setSelectedSocialId(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                      required
+                    >
+                      <option value="" disabled>Select Connected Handle</option>
+                      {socialAccounts.map((account) => (
+                        <option key={account.id} value={account.id} className="bg-[#0B1026]">
+                          @{account.handle} ({account.platform.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 font-sans">
+                      No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-white">Accounts Settings</Link> to connect handles before joining.
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-white/5 pt-4 space-y-2 text-xs font-sans text-slate-400">
+                  <div className="flex justify-between">
+                    <span>Base Payout Rate</span>
+                    <span className="text-kpugi-blue font-mono font-bold">{formatCompactCurrency(campaign.cpm_rate)} / 1k Views</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Minimum Threshold</span>
+                    <span className="text-white font-mono">{formatCompactNumber(campaign.min_view_threshold)} views</span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isJoining || socialAccounts.length === 0}
+                  className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
+                >
+                  {isJoining ? 'Joining Campaign...' : 'Confirm Join'}
+                </button>
+
+              </form>
+
+            </div>
           </div>
-        </div>
-      )}
+        );
+
+        return mounted ? createPortal(modalContent, document.body) : modalContent;
+      })()}
 
     </div>
   );
