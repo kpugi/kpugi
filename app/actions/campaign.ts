@@ -619,11 +619,32 @@ export async function updateCampaignDetailsAction(payload: {
     const advertiserId = userProfile.profile.id;
     const supabase = createAdminClient();
 
+    // Fetch existing campaign status
+    const { data: existingCampaign, error: fetchErr } = await supabase
+      .from('campaigns')
+      .select('id, status, title, cpm_rate, total_budget, min_view_threshold')
+      .eq('id', payload.campaignId)
+      .eq('advertiser_id', advertiserId)
+      .single();
+
+    if (fetchErr || !existingCampaign) {
+      return { success: false, error: 'Campaign not found or access denied.' };
+    }
+
+    const isLive = existingCampaign.status === 'live';
+
     const updateData: any = {
-      title: payload.title,
       description: payload.description,
       updated_at: new Date().toISOString(),
     };
+
+    // Only allow title & financial updates if campaign is NOT live
+    if (!isLive) {
+      updateData.title = payload.title;
+      if (payload.cpm_rate !== undefined) updateData.cpm_rate = Math.max(2000, Number(payload.cpm_rate));
+      if (payload.min_view_threshold !== undefined) updateData.min_view_threshold = Number(payload.min_view_threshold);
+      if (payload.total_budget !== undefined) updateData.total_budget = Number(payload.total_budget);
+    }
 
     if (payload.cover_image_url !== undefined) {
       if (payload.cover_image_url && payload.cover_image_url.startsWith('data:image/')) {
@@ -635,9 +656,6 @@ export async function updateCampaignDetailsAction(payload: {
     }
 
     if (payload.ad_format) updateData.ad_format = payload.ad_format;
-    if (payload.cpm_rate !== undefined) updateData.cpm_rate = Math.max(2000, Number(payload.cpm_rate));
-    if (payload.min_view_threshold !== undefined) updateData.min_view_threshold = Number(payload.min_view_threshold);
-    if (payload.total_budget !== undefined) updateData.total_budget = Number(payload.total_budget);
     if (payload.required_live_duration_hours !== undefined) updateData.required_live_duration_hours = Number(payload.required_live_duration_hours);
     if (payload.channels) updateData.channels = payload.channels;
     if (payload.is_featured !== undefined) updateData.is_featured = Boolean(payload.is_featured);

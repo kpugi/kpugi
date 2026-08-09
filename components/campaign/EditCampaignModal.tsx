@@ -161,6 +161,8 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
     }
   };
 
+  const isLive = campaign.status === 'live';
+
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
       <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
@@ -192,6 +194,18 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
             <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {isLive && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-sans flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold text-xs">Financial & Title Parameters Locked</p>
+                <p className="text-[11px] text-amber-800">
+                  Campaign Title, CPM Rate, Total Budget, and Minimum View Goal cannot be changed while a campaign is Live to protect joined creators. Cover image, brief description, target channels, and creative guidelines remain fully editable.
+                </p>
+              </div>
             </div>
           )}
 
@@ -252,12 +266,17 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           {/* Section 1: Campaign Title & Ad Format */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2 space-y-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Campaign Title *</label>
+              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                Campaign Title * {isLive && <span className="text-amber-600 font-bold">(Locked)</span>}
+              </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                disabled={isLive}
+                className={`w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 ${
+                  isLive ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''
+                }`}
                 placeholder="Campaign Title"
                 required
               />
@@ -301,10 +320,17 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           </div>
 
           {/* Section 3: Pricing & Campaign Budget Breakdown */}
-          <div className="p-4 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-3">
-            <div className="text-[11px] font-extrabold text-[#4338ca] uppercase tracking-wide flex items-center gap-1.5">
-              <Coins className="w-4 h-4" />
-              <span>CPM Rate & Budget Allocation</span>
+          <div className={`p-4 rounded-2xl border space-y-3 ${isLive ? 'bg-slate-100/70 border-slate-200' : 'bg-[#f8f7ff] border-[#e2e0fb]'}`}>
+            <div className="text-[11px] font-extrabold text-[#4338ca] uppercase tracking-wide flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Coins className="w-4 h-4" />
+                <span>CPM Rate & Budget Allocation</span>
+              </div>
+              {isLive && (
+                <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold">
+                  🔒 Locked Live Parameters
+                </span>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
@@ -315,7 +341,10 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                   step={250}
                   value={cpmRate}
                   onChange={(e) => setCpmRate(Math.max(2000, Number(e.target.value)))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold text-slate-900 bg-white"
+                  disabled={isLive}
+                  className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-slate-900 ${
+                    isLive ? 'bg-slate-200/60 text-slate-500 cursor-not-allowed border-slate-300' : 'bg-white border-slate-200'
+                  }`}
                 />
               </div>
 
@@ -327,7 +356,10 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                   step={5000}
                   value={totalBudget}
                   onChange={(e) => setTotalBudget(Math.max(10000, Number(e.target.value)))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold text-slate-900 bg-white"
+                  disabled={isLive}
+                  className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-slate-900 ${
+                    isLive ? 'bg-slate-200/60 text-slate-500 cursor-not-allowed border-slate-300' : 'bg-white border-slate-200'
+                  }`}
                 />
               </div>
 
@@ -339,7 +371,10 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                   step={500}
                   value={minViewThreshold}
                   onChange={(e) => setMinViewThreshold(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold text-slate-900 bg-white"
+                  disabled={isLive}
+                  className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-slate-900 ${
+                    isLive ? 'bg-slate-200/60 text-slate-500 cursor-not-allowed border-slate-300' : 'bg-white border-slate-200'
+                  }`}
                 />
               </div>
             </div>
