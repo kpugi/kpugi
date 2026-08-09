@@ -51,7 +51,7 @@ export function CampaignReceiptModal({
           </div>
           <h3 className="font-display text-lg font-extrabold">Campaign Funded & Live!</h3>
           <p className="text-xs text-slate-300">
-            Escrow budget locked in smart contract & creators notified.
+            Campaign Budget locked in smart contract & creators notified.
           </p>
         </div>
 
@@ -87,7 +87,7 @@ export function CampaignReceiptModal({
             <div className="text-[10px] font-bold uppercase text-slate-400">Financial Breakdown</div>
 
             <div className="flex justify-between items-center text-slate-600">
-              <span>Campaign Escrow Budget</span>
+              <span>Campaign Budget</span>
               <span className="font-mono font-bold text-slate-900">₦{receipt.escrow_budget.toLocaleString()}</span>
             </div>
 

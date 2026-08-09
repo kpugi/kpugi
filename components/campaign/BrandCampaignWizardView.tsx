@@ -1,35 +1,42 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, ArrowRight, ArrowLeft, AlertCircle, Save, Loader2, Rocket, Lock } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, AlertCircle, Save, Loader2, Rocket, Lock, CheckCircle2 } from 'lucide-react';
 import { CampaignStep1Basics } from './steps/CampaignStep1Basics';
 import { CampaignStep2Creatives } from './steps/CampaignStep2Creatives';
 import { CampaignStep3Targeting } from './steps/CampaignStep3Targeting';
 import { CampaignStep4Payment } from './steps/CampaignStep4Payment';
 import { CampaignStep5Launch } from './steps/CampaignStep5Launch';
 import { CampaignReceiptModal } from './CampaignReceiptModal';
-import { createCampaignWizardAction, saveCampaignDraftAction } from '@/app/actions/campaign';
+import { createCampaignWizardAction, saveCampaignDraftAction, verifyPaystackTransactionAction } from '@/app/actions/campaign';
 
 interface BrandCampaignWizardViewProps {
   walletBalance?: number;
+  advertiserEmail?: string;
   initialData?: any;
 }
 
-export function BrandCampaignWizardView({ walletBalance = 0, initialData }: BrandCampaignWizardViewProps) {
+export function BrandCampaignWizardView({
+  walletBalance = 0,
+  advertiserEmail = '',
+  initialData,
+}: BrandCampaignWizardViewProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
   const [createdCampaignId, setCreatedCampaignId] = useState<string>('');
 
   // Payment State
-  const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
-  const [verifiedPaymentRef, setVerifiedPaymentRef] = useState('');
+  const initialRef = initialData?.paystack_reference || initialData?.requirements?.paystack_reference || '';
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(Boolean(initialRef || initialData?.is_paid));
+  const [verifiedPaymentRef, setVerifiedPaymentRef] = useState(initialRef);
 
   const [formData, setFormData] = useState({
     id: initialData?.id || '',
@@ -46,7 +53,8 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
     channels: initialData?.channels || ['TikTok', 'Instagram'],
     is_featured: Boolean(initialData?.is_featured),
     payment_method: (initialData?.payment_method || 'wallet') as 'wallet' | 'paystack',
-    paystack_reference: initialData?.paystack_reference || '',
+    paystack_reference: initialRef,
+    is_paid: Boolean(initialRef || initialData?.is_paid),
     requirements: {
       creative_text_copy: initialData?.requirements?.creative_text_copy || '',
       google_drive_url: initialData?.requirements?.google_drive_url || '',
@@ -69,6 +77,39 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
     }));
   };
 
+  // Debounced Auto-Save Effect
+  useEffect(() => {
+    if (!formData.title?.trim() || isSubmitting) return;
+
+    const timer = setTimeout(async () => {
+      setAutoSaveStatus('saving');
+      const res = await saveCampaignDraftAction({
+        ...formData,
+        paystack_reference: verifiedPaymentRef || formData.paystack_reference,
+      });
+
+      if (res.success && res.campaignId) {
+        if (!formData.id) {
+          setFormData((prev) => ({ ...prev, id: res.campaignId! }));
+        }
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      } else {
+        setAutoSaveStatus('idle');
+      }
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [
+    formData.title,
+    formData.description,
+    formData.cpm_rate,
+    formData.total_budget,
+    formData.channels,
+    formData.requirements,
+    verifiedPaymentRef,
+  ]);
+
   const steps = [
     { number: 1, title: 'Basics' },
     { number: 2, title: 'Requirements' },
@@ -90,41 +131,13 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
       }
     }
     if (currentStep === 2) {
-      if (!formData.requirements?.creative_text_copy?.trim()) {
-        setErrorMessage('Please enter the ready-to-post caption / text copy.');
-        return false;
-      }
+      // Step 2 optional caption check or warning
     }
     if (currentStep === 3) {
       if (!formData.channels || formData.channels.length === 0) {
         setErrorMessage('Please select at least 1 target social network.');
         return false;
       }
-    }
-    return true;
-  };
-
-  const isCurrentStepValid = () => {
-    if (currentStep === 1) {
-      return Boolean(formData.title?.trim() && formData.description?.trim());
-    }
-    if (currentStep === 2) {
-      return Boolean(formData.requirements?.creative_text_copy?.trim());
-    }
-    if (currentStep === 3) {
-      return Boolean(formData.channels && formData.channels.length > 0);
-    }
-    if (currentStep === 4) {
-      return Boolean(
-        formData.title?.trim() &&
-        formData.description?.trim() &&
-        formData.requirements?.creative_text_copy?.trim() &&
-        formData.channels &&
-        formData.channels.length > 0
-      );
-    }
-    if (currentStep === 5) {
-      return isPaymentCompleted;
     }
     return true;
   };
@@ -147,7 +160,10 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
     setSuccessMessage('');
     setIsDrafting(true);
 
-    const res = await saveCampaignDraftAction(formData);
+    const res = await saveCampaignDraftAction({
+      ...formData,
+      paystack_reference: verifiedPaymentRef || formData.paystack_reference,
+    });
     setIsDrafting(false);
 
     if (res.success && res.campaignId) {
@@ -159,7 +175,7 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
     }
   };
 
-  // Helper to load Paystack InlineJS script dynamically
+  // Helper to load Paystack InlineJS V2 script dynamically
   const loadPaystackScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
       if ((window as any).PaystackPop) {
@@ -167,9 +183,16 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
         return;
       }
       const script = document.createElement('script');
-      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.src = 'https://js.paystack.co/v2/inline.js';
       script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onerror = () => {
+        // Fallback to v1 inline.js if v2 load fails
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://js.paystack.co/v1/inline.js';
+        fallbackScript.onload = () => resolve(true);
+        fallbackScript.onerror = () => resolve(false);
+        document.body.appendChild(fallbackScript);
+      };
       document.body.appendChild(script);
     });
   };
@@ -177,6 +200,31 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
   // Step 4 Action: Process Payment (Wallet or Paystack) and Advance to Step 5 (Publish)
   const handleExecutePaymentStep4 = async () => {
     setErrorMessage('');
+
+    // Pre-flight checks before payment
+    if (!formData.title?.trim()) {
+      setErrorMessage('Please enter a Campaign Title before completing payment.');
+      setCurrentStep(1);
+      return;
+    }
+    if (!formData.description?.trim()) {
+      setErrorMessage('Please enter a Campaign Brief before completing payment.');
+      setCurrentStep(1);
+      return;
+    }
+    if (!formData.channels || formData.channels.length === 0) {
+      setErrorMessage('Please select at least 1 target social network on Step 3.');
+      setCurrentStep(3);
+      return;
+    }
+
+    // If already paid, jump straight to Step 5
+    if (isPaymentCompleted) {
+      setCurrentStep(5);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     const totalPayableAmount = Number(formData.total_budget || 100000) + (formData.is_featured ? 2500 : 0);
     const method = formData.payment_method || 'wallet';
 
@@ -188,9 +236,22 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
         return;
       }
 
-      const walletRef = `WALLET-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const walletRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       setVerifiedPaymentRef(walletRef);
       setIsPaymentCompleted(true);
+      setFormData((prev) => ({
+        ...prev,
+        paystack_reference: walletRef,
+        is_paid: true,
+      }));
+
+      // Auto-save paid draft state
+      await saveCampaignDraftAction({
+        ...formData,
+        paystack_reference: walletRef,
+        payment_method: 'wallet',
+      });
+
       setCurrentStep(5);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -202,38 +263,80 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
     setIsSubmitting(false);
 
     if (!scriptLoaded || !(window as any).PaystackPop) {
-      setErrorMessage('Could not load Paystack checkout script. Please check your internet connection.');
+      setErrorMessage('Could not load Paystack checkout. Please check your internet connection.');
       return;
     }
 
     const publicKey =
       process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_3630914972cbf0ef4986fc0ae2181d38a94f9412';
 
-    const paystackRef = `KPG_PAY_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    const handler = (window as any).PaystackPop.setup({
-      key: publicKey,
-      email: 'advertiser@kpugi.com',
-      amount: totalPayableAmount * 100, // in kobo
-      currency: 'NGN',
-      ref: paystackRef,
-      callback: (response: any) => {
-        const ref = response.reference || paystackRef;
+    const onPaymentSuccess = async (ref: string) => {
+      setIsSubmitting(true);
+
+      // Server-side verification
+      const verifyRes = await verifyPaystackTransactionAction(ref);
+      setIsSubmitting(false);
+
+      if (verifyRes.success) {
         setFormData((prev) => ({
           ...prev,
           paystack_reference: ref,
+          is_paid: true,
         }));
         setVerifiedPaymentRef(ref);
         setIsPaymentCompleted(true);
+
+        // Auto-save paid draft state
+        await saveCampaignDraftAction({
+          ...formData,
+          paystack_reference: ref,
+          payment_method: 'paystack',
+        });
+
         setCurrentStep(5);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      },
-      onClose: () => {
-        setErrorMessage('Paystack checkout was closed or cancelled.');
-      },
-    });
+      } else {
+        setErrorMessage(verifyRes.error || 'Paystack payment verification failed. Please try again.');
+      }
+    };
 
-    handler.openIframe();
+    const onPaymentCancel = () => {
+      setErrorMessage('Payment process was closed or cancelled. Please click retry payment.');
+    };
+
+    // Paystack V2 Popup API (newPaystackPop().newTransaction)
+    try {
+      const paystack = new (window as any).PaystackPop();
+      paystack.newTransaction({
+        key: publicKey,
+        email: advertiserEmail || 'advertiser@kpugi.com',
+        amount: totalPayableAmount * 100, // amount in kobo
+        currency: 'NGN',
+        ref: paystackRef,
+        onSuccess: (transaction: any) => onPaymentSuccess(transaction.reference || paystackRef),
+        onCancel: onPaymentCancel,
+        onClose: onPaymentCancel,
+      });
+    } catch (e: any) {
+      // Fallback for V1 setup if V2 class throws
+      if (typeof (window as any).PaystackPop?.setup === 'function') {
+        const handler = (window as any).PaystackPop.setup({
+          key: publicKey,
+          email: advertiserEmail || 'advertiser@kpugi.com',
+          amount: totalPayableAmount * 100,
+          currency: 'NGN',
+          ref: paystackRef,
+          callback: (response: any) => onPaymentSuccess(response.reference || paystackRef),
+          onClose: onPaymentCancel,
+        });
+        handler.openIframe();
+      } else {
+        console.error('[Paystack Popup Error]', e);
+        setErrorMessage('Error launching Paystack checkout popup. Please try again or select Wallet Balance.');
+      }
+    }
   };
 
   // Step 5 Action: Final Campaign Publish & Dispatch Creator Notifications
@@ -254,7 +357,7 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
       channels: formData.channels,
       is_featured: formData.is_featured,
       payment_method: formData.payment_method,
-      paystack_reference: verifiedPaymentRef,
+      paystack_reference: verifiedPaymentRef || formData.paystack_reference,
       requirements: formData.requirements,
     });
 
@@ -273,7 +376,6 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
   };
 
   const totalPayableAmount = Number(formData.total_budget || 100000) + (formData.is_featured ? 2500 : 0);
-  const isValid = isCurrentStepValid();
 
   return (
     <div className="min-h-screen bg-[#f4f3ff] py-6 sm:py-8 px-4 sm:px-8 font-sans relative">
@@ -294,7 +396,7 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
                   }}
                 >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all ${
                       isCurrent
                         ? 'bg-[#4338ca] text-white shadow-md ring-4 ring-[#4338ca]/15'
                         : isCompleted
@@ -305,7 +407,7 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
                     {isCompleted ? <Check className="w-4 h-4" /> : step.number}
                   </div>
                   <span
-                    className={`text-xs font-bold ${
+                    className={`text-[10px] sm:text-xs font-bold ${
                       isCurrent ? 'text-[#4338ca]' : 'text-slate-400'
                     }`}
                   >
@@ -315,7 +417,7 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
 
                 {idx < steps.length - 1 && (
                   <div
-                    className={`h-[2px] w-8 sm:w-16 mb-5 transition-all ${
+                    className={`h-[2px] w-6 sm:w-16 mb-5 transition-all ${
                       currentStep > step.number ? 'bg-[#4338ca]' : 'bg-slate-200'
                     }`}
                   />
@@ -326,7 +428,7 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
         </div>
 
         {/* Main Card Container */}
-        <div className="w-full max-w-6xl mx-auto bg-white rounded-3xl p-6 sm:p-12 shadow-sm border border-[#e8e6fd] space-y-8">
+        <div className="w-full max-w-6xl mx-auto bg-white rounded-3xl p-5 sm:p-12 shadow-sm border border-[#e8e6fd] space-y-8">
           {currentStep === 1 && (
             <CampaignStep1Basics
               formData={formData}
@@ -349,12 +451,16 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
               walletBalance={walletBalance}
               isSubmitting={isSubmitting}
               onInitiatePayment={handleExecutePaymentStep4}
+              onProceedToStep5={() => {
+                setCurrentStep(5);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           )}
           {currentStep === 5 && (
             <CampaignStep5Launch
               formData={formData}
-              paymentRef={verifiedPaymentRef}
+              paymentRef={verifiedPaymentRef || formData.paystack_reference}
               paymentMethod={formData.payment_method}
               isPublishing={isSubmitting}
               onConfirmLaunch={handleFinalPublishStep5}
@@ -396,12 +502,12 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
             )}
 
             {/* Centered Action Navigation Bar */}
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 sm:gap-4">
               {currentStep > 1 && (
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="px-6 py-3 rounded-full border border-slate-300 bg-white text-slate-700 text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-full border border-slate-300 bg-white text-slate-700 text-xs sm:text-sm font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back</span>
@@ -412,22 +518,31 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
                 type="button"
                 disabled={isDrafting}
                 onClick={handleSaveDraft}
-                className="px-7 py-3 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-sm font-bold transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
+                className="w-full sm:w-auto px-7 py-3 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
               >
                 {isDrafting ? (
                   <Loader2 className="w-4 h-4 animate-spin text-[#4338ca]" />
+                ) : autoSaveStatus === 'saved' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 ) : (
                   <Save className="w-4 h-4 text-slate-600" />
                 )}
-                <span>{isDrafting ? 'Saving Draft...' : 'Save Draft'}</span>
+                <span>
+                  {isDrafting
+                    ? 'Saving Draft...'
+                    : autoSaveStatus === 'saving'
+                    ? 'Auto-saving...'
+                    : autoSaveStatus === 'saved'
+                    ? 'Auto-saved 🟢'
+                    : 'Save Draft'}
+                </span>
               </button>
 
               {currentStep < 4 && (
                 <button
                   type="button"
-                  disabled={!isValid}
                   onClick={handleNext}
-                  className="px-8 py-3 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4338ca]"
+                  className="w-full sm:w-auto px-8 py-3 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-xs sm:text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   <span>Continue to {steps[currentStep]?.title || 'Next Step'}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -437,14 +552,16 @@ export function BrandCampaignWizardView({ walletBalance = 0, initialData }: Bran
               {currentStep === 4 && (
                 <button
                   type="button"
-                  disabled={isSubmitting || !isValid}
+                  disabled={isSubmitting}
                   onClick={handleExecutePaymentStep4}
-                  className="px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center gap-2.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4338ca]"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-xs sm:text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 active:scale-[0.99] disabled:opacity-50"
                 >
                   <Lock className="w-4.5 h-4.5 text-amber-300" />
                   <span>
                     {isSubmitting
-                      ? 'Processing Payment...'
+                      ? 'Verifying Payment...'
+                      : isPaymentCompleted
+                      ? 'Publish'
                       : `Pay ₦${totalPayableAmount.toLocaleString()} & Proceed to Step 5`}
                   </span>
                 </button>

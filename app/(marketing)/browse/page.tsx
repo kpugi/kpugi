@@ -377,7 +377,7 @@ export default function BrowsePage() {
     return dbCampaigns.map((c) => {
       const brandName = c.advertiser?.company_name || 'Brand Partner';
       const brandLogo = c.advertiser?.profile?.avatar_url || null;
-      const thumbnailUrl = c.creatives?.[0]?.file_url || null;
+      const thumbnailUrl = c.cover_image_url || c.creatives?.[0]?.file_url || null;
       const creatorsCount = c.submissions ? c.submissions.length : 0;
 
       // Map dynamic categories based on brand names for various niches

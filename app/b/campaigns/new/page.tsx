@@ -21,6 +21,7 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
 
   const resolvedParams = await searchParams;
   const draftId = resolvedParams?.draftId;
+  const advertiserEmail = userProfile.profile.email || '';
 
   const supabase = createAdminClient();
   const { data: wallet } = await supabase
@@ -42,6 +43,9 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
       .single();
 
     if (draft) {
+      const payRef = draft.requirements?.paystack_reference || draft.paystack_reference || '';
+      const payMethod = draft.requirements?.payment_method || draft.payment_method || 'wallet';
+
       initialData = {
         id: draft.id,
         title: draft.title || '',
@@ -56,8 +60,9 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
         ad_format: draft.ad_format || 'Video Asset',
         channels: draft.channels || ['TikTok', 'Instagram'],
         is_featured: Boolean(draft.is_featured),
-        payment_method: draft.payment_method || 'wallet',
-        paystack_reference: draft.paystack_reference || '',
+        payment_method: payMethod,
+        paystack_reference: payRef,
+        is_paid: Boolean(payRef),
         requirements: draft.requirements || {
           creative_text_copy: '',
           google_drive_url: '',
@@ -79,11 +84,15 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
         </h1>
         <p className="font-sans text-xs sm:text-sm text-kpugi-slate mt-1">
           {draftId
-            ? 'Continue editing your saved draft, set escrow budget, and publish to creators.'
-            : 'Provide ready-to-post creatives, set CPM payout rates, and configure escrow budget allocation.'}
+            ? 'Continue editing your saved draft, set Campaign Budget, and publish to creators.'
+            : 'Provide ready-to-post creatives, set CPM payout rates, and configure Campaign Budget allocation.'}
         </p>
       </div>
-      <BrandCampaignWizardView walletBalance={walletBalance} initialData={initialData} />
+      <BrandCampaignWizardView
+        walletBalance={walletBalance}
+        advertiserEmail={advertiserEmail}
+        initialData={initialData}
+      />
     </div>
   );
 }

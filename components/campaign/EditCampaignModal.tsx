@@ -221,7 +221,7 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
             />
           </div>
 
-          {/* Section 3: Pricing & Escrow Budget Breakdown */}
+          {/* Section 3: Pricing & Campaign Budget Breakdown */}
           <div className="p-4 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-3">
             <div className="text-[11px] font-extrabold text-[#4338ca] uppercase tracking-wide flex items-center gap-1.5">
               <Coins className="w-4 h-4" />

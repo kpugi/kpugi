@@ -127,7 +127,7 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
       {/* Title & Subtitle Section - Step 1 & 2 Style */}
       <div className="text-center space-y-2">
         <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-          Let me reach the right audience.
+          Let's reach the right audience.
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
           Select target social media platforms, creator niches, and follower qualification filters.

@@ -72,7 +72,7 @@ export function CampaignStep4Review({
           Let's review and launch.
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-          Set your custom CPM payout rate, configure total escrow budget, and launch your campaign.
+          Set your custom CPM payout rate, configure total Campaign Budget, and launch your campaign.
         </p>
       </div>
 
@@ -197,7 +197,7 @@ export function CampaignStep4Review({
             </div>
             <div>
               <h3 className="font-display font-extrabold text-base text-slate-900">
-                Custom CPM Payout Rate & Escrow Budget
+                Custom CPM Payout Rate & Campaign Budget
               </h3>
               <p className="text-[11px] text-slate-500">
                 Set your custom payout rate per 1,000 views — no forced platform minimums.
@@ -255,7 +255,7 @@ export function CampaignStep4Review({
             </div>
           </div>
 
-          {/* Custom Total Escrow Budget Input & Presets */}
+          {/* Custom Total Campaign Budget Input & Presets */}
           <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200">
             <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
@@ -397,7 +397,7 @@ export function CampaignStep4Review({
               Get sticky top placement on the creator catalogue with a golden <strong>FEATURED</strong> badge.
               <br />
               <span className="text-[11px] font-medium text-amber-800">
-                Note: The ₦2,500 fee is billed separately as a platform service fee and is NOT deducted from your campaign escrow budget.
+                Note: The ₦2,500 fee is billed separately as a platform service fee and is NOT deducted from your Campaign Budget.
               </span>
             </p>
           </div>
@@ -522,7 +522,7 @@ export function CampaignStep4Review({
           <a href="#" className="text-[#4338ca] font-bold underline">
             Brand Terms of Service
           </a>
-          , Escrow Budget Allocation Policy, and Creator Payout Verification Guidelines. Creator payouts are released strictly upon verified CPM view deliverables.
+          , Campaign Budget Allocation Policy, and Creator Payout Verification Guidelines. Creator payouts are released strictly upon verified CPM view deliverables.
         </p>
       </div>
     </div>

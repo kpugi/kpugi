@@ -257,6 +257,7 @@ export interface CampaignDetailsForCreator {
     title: string;
     campaign_code: string | null;
     description: string;
+    cover_image_url?: string | null;
     ad_format: string;
     requirements: Record<string, any>;
     cpm_rate: number;
@@ -340,6 +341,7 @@ export async function getCampaignDetailsForCreator(
       title,
       campaign_code,
       description,
+      cover_image_url,
       ad_format,
       requirements,
       cpm_rate,
@@ -372,6 +374,7 @@ export async function getCampaignDetailsForCreator(
         title,
         campaign_code,
         description,
+        cover_image_url,
         ad_format,
         requirements,
         cpm_rate,
@@ -539,6 +542,7 @@ export async function getCampaignDetailsForCreator(
           title: campaign.title,
           campaign_code: campaign.campaign_code || null,
           description: campaign.description,
+          cover_image_url: campaign.cover_image_url || null,
           ad_format: campaign.ad_format,
           requirements: campaign.requirements as Record<string, any>,
           cpm_rate: Number(campaign.cpm_rate),

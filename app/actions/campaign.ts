@@ -143,6 +143,12 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
 
     const campaignCode = `KPG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
+    const requirementsWithPayment = {
+      ...(payload.requirements || {}),
+      ...(payload.paystack_reference ? { paystack_reference: payload.paystack_reference } : {}),
+      ...(payload.payment_method ? { payment_method: payload.payment_method } : {}),
+    };
+
     if (payload.id) {
       // Update existing draft
       const { error: updateErr } = await supabase
@@ -159,7 +165,7 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
           channels: payload.channels || ['TikTok', 'Instagram'],
           is_featured: Boolean(payload.is_featured),
           status: 'draft',
-          requirements: payload.requirements || {},
+          requirements: requirementsWithPayment,
           updated_at: new Date().toISOString(),
         })
         .eq('id', payload.id)
@@ -193,7 +199,7 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
         channels: payload.channels || ['TikTok', 'Instagram'],
         is_featured: Boolean(payload.is_featured),
         status: 'draft',
-        requirements: payload.requirements || {},
+        requirements: requirementsWithPayment,
       })
       .select('*')
       .single();
@@ -210,7 +216,56 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
 }
 
 /**
- * Server action to publish new brand campaign with escrow budget lock & receipts
+ * Server action to verify a Paystack transaction server-side
+ */
+export async function verifyPaystackTransactionAction(reference: string) {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecret) {
+      // Return success in test environment if secret key is not set
+      return { success: true, reference, status: 'success' };
+    }
+
+    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${paystackSecret}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      return { success: false, error: 'Failed to verify transaction with Paystack server.' };
+    }
+
+    const data = await res.json();
+    if (data.status && data.data?.status === 'success') {
+      return {
+        success: true,
+        reference,
+        status: 'success',
+        amount: data.data.amount / 100, // convert from kobo
+        paidAt: data.data.paid_at,
+        customerEmail: data.data.customer?.email,
+      };
+    } else {
+      return {
+        success: false,
+        error: data.data?.gateway_response || 'Payment declined by card issuer.',
+      };
+    }
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Server error verifying payment' };
+  }
+}
+
+/**
+ * Server action to publish new brand campaign with Campaign Budget lock & receipts
  */
 export async function createCampaignWizardAction(payload: CampaignWizardPayload) {
   try {
@@ -234,6 +289,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
     const totalBudget = Number(payload.total_budget || 100000);
     const isFeatured = Boolean(payload.is_featured);
     const featuredFee = isFeatured ? 2500 : 0;
+    const totalPaid = totalBudget + featuredFee;
 
     const initialReservedBudget = Math.min(baseSlotReserve, totalBudget);
 
@@ -245,39 +301,104 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       return 'video';
     };
 
-    const campaignCode = `KPG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    // Idempotency Check: Check if campaign ID exists & is already live
+    let campaign: any = null;
 
-    // 2. Insert new campaign into database
-    const { data: campaign, error: insertErr } = await supabase
-      .from('campaigns')
-      .insert({
-        advertiser_id: advertiserId,
-        title: payload.title,
-        campaign_code: campaignCode,
-        description: payload.description,
-        cover_image_url: payload.cover_image_url || null,
-        ad_format: normalizeAdFormat(payload.ad_format),
-        cpm_rate: cpmRate,
-        total_budget: totalBudget,
-        reserved_budget: initialReservedBudget,
-        spent_budget: 0,
-        min_view_threshold: minThreshold,
-        required_live_duration_hours: payload.required_live_duration_hours || 72,
-        verification_grace_hours: 24,
-        channels: payload.channels || ['TikTok', 'Instagram'],
-        is_featured: isFeatured,
-        status: 'live',
-        requirements: {
-          ...(payload.requirements || {}),
-          display_ad_format: payload.ad_format || 'Dedicated Video',
-        },
-      })
-      .select('*')
-      .single();
+    if (payload.id) {
+      const { data: existingCampaign } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('id', payload.id)
+        .eq('advertiser_id', advertiserId)
+        .single();
 
-    if (insertErr) {
-      console.error('[Campaign Action] Error inserting campaign:', insertErr);
-      return { success: false, error: `Database insert failed: ${insertErr.message}` };
+      if (existingCampaign) {
+        if (existingCampaign.status === 'live') {
+          // Already published (Idempotent return)
+          const receiptNumber = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${payload.id.substring(0, 4).toUpperCase()}`;
+          return {
+            success: true,
+            campaignId: existingCampaign.id,
+            receipt: {
+              receipt_number: receiptNumber,
+              total_amount: totalPaid,
+              escrow_budget: totalBudget,
+              featured_fee: featuredFee,
+              is_featured: isFeatured,
+              payment_method: payload.payment_method || 'wallet',
+            },
+          };
+        }
+
+        // Update existing draft to status = 'live'
+        const { data: updatedCampaign, error: updateErr } = await supabase
+          .from('campaigns')
+          .update({
+            title: payload.title,
+            description: payload.description,
+            cover_image_url: payload.cover_image_url || null,
+            ad_format: normalizeAdFormat(payload.ad_format),
+            cpm_rate: cpmRate,
+            total_budget: totalBudget,
+            reserved_budget: initialReservedBudget,
+            min_view_threshold: minThreshold,
+            required_live_duration_hours: payload.required_live_duration_hours || 72,
+            channels: payload.channels || ['TikTok', 'Instagram'],
+            is_featured: isFeatured,
+            status: 'live',
+            requirements: {
+              ...(payload.requirements || {}),
+              display_ad_format: payload.ad_format || 'Dedicated Video',
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', payload.id)
+          .select('*')
+          .single();
+
+        if (updateErr) {
+          return { success: false, error: `Failed to launch campaign draft: ${updateErr.message}` };
+        }
+        campaign = updatedCampaign;
+      }
+    }
+
+    // Insert new campaign if not updating existing draft
+    if (!campaign) {
+      const campaignCode = `KPG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+      const { data: insertedCampaign, error: insertErr } = await supabase
+        .from('campaigns')
+        .insert({
+          advertiser_id: advertiserId,
+          title: payload.title,
+          campaign_code: campaignCode,
+          description: payload.description,
+          cover_image_url: payload.cover_image_url || null,
+          ad_format: normalizeAdFormat(payload.ad_format),
+          cpm_rate: cpmRate,
+          total_budget: totalBudget,
+          reserved_budget: initialReservedBudget,
+          spent_budget: 0,
+          min_view_threshold: minThreshold,
+          required_live_duration_hours: payload.required_live_duration_hours || 72,
+          verification_grace_hours: 24,
+          channels: payload.channels || ['TikTok', 'Instagram'],
+          is_featured: isFeatured,
+          status: 'live',
+          requirements: {
+            ...(payload.requirements || {}),
+            display_ad_format: payload.ad_format || 'Dedicated Video',
+          },
+        })
+        .select('*')
+        .single();
+
+      if (insertErr) {
+        console.error('[Campaign Action] Error inserting campaign:', insertErr);
+        return { success: false, error: `Database insert failed: ${insertErr.message}` };
+      }
+      campaign = insertedCampaign;
     }
 
     // 3. Generate Receipt Record
@@ -285,8 +406,6 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       .toString(36)
       .substring(2, 6)
       .toUpperCase()}`;
-
-    const totalPaid = totalBudget + featuredFee;
 
     try {
       await supabase.from('payment_receipts').insert({

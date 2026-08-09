@@ -92,7 +92,7 @@ export function CampaignPaymentBridgeModal({
           </div>
 
           <div className="flex justify-between items-center text-slate-600">
-            <span>Escrow Budget</span>
+            <span>Campaign Budget</span>
             <span className="font-mono font-bold text-slate-900">
               ₦{totalBudget.toLocaleString()}
             </span>
@@ -116,7 +116,7 @@ export function CampaignPaymentBridgeModal({
           </div>
 
           <div className="flex justify-between items-center font-extrabold text-sm text-slate-900 pt-3 border-t border-slate-200">
-            <span className="font-display font-extrabold text-base">Total Escrow Paid</span>
+            <span className="font-display font-extrabold text-base">Total Paid</span>
             <span className="font-mono text-xl font-extrabold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
               ₦{totalPaid.toLocaleString()}
             </span>

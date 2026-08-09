@@ -53,7 +53,7 @@ export function CampaignStep5Launch({
           <span>PAYMENT VERIFIED!</span>
         </div>
         <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-          Step 5: Publish & Launch Campaign
+          Alright, let's get this out there!
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
           Payment has been confirmed. Review your ready-to-post creative briefing card below and launch your campaign to qualified creators.
@@ -81,7 +81,7 @@ export function CampaignStep5Launch({
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Escrow Budget</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase">Campaign Budget</div>
             <div className="font-mono text-xs font-bold text-slate-900">
               ₦{totalBudget.toLocaleString()}
             </div>
@@ -95,7 +95,7 @@ export function CampaignStep5Launch({
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Total Escrow Paid</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase">Total Paid</div>
             <div className="font-mono text-xs font-bold text-emerald-600">
               ₦{totalPayable.toLocaleString()}
             </div>

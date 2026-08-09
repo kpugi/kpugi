@@ -10,6 +10,8 @@ import {
   Coins,
   TrendingUp,
   CheckCircle2,
+  Receipt,
+  ArrowRight,
 } from 'lucide-react';
 
 interface Step4Props {
@@ -18,6 +20,7 @@ interface Step4Props {
   walletBalance?: number;
   isSubmitting: boolean;
   onInitiatePayment: () => void;
+  onProceedToStep5?: () => void;
 }
 
 export function CampaignStep4Payment({
@@ -26,6 +29,7 @@ export function CampaignStep4Payment({
   walletBalance = 0,
   isSubmitting,
   onInitiatePayment,
+  onProceedToStep5,
 }: Step4Props) {
   const cpmRate = Math.max(2000, Number(formData.cpm_rate || 2000));
   const totalBudget = Math.max(10000, Number(formData.total_budget || 100000));
@@ -38,7 +42,10 @@ export function CampaignStep4Payment({
   const totalPayable = totalBudget + featuredFee;
   const paymentMethod = formData.payment_method || 'wallet';
 
+  const isAlreadyPaid = Boolean(formData.paystack_reference || formData.is_paid);
+
   const toggleFeatured = () => {
+    if (isAlreadyPaid) return; // Locked once paid
     updateFormData({ is_featured: !isFeatured });
   };
 
@@ -50,15 +57,105 @@ export function CampaignStep4Payment({
     return `₦${val / 1000}k`;
   };
 
+  // Render Already Paid / Funded Success State
+  if (isAlreadyPaid) {
+    return (
+      <div className="space-y-8 font-sans animate-fadeIn">
+        {/* Step Header */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold mx-auto mb-1">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>PAYMENT VERIFIED & LOCKED</span>
+          </div>
+          <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+            Campaign Fully Funded!
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+            Payment for this campaign has already been completed. Funds are safely locked.
+          </p>
+        </div>
+
+        {/* Paid Receipt Summary Card */}
+        <div className="p-6 rounded-3xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-5 shadow-xs">
+          <div className="flex items-center justify-between border-b border-[#e2e0fb] pb-4">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-[#4338ca]" />
+              <div>
+                <h3 className="font-display font-extrabold text-sm text-slate-900">
+                  Payment Reference
+                </h3>
+                <p className="text-[11px] text-slate-500">Verified transaction record</p>
+              </div>
+            </div>
+            <span className="font-mono text-sm font-extrabold text-[#4338ca] bg-white px-3.5 py-1.5 rounded-full border border-[#dcd8fc] shadow-2xs">
+              {formData.paystack_reference || `KPG-PAY-${Date.now().toString().slice(-6)}`}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-center">
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase">Status</div>
+              <div className="font-bold text-emerald-600 text-xs flex items-center justify-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Paid & Verified</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase">Payment Method</div>
+              <div className="font-bold text-slate-900 text-xs capitalize">
+                {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Card / Transfer'}
+              </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase">Campaign Budget</div>
+              <div className="font-mono text-sm font-extrabold text-slate-900">
+                ₦{totalBudget.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase">Total Paid</div>
+              <div className="font-mono text-sm font-extrabold text-emerald-600">
+                ₦{totalPayable.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Proceed to Step 5 Action Card */}
+        <div className="p-6 rounded-3xl bg-slate-900 text-white space-y-4 shadow-xl text-center">
+          <h3 className="font-display font-extrabold text-lg text-white">
+            Ready for Final Launch
+          </h3>
+          <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+            Your campaign is funded. Proceed to review your live creator briefing card and launch your campaign to creators.
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={onProceedToStep5}
+              className="px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-sm font-extrabold transition-all shadow-lg flex items-center justify-center gap-2 mx-auto"
+            >
+              <span>Publish & Launch</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 font-sans">
       {/* Step Header */}
       <div className="text-center space-y-2">
         <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-          Step 4: Escrow Payment & Funding
+          Okay let's get this funded
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-          Set your custom CPM payout rate, configure escrow budget, and complete payment to proceed to final launch.
+          Set your custom CPM payout rate, configure Campaign Budget, and complete payment to proceed to final launch.
         </p>
       </div>
 
@@ -71,10 +168,10 @@ export function CampaignStep4Payment({
             </div>
             <div>
               <h3 className="font-display font-extrabold text-base text-slate-900">
-                Custom CPM Payout Rate & Escrow Budget
+                Custom CPM Payout Rate & Campaign Budget
               </h3>
               <p className="text-[11px] text-slate-500">
-                Set your custom payout rate per 1,000 views — no forced platform minimums.
+                Set what you are willing to pay per 1,000 views.
               </p>
             </div>
           </div>
@@ -89,7 +186,7 @@ export function CampaignStep4Payment({
             <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Coins className="w-4 h-4 text-[#4338ca]" />
-                <span>CPM Payout Rate (₦ / 1k Views) *</span>
+                <span>CPM Rate (₦ / 1k Views) *</span>
               </span>
               <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 Baseline Min: ₦2,000
@@ -129,14 +226,14 @@ export function CampaignStep4Payment({
             </div>
           </div>
 
-          {/* Custom Total Escrow Budget Input & Presets */}
+          {/* Custom Total Campaign Budget Input & Presets */}
           <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200">
             <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-[#4338ca]" />
-                <span>Total Escrow View Budget (₦) *</span>
+                <span>Total Campaign Budget (₦) *</span>
               </span>
-              <span className="text-[10px] font-mono text-slate-500">Escrow Pool</span>
+              <span className="text-[10px] font-mono text-slate-500">Campaign Pool</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-extrabold text-slate-400">
@@ -177,7 +274,7 @@ export function CampaignStep4Payment({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-center pt-2 border-t border-[#e2e0fb]">
           <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Escrow View Budget
+              Campaign Budget
             </div>
             <div className="font-mono text-lg font-extrabold text-slate-900">
               ₦{totalBudget.toLocaleString()}
@@ -185,7 +282,7 @@ export function CampaignStep4Payment({
           </div>
           <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              CPM Payout Rate
+              CPM Rate
             </div>
             <div className="font-mono text-lg font-extrabold text-[#4338ca]">
               ₦{cpmRate.toLocaleString()}
@@ -212,11 +309,11 @@ export function CampaignStep4Payment({
         {/* Itemized Checkout Table */}
         <div className="p-5 rounded-2xl bg-white border border-[#e2e0fb] space-y-3.5 shadow-2xs">
           <div className="text-xs font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 uppercase tracking-wide">
-            Itemized Payment Breakdown
+            Payment Breakdown
           </div>
 
           <div className="flex justify-between items-center text-xs text-slate-600">
-            <span className="font-medium">Campaign Escrow View Budget</span>
+            <span className="font-medium">Campaign Budget</span>
             <span className="font-mono font-bold text-slate-900 text-sm">
               ₦{totalBudget.toLocaleString()}
             </span>
@@ -283,7 +380,7 @@ export function CampaignStep4Payment({
 
       {/* Escrow Deposit Method Selection Cards */}
       <div className="space-y-3">
-        <label className="text-xs font-bold text-slate-900">Escrow Payment & Funding Method</label>
+        <label className="text-xs font-bold text-slate-900">Payment & Funding Method</label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Option 1: Kpugi Escrow Wallet */}
@@ -392,7 +489,7 @@ export function CampaignStep4Payment({
           <a href="#" className="text-[#4338ca] font-bold underline">
             Brand Terms of Service
           </a>
-          , Escrow Budget Allocation Policy, and Creator Payout Verification Guidelines.
+          , Campaign Budget Allocation Policy, and Creator Payout Verification Guidelines.
         </p>
       </div>
     </div>

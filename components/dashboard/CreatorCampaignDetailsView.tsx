@@ -228,8 +228,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
     }
   };
 
-  // Find hero background image
-  const heroBackground = creatives[0]?.file_url || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&auto=format&fit=crop&q=80';
+  // Find hero background image & external asset URLs
+  const heroBackground = campaign.cover_image_url || creatives[0]?.file_url || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&auto=format&fit=crop&q=80';
+  const googleDocUrl = campaign.requirements?.google_doc_url || campaign.requirements?.doc_url || 'https://docs.google.com';
+  const googleDriveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.drive_url || 'https://drive.google.com';
 
   return (
     <div className="min-h-screen bg-[#0B1026] text-white flex flex-col font-sans relative">
@@ -585,7 +587,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Campaign Assets</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href={getSafeExternalUrl("https://docs.google.com")} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                    <a href={getSafeExternalUrl(googleDocUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">📄</span>
                         <div className="text-left">
@@ -599,7 +601,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                       </svg>
                     </a>
-                    <a href={getSafeExternalUrl("https://drive.google.com")} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                    <a href={getSafeExternalUrl(googleDriveUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">📂</span>
                         <div className="text-left">
@@ -1011,7 +1013,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <span>Advertiser Mode (Read-Only)</span>
                   </div>
                   <p className="text-slate-300 leading-relaxed">
-                    You are viewing this campaign brief in advertiser mode. Verified creators use this portal to lock escrow budget and submit published post links.
+                    You are viewing this campaign brief in advertiser mode. Verified creators use this portal to lock Campaign Budget and submit published post links.
                   </p>
                   <div className="pt-1">
                     <Link href="/dashboard" className="text-kpugi-blue font-bold hover:underline block text-xs">
@@ -1037,7 +1039,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 /* Dynamic Not Joined State Card */
                 <div className="space-y-4">
                   <p className="font-sans text-xs text-slate-400 leading-relaxed">
-                    You have not joined this campaign yet. Connect one of your placement handles and click <strong>Join Campaign</strong> to reserve your escrow budget.
+                    You have not joined this campaign yet. Connect one of your placement handles and click <strong>Join Campaign</strong> to reserve your Campaign Budget.
                   </p>
                   <button
                     onClick={() => setIsJoinModalOpen(true)}
