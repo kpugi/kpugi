@@ -898,7 +898,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
                       <div className="font-mono text-2xl font-extrabold text-white">
-                        {(campaign as any)?.avg_watch_time_seconds != null ? `${(campaign as any).avg_watch_time_seconds}s` : '0s'}
+                        {dbViews > 0 && (campaign as any)?.avg_watch_time_seconds ? `${(campaign as any).avg_watch_time_seconds}s` : '0s'}
                       </div>
                       <div className="text-[9px] text-slate-400">Retention benchmark</div>
                     </div>

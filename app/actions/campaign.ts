@@ -141,6 +141,14 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
       return 'video';
     };
 
+    const sanitizeCoverImageUrl = (url?: string | null) => {
+      if (!url) return null;
+      if (url.startsWith('data:image/') && url.length > 50000) {
+        return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+      }
+      return url;
+    };
+
     const campaignCode = `KPG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     const requirementsWithPayment = {
@@ -149,6 +157,8 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
       ...(payload.payment_method ? { payment_method: payload.payment_method } : {}),
     };
 
+    const safeCoverImage = sanitizeCoverImageUrl(payload.cover_image_url);
+
     if (payload.id) {
       // Update existing draft
       const { error: updateErr } = await supabase
@@ -156,7 +166,7 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
         .update({
           title: payload.title || 'Untitled Draft',
           description: payload.description || '',
-          cover_image_url: payload.cover_image_url || null,
+          cover_image_url: safeCoverImage,
           ad_format: normalizeAdFormat(payload.ad_format),
           cpm_rate: payload.cpm_rate || 2000,
           total_budget: payload.total_budget || 100000,
@@ -301,6 +311,16 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       return 'video';
     };
 
+    const sanitizeCoverImageUrl = (url?: string | null) => {
+      if (!url) return null;
+      if (url.startsWith('data:image/') && url.length > 50000) {
+        return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+      }
+      return url;
+    };
+
+    const safeCoverImage = sanitizeCoverImageUrl(payload.cover_image_url);
+
     // Idempotency Check: Check if campaign ID exists & is already live
     let campaign: any = null;
 
@@ -336,7 +356,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
           .update({
             title: payload.title,
             description: payload.description,
-            cover_image_url: payload.cover_image_url || null,
+            cover_image_url: safeCoverImage,
             ad_format: normalizeAdFormat(payload.ad_format),
             cpm_rate: cpmRate,
             total_budget: totalBudget,
@@ -374,7 +394,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
           title: payload.title,
           campaign_code: campaignCode,
           description: payload.description,
-          cover_image_url: payload.cover_image_url || null,
+          cover_image_url: safeCoverImage,
           ad_format: normalizeAdFormat(payload.ad_format),
           cpm_rate: cpmRate,
           total_budget: totalBudget,

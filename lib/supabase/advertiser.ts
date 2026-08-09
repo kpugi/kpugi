@@ -495,7 +495,7 @@ export async function getBrandCampaignDetails(
     : 0;
 
   const watchTimeSubs = (rawSubmissions || []).filter((s) => Number(s.watch_time_seconds || 0) > 0);
-  const computedAvgWatchTime = watchTimeSubs.length > 0
+  const computedAvgWatchTime = watchTimeSubs.length > 0 && totalViews > 0
     ? Number((watchTimeSubs.reduce((sum, s) => sum + Number(s.watch_time_seconds), 0) / watchTimeSubs.length).toFixed(1))
     : 0;
 
@@ -529,7 +529,7 @@ export async function getBrandCampaignDetails(
       totalViews,
       totalPayouts: spentBudget,
       creatorsJoined: new Set(mappedSubmissions.map((s) => s.creator_id)).size,
-      totalSubmissions: mappedSubmissions.length,
+      totalSubmissions: mappedSubmissions.filter((s) => s.post_url != null && s.status !== 'joined').length,
       verifiedSubmissions,
       pendingAudits,
       rejectedSubmissions,

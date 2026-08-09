@@ -7,20 +7,24 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const creatorId = searchParams.get('creatorId');
+    const isFresh = searchParams.get('fresh') === 'true';
 
-    // If public request (no creatorId), try Redis cache first for sub-15ms response
     const cacheKey = creatorId ? `campaigns:creator_${creatorId}` : 'campaigns:public';
-    const cachedCampaigns = await getRedisCache<any[]>(cacheKey);
 
-    if (cachedCampaigns) {
-      return NextResponse.json(
-        { campaigns: cachedCampaigns, cached: true },
-        {
-          headers: {
-            'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-          },
-        }
-      );
+    if (isFresh) {
+      await deleteRedisCache(cacheKey);
+    } else {
+      const cachedCampaigns = await getRedisCache<any[]>(cacheKey);
+      if (cachedCampaigns) {
+        return NextResponse.json(
+          { campaigns: cachedCampaigns, cached: true },
+          {
+            headers: {
+              'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+            },
+          }
+        );
+      }
     }
 
     const supabase = createAdminClient();
@@ -66,7 +70,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Attach AI match scores
+    // Attach AI match scores and sanitize oversized base64 cover images
     const enrichedCampaigns = await Promise.all(
       (campaigns || []).map(async (camp) => {
         let matchScore = 94;
@@ -83,8 +87,16 @@ export async function GET(request: Request) {
             // Fallback match score
           }
         }
+
+        // Sanitize cover_image_url if it's an oversized base64 data URI (> 50KB) to prevent JSON API bloat
+        let safeCoverUrl = camp.cover_image_url || null;
+        if (safeCoverUrl && safeCoverUrl.startsWith('data:image/') && safeCoverUrl.length > 50000) {
+          safeCoverUrl = camp.creatives?.[0]?.file_url || null;
+        }
+
         return {
           ...camp,
+          cover_image_url: safeCoverUrl,
           match_score: matchScore,
         };
       })
@@ -167,4 +179,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-

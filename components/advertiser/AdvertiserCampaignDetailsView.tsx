@@ -258,7 +258,7 @@ export default function AdvertiserCampaignDetailsView({
             <Video className="w-3.5 h-3.5 text-amber-600" />
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
-            {submissions.filter((s) => s.post_url != null || s.status !== 'joined').length}
+            {submissions.filter((s) => s.post_url != null && s.status !== 'joined').length}
           </p>
           <span className="text-[9px] text-amber-600 font-medium block">Verified & Pending</span>
         </div>
@@ -282,7 +282,7 @@ export default function AdvertiserCampaignDetailsView({
             <Zap className="w-3.5 h-3.5 text-cyan-600" />
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
-            {metrics.avgWatchTime}s
+            {metrics.totalViews > 0 && metrics.avgWatchTime > 0 ? `${metrics.avgWatchTime}s` : '0s'}
           </p>
           <span className="text-[9px] text-cyan-600 font-medium block">Retention benchmark</span>
         </div>
@@ -307,7 +307,7 @@ export default function AdvertiserCampaignDetailsView({
         >
           <span>Creator Submissions</span>
           <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-800">
-            {submissions.length}
+            {submissions.filter((s) => s.post_url != null && s.status !== 'joined').length}
           </span>
         </button>
         <button
@@ -488,11 +488,7 @@ export default function AdvertiserCampaignDetailsView({
       {/* Tab 2: Submissions Stream */}
       {activeTab === 'submissions' && (() => {
         const activeSubmissions = submissions.filter(
-          (s) =>
-            s.status === 'joined' ||
-            s.status === 'pending' ||
-            s.status === 'auditing' ||
-            Number(s.pending_payout_amount || 0) > 0
+          (s) => s.post_url != null && s.status !== 'joined'
         );
 
         return (
@@ -500,14 +496,17 @@ export default function AdvertiserCampaignDetailsView({
             <div className="flex items-center justify-between">
               <h3 className="font-display font-bold text-lg text-kpugi-ink">Creator Submissions Stream</h3>
               <span className="text-xs text-kpugi-slate font-medium">
-                {activeSubmissions.length} active creator runs ({submissions.length} total slots)
+                {activeSubmissions.length} active submission{activeSubmissions.length === 1 ? '' : 's'}
               </span>
             </div>
 
             {activeSubmissions.length === 0 ? (
-              <div className="py-12 text-center text-kpugi-slate space-y-2">
+              <div className="py-12 text-center text-kpugi-slate space-y-2 bg-slate-50/50 rounded-2xl border border-slate-100">
                 <Video className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold">No active creator submissions currently pending audit or review.</p>
+                <p className="text-xs font-bold text-slate-700">No post links submitted by creators yet.</p>
+                <p className="text-[11px] text-slate-500">
+                  Joined creators who reserved slots are listed under <strong className="text-slate-700">Joined Creators</strong> in the Performance Overview tab.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
