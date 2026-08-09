@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Video,
   Image as ImageIcon,
@@ -11,8 +11,10 @@ import {
   Link as LinkIcon,
   Play,
   CheckCircle2,
+  Upload,
 } from 'lucide-react';
 import { generateAICampaignPolishAction } from '@/app/actions/campaign';
+import { optimizeImageFile } from '@/lib/utils/imageOptimizer';
 
 interface Step2Props {
   formData: any;
@@ -23,6 +25,17 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   const [tagInput, setTagInput] = useState('');
   const [mentionInput, setMentionInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  const [videoTab, setVideoTab] = useState<'upload' | 'url'>('upload');
+  const [videoUploadError, setVideoUploadError] = useState('');
+  const [imageUploadError, setImageUploadError] = useState('');
+
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const currentFormat = formData.ad_format || 'Video Asset';
+  const isVideoFormat = currentFormat.toLowerCase().includes('video');
+  const isImageFormat = currentFormat.toLowerCase().includes('image');
 
   const adFormats = [
     {
@@ -50,6 +63,47 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
     `#${(formData.title || 'Brand').replace(/\s+/g, '')}`,
   ];
   const mentions: string[] = formData.requirements?.mentions || ['@KpugiApp'];
+
+  const handleCreativeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUploadError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const compressedBase64 = await optimizeImageFile(file, 1200, 1200, 0.82);
+      updateFormData({
+        requirements: {
+          ...formData.requirements,
+          creative_image_url: compressedBase64,
+        },
+      });
+    } catch (err) {
+      setImageUploadError('Failed to process image file.');
+    }
+  };
+
+  const handleCreativeVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVideoUploadError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      setVideoUploadError('Video file size exceeds 50MB limit.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      updateFormData({
+        requirements: {
+          ...formData.requirements,
+          creative_video_url: base64,
+        },
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const addHashtag = () => {
     if (!tagInput.trim()) return;
@@ -178,28 +232,195 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
         </div>
       </div>
 
-      {/* Ready-to-Post Text Copy / Caption (Grab & Post) */}
-      <div className="space-y-2 pt-2 border-t border-slate-100">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <FileText className="w-4 h-4 text-[#4338ca]" />
-            <span>Ready-to-Post Caption (Grab & Post) *</span>
-          </label>
-          <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
-            Creators Copy Directly
-          </span>
+      {/* ─────────────────────────────────────────────────────
+          DYNAMIC AD FORMAT CREATIVE ASSET INPUTS
+      ───────────────────────────────────────────────────── */}
+      <div className="space-y-4 pt-2 border-t border-slate-100">
+        
+        {/* CASE 1: VIDEO ASSET */}
+        {isVideoFormat && (
+          <div className="p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Video className="w-4 h-4 text-[#4338ca]" />
+                <span>Video Creative Asset for Creators *</span>
+              </label>
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#dcd8fc]">
+                <button
+                  type="button"
+                  onClick={() => setVideoTab('upload')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    videoTab === 'upload'
+                      ? 'bg-[#4338ca] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVideoTab('url')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    videoTab === 'url'
+                      ? 'bg-[#4338ca] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Video URL / Link
+                </button>
+              </div>
+            </div>
+
+            {videoUploadError && (
+              <p className="text-[11px] font-bold text-red-600">{videoUploadError}</p>
+            )}
+
+            {videoTab === 'upload' ? (
+              <div className="space-y-3">
+                {formData.requirements?.creative_video_url && formData.requirements.creative_video_url.startsWith('data:video') ? (
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-black aspect-video max-h-[220px] flex items-center justify-center">
+                    <video
+                      src={formData.requirements.creative_video_url}
+                      controls
+                      className="w-full h-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateFormData({
+                          requirements: { ...formData.requirements, creative_video_url: '' },
+                        })
+                      }
+                      className="absolute top-3 right-3 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors shadow-md"
+                      title="Remove Video"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => videoInputRef.current?.click()}
+                    className="h-32 border-2 border-dashed border-[#c7d2fe] hover:border-[#4338ca] rounded-2xl flex flex-col items-center justify-center p-4 cursor-pointer bg-white transition-all text-center group"
+                  >
+                    <Upload className="w-6 h-6 text-[#4338ca] mb-1.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold text-slate-800">Click to upload official campaign video</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">MP4, WEBM, MOV (Max 50MB)</span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={videoInputRef}
+                  onChange={handleCreativeVideoUpload}
+                  accept="video/mp4,video/webm,video/quicktime"
+                  className="hidden"
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <input
+                  type="url"
+                  value={formData.requirements?.creative_video_url || ''}
+                  onChange={(e) =>
+                    updateFormData({
+                      requirements: { ...formData.requirements, creative_video_url: e.target.value },
+                    })
+                  }
+                  placeholder="Paste YouTube, TikTok, Instagram, Google Drive, or MP4 URL..."
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-[#dcd8fc] text-xs font-mono text-slate-900 focus:ring-2 focus:ring-[#4338ca] outline-none"
+                />
+                {formData.requirements?.creative_video_url && (
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                    <span className="font-mono text-slate-700 truncate max-w-xs">{formData.requirements.creative_video_url}</span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      ✓ Video Link Attached
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CASE 2: IMAGE ASSET */}
+        {isImageFormat && (
+          <div className="p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-[#4338ca]" />
+                <span>Image Creative Asset for Creators *</span>
+              </label>
+              <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
+                Auto-Optimized JPEG
+              </span>
+            </div>
+
+            {imageUploadError && (
+              <p className="text-[11px] font-bold text-red-600">{imageUploadError}</p>
+            )}
+
+            {formData.requirements?.creative_image_url ? (
+              <div className="relative h-44 w-full rounded-2xl overflow-hidden border border-slate-200 group bg-slate-900">
+                <img
+                  src={formData.requirements.creative_image_url}
+                  alt="Creative Asset"
+                  className="w-full h-full object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateFormData({
+                      requirements: { ...formData.requirements, creative_image_url: '' },
+                    })
+                  }
+                  className="absolute top-3 right-3 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors shadow-md"
+                  title="Remove Image"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => imageInputRef.current?.click()}
+                className="h-32 border-2 border-dashed border-[#c7d2fe] hover:border-[#4338ca] rounded-2xl flex flex-col items-center justify-center p-4 cursor-pointer bg-white transition-all text-center group"
+              >
+                <Upload className="w-6 h-6 text-[#4338ca] mb-1.5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold text-slate-800">Click to upload official campaign banner/photo</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP (Auto-optimized in browser)</span>
+              </div>
+            )}
+            <input
+              type="file"
+              ref={imageInputRef}
+              onChange={handleCreativeImageUpload}
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+            />
+          </div>
+        )}
+
+        {/* Ready-to-Post Text Copy / Caption */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-[#4338ca]" />
+              <span>Ready-to-Post Caption & Copy Instructions *</span>
+            </label>
+            <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
+              Creators Copy Directly
+            </span>
+          </div>
+          <textarea
+            rows={3}
+            value={formData.requirements?.creative_text_copy || ''}
+            onChange={(e) =>
+              updateFormData({
+                requirements: { ...formData.requirements, creative_text_copy: e.target.value },
+              })
+            }
+            placeholder="e.g. 🔥 Exciting news! Kpugi platform is officially launching in Nigeria. Join thousands of creators today! Link in bio #KpugiLaunch"
+            className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none leading-relaxed transition-all"
+          />
         </div>
-        <textarea
-          rows={3}
-          value={formData.requirements?.creative_text_copy || ''}
-          onChange={(e) =>
-            updateFormData({
-              requirements: { ...formData.requirements, creative_text_copy: e.target.value },
-            })
-          }
-          placeholder="e.g. 🔥 Exciting news! Kpugi platform is officially launching in Nigeria. Join thousands of creators today! Link in bio #KpugiLaunch"
-          className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none leading-relaxed transition-all"
-        />
       </div>
 
       {/* Asset Pack & Google Drive Links */}

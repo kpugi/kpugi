@@ -1,8 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server';
 
 /**
- * Uploads a base64 or buffer image to Supabase Storage bucket 'campaign-creatives'
- * and returns a clean, domain-proxied URL (/api/media/covers/...) without exposing
+ * Uploads a base64 or buffer image/video to Supabase Storage bucket 'campaign-creatives'
+ * and returns a clean, domain-proxied URL (/api/media/...) without exposing
  * raw Supabase bucket URLs to client.
  */
 export async function uploadCampaignImageToStorage(
@@ -13,25 +13,32 @@ export async function uploadCampaignImageToStorage(
     if (!base64Data) return null;
 
     // If already a proxied URL or standard http/https link (not data URI), return as-is
-    if (!base64Data.startsWith('data:image/')) {
+    if (!base64Data.startsWith('data:')) {
       return base64Data;
     }
 
-    const matches = base64Data.match(/^data:image\/([a-zA-Z0-9.+]+);base64,(.+)$/);
+    const matches = base64Data.match(/^data:([a-zA-Z0-9.\-\/+]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
       return null;
     }
 
-    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+    const mimeType = matches[1];
+    let ext = 'bin';
+    if (mimeType.includes('jpeg')) ext = 'jpg';
+    else if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('mp4')) ext = 'mp4';
+    else if (mimeType.includes('webm')) ext = 'webm';
+
     const buffer = Buffer.from(matches[2], 'base64');
     const fileName = `${folder}/cmp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('campaign-creatives')
       .upload(fileName, buffer, {
-        contentType: `image/${matches[1]}`,
+        contentType: mimeType,
         upsert: true,
       });
 

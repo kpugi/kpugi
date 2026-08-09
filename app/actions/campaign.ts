@@ -144,8 +144,8 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
 
     const processCoverImageUrl = async (url?: string | null) => {
       if (!url) return null;
-      if (url.startsWith('data:image/')) {
-        const uploadedUrl = await uploadCampaignImageToStorage(url);
+      if (url.startsWith('data:')) {
+        const uploadedUrl = await uploadCampaignImageToStorage(url, 'covers');
         if (uploadedUrl) return uploadedUrl;
       }
       return url;
@@ -153,8 +153,16 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
 
     const campaignCode = `KPG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
+    const reqs: any = { ...(payload.requirements || {}) };
+    if (reqs.creative_image_url && reqs.creative_image_url.startsWith('data:')) {
+      reqs.creative_image_url = await uploadCampaignImageToStorage(reqs.creative_image_url, 'creatives');
+    }
+    if (reqs.creative_video_url && reqs.creative_video_url.startsWith('data:')) {
+      reqs.creative_video_url = await uploadCampaignImageToStorage(reqs.creative_video_url, 'creatives');
+    }
+
     const requirementsWithPayment = {
-      ...(payload.requirements || {}),
+      ...reqs,
       ...(payload.paystack_reference ? { paystack_reference: payload.paystack_reference } : {}),
       ...(payload.payment_method ? { payment_method: payload.payment_method } : {}),
     };
@@ -324,6 +332,19 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
 
     const safeCoverImage = await processCoverImageUrl(payload.cover_image_url);
 
+    const processRequirementsMedia = async (reqs?: any) => {
+      const copy = { ...(reqs || {}) };
+      if (copy.creative_image_url && copy.creative_image_url.startsWith('data:')) {
+        copy.creative_image_url = await uploadCampaignImageToStorage(copy.creative_image_url, 'creatives');
+      }
+      if (copy.creative_video_url && copy.creative_video_url.startsWith('data:')) {
+        copy.creative_video_url = await uploadCampaignImageToStorage(copy.creative_video_url, 'creatives');
+      }
+      return copy;
+    };
+
+    const processedReqs = await processRequirementsMedia(payload.requirements);
+
     // Idempotency Check: Check if campaign ID exists & is already live
     let campaign: any = null;
 
@@ -370,7 +391,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
             is_featured: isFeatured,
             status: 'live',
             requirements: {
-              ...(payload.requirements || {}),
+              ...processedReqs,
               display_ad_format: payload.ad_format || 'Dedicated Video',
             },
             updated_at: new Date().toISOString(),
