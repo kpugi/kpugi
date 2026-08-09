@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, Save, Loader2, FileText, AlertCircle, Coins, Target, TrendingUp, Clock, Sparkle } from 'lucide-react';
+import { X, Sparkles, Save, Loader2, FileText, AlertCircle, Coins, Target, TrendingUp, Clock, Sparkle, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import { updateCampaignDetailsAction, generateAICampaignPolishAction } from '@/app/actions/campaign';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
+import { optimizeImageFile } from '@/lib/utils/imageOptimizer';
 
 interface EditCampaignModalProps {
   campaign: {
     id: string;
     title: string;
     description: string;
+    cover_image_url?: string;
     ad_format?: string;
     cpm_rate?: number;
     total_budget?: number;
@@ -28,6 +30,10 @@ interface EditCampaignModalProps {
 export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaignModalProps) {
   const [title, setTitle] = useState(campaign.title || '');
   const [description, setDescription] = useState(campaign.description || '');
+  const [coverImageUrl, setCoverImageUrl] = useState((campaign as any).cover_image_url || '');
+  const [imageError, setImageError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [adFormat, setAdFormat] = useState(campaign.ad_format || 'Video Asset');
   const [cpmRate, setCpmRate] = useState(campaign.cpm_rate || 2000);
   const [totalBudget, setTotalBudget] = useState(campaign.total_budget || 100000);
@@ -62,6 +68,24 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
     } else {
       setChannels([...channels, ch]);
     }
+  };
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const compressedBase64 = await optimizeImageFile(file, 1200, 1200, 0.82);
+      setCoverImageUrl(compressedBase64);
+    } catch (err) {
+      setImageError('Failed to process image. Please try another file.');
+    }
+  };
+
+  const removeCoverImage = () => {
+    setCoverImageUrl('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleAiExpandBrief = async () => {
@@ -108,6 +132,7 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
       campaignId: campaign.id,
       title: title.trim(),
       description: description.trim(),
+      cover_image_url: coverImageUrl,
       ad_format: adFormat,
       cpm_rate: Math.max(2000, Number(cpmRate)),
       min_view_threshold: Number(minViewThreshold),
@@ -169,6 +194,60 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
               <span>{errorMsg}</span>
             </div>
           )}
+
+          {/* Cover Image Re-upload Section */}
+          <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-kpugi-blue" />
+                <span>Campaign Cover Image</span>
+              </label>
+              {coverImageUrl && (
+                <button
+                  type="button"
+                  onClick={removeCoverImage}
+                  className="text-[10px] text-red-600 font-bold hover:underline flex items-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Remove Image</span>
+                </button>
+              )}
+            </div>
+
+            {imageError && (
+              <p className="text-[11px] font-bold text-red-600">{imageError}</p>
+            )}
+
+            {coverImageUrl ? (
+              <div className="relative h-28 w-full rounded-xl overflow-hidden border border-slate-200 group bg-slate-900">
+                <img src={coverImageUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-bold"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Re-upload New Cover Image</span>
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="h-24 border-2 border-dashed border-slate-300 hover:border-kpugi-blue/50 rounded-xl flex flex-col items-center justify-center p-3 cursor-pointer bg-white transition-colors text-center"
+              >
+                <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                <span className="text-xs font-bold text-slate-700">Click to upload cover image</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP (Auto-optimized in browser)</span>
+              </div>
+            )}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleCoverImageUpload}
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+            />
+          </div>
 
           {/* Section 1: Campaign Title & Ad Format */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

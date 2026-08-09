@@ -2,6 +2,7 @@
 
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -141,10 +142,11 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
       return 'video';
     };
 
-    const sanitizeCoverImageUrl = (url?: string | null) => {
+    const processCoverImageUrl = async (url?: string | null) => {
       if (!url) return null;
-      if (url.startsWith('data:image/') && url.length > 50000) {
-        return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+      if (url.startsWith('data:image/')) {
+        const uploadedUrl = await uploadCampaignImageToStorage(url);
+        if (uploadedUrl) return uploadedUrl;
       }
       return url;
     };
@@ -157,7 +159,7 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
       ...(payload.payment_method ? { payment_method: payload.payment_method } : {}),
     };
 
-    const safeCoverImage = sanitizeCoverImageUrl(payload.cover_image_url);
+    const safeCoverImage = await processCoverImageUrl(payload.cover_image_url);
 
     if (payload.id) {
       // Update existing draft
@@ -197,7 +199,7 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
         title: payload.title || 'Untitled Draft',
         campaign_code: campaignCode,
         description: payload.description || '',
-        cover_image_url: payload.cover_image_url || null,
+        cover_image_url: safeCoverImage,
         ad_format: normalizeAdFormat(payload.ad_format),
         cpm_rate: payload.cpm_rate || 2000,
         total_budget: payload.total_budget || 100000,
@@ -311,15 +313,16 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       return 'video';
     };
 
-    const sanitizeCoverImageUrl = (url?: string | null) => {
+    const processCoverImageUrl = async (url?: string | null) => {
       if (!url) return null;
-      if (url.startsWith('data:image/') && url.length > 50000) {
-        return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+      if (url.startsWith('data:image/')) {
+        const uploadedUrl = await uploadCampaignImageToStorage(url);
+        if (uploadedUrl) return uploadedUrl;
       }
       return url;
     };
 
-    const safeCoverImage = sanitizeCoverImageUrl(payload.cover_image_url);
+    const safeCoverImage = await processCoverImageUrl(payload.cover_image_url);
 
     // Idempotency Check: Check if campaign ID exists & is already live
     let campaign: any = null;
@@ -596,6 +599,7 @@ export async function updateCampaignDetailsAction(payload: {
   campaignId: string;
   title: string;
   description: string;
+  cover_image_url?: string;
   ad_format?: string;
   cpm_rate?: number;
   min_view_threshold?: number;
@@ -620,6 +624,15 @@ export async function updateCampaignDetailsAction(payload: {
       description: payload.description,
       updated_at: new Date().toISOString(),
     };
+
+    if (payload.cover_image_url !== undefined) {
+      if (payload.cover_image_url && payload.cover_image_url.startsWith('data:image/')) {
+        const uploadedUrl = await uploadCampaignImageToStorage(payload.cover_image_url);
+        updateData.cover_image_url = uploadedUrl || payload.cover_image_url;
+      } else {
+        updateData.cover_image_url = payload.cover_image_url;
+      }
+    }
 
     if (payload.ad_format) updateData.ad_format = payload.ad_format;
     if (payload.cpm_rate !== undefined) updateData.cpm_rate = Math.max(2000, Number(payload.cpm_rate));

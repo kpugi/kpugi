@@ -172,7 +172,7 @@ export default function DashboardHeader({
   const titleFormatted = formatMobileTitle(displayTitle);
 
   return (
-    <header className="sticky top-0 z-10 border-b border-kpugi-border bg-white/95 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-kpugi-border bg-white/95 backdrop-blur-md">
       <div className="px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-3">
 
         {/* Left: Mobile menu + Dynamic Header Title */}

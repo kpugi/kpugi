@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { generateAICampaignPolishAction } from '@/app/actions/campaign';
 
+import { optimizeImageFile } from '@/lib/utils/imageOptimizer';
+
 interface Step1Props {
   formData: any;
   updateFormData: (fields: Partial<any>) => void;
@@ -39,9 +41,9 @@ export function CampaignStep1Basics({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  const MAX_SIZE_MB = 5;
+  const MAX_SIZE_MB = 10;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError('');
     const file = e.target.files?.[0];
     if (!file) return;
@@ -52,18 +54,13 @@ export function CampaignStep1Basics({
       return;
     }
 
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      setImageError(`File size (${fileSizeMB}MB) exceeds 5MB limit. Please upload a smaller image.`);
-      return;
+    try {
+      // Compress and resize image in-browser to max 1200px and 82% quality (~100KB-200KB)
+      const compressedBase64 = await optimizeImageFile(file, 1200, 1200, 0.82);
+      updateFormData({ cover_image_url: compressedBase64 });
+    } catch (err) {
+      setImageError('Failed to process image. Please try another file.');
     }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      updateFormData({ cover_image_url: base64 });
-    };
-    reader.readAsDataURL(file);
   };
 
   const removeImage = () => {
