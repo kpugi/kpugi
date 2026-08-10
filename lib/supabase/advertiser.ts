@@ -43,47 +43,55 @@ export interface AdvertiserDashboardData {
 export async function getAdvertiserDashboardData(profileId: string): Promise<AdvertiserDashboardData> {
   const supabase = createAdminClient();
 
-  // Fetch advertiser profile
-  const { data: advProfile } = await supabase
-    .from('advertiser_profiles')
-    .select('company_name, profile:profiles(avatar_url)')
-    .eq('profile_id', profileId)
-    .maybeSingle();
+  const [advProfileRes, walletRes, campaignsRes, notificationsRes] = await Promise.all([
+    supabase
+      .from('advertiser_profiles')
+      .select('company_name, profile:profiles(avatar_url)')
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+    supabase
+      .from('wallets')
+      .select('balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'advertiser_funding')
+      .maybeSingle(),
+    supabase
+      .from('campaigns')
+      .select(`
+        id, 
+        title, 
+        campaign_code,
+        description, 
+        ad_format, 
+        cpm_rate, 
+        total_budget, 
+        reserved_budget, 
+        spent_budget, 
+        status, 
+        channels,
+        created_at, 
+        updated_at,
+        cover_image_url,
+        requirements,
+        submissions:submissions!left(id, status, final_view_count)
+      `)
+      .eq('advertiser_id', profileId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('notifications')
+      .select('id, knock_workflow_key, channel, payload, sent_at')
+      .eq('profile_id', profileId)
+      .order('sent_at', { ascending: false })
+      .limit(10),
+  ]);
+
+  const advProfile = advProfileRes.data;
+  const wallet = walletRes.data;
+  let campaigns = campaignsRes.data;
+  const notifications = notificationsRes.data;
 
   const companyName = advProfile?.company_name || 'Brand Partner';
   const advertiserAvatarUrl = (advProfile as any)?.profile?.avatar_url || null;
-
-  // Fetch wallet balance
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('balance')
-    .eq('profile_id', profileId)
-    .eq('wallet_type', 'advertiser_funding')
-    .maybeSingle();
-
-  // Fetch campaigns for this logged-in advertiser
-  let { data: campaigns } = await supabase
-    .from('campaigns')
-    .select(`
-      id, 
-      title, 
-      campaign_code,
-      description, 
-      ad_format, 
-      cpm_rate, 
-      total_budget, 
-      reserved_budget, 
-      spent_budget, 
-      status, 
-      channels,
-      created_at, 
-      updated_at,
-      cover_image_url,
-      requirements,
-      submissions:submissions!left(id, status, final_view_count)
-    `)
-    .eq('advertiser_id', profileId)
-    .order('created_at', { ascending: false });
 
   // If no campaigns belong to this specific profile yet, fetch all live platform campaigns so the brand console isn't blank
   if (!campaigns || campaigns.length === 0) {
@@ -122,14 +130,6 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       .eq('status', 'pending');
     pendingSubmissions = count || 0;
   }
-
-  // Fetch recent notifications
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('id, knock_workflow_key, channel, payload, sent_at')
-    .eq('profile_id', profileId)
-    .order('sent_at', { ascending: false })
-    .limit(10);
 
   let totalViewsDelivered = 0;
 

@@ -82,58 +82,64 @@ export interface CreatorEarningsData {
 export async function getCreatorOverviewData(profileId: string): Promise<CreatorOverviewData> {
   const supabase = createAdminClient();
 
-  const { data: creatorProfile } = await supabase
-    .from('creator_profiles')
-    .select('id, total_earned, kyc_status')
-    .eq('profile_id', profileId)
-    .maybeSingle();
-
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('balance')
-    .eq('profile_id', profileId)
-    .eq('wallet_type', 'creator_earnings')
-    .maybeSingle();
-
-  const creatorProfileId = creatorProfile?.id;
-  const creatorFilter = creatorProfileId
-    ? `creator_id.eq.${profileId},creator_id.eq.${creatorProfileId}`
-    : `creator_id.eq.${profileId}`;
-
-  const { data: rawSubmissions } = await supabase
-    .from('submissions')
-    .select(`
-      id,
-      post_url,
-      status,
-      submitted_at,
-      reserved_amount,
-      final_view_count,
-      verified_at,
-      payout_amount,
-      campaign:campaigns (
+  const [creatorProfileRes, walletRes, rawSubmissionsRes, notificationsRes] = await Promise.all([
+    supabase
+      .from('creator_profiles')
+      .select('id, total_earned, kyc_status')
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+    supabase
+      .from('wallets')
+      .select('balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle(),
+    supabase
+      .from('submissions')
+      .select(`
         id,
-        title,
+        post_url,
         status,
-        channels,
-        ad_format,
-        cpm_rate,
-        total_budget,
-        min_view_threshold,
-        created_at,
-        updated_at,
-        cover_image_url,
-        requirements,
-        advertiser:advertiser_profiles (
-          company_name,
-          profile:profiles (
-            avatar_url
+        submitted_at,
+        reserved_amount,
+        final_view_count,
+        verified_at,
+        payout_amount,
+        campaign:campaigns (
+          id,
+          title,
+          status,
+          channels,
+          ad_format,
+          cpm_rate,
+          total_budget,
+          min_view_threshold,
+          created_at,
+          updated_at,
+          cover_image_url,
+          requirements,
+          advertiser:advertiser_profiles (
+            company_name,
+            profile:profiles (
+              avatar_url
+            )
           )
         )
-      )
-    `)
-    .or(creatorFilter)
-    .order('submitted_at', { ascending: false });
+      `)
+      .or(`creator_id.eq.${profileId}`)
+      .order('submitted_at', { ascending: false }),
+    supabase
+      .from('notifications')
+      .select('id, knock_workflow_key, channel, payload, sent_at')
+      .eq('profile_id', profileId)
+      .order('sent_at', { ascending: false })
+      .limit(10),
+  ]);
+
+  const creatorProfile = creatorProfileRes.data;
+  const wallet = walletRes.data;
+  const rawSubmissions = rawSubmissionsRes.data;
+  const notifications = notificationsRes.data;
 
   const submissions: CreatorSubmission[] = (rawSubmissions || []).map((sub: any) => {
     const campaignObj = Array.isArray(sub.campaign) ? sub.campaign[0] : sub.campaign;
@@ -157,13 +163,6 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
       },
     };
   });
-
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('id, knock_workflow_key, channel, payload, sent_at')
-    .eq('profile_id', profileId)
-    .order('sent_at', { ascending: false })
-    .limit(10);
 
   const activeSubmissions = submissions.filter(
     (s) => s.status === 'pending' || s.status === 'under_review' || s.status === 'approved' || s.status === 'reserved'
@@ -300,34 +299,53 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
 
-  // 1. Fetch creator profile
-  const { data: creator } = await supabase
-    .from('creator_profiles')
-    .select('profile_id, total_earned, paystack_recipient_code, kyc_status')
-    .eq('profile_id', profileId)
-    .maybeSingle();
+  const [
+    creatorRes,
+    walletRes,
+    transactionsRes,
+    payoutRequestsRes,
+    rawSubmissionsRes,
+    dbBankAccountsRes,
+  ] = await Promise.all([
+    supabase
+      .from('creator_profiles')
+      .select('profile_id, total_earned, paystack_recipient_code, kyc_status')
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+    supabase
+      .from('wallets')
+      .select('balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle(),
+    supabase
+      .from('wallet_transactions')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('payout_requests')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('submissions')
+      .select('reserved_amount, payout_amount, status')
+      .or(`creator_id.eq.${profileId}`),
+    supabase
+      .from('bank_accounts')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('is_primary', { ascending: false })
+      .order('created_at', { ascending: false }),
+  ]);
 
-  // 2. Fetch wallet balance
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('balance')
-    .eq('profile_id', profileId)
-    .eq('wallet_type', 'creator_earnings')
-    .maybeSingle();
-
-  // 3. Fetch real transactions
-  const { data: transactions } = await supabase
-    .from('wallet_transactions')
-    .select('*')
-    .eq('profile_id', profileId)
-    .order('created_at', { ascending: false });
-
-  // 4. Fetch real payout requests for totalWithdrawn & lastWithdrawalDate
-  const { data: payoutRequests } = await supabase
-    .from('payout_requests')
-    .select('*')
-    .eq('profile_id', profileId)
-    .order('created_at', { ascending: false });
+  const creator = creatorRes.data;
+  const wallet = walletRes.data;
+  const transactions = transactionsRes.data;
+  const payoutRequests = payoutRequestsRes.data;
+  const rawSubmissions = rawSubmissionsRes.data;
+  const dbBankAccounts = dbBankAccountsRes.data;
 
   const totalWithdrawn = (payoutRequests || [])
     .filter((p) => p.status === 'success' || p.status === 'completed')
@@ -335,28 +353,9 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   const lastWithdrawalDate = payoutRequests && payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
 
-  // 5. Calculate Pending Escrow from real active submissions
-  const creatorProfileId = creator?.profile_id;
-  const creatorFilter = creatorProfileId
-    ? `creator_id.eq.${profileId},creator_id.eq.${creatorProfileId}`
-    : `creator_id.eq.${profileId}`;
-
-  const { data: rawSubmissions } = await supabase
-    .from('submissions')
-    .select('reserved_amount, payout_amount, status')
-    .or(creatorFilter);
-
   const pendingEscrow = (rawSubmissions || [])
     .filter((s: any) => s.status === 'reserved' || s.status === 'under_review' || s.status === 'pending' || s.status === 'auditing')
     .reduce((sum: number, s: any) => sum + (Number(s.reserved_amount || s.payout_amount) || 0), 0);
-
-  // 6. Fetch saved bank accounts from bank_accounts table
-  const { data: dbBankAccounts } = await supabase
-    .from('bank_accounts')
-    .select('*')
-    .eq('profile_id', profileId)
-    .order('is_primary', { ascending: false })
-    .order('created_at', { ascending: false });
 
   const bankAccounts: BankAccountItem[] = (dbBankAccounts || []).map((b: any, idx: number) => ({
     id: b.id,
