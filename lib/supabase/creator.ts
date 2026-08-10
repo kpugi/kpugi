@@ -22,6 +22,8 @@ export interface CreatorSubmission {
     updated_at: string;
     company_name?: string;
     company_logo?: string | null;
+    cover_image_url?: string | null;
+    requirements?: any;
   };
 }
 
@@ -44,6 +46,7 @@ export interface CreatorCampaignItem {
   title: string;
   brandName?: string;
   companyLogo?: string | null;
+  coverImageUrl?: string | null;
   platform?: string;
   ratePer1k?: number;
   minThreshold?: number;
@@ -119,6 +122,8 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
         min_view_threshold,
         created_at,
         updated_at,
+        cover_image_url,
+        requirements,
         advertiser:advertiser_profiles (
           company_name,
           profile:profiles (
@@ -133,6 +138,8 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   const submissions: CreatorSubmission[] = (rawSubmissions || []).map((sub: any) => {
     const campaignObj = Array.isArray(sub.campaign) ? sub.campaign[0] : sub.campaign;
     const adv = campaignObj?.advertiser as any;
+    const campaignImg = campaignObj?.cover_image_url || campaignObj?.requirements?.creative_image_url || adv?.profile?.avatar_url || null;
+
     return {
       id: sub.id,
       post_url: sub.post_url,
@@ -145,7 +152,8 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
       campaign: {
         ...campaignObj,
         company_name: adv?.company_name || 'Brand Partner',
-        company_logo: adv?.profile?.avatar_url || null,
+        company_logo: campaignImg,
+        cover_image_url: campaignObj?.cover_image_url || null,
       },
     };
   });
@@ -209,6 +217,8 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
         channels,
         cpm_rate,
         min_view_threshold,
+        cover_image_url,
+        requirements,
         advertiser:advertiser_profiles (
           company_name,
           profile:profiles (
@@ -225,12 +235,15 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
   return rawData.map((sub: any) => {
     const campaign = Array.isArray(sub.campaign) ? sub.campaign[0] : sub.campaign;
     const adv = campaign?.advertiser as any;
+    const campaignImg = campaign?.cover_image_url || campaign?.requirements?.creative_image_url || adv?.profile?.avatar_url || null;
+
     return {
       id: sub.id,
       campaignId: campaign?.id || sub.id,
       title: campaign?.title || 'Campaign',
       brandName: adv?.company_name || 'Brand Partner',
-      companyLogo: adv?.profile?.avatar_url || null,
+      companyLogo: campaignImg,
+      coverImageUrl: campaign?.cover_image_url || null,
       platform: campaign?.channels?.[0] || 'tiktok',
       ratePer1k: campaign?.cpm_rate || 0,
       minThreshold: campaign?.min_view_threshold || 500,

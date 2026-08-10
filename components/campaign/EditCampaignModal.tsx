@@ -266,20 +266,25 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           {/* Section 1: Campaign Title & Ad Format */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2 space-y-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                Campaign Title * {isLive && <span className="text-amber-600 font-bold">(Locked)</span>}
+              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+                <span>Campaign Title *</span>
+                {isLive && <span className="text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded text-[9px]">🔒 Locked</span>}
               </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={isLive}
-                className={`w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 ${
-                  isLive ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''
-                }`}
-                placeholder="Campaign Title"
-                required
-              />
+              {isLive ? (
+                <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 font-bold text-slate-700 flex items-center justify-between select-none">
+                  <span className="truncate">{title}</span>
+                  <span className="text-[10px] text-slate-400 font-mono shrink-0 ml-2">READ ONLY</span>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                  placeholder="Campaign Title"
+                  required
+                />
+              )}
             </div>
             <div className="space-y-1">
               <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Ad Format</label>
@@ -335,47 +340,56 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 text-[10px] uppercase">CPM Rate (₦ / 1k)</label>
-                <input
-                  type="number"
-                  min={2000}
-                  step={250}
-                  value={cpmRate}
-                  onChange={(e) => setCpmRate(Math.max(2000, Number(e.target.value)))}
-                  disabled={isLive}
-                  className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-slate-900 ${
-                    isLive ? 'bg-slate-200/60 text-slate-500 cursor-not-allowed border-slate-300' : 'bg-white border-slate-200'
-                  }`}
-                />
+                {isLive ? (
+                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-200/70 font-mono font-bold text-slate-700 select-none">
+                    ₦{cpmRate.toLocaleString()}
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min={2000}
+                    step={250}
+                    value={cpmRate}
+                    onChange={(e) => setCpmRate(Math.max(2000, Number(e.target.value)))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 text-[10px] uppercase">Total Budget (₦)</label>
-                <input
-                  type="number"
-                  min={10000}
-                  step={5000}
-                  value={totalBudget}
-                  onChange={(e) => setTotalBudget(Math.max(10000, Number(e.target.value)))}
-                  disabled={isLive}
-                  className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-slate-900 ${
-                    isLive ? 'bg-slate-200/60 text-slate-500 cursor-not-allowed border-slate-300' : 'bg-white border-slate-200'
-                  }`}
-                />
+                {isLive ? (
+                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-200/70 font-mono font-bold text-slate-700 select-none">
+                    ₦{totalBudget.toLocaleString()}
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min={10000}
+                    step={5000}
+                    value={totalBudget}
+                    onChange={(e) => setTotalBudget(Math.max(10000, Number(e.target.value)))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 text-[10px] uppercase">Min View Goal</label>
-                <input
-                  type="number"
-                  min={1000}
-                  step={500}
-                  value={minViewThreshold}
-                  onChange={(e) => setMinViewThreshold(Number(e.target.value))}
-                  disabled={isLive}
-                  className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-slate-900 ${
-                    isLive ? 'bg-slate-200/60 text-slate-500 cursor-not-allowed border-slate-300' : 'bg-white border-slate-200'
-                  }`}
-                />
+                {isLive ? (
+                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-200/70 font-mono font-bold text-slate-700 select-none">
+                    {minViewThreshold.toLocaleString()} views
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min={1000}
+                    step={500}
+                    value={minViewThreshold}
+                    onChange={(e) => setMinViewThreshold(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900"
+                  />
+                )}
               </div>
             </div>
           </div>

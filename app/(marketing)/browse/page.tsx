@@ -538,9 +538,6 @@ export default function BrowsePage() {
                 <div className="flex items-center gap-2.5 bg-[#121833] border border-blue-500/30 px-4 py-2 rounded-full shadow-inner">
                   <img src="/kpugi_logo.png" alt="Kpugi Logo" className="h-6 w-auto object-contain" />
                 </div>
-                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-full">
-                  ⚡ Guaranteed Automated Escrow
-                </span>
               </div>
 
               {/* Headline */}
@@ -556,11 +553,11 @@ export default function BrowsePage() {
               {/* Key Feature Stats Bar */}
               <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10 max-w-lg">
                 <div>
-                  <div className="font-display font-extrabold text-2xl text-white">₦2,000</div>
+                  <div className="font-display font-extrabold text-2xl text-white">₦2k</div>
                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Base CPM Rate</div>
                 </div>
                 <div>
-                  <div className="font-display font-extrabold text-2xl text-white">72 Hours</div>
+                  <div className="font-display font-extrabold text-2xl text-white">72 Hrs</div>
                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Live Audit Window</div>
                 </div>
                 <div>

@@ -90,15 +90,15 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  {item.companyLogo ? (
+                  {item.coverImageUrl || item.companyLogo ? (
                     <img
-                      src={item.companyLogo}
-                      alt={item.brandName || item.title}
+                      src={item.coverImageUrl || item.companyLogo!}
+                      alt={item.title || item.brandName}
                       className="w-10 h-10 rounded-2xl object-cover border border-kpugi-border shrink-0"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-2xl bg-kpugi-ink text-white font-bold text-sm flex items-center justify-center uppercase shrink-0">
-                      {(item.brandName || item.title).charAt(0)}
+                      {(item.title || item.brandName || 'C').charAt(0)}
                     </div>
                   )}
 

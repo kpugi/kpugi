@@ -17,6 +17,8 @@ export interface AdvertiserCampaign {
   creators_count: number;
   views_delivered: number;
   company_logo: string | null;
+  cover_image_url?: string | null;
+  requirements?: any;
 }
 
 export interface AdvertiserDashboardData {
@@ -76,6 +78,8 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       channels,
       created_at, 
       updated_at,
+      cover_image_url,
+      requirements,
       submissions:submissions!left(id, status, final_view_count)
     `)
     .eq('advertiser_id', profileId)
@@ -99,6 +103,8 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         channels,
         created_at, 
         updated_at,
+        cover_image_url,
+        requirements,
         submissions:submissions!left(id, status, final_view_count)
       `)
       .order('created_at', { ascending: false });
@@ -135,6 +141,8 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     );
     totalViewsDelivered += campaignViews;
 
+    const campaignImg = c.cover_image_url || c.requirements?.creative_image_url || advertiserAvatarUrl || null;
+
     return {
       id: c.id,
       title: c.title,
@@ -151,7 +159,9 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       updated_at: c.updated_at,
       creators_count: subs.length,
       views_delivered: campaignViews,
-      company_logo: advertiserAvatarUrl,
+      company_logo: campaignImg,
+      cover_image_url: c.cover_image_url || null,
+      requirements: c.requirements || {},
     };
   }) as AdvertiserCampaign[];
 

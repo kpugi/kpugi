@@ -196,8 +196,14 @@ export default function AdvertiserCampaignsView({ campaigns }: AdvertiserCampaig
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {c.company_logo ? (
-                        <Image src={c.company_logo} alt="" width={40} height={40} className="rounded-xl object-cover border border-kpugi-border shrink-0" />
+                      {c.cover_image_url || c.requirements?.creative_image_url || c.company_logo ? (
+                        <Image
+                          src={c.cover_image_url || c.requirements?.creative_image_url || c.company_logo!}
+                          alt={c.title}
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-xl object-cover border border-kpugi-border shrink-0"
+                        />
                       ) : (
                         <div className="w-10 h-10 rounded-xl bg-kpugi-blue/10 text-kpugi-blue font-bold text-base flex items-center justify-center shrink-0 border border-kpugi-blue/20">
                           📢

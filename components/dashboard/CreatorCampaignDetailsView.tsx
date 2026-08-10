@@ -282,15 +282,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             {/* Advertiser Profile & Campaign Code Pill (Unified Capsule) */}
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2.5 bg-[#0B1026] backdrop-blur-md pl-1.5 pr-4 py-1.5 rounded-full border border-white/15 shadow-md">
-                {campaign.company_logo ? (
+                {campaign.cover_image_url || campaign.requirements?.creative_image_url || campaign.company_logo ? (
                   <img
-                    src={campaign.company_logo}
-                    alt={campaign.company_name}
+                    src={campaign.cover_image_url || campaign.requirements?.creative_image_url || campaign.company_logo}
+                    alt={campaign.title || campaign.company_name}
                     className="w-7 h-7 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
                   />
                 ) : (
                   <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xs uppercase text-white shadow-sm shrink-0">
-                    {campaign.company_name.slice(0, 1)}
+                    {(campaign.title || campaign.company_name).slice(0, 1)}
                   </div>
                 )}
                 <span className="font-sans text-xs font-bold text-white">

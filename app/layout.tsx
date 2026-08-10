@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import KnockProviderWrapper from '@/components/providers/KnockProviderWrapper';
+import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-screen bg-[#090A0F] text-white antialiased overflow-x-hidden">
+          <NetworkStatusBanner />
           <KnockProviderWrapper>
             {children}
           </KnockProviderWrapper>

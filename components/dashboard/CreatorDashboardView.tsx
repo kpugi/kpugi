@@ -138,15 +138,15 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                 <div>
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex items-start gap-4">
-                      {featuredSub.campaign.company_logo ? (
+                      {featuredSub.campaign.company_logo || (featuredSub.campaign as any).cover_image_url || (featuredSub.campaign as any).requirements?.creative_image_url ? (
                         <img
-                          src={featuredSub.campaign.company_logo}
-                          alt={featuredSub.campaign.company_name || featuredSub.campaign.title}
+                          src={featuredSub.campaign.company_logo || (featuredSub.campaign as any).cover_image_url || (featuredSub.campaign as any).requirements?.creative_image_url}
+                          alt={featuredSub.campaign.title || featuredSub.campaign.company_name || 'Campaign'}
                           className="w-12 h-12 rounded-2xl object-cover border border-kpugi-border shrink-0 shadow-sm"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-2xl bg-kpugi-ink text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
-                          {(featuredSub.campaign.company_name || featuredSub.campaign.title).charAt(0).toUpperCase()}
+                          {(featuredSub.campaign.title || featuredSub.campaign.company_name || 'C').charAt(0).toUpperCase()}
                         </div>
                       )}
 
