@@ -686,7 +686,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
-                      <span>📌</span> Detailed Posting Guidelines & Creator Rules
+                      <span>📌</span> Guidelines & Rules
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                       Follow these step-by-step rules to guarantee your post passes automated audit and unlocks instant CPM payouts.
