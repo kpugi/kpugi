@@ -88,7 +88,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
 
     if (t.transaction_type === 'campaign_funding' || t.transaction_type === 'debit') {
       typeLabel = 'Campaign Funding';
-      desc = t.campaign_title ? `Campaign Allocation: ${t.campaign_title}` : 'Campaign Escrow Allocation';
+      desc = t.campaign_title ? `${t.campaign_title}` : 'Campaign Escrow Allocation';
     } else if (t.transaction_type === 'unspent_refund') {
       typeLabel = 'Unspent Refund';
       desc = 'Unspent Budget Refund';

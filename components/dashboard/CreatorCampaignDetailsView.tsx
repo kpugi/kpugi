@@ -282,15 +282,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             {/* Advertiser Profile & Campaign Code Pill (Unified Capsule) */}
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2.5 bg-[#0B1026] backdrop-blur-md pl-1.5 pr-4 py-1.5 rounded-full border border-white/15 shadow-md">
-                {campaign.cover_image_url || campaign.requirements?.creative_image_url || campaign.company_logo ? (
+                {campaign.company_logo ? (
                   <img
-                    src={campaign.cover_image_url || campaign.requirements?.creative_image_url || campaign.company_logo}
-                    alt={campaign.title || campaign.company_name}
+                    src={campaign.company_logo}
+                    alt={campaign.company_name}
                     className="w-7 h-7 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
                   />
                 ) : (
                   <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xs uppercase text-white shadow-sm shrink-0">
-                    {(campaign.title || campaign.company_name).slice(0, 1)}
+                    {(campaign.company_name || campaign.title).slice(0, 1)}
                   </div>
                 )}
                 <span className="font-sans text-xs font-bold text-white">
@@ -436,6 +436,105 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     {campaign.description}
                   </p>
                 </div>
+
+                {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    🎬 BRAND CREATIVE ASSETS — shown prominently below description
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                {(() => {
+                  // Gather asset data: prefer campaign_creatives table, fall back to requirements JSONB
+                  const dbCreative = creatives[0] || null;
+                  const reqFileUrl = (campaign as any).requirements?.creative_video_url || (campaign as any).requirements?.creative_image_url || null;
+                  const reqCopyText = (campaign as any).requirements?.creative_text_copy || null;
+                  const reqCaption = (campaign as any).requirements?.caption_suggestion || null;
+
+                  const fileUrl = dbCreative?.file_url || reqFileUrl || null;
+                  const copyText = dbCreative?.copy_text || reqCopyText || null;
+                  const captionText = dbCreative?.caption_suggestion || reqCaption || null;
+
+                  if (!fileUrl && !copyText && !captionText) return null;
+
+                  // Detect YouTube link
+                  const ytMatch = fileUrl?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                  const isYouTube = !!ytMatch;
+                  const ytId = ytMatch?.[1];
+
+                  // Detect video file
+                  const isVideoFile = !isYouTube && !!fileUrl?.match(/\.(mp4|mov|webm|avi|mkv)(\?|$)/i);
+
+                  return (
+                    <div className="rounded-3xl overflow-hidden border border-white/10 bg-[#0B1021] shadow-2xl">
+                      {/* Header bar */}
+                      <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10 bg-white/[0.03]">
+                        <span className="text-xl">🎬</span>
+                        <div>
+                          <h3 className="font-display font-bold text-white text-base">Brand Creative Asset</h3>
+                          <p className="text-xs text-slate-400 mt-0.5">Use this asset in your post — it's required for campaign participation</p>
+                        </div>
+                        <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                          ⚠ Required
+                        </span>
+                      </div>
+
+                      {/* Media preview */}
+                      {fileUrl && (
+                        <div className="bg-black">
+                          {isYouTube ? (
+                            <div className="aspect-video w-full">
+                              <iframe
+                                src={`https://www.youtube.com/embed/${ytId}`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="w-full h-full"
+                              />
+                            </div>
+                          ) : isVideoFile ? (
+                            <video
+                              src={fileUrl}
+                              controls
+                              className="w-full max-h-[480px] object-contain"
+                            />
+                          ) : (
+                            <img
+                              src={fileUrl}
+                              alt="Brand Creative"
+                              className="w-full max-h-[480px] object-contain"
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {/* Caption + copy text */}
+                      {(captionText || copyText) && (
+                        <div className="p-6 space-y-4">
+                          {captionText && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Caption</span>
+                                <button
+                                  onClick={() => handleCopyCaption(captionText)}
+                                  className="text-xs text-kpugi-blue hover:text-blue-400 font-sans font-bold"
+                                >
+                                  Copy Caption
+                                </button>
+                              </div>
+                              <p className="font-sans text-xs text-slate-300 bg-white/[0.03] border border-white/5 rounded-xl p-4 leading-relaxed italic">
+                                &ldquo;{captionText}&rdquo;
+                              </p>
+                            </div>
+                          )}
+                          {copyText && copyText !== fileUrl && (
+                            <div className="space-y-2">
+                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Copy / Instructions</span>
+                              <p className="font-sans text-xs text-slate-300 leading-relaxed bg-white/[0.01] p-3 rounded-lg border border-white/5 whitespace-pre-wrap">
+                                {copyText}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ⚡ AI-POWERED SYNC CARD (Clean 2-Column Layout) */}
                 {(() => {
@@ -627,9 +726,30 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 {/* Creative Brief suggestions */}
                 {creatives.length > 0 && (
                   <div className="space-y-4">
-                    <h3 className="font-display font-bold text-lg text-white">Suggested Caption</h3>
+                    <h3 className="font-display font-bold text-lg text-white">Brand Creative Assets</h3>
                     {creatives.map((creative) => (
                       <div key={creative.id} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
+
+                        {/* Creative Media Asset (image or video) */}
+                        {creative.file_url && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Creative Asset</span>
+                            {creative.file_url.match(/\.(mp4|mov|webm|avi|mkv)(\?|$)/i) ? (
+                              <video
+                                src={creative.file_url}
+                                controls
+                                className="w-full rounded-xl border border-white/10 max-h-[420px] object-contain bg-black"
+                              />
+                            ) : (
+                              <img
+                                src={creative.file_url}
+                                alt="Creative Asset"
+                                className="w-full rounded-xl border border-white/10 max-h-[420px] object-contain bg-black"
+                              />
+                            )}
+                          </div>
+                        )}
+
                         {creative.caption_suggestion && (
                           <div className="space-y-2">
                             <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">

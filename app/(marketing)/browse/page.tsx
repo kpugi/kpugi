@@ -403,7 +403,13 @@ export default function BrowsePage() {
         minViews: c.min_view_threshold,
         daysLeft: 14,
         tone: c.description.slice(0, 100) + '...',
-        timePosted: '1d',
+        timePosted: (() => {
+          const diff = Math.floor((Date.now() - new Date(c.created_at).getTime()) / 1000);
+          if (diff < 60) return `${diff}s`;
+          if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+          if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+          return `${Math.floor(diff / 86400)}d`;
+        })(),
         is_featured: !!c.is_featured,
         matchScore: c.match_score || 94,
       };

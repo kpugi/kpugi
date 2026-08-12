@@ -104,7 +104,7 @@ export async function createCampaignAction(formData: FormData) {
   }
 
   // 5. Record Wallet Escrow Allocation Transaction
-  await supabase.from('wallet_transactions').insert({
+  const { error: txError } = await supabase.from('wallet_transactions').insert({
     wallet_id: wallet!.id,
     type: 'campaign_funding',
     amount: totalBudget,
@@ -113,6 +113,10 @@ export async function createCampaignAction(formData: FormData) {
     paystack_reference: `KP-ESC-${Date.now().toString().slice(-6)}`,
     created_at: new Date().toISOString(),
   });
+
+  if (txError) {
+    console.error('[createCampaignAction] wallet_transactions insert failed:', txError);
+  }
 
   revalidatePath('/b/campaigns');
   revalidatePath('/b/dashboard');

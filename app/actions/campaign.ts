@@ -445,6 +445,26 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       campaign = insertedCampaign;
     }
 
+    // 2b. Upsert campaign_creatives row from requirements data
+    try {
+      const fileUrl = processedReqs?.creative_video_url || processedReqs?.creative_image_url || null;
+      const copyText = processedReqs?.creative_text_copy || null;
+      const captionSuggestion = processedReqs?.caption_suggestion || null;
+
+      if (fileUrl || copyText || captionSuggestion) {
+        // Delete existing creatives for this campaign then re-insert (clean upsert)
+        await supabase.from('campaign_creatives').delete().eq('campaign_id', campaign.id);
+        await supabase.from('campaign_creatives').insert({
+          campaign_id: campaign.id,
+          file_url: fileUrl,
+          copy_text: copyText,
+          caption_suggestion: captionSuggestion,
+        });
+      }
+    } catch (e) {
+      console.error('[Campaign Action] Error saving campaign_creatives:', e);
+    }
+
     // 3. Generate Receipt Record
     const receiptNumber = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random()
       .toString(36)
@@ -468,6 +488,34 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       // Table may be migrating, continue cleanly
     }
 
+    // 3b. Record wallet debit transaction for wallet-funded campaigns
+    if (payload.payment_method === 'wallet' || !payload.paystack_reference) {
+      try {
+        const { data: advWallet } = await supabase
+          .from('wallets')
+          .select('id')
+          .eq('profile_id', advertiserId)
+          .eq('wallet_type', 'advertiser_funding')
+          .maybeSingle();
+
+        if (advWallet) {
+          const { error: txErr } = await supabase.from('wallet_transactions').insert({
+            wallet_id: advWallet.id,
+            type: 'campaign_funding',
+            amount: totalBudget,
+            campaign_id: campaign.id,
+            status: 'completed',
+            paystack_reference: `KP-ESC-${Date.now().toString().slice(-8)}`,
+          });
+          if (txErr) {
+            console.error('[createCampaignWizardAction] wallet_transactions insert failed:', txErr);
+          }
+        }
+      } catch (e) {
+        console.error('[createCampaignWizardAction] Error recording wallet debit:', e);
+      }
+    }
+
     // 4. Trigger Knock notifications and Resend emails to all creators
     try {
       await notifyCreatorsNewCampaign(campaign);
@@ -476,6 +524,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
     }
 
     revalidatePath('/b/campaigns');
+    revalidatePath('/b/wallet');
     revalidatePath('/browse');
 
     return {
@@ -538,7 +587,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
             bgColor: '#2563EB',
           },
           cta: {
-            label: 'Claim Slot & Start Earning',
+            label: 'Let\'s Go!',
             url: `${appUrl}/dashboard`,
             subtext: 'Grab the approved creative asset and publish to start earning!',
           },
