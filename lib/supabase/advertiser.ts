@@ -586,8 +586,8 @@ export interface BrandWalletData {
 export async function getBrandWalletData(profileId: string): Promise<BrandWalletData> {
   const supabase = createAdminClient();
 
-  // Fetch advertiser profile email, wallet, transactions, campaigns, and submissions concurrently
-  const [profileRes, walletRes, transactionsRes, campaignsRes, submissionsRes] = await Promise.all([
+  // 1. Fetch advertiser profile email and wallet
+  const [profileRes, walletRes] = await Promise.all([
     supabase.from('profiles').select('email').eq('id', profileId).maybeSingle(),
     supabase
       .from('wallets')
@@ -595,11 +595,21 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
       .eq('profile_id', profileId)
       .eq('wallet_type', 'advertiser_funding')
       .maybeSingle(),
-    supabase
-      .from('wallet_transactions')
-      .select('id, wallet_id, type, amount, paystack_reference, status, created_at, campaign:campaigns(title)')
-      .order('created_at', { ascending: false })
-      .limit(30),
+  ]);
+
+  const advertiserEmail = profileRes.data?.email || undefined;
+  const wallet = walletRes.data;
+
+  // 2. Fetch transactions for this wallet, campaigns, and submissions concurrently
+  const [transactionsRes, campaignsRes, submissionsRes] = await Promise.all([
+    wallet?.id
+      ? supabase
+          .from('wallet_transactions')
+          .select('id, wallet_id, type, amount, paystack_reference, status, created_at, campaign:campaigns(title)')
+          .eq('wallet_id', wallet.id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from('campaigns')
       .select('id, title, total_budget, spent_budget, status, submissions:submissions!left(id)')
@@ -611,9 +621,6 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
       .eq('campaign.advertiser_id', profileId)
       .or('status.eq.paid,status.eq.verified_pass'),
   ]);
-
-  const advertiserEmail = profileRes.data?.email || undefined;
-  const wallet = walletRes.data;
 
   const transactions = transactionsRes.data;
   let campaigns = campaignsRes.data;

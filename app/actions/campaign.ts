@@ -512,39 +512,44 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
 
     if (!creators || creators.length === 0) return;
 
-    const resendKey = process.env.RESEND_API_KEY;
     const cpmFormatted = Number(campaign.cpm_rate || 2000).toLocaleString();
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+
+    const { sendEmail, renderReusableEmailTemplate } = await import('@/lib/resend/send-email');
 
     for (const creator of creators) {
       if (!creator.email) continue;
       try {
-        // Send email via Resend API
-        if (resendKey) {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${resendKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: process.env.RESEND_FROM_EMAIL || 'Kpugi <onboarding@resend.dev>',
-              to: creator.email,
-              subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
-              html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e0fb; border-radius: 16px; background-color: #ffffff;">
-                  <h2 style="color: #4338ca; margin-top: 0;">🚀 New Campaign Live on Kpugi!</h2>
-                  <p style="color: #334155; font-size: 14px;">Hi ${creator.full_name || 'Creator'},</p>
-                  <p style="color: #334155; font-size: 14px;">A new brand campaign is live on Kpugi with ready-to-post creatives!</p>
-                  <div style="background-color: #f8f7ff; border: 1px solid #e2e0fb; padding: 18px; border-radius: 12px; margin: 16px 0;">
-                    <h3 style="margin: 0 0 8px 0; color: #1e1b4b; font-size: 16px;">${campaign.title}</h3>
-                    <p style="margin: 0; color: #4338ca; font-weight: bold; font-size: 15px;">Payout Rate: ₦${cpmFormatted} per 1,000 views</p>
-                  </div>
-                  <p style="color: #475569; font-size: 13px;">Log in to your Kpugi Creator Dashboard, grab the approved creative asset, and publish to start earning!</p>
-                </div>
-              `,
-            }),
-          });
-        }
+        const html = renderReusableEmailTemplate({
+          to: creator.email,
+          subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
+          previewText: `New campaign live on Kpugi! Earn ₦${cpmFormatted} per 1,000 views on "${campaign.title}"`,
+          icon: 'rocket',
+          headline: 'New Campaign Drop 🚀!',
+          subtitle: `Hi ${creator.full_name || 'Creator'}, a new brand campaign is live on Kpugi with ready-to-post creatives!`,
+          cardTitle: 'Campaign Details',
+          details: [
+            { label: 'Campaign Title', value: campaign.title },
+            { label: 'Ad Format', value: campaign.ad_format || 'Short Video' },
+          ],
+          highlightBar: {
+            label: 'Payout Rate',
+            value: `₦${cpmFormatted} / 1k views`,
+            bgColor: '#2563EB',
+          },
+          cta: {
+            label: 'Claim Slot & Start Earning',
+            url: `${appUrl}/dashboard`,
+            subtext: 'Grab the approved creative asset and publish to start earning!',
+          },
+        });
+
+        await sendEmail({
+          to: creator.email,
+          subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
+          previewText: `New campaign live on Kpugi! Earn ₦${cpmFormatted} per 1,000 views on "${campaign.title}"`,
+          html,
+        });
       } catch (e) {
         // Suppress individual creator email error
       }

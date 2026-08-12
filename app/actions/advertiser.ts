@@ -105,12 +105,12 @@ export async function createCampaignAction(formData: FormData) {
 
   // 5. Record Wallet Escrow Allocation Transaction
   await supabase.from('wallet_transactions').insert({
-    profile_id: userProfile.profile.id,
-    wallet_type: 'advertiser_funding',
-    transaction_type: 'campaign_allocation',
+    wallet_id: wallet!.id,
+    type: 'campaign_funding',
     amount: totalBudget,
+    campaign_id: campaign.id,
     status: 'completed',
-    reference: `KP-ESC-${Date.now().toString().slice(-6)}`,
+    paystack_reference: `KP-ESC-${Date.now().toString().slice(-6)}`,
     created_at: new Date().toISOString(),
   });
 
@@ -168,12 +168,12 @@ export async function updateCampaignStatusAction(formData: FormData) {
           .eq('id', wallet.id);
 
         await supabase.from('wallet_transactions').insert({
-          profile_id: userProfile.profile.id,
-          wallet_type: 'advertiser_funding',
-          transaction_type: 'unspent_refund',
+          wallet_id: wallet.id,
+          type: 'budget_release_refund',
           amount: unspentBudget,
+          campaign_id: campaign.id,
           status: 'completed',
-          reference: `KP-RFD-${Date.now().toString().slice(-6)}`,
+          paystack_reference: `KP-RFD-${Date.now().toString().slice(-6)}`,
           created_at: new Date().toISOString(),
         });
       }
