@@ -560,10 +560,13 @@ export async function getBrandCampaignDetails(
 export interface BrandWalletData {
   walletBalance: number;
   totalEscrowLocked: number;
+  totalPayouts: number;
   totalSpent: number;
+  advertiserEmail?: string;
   transactions: {
     id: string;
     transaction_type: string;
+    campaign_title?: string | null;
     amount: number;
     status: string;
     reference: string;
@@ -575,73 +578,89 @@ export interface BrandWalletData {
     total_budget: number;
     spent_budget: number;
     escrow_remaining: number;
+    creators_assigned: number;
+    status: string;
   }[];
 }
 
 export async function getBrandWalletData(profileId: string): Promise<BrandWalletData> {
   const supabase = createAdminClient();
 
-  // Fetch wallet
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('balance')
-    .eq('profile_id', profileId)
-    .eq('wallet_type', 'advertiser_funding')
-    .maybeSingle();
-
-  // Fetch transactions
-  const { data: transactions } = await supabase
-    .from('wallet_transactions')
-    .select('id, transaction_type, amount, status, reference, created_at')
-    .eq('profile_id', profileId)
-    .order('created_at', { ascending: false })
-    .limit(30);
-
-  // Fetch active campaigns for escrow display
-  let { data: campaigns } = await supabase
-    .from('campaigns')
-    .select('id, title, total_budget, spent_budget, status')
-    .eq('advertiser_id', profileId)
-    .or('status.eq.live,status.eq.budget_committed');
-
-  if (!campaigns || campaigns.length === 0) {
-    const { data: allCampaigns } = await supabase
+  // Fetch advertiser profile email, wallet, transactions, campaigns, and submissions concurrently
+  const [profileRes, walletRes, transactionsRes, campaignsRes, submissionsRes] = await Promise.all([
+    supabase.from('profiles').select('email').eq('id', profileId).maybeSingle(),
+    supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'advertiser_funding')
+      .maybeSingle(),
+    supabase
+      .from('wallet_transactions')
+      .select('id, wallet_id, type, amount, paystack_reference, status, created_at, campaign:campaigns(title)')
+      .order('created_at', { ascending: false })
+      .limit(30),
+    supabase
       .from('campaigns')
-      .select('id, title, total_budget, spent_budget, status')
-      .or('status.eq.live,status.eq.budget_committed');
-    campaigns = allCampaigns || [];
-  }
+      .select('id, title, total_budget, spent_budget, status, submissions:submissions!left(id)')
+      .eq('advertiser_id', profileId)
+      .or('status.eq.live,status.eq.budget_committed,status.eq.active'),
+    supabase
+      .from('submissions')
+      .select('payout_amount, status, campaign:campaigns!inner(advertiser_id)')
+      .eq('campaign.advertiser_id', profileId)
+      .or('status.eq.paid,status.eq.verified_pass'),
+  ]);
+
+  const advertiserEmail = profileRes.data?.email || undefined;
+  const wallet = walletRes.data;
+
+  const transactions = transactionsRes.data;
+  let campaigns = campaignsRes.data;
+  const paidSubmissions = submissionsRes.data;
 
   let totalEscrowLocked = 0;
-  const activeCampaignsEscrow = (campaigns || []).map((c) => {
-    const remaining = Math.max(0, Number(c.total_budget) - Number(c.spent_budget));
+  const activeCampaignsEscrow = (campaigns || []).map((c: any) => {
+    const remaining = Math.max(0, Number(c.total_budget || 0) - Number(c.spent_budget || 0));
     totalEscrowLocked += remaining;
+    const creatorsCount = Array.isArray(c.submissions) ? c.submissions.length : 0;
+
     return {
       id: c.id,
       title: c.title,
-      total_budget: Number(c.total_budget),
-      spent_budget: Number(c.spent_budget),
+      total_budget: Number(c.total_budget || 0),
+      spent_budget: Number(c.spent_budget || 0),
       escrow_remaining: remaining,
+      creators_assigned: creatorsCount,
+      status: c.status || 'live',
     };
   });
 
-  const txs = (transactions || []).map((t) => ({
+  const txs = (transactions || []).map((t: any) => ({
     id: t.id,
-    transaction_type: t.transaction_type,
+    transaction_type: t.type || 'deposit',
+    campaign_title: t.campaign?.title || null,
     amount: Number(t.amount),
-    status: t.status,
-    reference: t.reference,
+    status: (t.status || 'completed').toUpperCase(),
+    reference: t.paystack_reference || `KP-TX-${t.id.slice(0, 6)}`,
     created_at: t.created_at,
   }));
 
   const totalSpent = txs
-    .filter((t) => t.transaction_type === 'campaign_allocation' || t.transaction_type === 'debit')
+    .filter((t) => t.transaction_type === 'campaign_funding' || t.transaction_type === 'debit')
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalPayouts = (paidSubmissions || []).reduce(
+    (sum: number, s: any) => sum + Number(s.payout_amount || 0),
+    0
+  );
 
   return {
     walletBalance: Number(wallet?.balance || 0),
     totalEscrowLocked,
+    totalPayouts,
     totalSpent,
+    advertiserEmail,
     transactions: txs,
     activeCampaignsEscrow,
   };

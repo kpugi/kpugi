@@ -1,208 +1,703 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CreditCard, Lock, ArrowUpRight, Plus, ShieldCheck, DollarSign, Clock, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import Link from 'next/link';
+import {
+  Wallet,
+  Lock,
+  Banknote,
+  Plus,
+  Download,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  CreditCard,
+  Zap,
+} from 'lucide-react';
 import { BrandWalletData } from '@/lib/supabase/advertiser';
-import { depositBrandFundsAction } from '@/app/actions/advertiser';
+import { initializePaystackDepositAction, verifyPaystackDepositAction, logCancelledPaystackDepositAction } from '@/app/actions/advertiser';
 
 interface AdvertiserWalletViewProps {
   data: BrandWalletData;
+  verificationNotice?: { text: string; type: 'success' | 'error' } | null;
 }
 
-export default function AdvertiserWalletView({ data }: AdvertiserWalletViewProps) {
+export default function AdvertiserWalletView({ data, verificationNotice }: AdvertiserWalletViewProps) {
+  const {
+    walletBalance,
+    totalEscrowLocked,
+    totalPayouts,
+    advertiserEmail,
+    transactions: rawTransactions,
+    activeCampaignsEscrow: rawEscrow,
+  } = data;
+
+  const [mounted, setMounted] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [depositAmount, setDepositAmount] = useState('50000');
+  const [depositAmount, setDepositAmount] = useState('500000');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(verificationNotice || null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const { walletBalance, totalEscrowLocked, totalSpent, transactions, activeCampaignsEscrow } = data;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
+  // Dynamically load Paystack Inline JS V2 for popup checkout
+  useEffect(() => {
+    if ((window as any).PaystackPop) return;
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v2/inline.js';
+    script.async = true;
+    script.onerror = () => {
+      const fallbackScript = document.createElement('script');
+      fallbackScript.src = 'https://js.paystack.co/v1/inline.js';
+      fallbackScript.async = true;
+      document.body.appendChild(fallbackScript);
+    };
+    document.body.appendChild(script);
+  }, []);
+
+  // Utility to format values compactly in M's and K's (e.g., ₦2.45M, ₦500K)
+  const formatCompactCurrency = (val: number) => {
+    if (val >= 1000000) {
+      const num = val / 1000000;
+      return `₦${num.toFixed(num % 1 === 0 ? 0 : 2)}M`;
+    }
+    if (val >= 1000) {
+      const num = val / 1000;
+      return `₦${num.toFixed(num % 1 === 0 ? 0 : 1)}K`;
+    }
+    return `₦${val.toLocaleString()}`;
+  };
+
+  const format2Decimals = (num: number) => {
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Map 100% real database transactions with clear Description column and exact timestamp
+  const transactions = (rawTransactions || []).map((t) => {
+    let typeLabel = 'Deposit';
+    let desc = 'Wallet Top Up (Paystack)';
+
+    if (t.transaction_type === 'campaign_funding' || t.transaction_type === 'debit') {
+      typeLabel = 'Campaign Funding';
+      desc = t.campaign_title ? `Campaign Allocation: ${t.campaign_title}` : 'Campaign Escrow Allocation';
+    } else if (t.transaction_type === 'unspent_refund') {
+      typeLabel = 'Unspent Refund';
+      desc = 'Unspent Budget Refund';
+    } else if (t.transaction_type === 'deposit') {
+      typeLabel = 'Deposit';
+      desc = 'Wallet Top Up (Paystack)';
+    }
+
+    const isCredit = typeLabel === 'Deposit' || typeLabel === 'Unspent Refund';
+    const txDate = new Date(t.created_at);
+
+    return {
+      id: t.id,
+      date: txDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      time: txDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }),
+      type: typeLabel,
+      description: desc,
+      amount: isCredit ? Math.abs(t.amount) : -Math.abs(t.amount),
+      status: (t.status || 'COMPLETED').toUpperCase(),
+    };
+  });
+
+  const escrowItems = (rawEscrow || []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    amount: e.escrow_remaining,
+    creators: e.creators_assigned,
+    status: 'LOCKED',
+  }));
+
+  // 100% True DB Metric Values
+  const liveWalletBalance = walletBalance || 0;
+  const liveEscrowLocked = totalEscrowLocked || 0;
+  const liveTotalPayouts = totalPayouts || 0;
+
+  // Pagination calculations
+  const totalPages = Math.ceil(transactions.length / itemsPerPage) || 1;
+  const paginatedTransactions = transactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Paystack V2 Popup Deposit Handler (Matching Campaign Creation Flow)
   const handleDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMsg(null);
 
-    const formData = new FormData();
-    formData.append('amount', depositAmount);
-    formData.append('reference', `KP-DEP-${Date.now()}`);
+    const cleanAmountStr = String(depositAmount || '').replace(/[^0-9.]/g, '');
+    const amtNum = parseFloat(cleanAmountStr) || 0;
+    if (amtNum < 5000) {
+      setMsg({ text: 'Minimum deposit amount is ₦5,000 NGN. Please enter ₦5,000 or more to proceed.', type: 'error' });
+      setIsSubmitting(false);
+      return;
+    }
 
-    const res = await depositBrandFundsAction(formData);
-    setIsSubmitting(false);
+    const paystackPublicKey =
+      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_3630914972cbf0ef4986fc0ae2181d38a94f9412';
+    const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    if (res.success) {
-      setShowDepositModal(false);
-      setMsg({ text: `₦${Number(depositAmount).toLocaleString()} successfully added to brand wallet balance!`, type: 'success' });
+    const onPaymentSuccess = async (ref: string) => {
+      setIsSubmitting(true);
+      const verifyRes = await verifyPaystackDepositAction(ref);
+      setIsSubmitting(false);
+
+      if (verifyRes.success) {
+        setShowDepositModal(false);
+        setMsg({
+          text: `₦${amtNum.toLocaleString()} successfully verified & deposited into your brand wallet!`,
+          type: 'success',
+        });
+      } else {
+        setMsg({ text: verifyRes.error || 'Paystack payment verification failed.', type: 'error' });
+      }
+    };
+
+    const onPaymentCancel = async () => {
+      setIsSubmitting(false);
+      await logCancelledPaystackDepositAction(paystackRef, amtNum);
+      setMsg({
+        text: 'Oops!🤭, That Payment didn\'t go through now, did it?',
+        type: 'error',
+      });
+    };
+
+    // Trigger Paystack V2 Popup API
+    try {
+      if ((window as any).PaystackPop) {
+        const paystack = new (window as any).PaystackPop();
+        paystack.newTransaction({
+          key: paystackPublicKey,
+          email: advertiserEmail || 'advertiser@kpugi.com',
+          amount: amtNum * 100, // kobo
+          currency: 'NGN',
+          ref: paystackRef,
+          onSuccess: (transaction: any) => onPaymentSuccess(transaction.reference || paystackRef),
+          onCancel: onPaymentCancel,
+          onClose: onPaymentCancel,
+        });
+        return;
+      }
+    } catch (e: any) {
+      if (typeof (window as any).PaystackPop?.setup === 'function') {
+        const handler = (window as any).PaystackPop.setup({
+          key: paystackPublicKey,
+          email: advertiserEmail || 'advertiser@kpugi.com',
+          amount: amtNum * 100,
+          currency: 'NGN',
+          ref: paystackRef,
+          callback: (response: any) => onPaymentSuccess(response.reference || paystackRef),
+          onClose: onPaymentCancel,
+        });
+        handler.openIframe();
+        return;
+      }
+    }
+
+    // Fallback: server initialize if popup unavailable
+    const initRes = await initializePaystackDepositAction(amtNum);
+    if (initRes.success && initRes.authorization_url) {
+      window.location.href = initRes.authorization_url;
     } else {
-      setMsg({ text: res.error || 'Failed to complete deposit', type: 'error' });
+      setIsSubmitting(false);
+      setMsg({ text: initRes.error || 'Failed to launch Paystack checkout.', type: 'error' });
     }
   };
 
+  const handleExportStatementCSV = () => {
+    const csvLines = [
+      `"===================================================================================================="`,
+      `"KPUGI ADVERTISING PLATFORM — BRAND WALLET STATEMENT"`,
+      `"===================================================================================================="`,
+      `"Generated At:","${new Date().toLocaleString()}"`,
+      `"Total Wallet Balance (Available):","NGN ${format2Decimals(liveWalletBalance)}"`,
+      `"Active Campaign Escrow Locked:","NGN ${format2Decimals(liveEscrowLocked)}"`,
+      `"Total All-Time Creator Payouts Released:","NGN ${format2Decimals(liveTotalPayouts)}"`,
+      `""`,
+      `"--- TRANSACTION HISTORY LEDGER ---"`,
+      `"Date","Type","Description","Amount (NGN)","Status"`,
+    ];
+
+    transactions.forEach((tx) => {
+      const amtStr = tx.amount > 0 ? `+${tx.amount}` : `${tx.amount}`;
+      csvLines.push(`"${tx.date}","${tx.type}","${tx.description}",${amtStr},"${tx.status}"`);
+    });
+
+    csvLines.push(`""`);
+    csvLines.push(`"===================================================================================================="`);
+    csvLines.push(`"End of Official Kpugi Wallet Statement. Confidential & Proprietary."`);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + csvLines.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `kpugi_wallet_statement_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="space-y-6">
-
-      {/* Top Banner & Balance Overview */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 text-white shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Brand Escrow & Funding Wallet</span>
-            <h1 className="font-display text-3xl sm:text-4xl font-black text-white mt-1">
-              ₦{walletBalance.toLocaleString()}
-            </h1>
-            <span className="text-xs text-slate-400 mt-1 block">Unallocated Available Cash Balance</span>
-          </div>
-
-          <button
-            onClick={() => setShowDepositModal(true)}
-            className="px-6 py-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-kpugi-blue/30 transition-all flex items-center justify-center gap-2 self-start sm:self-center"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Brand Funds</span>
-          </button>
+    <div className="space-y-6 pb-12 font-sans">
+      {/* Top Section Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Financial Overview
+          </h1>
+          <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
+            Manage your institutional capital and active campaign escrows.
+          </p>
         </div>
 
-        {/* Escrow Breakdown */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-800">
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[11px] font-bold uppercase text-slate-400 block">Locked Campaign Escrow</span>
-              <span className="font-display font-bold text-lg text-amber-300">₦{totalEscrowLocked.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[11px] font-bold uppercase text-slate-400 block">Total Historical Spent</span>
-              <span className="font-display font-bold text-lg text-emerald-300">₦{totalSpent.toLocaleString()}</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExportStatementCSV}
+            className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-2xs"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>Export Statement</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDepositModal(true)}
+            className="px-5 py-2.5 rounded-xl bg-[#4338ca] text-white font-bold text-xs shadow-2xs hover:bg-indigo-700 transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Funds</span>
+          </button>
         </div>
       </div>
 
       {msg && (
-        <div className={`p-4 rounded-2xl text-xs font-bold ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-          {msg.text}
+        <div
+          className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between ${
+            msg.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {msg.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span>{msg.text}</span>
+          </div>
+          <button onClick={() => setMsg(null)} className="text-slate-400 hover:text-slate-600">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Active Campaign Escrow List */}
-      <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-        <h3 className="font-display font-bold text-lg text-kpugi-ink">Active Campaign Escrow Allocations</h3>
+      {/* 3 Top Financial Summary Cards Grid (100% Real DB Data) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Total Wallet Balance */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Total Wallet Balance
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#4338ca] flex items-center justify-center border border-blue-100/60">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {formatCompactCurrency(liveWalletBalance)}
+            </p>
+            <span className="text-[11px] font-medium text-slate-400 mt-1 block">
+              Unallocated funds available
+            </span>
+          </div>
+        </div>
 
-        {activeCampaignsEscrow.length === 0 ? (
-          <p className="text-xs text-kpugi-slate py-4">No active live campaigns locking escrow funds currently.</p>
-        ) : (
-          <div className="space-y-3">
-            {activeCampaignsEscrow.map((camp) => (
-              <div key={camp.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-xs text-slate-900 block">{camp.title}</span>
-                  <span className="text-[11px] text-slate-500">
-                    Spent: ₦{camp.spent_budget.toLocaleString()} of ₦{camp.total_budget.toLocaleString()}
-                  </span>
+        {/* Card 2: Active Escrow */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Active Escrow
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/60">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {formatCompactCurrency(liveEscrowLocked)}
+            </p>
+            <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1.5 mt-1">
+              <span className="w-2 h-2 rounded-full bg-[#4338ca] animate-pulse" />
+              Locked across {escrowItems.length} campaign{escrowItems.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Total Payouts */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Total Payouts
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/60">
+              <Banknote className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {formatCompactCurrency(liveTotalPayouts)}
+            </p>
+            <span className="text-[11px] font-medium text-slate-400 mt-1 block">
+              All-time released to creators
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Layout Grid: Transaction History (Left 8 cols) & Active Campaign Breakdown (Right 4 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Transaction History */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
+            {/* Card Header (No 'View All' link) */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="font-display text-base sm:text-lg font-bold text-slate-900">
+                Transaction History
+              </h2>
+              <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+                {transactions.length} Record{transactions.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-50/70">
+                    <th className="py-3 px-5">Date & Time</th>
+                    <th className="py-3 px-4">Type</th>
+                    <th className="py-3 px-4">Description</th>
+                    <th className="py-3 px-4 text-right">Amount</th>
+                    <th className="py-3 px-5 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                  {paginatedTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                        No transaction history recorded yet. Make a deposit to fund your brand wallet.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedTransactions.map((tx) => {
+                      const isCredit = tx.amount > 0;
+                      return (
+                        <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-4 px-5">
+                            <span className="font-mono font-bold text-slate-800 text-xs block">{tx.date}</span>
+                            <span className="font-mono text-[10px] text-slate-400 font-medium block">{tx.time}</span>
+                          </td>
+                          <td className="py-4 px-4 font-bold text-slate-800">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
+                                tx.type === 'Deposit'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                  : tx.type === 'Unspent Refund'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                    : 'bg-slate-100 text-slate-800 border border-slate-200'
+                              }`}
+                            >
+                              {tx.type}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 font-medium text-slate-600">{tx.description}</td>
+                          <td
+                            className={`py-4 px-4 text-right font-mono font-extrabold ${
+                              isCredit ? 'text-blue-600' : 'text-slate-900'
+                            }`}
+                          >
+                            {isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}
+                          </td>
+                          <td className="py-4 px-5 text-right">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                tx.status === 'COMPLETED'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                  : tx.status === 'CANCELLED'
+                                    ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
+                                    : tx.status === 'FAILED'
+                                      ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
+                                      : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                              }`}
+                            >
+                              {tx.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Responsive Card List View */}
+            <div className="block sm:hidden divide-y divide-slate-100">
+              {paginatedTransactions.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">
+                  No transaction history recorded yet. Make a deposit to fund your brand wallet.
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-amber-700 font-bold uppercase block">Escrow Locked</span>
-                  <span className="font-mono font-bold text-xs text-amber-800">₦{camp.escrow_remaining.toLocaleString()}</span>
+              ) : (
+                paginatedTransactions.map((tx) => {
+                  const isCredit = tx.amount > 0;
+                  return (
+                    <div key={tx.id} className="p-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-900">{tx.type}</span>
+                        <span
+                          className={`font-mono font-extrabold ${
+                            isCredit ? 'text-blue-600' : 'text-slate-900'
+                          }`}
+                        >
+                          {isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span className="truncate max-w-[180px]">{tx.description}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] text-slate-400">{tx.date} • {tx.time}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              tx.status === 'COMPLETED'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : tx.status === 'CANCELLED'
+                                  ? 'bg-slate-200 text-slate-800'
+                                  : tx.status === 'FAILED'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {tx.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>
+                Showing {transactions.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
+                {Math.min(currentPage * itemsPerPage, transactions.length)} of {transactions.length} transactions
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Active Campaign Breakdown Card */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-1">
+              <h3 className="font-display text-base font-bold text-slate-900">
+                Active Campaign Breakdown
+              </h3>
+              <button type="button" className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {escrowItems.length === 0 ? (
+                <p className="text-xs text-slate-400 py-3 text-center">No active campaign breakdown items.</p>
+              ) : (
+                escrowItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3 hover:bg-slate-100/60 transition-colors"
+                  >
+                    <div>
+                      <span className="font-bold text-xs text-slate-900 block truncate max-w-[160px]">
+                        {item.title}
+                      </span>
+                      <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
+                        {item.creators} Creator{item.creators !== 1 ? 's' : ''} assigned
+                      </span>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="font-mono font-black text-xs text-slate-900 block">
+                        {formatCompactCurrency(item.amount)}
+                      </span>
+                      <span className="inline-block text-[9px] font-extrabold uppercase tracking-widest text-slate-500 bg-slate-200/70 px-1.5 py-0.5 rounded mt-0.5">
+                        LOCKED
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <Link
+              href="/b/campaigns"
+              className="w-full py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 shadow-2xs block text-center"
+            >
+              <span>Manage Escrow</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Paystack Checkout Deposit Modal (+ Add Funds) */}
+      {showDepositModal && mounted && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-5 animate-in fade-in zoom-in-95 my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#4338ca] flex items-center justify-center font-bold">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <h3 className="font-display font-extrabold text-base text-slate-900">Add Funds</h3>
+              </div>
+              <button
+                onClick={() => setShowDepositModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleDepositSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 text-xs uppercase tracking-wider">
+                    Deposit Amount (₦ NGN)
+                  </label>
+                  <span className="text-[11px] font-bold text-slate-400">Min: ₦5,000</span>
+                </div>
+                <input
+                  type="number"
+                  min={5000}
+                  step={1000}
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-2xl border font-mono font-black text-lg text-slate-900 focus:outline-none transition-colors ${
+                    (parseFloat(String(depositAmount || '').replace(/[^0-9.]/g, '')) || 0) < 5000
+                      ? 'border-rose-300 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/30'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#4338ca]/20'
+                  }`}
+                  required
+                />
+                {(parseFloat(String(depositAmount || '').replace(/[^0-9.]/g, '')) || 0) < 5000 && (
+                  <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    Minimum deposit amount is ₦5,000 (NGN)
+                  </p>
+                )}
+              </div>
+
+              {/* Quick Select Presets */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Quick Preset Options</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {['100000', '500000', '1000000'].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setDepositAmount(amt)}
+                      className={`py-2 rounded-xl text-xs font-mono font-bold border transition-colors ${
+                        depositAmount === amt
+                          ? 'bg-[#4338ca] text-white border-[#4338ca]'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {formatCompactCurrency(Number(amt))}
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))}
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" /> Payment Gateway
+                </span>
+                <span className="font-bold text-slate-900 font-mono">Paystack Popup</span>
+              </div>
+
+              <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                Payments trigger an inline Paystack popup modal. Funds are credited ONLY after Paystack confirms successful payment.
+              </p>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDepositModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || (parseFloat(String(depositAmount || '').replace(/[^0-9.]/g, '')) || 0) < 5000}
+                  className="px-6 py-2.5 rounded-xl bg-[#4338ca] text-white text-xs font-bold shadow-2xs hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Opening Paystack...</span>
+                    </>
+                  ) : (
+                    <span>Pay with Paystack</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
-
-      {/* Transaction Ledger Table */}
-      <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-        <h3 className="font-display font-bold text-lg text-kpugi-ink">Transaction History</h3>
-
-        {transactions.length === 0 ? (
-          <p className="text-xs text-kpugi-slate py-4">No transaction history recorded yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
-                  <th className="py-3 px-3">Date</th>
-                  <th className="py-3 px-3">Type</th>
-                  <th className="py-3 px-3">Reference</th>
-                  <th className="py-3 px-3 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 text-slate-600 font-medium">
-                      {new Date(tx.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        tx.transaction_type === 'deposit' ? 'bg-emerald-100 text-emerald-800' :
-                        tx.transaction_type === 'unspent_refund' ? 'bg-indigo-100 text-indigo-800' :
-                        'bg-slate-100 text-slate-800'
-                      }`}>
-                        {tx.transaction_type.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-mono text-[11px] text-slate-500">{tx.reference}</td>
-                    <td className={`py-3 px-3 text-right font-mono font-bold ${
-                      tx.transaction_type === 'deposit' || tx.transaction_type === 'unspent_refund' ? 'text-emerald-600' : 'text-slate-900'
-                    }`}>
-                      {tx.transaction_type === 'deposit' || tx.transaction_type === 'unspent_refund' ? '+' : '-'}₦{tx.amount.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Deposit Modal */}
-      {showDepositModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleDepositSubmit} className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-kpugi-border">
-            <h3 className="font-display font-bold text-lg text-kpugi-ink">Add Brand Funding</h3>
-            <p className="text-xs text-kpugi-slate">
-              Enter deposit amount to fund your brand wallet for launching creator campaigns.
-            </p>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700">Deposit Amount (₦)</label>
-              <input
-                type="number"
-                min="5000"
-                step="5000"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                className="w-full p-3 rounded-xl border border-kpugi-border text-sm font-bold focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs transition-colors"
-              >
-                Add Funds →
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDepositModal(false)}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+        </div>,
+        document.body
       )}
-
     </div>
   );
 }

@@ -701,3 +701,84 @@ export async function updateCampaignDetailsAction(payload: {
     return { success: false, error: err?.message || 'Server error updating campaign' };
   }
 }
+
+/**
+ * AI Cross-Campaign Analytics Insights Generator
+ */
+export async function generateAIAnalyticsInsightsAction(
+  campaignsPayload: Array<{ title: string; views: number; spent: number; cpm: number; channel: string }>
+) {
+  try {
+    if (!campaignsPayload || campaignsPayload.length === 0 || campaignsPayload.every((c) => c.views === 0)) {
+      return {
+        success: true,
+        hasData: false,
+        insights: null,
+        message: 'No active view delivery data registered yet. Run live campaigns to generate AI ROI analysis.',
+      };
+    }
+
+    const nvidiaKey = process.env.NVIDIA_API_KEY;
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.3-70b-instruct';
+
+    const totalViews = campaignsPayload.reduce((sum, c) => sum + c.views, 0);
+    const totalSpent = campaignsPayload.reduce((sum, c) => sum + c.spent, 0);
+    const cpv = totalViews > 0 ? totalSpent / totalViews : 0;
+    const avgCpm = totalViews > 0 ? (totalSpent / totalViews) * 1000 : 0;
+
+    if (!nvidiaKey) {
+      return {
+        success: true,
+        hasData: true,
+        insights: {
+          optimizationTip: `Based on ${campaignsPayload.length} live campaign placement(s), your current effective Cost-Per-View is ₦${cpv.toFixed(2)}. Allocating budget toward higher-throughput channel formats will maximize overall view delivery.`,
+          benchmarkComparison: `Your brand's blended CPM of ₦${Math.round(avgCpm).toLocaleString()} is being evaluated against standard Nigeria ad-network benchmarks (₦1,500 - ₦2,000 / 1k views).`,
+        },
+      };
+    }
+
+    const promptText = JSON.stringify(campaignsPayload);
+    const systemInstruction = `You are Kpugi AI, a senior performance ad analyst for Nigeria's leading view-based ad platform. Analyze the provided real campaign data payload and generate 2 short, highly accurate, executive insights:
+1. Optimization Tip (1-2 sentences on channel/budget performance based STRICTLY on data provided).
+2. Benchmark Comparison (1-2 sentences comparing effective CPM with typical Nigeria CPM benchmarks of ₦1,500-₦2,000).
+Return ONLY a valid JSON object in the exact format: {"optimizationTip": "...", "benchmarkComparison": "..."}`;
+
+    const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${nvidiaKey}`,
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: `Real Campaign Data:\n${promptText}` },
+        ],
+        temperature: 0.4,
+        max_tokens: 300,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('NVIDIA AI request failed');
+    }
+
+    const jsonRes = await res.json();
+    const content = jsonRes.choices?.[0]?.message?.content || '';
+    const parsed = JSON.parse(content.replace(/```json|```/g, '').trim());
+
+    return {
+      success: true,
+      hasData: true,
+      insights: parsed,
+    };
+  } catch (error: any) {
+    console.error('[AI Analytics Insights] Error:', error);
+    return {
+      success: false,
+      hasData: false,
+      error: error?.message || 'Failed to generate AI insights',
+    };
+  }
+}

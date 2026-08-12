@@ -406,54 +406,253 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
   return { success: true };
 }
 
-// ─── 4. Deposit Brand Funds Action ─────────────────────────────────────────
+// ─── 4. Paystack Brand Wallet Deposit Actions ─────────────────────────────────────────
 
-export async function depositBrandFundsAction(formData: FormData) {
+/**
+ * 1. Initialize Paystack Deposit Checkout
+ */
+export async function initializePaystackDepositAction(amount: number) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile || !userProfile.profile) {
     return { success: false, error: 'Unauthorized: Please sign in.' };
   }
 
-  const amount = Number(formData.get('amount') || 0);
-  const reference = (formData.get('reference') as string || `KP-DEP-${Date.now()}`).trim();
-
   if (amount < 5000) {
-    return { success: false, error: 'Minimum funding deposit amount is ₦5,000.' };
+    return { success: false, error: 'Minimum deposit amount is ₦5,000.' };
   }
+
+  const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+  if (!paystackSecret) {
+    return { success: false, error: 'Paystack Secret Key is missing in environment variables.' };
+  }
+
+  const reference = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const callbackUrl = `${baseUrl}/b/wallet`;
+
+  try {
+    const res = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${paystackSecret}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: userProfile.profile.email || 'brand@kpugi.com',
+        amount: Math.round(amount * 100), // convert NGN to kobo
+        reference: reference,
+        callback_url: callbackUrl,
+        metadata: {
+          profile_id: userProfile.profile.id,
+          wallet_type: 'advertiser_funding',
+          deposit_amount: amount,
+        },
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.status) {
+      console.error('[Paystack Initialize] Error:', json);
+      return { success: false, error: json.message || 'Paystack initialization failed.' };
+    }
+
+    return {
+      success: true,
+      authorization_url: json.data.authorization_url,
+      access_code: json.data.access_code,
+      reference: json.data.reference,
+    };
+  } catch (err: any) {
+    console.error('[Paystack Initialize] Exception:', err);
+    return { success: false, error: err?.message || 'Network error connecting to Paystack.' };
+  }
+}
+
+/**
+ * 2. Verify Paystack Deposit Reference & Credit Wallet (Idempotent)
+ */
+export async function verifyPaystackDepositAction(reference: string, shouldRevalidate: boolean = true) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+  if (!paystackSecret) {
+    return { success: false, error: 'Paystack Secret Key missing.' };
+  }
+
+  const profileId = userProfile.profile.id;
+  const supabase = createAdminClient();
+
+  // 1. Database-Level Idempotency Check: Prevent Double Crediting
+  const { data: existingTx } = await supabase
+    .from('wallet_transactions')
+    .select('id, amount, status')
+    .eq('paystack_reference', reference)
+    .maybeSingle();
+
+  if (existingTx) {
+    return {
+      success: existingTx.status === 'completed',
+      alreadyProcessed: true,
+      amount: Number(existingTx.amount),
+      status: existingTx.status || 'completed',
+    };
+  }
+
+  try {
+    // 2. Verify with Paystack API
+    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${paystackSecret}`,
+      },
+    });
+
+    const json = await res.json();
+    const paystackData = json.data;
+    const amountNGN = paystackData?.amount ? Number(paystackData.amount) / 100 : 0;
+
+    // 3. Get or create advertiser funding wallet
+    let { data: wallet } = await supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'advertiser_funding')
+      .maybeSingle();
+
+    if (!wallet) {
+      const { data: newWallet, error: walletCreateErr } = await supabase
+        .from('wallets')
+        .insert({
+          profile_id: profileId,
+          wallet_type: 'advertiser_funding',
+          balance: 0,
+        })
+        .select('id, balance')
+        .single();
+
+      if (walletCreateErr || !newWallet) {
+        return { success: false, error: 'Failed to create brand wallet.' };
+      }
+      wallet = newWallet;
+    }
+
+    // 4. If Paystack verification fails or payment was cancelled/abandoned
+    if (!res.ok || !json.status || paystackData?.status !== 'success') {
+      const failedStatus = paystackData?.status === 'abandoned' ? 'cancelled' : 'failed';
+
+      // Log cancelled/failed transaction attempt in DB
+      await supabase.from('wallet_transactions').insert({
+        wallet_id: wallet.id,
+        type: 'deposit',
+        amount: amountNGN || 0,
+        paystack_reference: reference,
+        status: failedStatus,
+        created_at: new Date().toISOString(),
+      });
+
+      if (shouldRevalidate) {
+        revalidatePath('/b/wallet');
+      }
+
+      return {
+        success: false,
+        status: failedStatus,
+        error: `Payment ${failedStatus}. No funds were deducted.`,
+      };
+    }
+
+    // 5. Success Path: Update wallet balance atomically
+    const newBalance = Number(wallet.balance) + amountNGN;
+    await supabase
+      .from('wallets')
+      .update({ balance: newBalance })
+      .eq('id', wallet.id);
+
+    // 6. Record verified transaction as 'completed'
+    await supabase.from('wallet_transactions').insert({
+      wallet_id: wallet.id,
+      type: 'deposit',
+      amount: amountNGN,
+      paystack_reference: reference,
+      status: 'completed',
+      created_at: new Date().toISOString(),
+    });
+
+    // 7. Trigger Notifications (Knock In-App + Resend Email)
+    const { notifyAdvertiserWalletFunded } = await import('@/lib/notifications/advertiser');
+    notifyAdvertiserWalletFunded({
+      clerkId: userProfile.profile.clerk_id,
+      email: userProfile.profile.email || 'brand@kpugi.com',
+      amount: amountNGN,
+      newBalance,
+      reference,
+      profileId,
+    }).catch((err) => console.error('[Paystack Deposit Notification Error]:', err));
+
+    if (shouldRevalidate) {
+      revalidatePath('/b/wallet');
+      revalidatePath('/b/dashboard');
+    }
+
+    return { success: true, amount: amountNGN, reference, status: 'completed' };
+  } catch (err: any) {
+    console.error('[verifyPaystackDepositAction] Error:', err);
+    return { success: false, error: err?.message || 'Error verifying Paystack transaction' };
+  }
+}
+
+/**
+ * 3. Log Cancelled Paystack Deposit Attempt in History
+ */
+export async function logCancelledPaystackDepositAction(reference: string, amount: number) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) return { success: false };
 
   const supabase = createAdminClient();
 
+  // Check if reference already logged
+  const { data: existing } = await supabase
+    .from('wallet_transactions')
+    .select('id')
+    .eq('paystack_reference', reference)
+    .maybeSingle();
+
+  if (existing) return { success: true };
+
   const { data: wallet } = await supabase
     .from('wallets')
-    .select('id, balance')
+    .select('id')
     .eq('profile_id', userProfile.profile.id)
     .eq('wallet_type', 'advertiser_funding')
-    .single();
+    .maybeSingle();
 
-  if (!wallet) {
-    return { success: false, error: 'Brand wallet not found.' };
-  }
+  if (!wallet) return { success: false };
 
-  // Credit balance
-  await supabase
-    .from('wallets')
-    .update({ balance: Number(wallet.balance) + amount })
-    .eq('id', wallet.id);
-
-  // Record transaction
   await supabase.from('wallet_transactions').insert({
-    profile_id: userProfile.profile.id,
-    wallet_type: 'advertiser_funding',
-    transaction_type: 'deposit',
+    wallet_id: wallet.id,
+    type: 'deposit',
     amount: amount,
-    status: 'completed',
-    reference: reference,
+    paystack_reference: reference,
+    status: 'cancelled',
     created_at: new Date().toISOString(),
   });
 
   revalidatePath('/b/wallet');
-  revalidatePath('/b/dashboard');
   return { success: true };
+}
+
+/**
+ * 3. Legacy Direct Deposit Action (Deprecated - uses verifyPaystackDepositAction)
+ */
+export async function depositBrandFundsAction(formData: FormData) {
+  const reference = (formData.get('reference') as string || '').trim();
+  if (reference) {
+    return await verifyPaystackDepositAction(reference);
+  }
+  return { success: false, error: 'Direct unverified deposits are disabled. Please pay via Paystack.' };
 }
 
 // ─── 5. Update Brand Profile Details Action ────────────────────────────────
