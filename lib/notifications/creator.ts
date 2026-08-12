@@ -1,5 +1,5 @@
 import { triggerNotification } from '@/lib/knock/notify';
-import { sendEmail } from '@/lib/resend/send-email';
+import { sendEmail, renderReusableEmailTemplate } from '@/lib/resend/send-email';
 
 export async function notifyCreatorWelcome({
   clerkId,
@@ -293,14 +293,36 @@ export async function notifyCreatorPayoutReleased({
     profileId,
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Yooo! You got paid 💰! ₦${amount.toLocaleString()} just hit your creator wallet for "${campaignTitle}"`,
+    previewText: `₦${amount.toLocaleString()} added to your wallet!`,
+    icon: 'wallet',
+    headline: 'Yooo! You Got Paid 💰!',
+    subtitle: `Your video submission for "${campaignTitle}" passed verification and funds have been credited to your creator wallet.`,
+    cardTitle: 'Payout Details',
+    details: [
+      { label: 'Campaign Title', value: campaignTitle },
+      { label: 'Date Credited', value: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+      { label: 'Updated Wallet Balance', value: `₦${newBalance.toLocaleString()}`, isMonospace: true },
+    ],
+    highlightBar: {
+      label: 'Earnings Credited',
+      value: `₦${amount.toLocaleString()}`,
+      bgColor: '#10B981',
+    },
+    cta: {
+      label: 'View Wallet & Withdraw',
+      url: `${appUrl}/c/wallet`,
+      subtext: 'Withdraw your earnings straight to your bank account anytime.',
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `💰 Wallet Credited: ₦${amount.toLocaleString()} from "${campaignTitle}"`,
-    html: `
-      <h2 style="margin-top:0; color:#16a34a;">Wallet Credited 💵</h2>
-      <p><strong>₦${amount.toLocaleString()}</strong> has been credited to your Kpugi creator earnings wallet from <strong>"${campaignTitle}"</strong>.</p>
-      <p><strong>Updated Wallet Balance:</strong> ₦${newBalance.toLocaleString()}</p>
-    `,
+    subject: `Yooo! You got paid 💰! ₦${amount.toLocaleString()} just hit your creator wallet for "${campaignTitle}"`,
+    html,
   });
 }
 

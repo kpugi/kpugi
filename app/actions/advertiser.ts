@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 export async function createCampaignAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile || !userProfile.profile) {
-    return { success: false, error: 'Unauthorized: Please sign in.' };
+    return { success: false, error: "Hol' up ✋... You gotta sign in first to get access!" };
   }
 
   if (userProfile.role !== 'advertiser' && !userProfile.advertiserProfile) {
@@ -25,11 +25,11 @@ export async function createCampaignAction(formData: FormData) {
   const channelsRaw = (formData.get('channels') as string || 'TikTok,Instagram,YouTube,X').split(',');
 
   if (!title || !description) {
-    return { success: false, error: 'Campaign title and description are required.' };
+    return { success: false, error: "Don't leave us hanging! 👀 Title and description need some love." };
   }
 
   if (totalBudget < 10000) {
-    return { success: false, error: 'Minimum campaign budget is ₦10,000.' };
+    return { success: false, error: "Let's make it count 🚀... Minimum campaign budget is ₦10,000!" };
   }
 
   if (cpmRate < 100) {
@@ -50,7 +50,7 @@ export async function createCampaignAction(formData: FormData) {
   if (currentBalance < totalBudget) {
     return {
       success: false,
-      error: `Insufficient brand funding balance. Available: ₦${currentBalance.toLocaleString()}, Required: ₦${totalBudget.toLocaleString()}. Please deposit funds first.`,
+      error: `Bag ain't deep enough yet 💼... You got ₦${currentBalance.toLocaleString()} available but this campaign requires ₦${totalBudget.toLocaleString()}. Top up real quick!`,
     };
   }
 
@@ -414,11 +414,11 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
 export async function initializePaystackDepositAction(amount: number) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile || !userProfile.profile) {
-    return { success: false, error: 'Unauthorized: Please sign in.' };
+    return { success: false, error: "Hol' up ✋... You gotta sign in first to get access!" };
   }
 
   if (amount < 5000) {
-    return { success: false, error: 'Minimum deposit amount is ₦5,000.' };
+    return { success: false, error: "Hold on now 🛑... Minimum top-up is ₦5,000! Let's get them numbers up." };
   }
 
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
@@ -582,15 +582,18 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
     });
 
     // 7. Trigger Notifications (Knock In-App + Resend Email)
-    const { notifyAdvertiserWalletFunded } = await import('@/lib/notifications/advertiser');
-    notifyAdvertiserWalletFunded({
-      clerkId: userProfile.profile.clerk_id,
-      email: userProfile.profile.email || 'brand@kpugi.com',
-      amount: amountNGN,
-      newBalance,
-      reference,
-      profileId,
-    }).catch((err) => console.error('[Paystack Deposit Notification Error]:', err));
+    const recipientEmail = userProfile.profile.email || paystackData?.customer?.email;
+    if (recipientEmail) {
+      const { notifyAdvertiserWalletFunded } = await import('@/lib/notifications/advertiser');
+      notifyAdvertiserWalletFunded({
+        clerkId: userProfile.profile.clerk_id,
+        email: recipientEmail,
+        amount: amountNGN,
+        newBalance,
+        reference,
+        profileId,
+      }).catch((err) => console.error('[Paystack Deposit Notification Error]:', err));
+    }
 
     if (shouldRevalidate) {
       revalidatePath('/b/wallet');
@@ -652,7 +655,7 @@ export async function depositBrandFundsAction(formData: FormData) {
   if (reference) {
     return await verifyPaystackDepositAction(reference);
   }
-  return { success: false, error: 'Direct unverified deposits are disabled. Please pay via Paystack.' };
+  return { success: false, error: "No shortcuts here! 🙅‍♂️ All deposits gotta go through Paystack popup." };
 }
 
 // ─── 5. Update Brand Profile Details Action ────────────────────────────────

@@ -136,7 +136,7 @@ export async function requestPayoutAction(formData: FormData) {
 
   const amount = Number(formData.get('amount'));
   if (isNaN(amount) || amount < 10000) {
-    return { success: false, error: 'Minimum withdrawal amount is ₦10,000' };
+    return { success: false, error: "Hold on now 🛑... Minimum withdrawal is ₦10,000!" };
   }
 
   const supabase = createAdminClient();
@@ -166,7 +166,7 @@ export async function requestPayoutAction(formData: FormData) {
 
   const currentBalance = Number(wallet?.balance || 0);
   if (currentBalance < amount) {
-    return { success: false, error: 'Insufficient wallet balance' };
+    return { success: false, error: "Bag ain't deep enough yet 💼... Insufficient wallet balance for this withdrawal." };
   }
 
   const newBalance = currentBalance - amount;

@@ -1,5 +1,5 @@
 import { triggerNotification } from '@/lib/knock/notify';
-import { sendEmail } from '@/lib/resend/send-email';
+import { sendEmail, renderReusableEmailTemplate } from '@/lib/resend/send-email';
 
 export async function notifyAdvertiserWelcome({
   clerkId,
@@ -22,28 +22,25 @@ export async function notifyAdvertiserWelcome({
     profileId,
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Welcome to the big leagues, ${companyName}! 🏢`,
+    previewText: 'Launch performance campaigns backed by 100% escrow protection.',
+    icon: 'star',
+    headline: 'Welcome to the Big Leagues 🏢!',
+    subtitle: `Hello ${companyName}, your brand partner account is ready. Fund your balance, launch performance video campaigns, and pay only for verified view milestones reached by creators.`,
+    cta: {
+      label: 'Create First Campaign',
+      url: `${appUrl}/campaigns/new`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Welcome to Kpugi Brand Console, ${companyName}! 🏢`,
+    subject: `Welcome to the big leagues, ${companyName}! 🏢`,
     previewText: 'Launch performance campaigns backed by 100% escrow protection.',
-    html: `
-      <h2 style="margin-top:0;">Welcome to Kpugi Brand Console! 🏢</h2>
-      <p>Hello <strong>${companyName}</strong>,</p>
-      <p>Your brand partner account is ready. Fund your balance, launch performance video campaigns, and pay only for verified view milestones reached by creators.</p>
-      
-      <div style="background:#f8fafc; border-left:4px solid #2563eb; padding:16px; margin:20px 0;">
-        <h4 style="margin:0 0 8px 0;">Why Brands Choose Kpugi:</h4>
-        <ul style="margin:0; padding-left:20px;">
-          <li><strong>Zero Waste:</strong> Funds stay in escrow until creators hit verified view floors.</li>
-          <li><strong>Automated Scraping:</strong> View count auditing runs automatically every 6 hours.</li>
-          <li><strong>Direct Creators:</strong> Top creators claim slots and deliver authentic short-form UGC videos.</li>
-        </ul>
-      </div>
-
-      <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/campaigns/new" class="btn">Create First Campaign</a>
-      </p>
-    `,
+    html,
   });
 }
 
@@ -74,29 +71,37 @@ export async function notifyAdvertiserWalletFunded({
     profileId,
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Wallet Loaded 💳! ₦${amount.toLocaleString()} is ready to fund your next viral campaign`,
+    previewText: 'Your escrow wallet has been funded successfully.',
+    icon: 'wallet',
+    headline: 'Wallet Loaded 💳!',
+    subtitle: 'Say less! 💰 Your deposit payment was successfully confirmed via Paystack.',
+    cardTitle: 'Transaction Details',
+    details: [
+      { label: 'Paystack Reference', value: reference, isMonospace: true },
+      { label: 'Date', value: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+      { label: 'Total Available Balance', value: `₦${newBalance.toLocaleString()}`, isMonospace: true },
+    ],
+    highlightBar: {
+      label: 'Amount Deposited',
+      value: `₦${amount.toLocaleString()}`,
+      bgColor: '#2563EB',
+    },
+    cta: {
+      label: 'View Dashboard',
+      url: `${appUrl}/b/wallet`,
+      subtext: 'Or login to your account to view full transaction history.',
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Deposit Confirmed: ₦${amount.toLocaleString()} added to your Kpugi balance`,
+    subject: `Wallet Loaded 💳! ₦${amount.toLocaleString()} is ready to fund your next viral campaign`,
     previewText: 'Your escrow wallet has been funded successfully.',
-    html: `
-      <h2 style="margin-top:0; color:#16a34a;">Wallet Deposit Received 💳</h2>
-      <p>We received your deposit payment via Paystack.</p>
-      
-      <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px;">
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Amount Deposited:</td>
-          <td style="padding:10px 16px; font-weight:700; text-align:right;">₦${amount.toLocaleString()}</td>
-        </tr>
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Paystack Reference:</td>
-          <td style="padding:10px 16px; font-family:monospace; text-align:right;">${reference}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 16px; color:#64748b;">Total Available Balance:</td>
-          <td style="padding:10px 16px; font-weight:800; color:#2563eb; text-align:right;">₦${newBalance.toLocaleString()}</td>
-        </tr>
-      </table>
-    `,
+    html,
   });
 }
 
@@ -118,6 +123,7 @@ export async function notifyAdvertiserCampaignLive({
   profileId?: string;
 }) {
   const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'campaign-funded',
@@ -132,28 +138,34 @@ export async function notifyAdvertiserCampaignLive({
     profileId,
   });
 
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Lights, camera, action 🎬! "${campaignTitle}" is live and catching views`,
+    previewText: `Your campaign "${campaignTitle}" is funded and live!`,
+    icon: 'rocket',
+    headline: 'We Cooked 🍳! Campaign Live!',
+    subtitle: `Your campaign "${campaignTitle}" is funded and live on the Kpugi creator marketplace.`,
+    cardTitle: 'Campaign Details',
+    details: [
+      { label: 'Campaign Title', value: campaignTitle },
+      { label: 'CPM Rate', value: `₦${cpmRate.toLocaleString()} per 1k views` },
+    ],
+    highlightBar: {
+      label: 'Total Escrow Budget',
+      value: `₦${totalBudget.toLocaleString()}`,
+      bgColor: '#2563EB',
+    },
+    cta: {
+      label: 'View Campaign Dashboard',
+      url: `${appUrl}${actionUrl}`,
+      subtext: 'Track real-time view counts and creator submissions.',
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `🚀 Campaign Live: "${campaignTitle}" is now active!`,
-    html: `
-      <h2 style="margin-top:0; color:#2563eb;">Campaign Live & Open to Creators! 🚀</h2>
-      <p>Your campaign <strong>"${campaignTitle}"</strong> is funded and live on the Kpugi creator marketplace.</p>
-      
-      <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px;">
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Total Budget:</td>
-          <td style="padding:10px 16px; font-weight:700; text-align:right;">₦${totalBudget.toLocaleString()}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 16px; color:#64748b;">CPM Rate:</td>
-          <td style="padding:10px 16px; font-weight:700; text-align:right;">₦${cpmRate.toLocaleString()} per 1,000 views</td>
-        </tr>
-      </table>
-
-      <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}${actionUrl}" class="btn">View Campaign Dashboard</a>
-      </p>
-    `,
+    subject: `Lights, camera, action 🎬! "${campaignTitle}" is live and catching views`,
+    html,
   });
 }
 

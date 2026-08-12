@@ -148,7 +148,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
     const cleanAmountStr = String(depositAmount || '').replace(/[^0-9.]/g, '');
     const amtNum = parseFloat(cleanAmountStr) || 0;
     if (amtNum < 5000) {
-      setMsg({ text: 'Minimum deposit amount is ₦5,000 NGN. Please enter ₦5,000 or more to proceed.', type: 'error' });
+      setMsg({ text: "Hold on now 🛑... Minimum top-up is ₦5,000! Let's get them numbers up.", type: 'error' });
       setIsSubmitting(false);
       return;
     }
@@ -165,7 +165,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       if (verifyRes.success) {
         setShowDepositModal(false);
         setMsg({
-          text: `₦${amtNum.toLocaleString()} successfully verified & deposited into your brand wallet!`,
+          text: `Say less! 💰 ₦${amtNum.toLocaleString()} just landed clean in your brand wallet.`,
           type: 'success',
         });
       } else {
@@ -633,7 +633,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                 {(parseFloat(String(depositAmount || '').replace(/[^0-9.]/g, '')) || 0) < 5000 && (
                   <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    Minimum deposit amount is ₦5,000 (NGN)
+                    Hold on now... Minimum top-up is ₦5,000! Let's get them numbers up.
                   </p>
                 )}
               </div>
