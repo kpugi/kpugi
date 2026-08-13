@@ -430,7 +430,7 @@ export async function initializePaystackDepositAction(amount: number) {
     return { success: false, error: 'Paystack Secret Key is missing in environment variables.' };
   }
 
-  const reference = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const reference = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const callbackUrl = `${baseUrl}/b/wallet`;
 

@@ -566,7 +566,9 @@ export interface BrandWalletData {
   transactions: {
     id: string;
     transaction_type: string;
+    campaign_id?: string | null;
     campaign_title?: string | null;
+    campaign_code?: string | null;
     amount: number;
     status: string;
     reference: string;
@@ -605,7 +607,7 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
     wallet?.id
       ? supabase
           .from('wallet_transactions')
-          .select('id, wallet_id, type, amount, paystack_reference, status, created_at, campaign:campaigns(title)')
+          .select('id, wallet_id, type, amount, paystack_reference, status, created_at, campaign_id, campaign:campaigns(id, title, campaign_code)')
           .eq('wallet_id', wallet.id)
           .order('created_at', { ascending: false })
           .limit(50)
@@ -646,7 +648,9 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
   const txs = (transactions || []).map((t: any) => ({
     id: t.id,
     transaction_type: t.type || 'deposit',
+    campaign_id: t.campaign_id || t.campaign?.id || null,
     campaign_title: t.campaign?.title || null,
+    campaign_code: t.campaign?.campaign_code || null,
     amount: Number(t.amount),
     status: (t.status || 'completed').toUpperCase(),
     reference: t.paystack_reference || `KP-TX-${t.id.slice(0, 6)}`,

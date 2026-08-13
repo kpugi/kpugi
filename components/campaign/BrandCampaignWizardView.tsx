@@ -236,7 +236,7 @@ export function BrandCampaignWizardView({
         return;
       }
 
-      const walletRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const walletRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       setVerifiedPaymentRef(walletRef);
       setIsPaymentCompleted(true);
       setFormData((prev) => ({
@@ -270,7 +270,7 @@ export function BrandCampaignWizardView({
     const publicKey =
       process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_3630914972cbf0ef4986fc0ae2181d38a94f9412';
 
-    const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     const onPaymentSuccess = async (ref: string) => {
       setIsSubmitting(true);

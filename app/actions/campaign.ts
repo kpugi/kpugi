@@ -466,9 +466,9 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
     }
 
     // 3. Generate Receipt Record
-    const receiptNumber = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random()
+    const receiptNumber = `KPG-PAY-${Math.random()
       .toString(36)
-      .substring(2, 6)
+      .substring(2, 7)
       .toUpperCase()}`;
 
     try {
