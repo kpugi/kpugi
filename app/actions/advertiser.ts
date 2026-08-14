@@ -869,7 +869,8 @@ export async function getReceiptByIdAction(ref: string) {
       notes,
       status,
       issued_at,
-      created_at
+      created_at,
+      campaign:campaigns(id, title, campaign_code)
     `)
     .eq('advertiser_id', profileId)
     .or(`receipt_number.eq.${ref},paystack_reference.eq.${ref}`)
@@ -890,7 +891,8 @@ export async function getReceiptByIdAction(ref: string) {
       id: data.id,
       receipt_number: data.receipt_number,
       campaign_id: data.campaign_id,
-      campaign_title: data.campaign_title,
+      campaign_title: data.campaign_title || (data.campaign as any)?.title || null,
+      campaign_code: (data.campaign as any)?.campaign_code || null,
       total_amount: Number(data.total_amount),
       escrow_budget: Number(data.escrow_budget),
       featured_fee: Number(data.featured_fee),

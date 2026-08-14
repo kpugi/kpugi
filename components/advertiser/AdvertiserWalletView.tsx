@@ -32,6 +32,7 @@ import {
   logCancelledPaystackDepositAction,
   saveAdvertiserAlertSettingsAction,
   getFilteredTransactionsAction,
+  getReceiptByIdAction,
 } from '@/app/actions/advertiser';
 import { InvoiceModal, InvoiceData } from '@/components/common/InvoiceModal';
 
@@ -199,23 +200,55 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
     };
   });
 
-  const handleOpenReceipt = (tx: any) => {
+  const handleOpenReceipt = async (tx: any) => {
     const isDeposit = tx.type === 'Deposit';
     const refNum = tx.reference || `KPG-PAY-${tx.id.slice(0, 5).toUpperCase()}`;
 
-    setSelectedInvoice({
+    const fallbackInvoice: InvoiceData = {
       receipt_number: refNum,
       transaction_type: isDeposit ? 'deposit' : 'campaign_funding',
       issued_at: tx.rawCreatedAt || new Date().toISOString(),
       total_amount: Math.abs(tx.amount),
+      escrow_budget: Math.abs(tx.amount),
+      featured_fee: 0,
+      is_featured: false,
       payment_method: isDeposit ? 'paystack' : 'wallet',
       status: tx.status,
       advertiser_name: advertiserEmail?.split('@')[0] || 'Brand Partner',
       advertiser_email: advertiserEmail,
       campaign_title: tx.campaignTitle || (isDeposit ? null : tx.description),
       campaign_code: tx.campaignCode || null,
-    });
+    };
+
+    setSelectedInvoice(fallbackInvoice);
     setSelectedCampaignId(tx.campaignId || null);
+
+    try {
+      const res = await getReceiptByIdAction(refNum);
+      if (res.success && res.receipt) {
+        const r = res.receipt;
+        setSelectedInvoice({
+          receipt_number: r.receipt_number || refNum,
+          transaction_type: isDeposit ? 'deposit' : 'campaign_funding',
+          issued_at: r.issued_at || tx.rawCreatedAt || new Date().toISOString(),
+          total_amount: isDeposit
+            ? Number(r.total_amount || Math.abs(tx.amount))
+            : Number(r.escrow_budget || Math.abs(tx.amount)),
+          escrow_budget: Number(r.escrow_budget || Math.abs(tx.amount)),
+          featured_fee: isDeposit ? Number(r.featured_fee || 0) : 0,
+          is_featured: isDeposit ? Boolean(r.is_featured) : false,
+          payment_method: r.payment_method || (isDeposit ? 'paystack' : 'wallet'),
+          paystack_reference: r.paystack_reference || refNum,
+          status: (r.status || tx.status || 'PAID').toUpperCase(),
+          advertiser_name: advertiserEmail?.split('@')[0] || 'Brand Partner',
+          advertiser_email: r.advertiser_email || advertiserEmail,
+          campaign_title: r.campaign_title || tx.campaignTitle || (isDeposit ? null : tx.description),
+          campaign_code: r.campaign_code || tx.campaignCode || null,
+        });
+      }
+    } catch (err) {
+      console.error('[AdvertiserWalletView] Failed to fetch receipt details:', err);
+    }
   };
 
   const escrowItems = (rawEscrow || []).map((e) => ({

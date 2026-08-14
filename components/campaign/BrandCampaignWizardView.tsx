@@ -286,8 +286,14 @@ export function BrandCampaignWizardView({
     const onPaymentSuccess = async (ref: string) => {
       setIsSubmitting(true);
 
-      // Server-side verification
-      const verifyRes = await verifyPaystackTransactionAction(ref);
+      // Server-side verification & dual ledger recording (deposit + campaign funding debit)
+      const verifyRes = await verifyPaystackTransactionAction(ref, {
+        campaignId: formData.id,
+        campaignTitle: formData.title,
+        isFeatured: Boolean(formData.is_featured),
+        featuredFee: formData.is_featured ? 2500 : 0,
+        amount: totalPayableAmount,
+      });
       setIsSubmitting(false);
 
       if (verifyRes.success) {

@@ -18,12 +18,8 @@ import {
   Linkedin,
   MessageCircle,
 } from 'lucide-react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoicePDFDocument } from '@/components/invoice/InvoicePDFDocument';
-
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((m) => m.PDFDownloadLink),
-  { ssr: false }
-);
 
 interface CampaignSuccessViewProps {
   campaign: {
@@ -48,7 +44,12 @@ interface CampaignSuccessViewProps {
 export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewProps) {
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const confettiRef = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const appUrl =
     typeof window !== 'undefined'
@@ -97,15 +98,18 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
   const pdfData = receipt
     ? {
         receipt_number: receipt.receipt_number,
-        transaction_type: 'campaign_funding' as const,
+        transaction_type: 'deposit' as const,
         issued_at: receipt.issued_at,
         total_amount: receipt.total_amount,
-        escrow_budget: receipt.total_amount,
-        featured_fee: 0,
+        escrow_budget: campaign.total_budget,
+        featured_fee: campaign.is_featured
+          ? Math.max(0, receipt.total_amount - campaign.total_budget) || 2500
+          : 0,
         is_featured: campaign.is_featured,
         payment_method: receipt.payment_method,
         status: 'PAID',
         campaign_title: campaign.title,
+        campaign_code: campaign.campaign_code,
         advertiser_name: 'Brand Partner',
       }
     : null;
@@ -258,7 +262,7 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
         </div>
 
         {/* Download Receipt PDF */}
-        {pdfData && (
+        {mounted && pdfData && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div className="flex items-center justify-between">
               <div>

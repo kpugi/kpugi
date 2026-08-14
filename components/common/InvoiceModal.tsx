@@ -40,12 +40,23 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
     hour12: true,
   });
 
-  const isDeposit = data.transaction_type === 'deposit';
+  const isDeposit = data.transaction_type === 'deposit' || data.transaction_type === 'wallet_deposit';
+  const hasFeaturedAddOn = isDeposit && Boolean(data.is_featured && data.featured_fee && data.featured_fee > 0);
+
+  const depositBudgetPortion = data.escrow_budget || (data.total_amount - (data.featured_fee || 0));
+  const mainRowAmount = isDeposit
+    ? (hasFeaturedAddOn ? depositBudgetPortion : data.total_amount)
+    : (data.escrow_budget || data.total_amount);
+
+  const finalTotal = isDeposit ? data.total_amount : (data.escrow_budget || data.total_amount);
+
   const descriptionText = isDeposit
-    ? 'Wallet Account Top-Up (Paystack Checkout)'
-    : data.campaign_title
-      ? `Campaign Budget: ${data.campaign_title}`
-      : 'Campaign Budget';
+    ? (data.campaign_title
+        ? `Campaign Budget Deposit (${data.campaign_title})`
+        : 'Wallet Account Top-Up (Paystack Checkout)')
+    : (data.campaign_title
+        ? `Campaign Budget: ${data.campaign_title}`
+        : 'Campaign Budget Allocation');
 
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
@@ -152,14 +163,14 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
                     )}
                   </td>
                   <td className="py-3.5 px-4 text-slate-600 font-medium capitalize">
-                    {isDeposit ? 'Wallet Deposit' : 'Campaign Escrow'}
+                    {isDeposit ? (hasFeaturedAddOn ? 'Deposit Allocation' : 'Wallet Deposit') : 'Campaign Escrow'}
                   </td>
                   <td className="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900">
-                    ₦{Number(data.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    ₦{Number(mainRowAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
 
-                {data.is_featured && data.featured_fee && data.featured_fee > 0 ? (
+                {hasFeaturedAddOn ? (
                   <tr>
                     <td className="py-3.5 px-4 font-bold text-slate-900">
                       Featured Campaign Placement Add-On
@@ -180,7 +191,7 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
               <div className="flex justify-between items-center text-slate-500">
                 <span>Subtotal:</span>
                 <span className="font-mono font-bold text-slate-800">
-                  ₦{Number(data.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  ₦{Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex justify-between items-center text-slate-500">
@@ -190,7 +201,7 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
               <div className="flex justify-between items-center pt-2 border-t border-slate-200 font-extrabold text-sm text-slate-900">
                 <span>{isCancelled ? 'Total Amount:' : isPending ? 'Total Pending:' : 'Total Paid:'}</span>
                 <span className={`font-mono text-base font-extrabold ${isCancelled ? 'text-slate-600' : isPending ? 'text-amber-600' : 'text-emerald-600'}`}>
-                  ₦{Number(data.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  ₦{Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

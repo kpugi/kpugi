@@ -236,49 +236,168 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
 }
 
 /**
- * Server action to verify a Paystack transaction server-side
+ * Server action to verify a Paystack transaction server-side and record dual ledger entries (deposit + campaign funding)
  */
-export async function verifyPaystackTransactionAction(reference: string) {
+export async function verifyPaystackTransactionAction(
+  reference: string,
+  metadata?: {
+    campaignId?: string;
+    campaignTitle?: string;
+    isFeatured?: boolean;
+    featuredFee?: number;
+    amount?: number;
+  }
+) {
   try {
     const userProfile = await getOrCreateUserProfile();
     if (!userProfile || !userProfile.profile) {
       return { success: false, error: 'Unauthorized. Please sign in.' };
     }
 
+    const profileId = userProfile.profile.id;
+    const supabase = createAdminClient();
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
-    if (!paystackSecret) {
-      // Return success in test environment if secret key is not set
-      return { success: true, reference, status: 'success' };
+    let verifiedAmount = metadata?.amount || 0;
+    let customerEmail = userProfile.profile.email;
+
+    if (paystackSecret) {
+      const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${paystackSecret}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        return { success: false, error: 'Failed to verify transaction with Paystack server.' };
+      }
+
+      const data = await res.json();
+      if (data.status && data.data?.status === 'success') {
+        verifiedAmount = Number(data.data.amount) / 100; // convert from kobo
+        customerEmail = data.data.customer?.email || customerEmail;
+      } else {
+        return {
+          success: false,
+          error: data.data?.gateway_response || 'Payment declined by card issuer.',
+        };
+      }
     }
 
-    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${paystackSecret}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    // Get or create advertiser funding wallet
+    let { data: wallet } = await supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'advertiser_funding')
+      .maybeSingle();
 
-    if (!res.ok) {
-      return { success: false, error: 'Failed to verify transaction with Paystack server.' };
+    if (!wallet) {
+      const { data: newWallet, error: walletCreateErr } = await supabase
+        .from('wallets')
+        .insert({
+          profile_id: profileId,
+          wallet_type: 'advertiser_funding',
+          balance: 0,
+        })
+        .select('id, balance')
+        .single();
+
+      if (!walletCreateErr && newWallet) {
+        wallet = newWallet;
+      }
     }
 
-    const data = await res.json();
-    if (data.status && data.data?.status === 'success') {
-      return {
-        success: true,
-        reference,
-        status: 'success',
-        amount: data.data.amount / 100, // convert from kobo
-        paidAt: data.data.paid_at,
-        customerEmail: data.data.customer?.email,
-      };
-    } else {
-      return {
-        success: false,
-        error: data.data?.gateway_response || 'Payment declined by card issuer.',
-      };
+    // Record Dual Ledger Entries in wallet_transactions (Deposit + Campaign Funding Debit)
+    if (wallet) {
+      const { data: existingTx } = await supabase
+        .from('wallet_transactions')
+        .select('id, type')
+        .eq('paystack_reference', reference);
+
+      const hasDeposit = existingTx?.some((t) => t.type === 'deposit');
+      const hasDebit = existingTx?.some((t) => t.type === 'campaign_funding');
+
+      if (!hasDeposit) {
+        // 1. Deposit Entry (Credit)
+        const { error: depErr } = await supabase.from('wallet_transactions').insert({
+          wallet_id: wallet.id,
+          type: 'deposit',
+          amount: verifiedAmount,
+          status: 'completed',
+          paystack_reference: reference,
+          created_at: new Date(Date.now() - 1000).toISOString(),
+        });
+        if (depErr) {
+          console.error('[verifyPaystackTransactionAction] deposit insert error:', depErr);
+        }
+      }
+
+      const escrowBudget = (metadata?.featuredFee && metadata.featuredFee > 0)
+        ? (verifiedAmount - metadata.featuredFee)
+        : verifiedAmount;
+
+      if (!hasDebit) {
+        // 2. Campaign Funding Entry (Debit) — strictly creator escrow budget
+        const { error: debitErr } = await supabase.from('wallet_transactions').insert({
+          wallet_id: wallet.id,
+          type: 'campaign_funding',
+          amount: escrowBudget > 0 ? escrowBudget : verifiedAmount,
+          status: 'completed',
+          paystack_reference: reference,
+          campaign_id: metadata?.campaignId || null,
+          created_at: new Date().toISOString(),
+        });
+        if (debitErr) {
+          console.error('[verifyPaystackTransactionAction] campaign_funding debit error:', debitErr);
+        }
+      }
     }
+
+    // 3. Insert or update payment_receipts record
+    const receiptNum = reference.startsWith('KPG-PAY-')
+      ? reference
+      : `KPG-PAY-${reference.slice(-5).toUpperCase()}`;
+
+    const totalBudget = verifiedAmount - (metadata?.featuredFee || 0);
+
+    await supabase
+      .from('payment_receipts')
+      .upsert(
+        {
+          receipt_number: receiptNum,
+          advertiser_id: profileId,
+          campaign_id: metadata?.campaignId || null,
+          campaign_title: metadata?.campaignTitle || null,
+          total_amount: verifiedAmount,
+          escrow_budget: totalBudget > 0 ? totalBudget : verifiedAmount,
+          featured_fee: metadata?.featuredFee || 0,
+          is_featured: Boolean(metadata?.isFeatured),
+          payment_method: 'paystack',
+          paystack_reference: reference,
+          transaction_type: 'campaign_funding',
+          advertiser_email: customerEmail,
+          status: 'paid',
+        },
+        { onConflict: 'receipt_number' }
+      )
+      .then(({ error: rErr }) => {
+        if (rErr && !rErr.message.includes('duplicate')) {
+          console.error('[verifyPaystackTransactionAction] payment_receipts error:', rErr);
+        }
+      });
+
+    revalidatePath('/b/wallet');
+    revalidatePath('/b/campaigns');
+
+    return {
+      success: true,
+      reference,
+      status: 'success',
+      amount: verifiedAmount,
+      customerEmail,
+    };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Server error verifying payment' };
   }
@@ -500,11 +619,12 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
           .eq('receipt_number', receiptNumber)
           .eq('advertiser_id', advertiserId);
         
-        // Link the corresponding wallet transaction if it exists
+        // Link the corresponding wallet transaction if it exists (for campaign_funding)
         await supabase
           .from('wallet_transactions')
           .update({ campaign_id: campaign.id })
-          .eq('paystack_reference', receiptNumber);
+          .eq('paystack_reference', receiptNumber)
+          .eq('type', 'campaign_funding');
       } catch (e) {
         console.error('[Campaign Action] Error linking existing receipt/transaction:', e);
       }
@@ -584,6 +704,66 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
           }
         } catch (e) {
           console.error('[createCampaignWizardAction] Error recording wallet debit:', e);
+        }
+      } else if (payload.payment_method === 'paystack') {
+        // Fallback for Paystack: ensure dual ledger entries exist (Deposit + Campaign Funding Debit)
+        try {
+          let { data: advWallet } = await supabase
+            .from('wallets')
+            .select('id, balance')
+            .eq('profile_id', advertiserId)
+            .eq('wallet_type', 'advertiser_funding')
+            .maybeSingle();
+
+          if (!advWallet) {
+            const { data: newW } = await supabase
+              .from('wallets')
+              .insert({ profile_id: advertiserId, wallet_type: 'advertiser_funding', balance: 0 })
+              .select('id, balance')
+              .single();
+            advWallet = newW;
+          }
+
+          if (advWallet) {
+            const { data: existingTx } = await supabase
+              .from('wallet_transactions')
+              .select('id, type')
+              .eq('paystack_reference', receiptNumber);
+
+            const hasDeposit = existingTx?.some((t) => t.type === 'deposit');
+            const hasDebit = existingTx?.some((t) => t.type === 'campaign_funding');
+
+            if (!hasDeposit) {
+              await supabase.from('wallet_transactions').insert({
+                wallet_id: advWallet.id,
+                type: 'deposit',
+                amount: totalPaid,
+                paystack_reference: receiptNumber,
+                status: 'completed',
+                created_at: new Date(Date.now() - 1000).toISOString(),
+              });
+            }
+
+            if (!hasDebit) {
+              await supabase.from('wallet_transactions').insert({
+                wallet_id: advWallet.id,
+                type: 'campaign_funding',
+                amount: totalBudget,
+                campaign_id: campaign.id,
+                paystack_reference: receiptNumber,
+                status: 'completed',
+                created_at: new Date().toISOString(),
+              });
+            } else {
+              await supabase
+                .from('wallet_transactions')
+                .update({ campaign_id: campaign.id })
+                .eq('paystack_reference', receiptNumber)
+                .eq('type', 'campaign_funding');
+            }
+          }
+        } catch (e) {
+          console.error('[createCampaignWizardAction] Error recording Paystack dual ledger entries:', e);
         }
       }
     }

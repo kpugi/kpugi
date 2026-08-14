@@ -290,14 +290,30 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
     hour12: true,
   });
 
-  const isDeposit = data.transaction_type === 'deposit';
-  const descriptionText = isDeposit
-    ? 'Wallet Account Top-Up (Paystack Checkout)'
-    : data.campaign_title
-      ? `Campaign Budget Allocation: ${data.campaign_title}`
-      : 'Campaign Budget Allocation';
+  const isDeposit = data.transaction_type === 'deposit' || data.transaction_type === 'wallet_deposit';
+  const hasFeaturedAddOn = isDeposit && Boolean(data.is_featured && data.featured_fee && data.featured_fee > 0);
 
-  const amountStr = `N${Number(data.total_amount).toLocaleString('en-US', {
+  const depositBudgetPortion = data.escrow_budget || (data.total_amount - (data.featured_fee || 0));
+  const mainRowAmount = isDeposit
+    ? (hasFeaturedAddOn ? depositBudgetPortion : data.total_amount)
+    : (data.escrow_budget || data.total_amount);
+
+  const finalTotal = isDeposit ? data.total_amount : (data.escrow_budget || data.total_amount);
+
+  const descriptionText = isDeposit
+    ? (data.campaign_title
+        ? `Campaign Budget Deposit (${data.campaign_title})`
+        : 'Wallet Account Top-Up (Paystack Checkout)')
+    : (data.campaign_title
+        ? `Campaign Budget Allocation: ${data.campaign_title}`
+        : 'Campaign Budget Allocation');
+
+  const mainRowAmountStr = `N${Number(mainRowAmount).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+  const totalAmountStr = `N${Number(finalTotal).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -375,14 +391,16 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
               )}
             </View>
             <View style={styles.colType}>
-              <Text style={styles.tdText}>{isDeposit ? 'Deposit' : 'Campaign Funding'}</Text>
+              <Text style={styles.tdText}>
+                {isDeposit ? (hasFeaturedAddOn ? 'Deposit Allocation' : 'Deposit') : 'Campaign Escrow'}
+              </Text>
             </View>
             <View style={styles.colAmount}>
-              <Text style={styles.tdAmountText}>{amountStr}</Text>
+              <Text style={styles.tdAmountText}>{mainRowAmountStr}</Text>
             </View>
           </View>
 
-          {data.is_featured && data.featured_fee && data.featured_fee > 0 ? (
+          {hasFeaturedAddOn ? (
             <View style={styles.tableRow}>
               <View style={styles.colDesc}>
                 <Text style={styles.tdTextBold}>Featured Campaign Placement Add-On</Text>
@@ -392,7 +410,7 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
               </View>
               <View style={styles.colAmount}>
                 <Text style={styles.tdAmountText}>
-                  N{Number(data.featured_fee).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  N{Number(data.featured_fee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>
@@ -404,7 +422,7 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
           <View style={styles.summaryBox}>
             <View style={styles.summaryRow}>
               <Text style={{ fontSize: 9, color: '#64748B' }}>Subtotal:</Text>
-              <Text style={{ fontSize: 9, color: '#0F172A', fontWeight: 'bold' }}>{amountStr}</Text>
+              <Text style={{ fontSize: 9, color: '#0F172A', fontWeight: 'bold' }}>{totalAmountStr}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={{ fontSize: 9, color: '#64748B' }}>Platform Fee:</Text>
@@ -418,7 +436,7 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
                 styles.totalText,
                 isCancelled ? { color: '#475569' } : isPending ? { color: '#D97706' } : {}
               ]}>
-                {amountStr}
+                {totalAmountStr}
               </Text>
             </View>
           </View>
