@@ -140,8 +140,12 @@ export interface AdvertiserCampaign {
 export interface AdvertiserDashboardData {
   totalSpent: number;
   walletBalance: number;
+  escrowLocked?: number;
   activeCampaigns: number;
+  totalViewsDelivered?: number;
   pendingSubmissions: number;
+  activeCreatorsCount?: number;
+  recentActivity?: any[];
   campaigns: AdvertiserCampaign[];
   recentNotifications: {
     id: string;
@@ -151,6 +155,7 @@ export interface AdvertiserDashboardData {
     sent_at: string;
   }[];
   advertiserAvatarUrl: string | null;
+  companyName?: string;
 }
 
 export async function getAdvertiserDashboardData(profileId: string): Promise<AdvertiserDashboardData> {

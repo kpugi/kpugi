@@ -21,6 +21,20 @@ export interface AdvertiserCampaign {
   requirements?: any;
 }
 
+export interface DashboardRecentActivity {
+  id: string;
+  creatorHandle: string;
+  creatorAvatarUrl: string | null;
+  platform: string;
+  postUrl: string | null;
+  status: string;
+  viewsCount: number;
+  payoutAmount: number | null;
+  submittedAt: string;
+  campaignTitle: string;
+  campaignCode: string | null;
+}
+
 export interface AdvertiserDashboardData {
   totalSpent: number;
   walletBalance: number;
@@ -28,6 +42,8 @@ export interface AdvertiserDashboardData {
   activeCampaigns: number;
   totalViewsDelivered: number;
   pendingSubmissions: number;
+  activeCreatorsCount: number;
+  recentActivity: DashboardRecentActivity[];
   campaigns: AdvertiserCampaign[];
   recentNotifications: {
     id: string;
@@ -126,17 +142,73 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
 
   const campaignIds = (campaigns || []).map((c) => c.id);
   let pendingSubmissions = 0;
+  let recentActivity: DashboardRecentActivity[] = [];
 
   if (campaignIds.length > 0) {
-    const { count } = await supabase
-      .from('submissions')
-      .select('id', { count: 'exact', head: true })
-      .in('campaign_id', campaignIds)
-      .eq('status', 'pending');
-    pendingSubmissions = count || 0;
+    const [pendingRes, recentSubsRes] = await Promise.all([
+      supabase
+        .from('submissions')
+        .select('id', { count: 'exact', head: true })
+        .in('campaign_id', campaignIds)
+        .eq('status', 'pending'),
+      supabase
+        .from('submissions')
+        .select(`
+          id,
+          creator_id,
+          post_url,
+          screenshot_url,
+          status,
+          reserved_amount,
+          final_view_count,
+          views_count,
+          payout_amount,
+          submitted_at,
+          verified_at,
+          campaign:campaigns!inner (
+            id,
+            title,
+            campaign_code
+          ),
+          social_account:social_accounts!left (
+            platform
+          ),
+          creator:creator_profiles!left (
+            display_name,
+            profile:profiles!left (
+              full_name,
+              avatar_url
+            )
+          )
+        `)
+        .in('campaign_id', campaignIds)
+        .order('submitted_at', { ascending: false })
+        .limit(8),
+    ]);
+
+    pendingSubmissions = pendingRes.count || 0;
+
+    recentActivity = (recentSubsRes.data || []).map((sub: any) => {
+      const rawHandle = sub.creator?.display_name || sub.creator?.profile?.full_name || 'Creator';
+      const handle = rawHandle.startsWith('@') ? rawHandle : `@${rawHandle}`;
+      return {
+        id: sub.id,
+        creatorHandle: handle,
+        creatorAvatarUrl: sub.creator?.profile?.avatar_url || null,
+        platform: sub.social_account?.platform || 'tiktok',
+        postUrl: sub.post_url,
+        status: sub.status,
+        viewsCount: Number(sub.final_view_count || sub.views_count || 0),
+        payoutAmount: sub.payout_amount ? Number(sub.payout_amount) : null,
+        submittedAt: sub.submitted_at,
+        campaignTitle: sub.campaign?.title || 'Active Campaign',
+        campaignCode: sub.campaign?.campaign_code || null,
+      };
+    });
   }
 
   let totalViewsDelivered = 0;
+  const distinctCreatorIds = new Set<string>();
 
   const camps = (campaigns || []).map((c: any) => {
     const subs = c.submissions || [];
@@ -145,6 +217,10 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       0
     );
     totalViewsDelivered += campaignViews;
+
+    subs.forEach((s: any) => {
+      if (s.creator_id) distinctCreatorIds.add(s.creator_id);
+    });
 
     const campaignImg = c.cover_image_url || c.requirements?.creative_image_url || advertiserAvatarUrl || null;
 
@@ -182,6 +258,8 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     activeCampaigns: camps.filter((c) => c.status === 'live' || c.status === 'budget_committed').length,
     totalViewsDelivered,
     pendingSubmissions,
+    activeCreatorsCount: distinctCreatorIds.size,
+    recentActivity,
     campaigns: camps,
     recentNotifications: notifications || [],
     advertiserAvatarUrl,

@@ -524,7 +524,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                           )}
                           {copyText && copyText !== fileUrl && (
                             <div className="space-y-2">
-                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Copy / Instructions</span>
+                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Caption</span>
                               <p className="font-sans text-xs text-slate-300 leading-relaxed bg-white/[0.01] p-3 rounded-lg border border-white/5 whitespace-pre-wrap">
                                 {copyText}
                               </p>
@@ -722,63 +722,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     </a>
                   </div>
                 </div>
-
-                {/* Creative Brief suggestions */}
-                {creatives.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-display font-bold text-lg text-white">Brand Creative Assets</h3>
-                    {creatives.map((creative) => (
-                      <div key={creative.id} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
-
-                        {/* Creative Media Asset (image or video) */}
-                        {creative.file_url && (
-                          <div className="space-y-2">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Creative Asset</span>
-                            {creative.file_url.match(/\.(mp4|mov|webm|avi|mkv)(\?|$)/i) ? (
-                              <video
-                                src={creative.file_url}
-                                controls
-                                className="w-full rounded-xl border border-white/10 max-h-[420px] object-contain bg-black"
-                              />
-                            ) : (
-                              <img
-                                src={creative.file_url}
-                                alt="Creative Asset"
-                                className="w-full rounded-xl border border-white/10 max-h-[420px] object-contain bg-black"
-                              />
-                            )}
-                          </div>
-                        )}
-
-                        {creative.caption_suggestion && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-                              <span>Caption Text</span>
-                              <button
-                                onClick={() => handleCopyCaption(creative.caption_suggestion || '')}
-                                className="text-kpugi-blue hover:text-blue-400 font-sans normal-case"
-                              >
-                                Copy Caption
-                              </button>
-                            </div>
-                            <p className="font-sans text-xs text-slate-300 bg-white/[0.03] border border-white/5 rounded-xl p-4 leading-relaxed italic">
-                              &ldquo;{creative.caption_suggestion}&rdquo;
-                            </p>
-                          </div>
-                        )}
-
-                        {creative.copy_text && (
-                          <div className="space-y-2">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Additional instructions copy</span>
-                            <p className="font-sans text-xs text-slate-300 leading-relaxed bg-white/[0.01] p-3 rounded-lg border border-white/5">
-                              {creative.copy_text}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 
