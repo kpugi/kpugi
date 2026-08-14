@@ -13,6 +13,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
+import { formatCompactCurrency } from '@/lib/utils/format';
 
 interface Step5Props {
   formData: any;
@@ -75,29 +76,29 @@ export function CampaignStep5Launch({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
             <div className="text-[10px] font-bold text-slate-400 uppercase">Payment Method</div>
-            <div className="font-bold text-slate-800 text-xs capitalize">
-              {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Card / Bank Transfer'}
+            <div className="font-bold text-slate-800 text-xs capitalize truncate">
+              {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Card / Transfer'}
             </div>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
             <div className="text-[10px] font-bold text-slate-400 uppercase">Campaign Budget</div>
-            <div className="font-mono text-xs font-bold text-slate-900">
-              ₦{totalBudget.toLocaleString()}
+            <div className="font-mono text-xs font-bold text-slate-900 truncate" title={`₦${totalBudget.toLocaleString()}`}>
+              {formatCompactCurrency(totalBudget)}
             </div>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
             <div className="text-[10px] font-bold text-slate-400 uppercase">CPM Rate</div>
-            <div className="font-mono text-xs font-bold text-[#4338ca]">
+            <div className="font-mono text-xs font-bold text-[#4338ca] truncate">
               ₦{cpmRate.toLocaleString()} / 1k
             </div>
           </div>
 
           <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
             <div className="text-[10px] font-bold text-slate-400 uppercase">Total Paid</div>
-            <div className="font-mono text-xs font-bold text-emerald-600">
-              ₦{totalPayable.toLocaleString()}
+            <div className="font-mono text-xs font-bold text-emerald-600 truncate" title={`₦${totalPayable.toLocaleString()}`}>
+              {formatCompactCurrency(totalPayable)}
             </div>
           </div>
         </div>
@@ -108,18 +109,16 @@ export function CampaignStep5Launch({
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <Eye className="w-4 h-4 text-[#4338ca]" />
-            <span>Live Creator Briefing Preview (How Creators See It)</span>
+            <span>PREVIEW</span>
           </label>
           <div className="flex items-center gap-2">
             {isFeatured && (
               <span className="text-[10px] font-mono font-bold text-amber-900 bg-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-700" />
-                <span>FEATURED CAMPAIGN</span>
+                <span>FEATURED</span>
               </span>
             )}
-            <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Grab & Post Enabled
-            </span>
+           
           </div>
         </div>
 
@@ -140,7 +139,7 @@ export function CampaignStep5Launch({
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30 mb-3">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span>READY TO LAUNCH</span>
+                  <span>READY</span>
                 </div>
                 <h3 className="font-display text-2xl font-extrabold text-white">
                   {formData.title || 'Untitled Campaign'}
@@ -179,11 +178,9 @@ export function CampaignStep5Launch({
                 <div className="flex items-center justify-between text-xs font-bold text-amber-300">
                   <span className="flex items-center gap-1.5">
                     <FileText className="w-4 h-4" />
-                    <span>Approved Post Caption (Creators Copy This)</span>
+                    <span>Caption</span>
                   </span>
-                  <span className="text-[10px] font-mono bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full">
-                    Ready to Post
-                  </span>
+                 
                 </div>
                 <p className="text-xs text-slate-200 font-mono italic leading-relaxed bg-black/40 p-3 rounded-xl border border-white/5">
                   "{formData.requirements.creative_text_copy}"

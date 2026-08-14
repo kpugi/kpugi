@@ -17,6 +17,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
+import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 
 interface Step4Props {
   formData: any;
@@ -81,7 +82,7 @@ export function CampaignStep4Review({
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <Eye className="w-4 h-4 text-[#4338ca]" />
-            <span>Live Creator Briefing Preview (How Creators See It)</span>
+            <span>PREVIEW</span>
           </label>
           <div className="flex items-center gap-2">
             {isFeatured && (
@@ -303,67 +304,67 @@ export function CampaignStep4Review({
         </div>
 
         {/* 4 Key Financial Metric Cards (Live Calculated) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-center pt-2 border-t border-[#e2e0fb]">
-          <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 text-center pt-2 border-t border-[#e2e0fb]">
+          <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Escrow View Budget
             </div>
-            <div className="font-mono text-lg font-extrabold text-slate-900">
-              ₦{totalBudget.toLocaleString()}
+            <div className="font-mono text-base sm:text-lg font-extrabold text-slate-900 truncate" title={`₦${totalBudget.toLocaleString()}`}>
+              {formatCompactCurrency(totalBudget)}
             </div>
           </div>
-          <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
+          <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               CPM Payout Rate
             </div>
-            <div className="font-mono text-lg font-extrabold text-[#4338ca]">
+            <div className="font-mono text-base sm:text-lg font-extrabold text-[#4338ca] truncate">
               ₦{cpmRate.toLocaleString()}
             </div>
           </div>
-          <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
+          <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Creator Slots
             </div>
-            <div className="font-mono text-lg font-extrabold text-amber-700">
-              {creatorSlots} Slots
+            <div className="font-mono text-base sm:text-lg font-extrabold text-amber-700 truncate" title={`${creatorSlots.toLocaleString()} Slots`}>
+              {formatCompactNumber(creatorSlots)} Slots
             </div>
           </div>
-          <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
+          <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 space-y-1 shadow-2xs">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Est. Total Views
             </div>
-            <div className="font-mono text-lg font-extrabold text-emerald-700">
-              {potentialViews.toLocaleString()}
+            <div className="font-mono text-base sm:text-lg font-extrabold text-emerald-700 truncate" title={`${potentialViews.toLocaleString()} Views`}>
+              {formatCompactNumber(potentialViews)}
             </div>
           </div>
         </div>
 
         {/* Enhanced Itemized Checkout Table */}
-        <div className="p-5 rounded-2xl bg-white border border-[#e2e0fb] space-y-3.5 shadow-2xs">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#e2e0fb] space-y-3 shadow-2xs">
           <div className="text-xs font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 uppercase tracking-wide">
             Itemized Payment Breakdown
           </div>
 
-          <div className="flex justify-between items-center text-xs text-slate-600">
-            <span className="font-medium">Campaign Escrow View Budget</span>
-            <span className="font-mono font-bold text-slate-900 text-sm">
+          <div className="flex justify-between items-center text-xs text-slate-600 gap-3">
+            <span className="font-medium shrink-0">Campaign Escrow View Budget</span>
+            <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm shrink-0 whitespace-nowrap">
               ₦{totalBudget.toLocaleString()}
             </span>
           </div>
 
           {isFeatured && (
-            <div className="flex justify-between items-center text-xs text-amber-900 bg-amber-50/80 px-3.5 py-2.5 rounded-xl border border-amber-200/80">
-              <span className="flex items-center gap-1.5 font-bold">
+            <div className="flex justify-between items-center text-xs text-amber-900 bg-amber-50/80 px-3.5 py-2 rounded-xl border border-amber-200/80 gap-3">
+              <span className="flex items-center gap-1.5 font-bold shrink-0">
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Add-On</span>
+                <span>Featured Add-On</span>
               </span>
-              <span className="font-mono font-bold text-sm text-amber-600">+₦2,500</span>
+              <span className="font-mono font-bold text-xs sm:text-sm text-amber-600 shrink-0 whitespace-nowrap">+₦2,500</span>
             </div>
           )}
 
-          <div className="flex justify-between items-center text-sm font-extrabold text-slate-900 pt-3 border-t border-slate-200">
-            <span className="font-display text-base">Total</span>
-            <span className="font-mono text-xl font-extrabold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs">
+          <div className="flex justify-between items-center pt-3 border-t border-slate-200 gap-3">
+            <span className="font-display font-extrabold text-sm sm:text-base text-slate-900 shrink-0 whitespace-nowrap">Total Due</span>
+            <span className="font-mono text-base sm:text-lg font-extrabold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-xl border border-emerald-200 shadow-2xs shrink-0 whitespace-nowrap">
               ₦{totalPayable.toLocaleString()}
             </span>
           </div>

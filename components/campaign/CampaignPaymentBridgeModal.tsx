@@ -92,7 +92,7 @@ export function CampaignPaymentBridgeModal({
           </div>
 
           <div className="flex justify-between items-center text-slate-600">
-            <span>Campaign Budget</span>
+            <span>Budget</span>
             <span className="font-mono font-bold text-slate-900">
               ₦{totalBudget.toLocaleString()}
             </span>

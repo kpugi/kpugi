@@ -2,6 +2,10 @@
  * Formats a number to a compact string (e.g. 2,500,000 -> 2.5m, 1,500 -> 1.5k)
  */
 export function formatCompactNumber(num: number): string {
+  if (num >= 1000000000) {
+    const formatted = (num / 1000000000).toFixed(1);
+    return formatted.endsWith('.0') ? `${formatted.slice(0, -2)}B` : `${formatted}B`;
+  }
   if (num >= 1000000) {
     const formatted = (num / 1000000).toFixed(1);
     return formatted.endsWith('.0') ? `${formatted.slice(0, -2)}m` : `${formatted}m`;
