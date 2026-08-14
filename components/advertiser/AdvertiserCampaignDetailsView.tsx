@@ -562,10 +562,10 @@ export default function AdvertiserCampaignDetailsView({
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
-                      <th className="py-3 px-3">Joined Creator</th>
+                      <th className="py-3 px-3">Creator</th>
                       <th className="py-3 px-3">Platform</th>
                       <th className="py-3 px-3">Cumulative Verified Views</th>
-                      <th className="py-3 px-3 text-right">Total Earned / Payout Released</th>
+                      <th className="py-3 px-3 text-right">Total Earned</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -905,7 +905,7 @@ export default function AdvertiserCampaignDetailsView({
               <div className="flex items-center justify-between">
                 <h4 className="font-display font-bold text-sm text-kpugi-ink flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Settled Audit Cycles History</span>
+                  <span>Audit History</span>
                 </h4>
                 <span className="text-[11px] font-mono font-bold text-slate-500">
                   {data.audits?.length || 0} Settled Runs

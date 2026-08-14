@@ -96,11 +96,60 @@ export async function submitCampaignVideoAction(formData: FormData) {
     return { success: false, error: 'This campaign is not currently accepting submissions.' };
   }
 
-  const { error } = await supabase.from('campaign_submissions').upsert(
+  // Detect platform from domain
+  let platform = 'x';
+  if (hostname.includes('tiktok.com')) platform = 'tiktok';
+  else if (hostname.includes('instagram.com')) platform = 'instagram';
+  else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) platform = 'youtube';
+  else if (hostname.includes('facebook.com')) platform = 'facebook';
+  else if (hostname.includes('linkedin.com')) platform = 'linkedin';
+  else if (hostname.includes('x.com') || hostname.includes('twitter.com')) platform = 'x';
+
+  // Find creator's connected social account
+  const { data: socialAcc } = await supabase
+    .from('social_accounts')
+    .select('id')
+    .eq('creator_id', userProfile.profile.id)
+    .eq('platform', platform)
+    .maybeSingle();
+
+  let socialAccountId = socialAcc?.id;
+  if (!socialAccountId) {
+    const { data: anySocial } = await supabase
+      .from('social_accounts')
+      .select('id')
+      .eq('creator_id', userProfile.profile.id)
+      .limit(1)
+      .maybeSingle();
+    socialAccountId = anySocial?.id;
+  }
+
+  if (!socialAccountId) {
+    const handle = userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'creator';
+    const cleanHandle = handle.replace(/^@/, '');
+    const { data: newSocial } = await supabase
+      .from('social_accounts')
+      .insert({
+        creator_id: userProfile.profile.id,
+        platform,
+        handle: cleanHandle,
+        platform_user_id: cleanHandle,
+        verification_status: 'unverified',
+        connected_at: new Date().toISOString(),
+      })
+      .select('id')
+      .maybeSingle();
+    socialAccountId = newSocial?.id;
+  }
+
+  const { error } = await supabase.from('submissions').upsert(
     {
       campaign_id: campaignId,
-      creator_id: userProfile.creatorProfile.id,
+      creator_id: userProfile.profile.id,
+      social_account_id: socialAccountId,
       post_url: parsedUrl.toString(),
+      screenshot_url: 'https://via.placeholder.com/150',
+      reserved_amount: Number(campaign.cpm_rate || 0),
       status: 'pending',
       submitted_at: new Date().toISOString(),
     },
@@ -123,6 +172,8 @@ export async function submitCampaignVideoAction(formData: FormData) {
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath('/campaigns');
   revalidatePath('/dashboard');
+  revalidatePath('/c/submissions');
+  revalidatePath('/submissions');
   return { success: true };
 }
 
@@ -484,18 +535,19 @@ export async function resyncSubmissionScraperAction(submissionId: string) {
 
   const supabase = createAdminClient();
   const { error } = await supabase
-    .from('campaign_submissions')
+    .from('submissions')
     .update({
       status: 'pending',
       verified_at: new Date().toISOString(),
     })
     .eq('id', submissionId)
-    .eq('creator_id', userProfile.creatorProfile.id);
+    .or(`creator_id.eq.${userProfile.profile.id},creator_id.eq.${userProfile.creatorProfile.id}`);
 
   if (error) {
     return { success: false, error: error.message };
   }
 
   revalidatePath('/submissions');
+  revalidatePath('/c/submissions');
   return { success: true };
 }

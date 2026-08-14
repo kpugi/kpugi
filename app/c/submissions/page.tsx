@@ -11,7 +11,10 @@ export default async function CreatorSubmissionsPage() {
     redirect('/sign-in');
   }
 
-  const data = await getCreatorSubmissionsData(userProfile.creatorProfile.id);
+  const data = await getCreatorSubmissionsData(
+    userProfile.profile.id,
+    userProfile.creatorProfile.id
+  );
 
   return <CreatorSubmissionsView data={data} />;
 }

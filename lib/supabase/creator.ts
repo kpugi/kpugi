@@ -846,7 +846,8 @@ function getMockSubmissionsData(
 }
 
 export async function getCreatorSubmissionsData(
-  creatorProfileId: string
+  creatorProfileId: string,
+  secondaryProfileId?: string
 ): Promise<CreatorSubmissionsData> {
   const supabase = createAdminClient();
 
@@ -862,8 +863,28 @@ export async function getCreatorSubmissionsData(
     campaignCode: formatCampaignCode(c.id, c.campaign_code),
   }));
 
+  // Resolve all candidate IDs for the creator (profile_id and creator_profiles.id)
+  const candidateIds = Array.from(
+    new Set([creatorProfileId, secondaryProfileId].filter(Boolean))
+  );
+
+  if (candidateIds.length > 0) {
+    const { data: cp } = await supabase
+      .from('creator_profiles')
+      .select('id, profile_id')
+      .or(`id.in.(${candidateIds.join(',')}),profile_id.in.(${candidateIds.join(',')})`)
+      .maybeSingle();
+
+    if (cp) {
+      if (cp.id) candidateIds.push(cp.id);
+      if (cp.profile_id) candidateIds.push(cp.profile_id);
+    }
+  }
+
+  const uniqueIds = Array.from(new Set(candidateIds));
+
   // 2. Fetch submissions from database tables where post_url is non-null
-  const { data: subs1 } = await supabase
+  let query = supabase
     .from('submissions')
     .select(`
       *,
@@ -877,29 +898,21 @@ export async function getCreatorSubmissionsData(
         created_at
       )
     `)
-    .or(`creator_id.eq.${creatorProfileId},profile_id.eq.${creatorProfileId}`)
     .not('post_url', 'is', null)
     .order('submitted_at', { ascending: false });
 
-  const { data: subs2 } = await supabase
-    .from('campaign_submissions')
-    .select(`
-      *,
-      campaigns (
-        id,
-        title,
-        campaign_code,
-        channels,
-        cpm_rate,
-        status,
-        created_at
-      )
-    `)
-    .or(`creator_id.eq.${creatorProfileId},profile_id.eq.${creatorProfileId}`)
-    .not('post_url', 'is', null)
-    .order('submitted_at', { ascending: false });
+  if (uniqueIds.length > 1) {
+    query = query.in('creator_id', uniqueIds);
+  } else if (uniqueIds.length === 1) {
+    query = query.eq('creator_id', uniqueIds[0]);
+  }
 
-  const rawSubmissions = [...(subs1 || []), ...(subs2 || [])].filter(
+  const { data: subs1, error: subsError } = await query;
+  if (subsError) {
+    console.error('[getCreatorSubmissionsData] Error fetching submissions:', subsError);
+  }
+
+  const rawSubmissions = (subs1 || []).filter(
     (sub) => sub.post_url && sub.post_url.trim().length > 0
   );
 
