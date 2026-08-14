@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { CheckCircle2, Download, Printer, ArrowRight, X, ShieldCheck, FileText } from 'lucide-react';
+import { CheckCircle2, Download, Printer, ArrowRight, X, ShieldCheck, FileText, XCircle, Clock } from 'lucide-react';
 import { InvoicePDFDocument, InvoiceData } from '@/components/invoice/InvoicePDFDocument';
 
 export type { InvoiceData };
@@ -22,6 +22,10 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  const isPaid = data.status === 'COMPLETED' || data.status === 'PAID';
+  const isCancelled = data.status === 'CANCELLED' || data.status === 'FAILED';
+  const isPending = data.status === 'PENDING';
 
   const handlePrint = () => {
     window.print();
@@ -67,7 +71,17 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
         </div>
 
         {/* Printable Document Container (Flat Paper View) */}
-        <div className="p-6 sm:p-8 space-y-6 font-sans text-xs flex-1 overflow-y-auto print-container bg-white">
+        <div className="p-6 sm:p-8 space-y-6 font-sans text-xs flex-1 overflow-y-auto print-container bg-white relative">
+          {/* Decorative Stamp Watermark */}
+          <div className="absolute top-28 right-8 sm:right-16 pointer-events-none select-none opacity-[0.14] sm:opacity-[0.18] rotate-[-12deg] z-10 transition-all duration-300">
+            <div className={`w-28 h-28 rounded-full border-4 border-double flex flex-col items-center justify-center font-display font-black tracking-widest text-center uppercase ${
+              isCancelled ? 'border-rose-600 text-rose-600' : isPending ? 'border-amber-600 text-amber-600' : 'border-emerald-600 text-emerald-600'
+            }`}>
+              <div className="text-[10px] font-bold tracking-widest leading-none">KPUGI</div>
+              <div className="text-[17px] font-black my-0.5 leading-none">{isCancelled ? 'CANCELLED' : isPending ? 'PENDING' : 'PAID'}</div>
+              <div className="text-[8px] font-extrabold tracking-wider leading-none">OFFICIAL</div>
+            </div>
+          </div>
           {/* Executive Document Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200 gap-4">
             <div>
@@ -78,10 +92,22 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
             </div>
 
             <div className="sm:text-right space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-extrabold uppercase tracking-wider">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>PAID & VERIFIED</span>
-              </div>
+              {isCancelled ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-extrabold uppercase tracking-wider">
+                  <XCircle className="w-3.5 h-3.5 text-slate-500" />
+                  <span>CANCELLED</span>
+                </div>
+              ) : isPending ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-extrabold uppercase tracking-wider">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                  <span>PENDING</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-extrabold uppercase tracking-wider">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>PAID & VERIFIED</span>
+                </div>
+              )}
               <div className="text-[11px] font-mono text-slate-600 pt-1">
                 Ref: <span className="font-bold text-slate-900">{data.receipt_number}</span>
               </div>
@@ -162,8 +188,8 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
                 <span className="font-mono font-bold text-slate-800">₦0.00</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-200 font-extrabold text-sm text-slate-900">
-                <span>Total Paid:</span>
-                <span className="font-mono text-base font-extrabold text-emerald-600">
+                <span>{isCancelled ? 'Total Amount:' : isPending ? 'Total Pending:' : 'Total Paid:'}</span>
+                <span className={`font-mono text-base font-extrabold ${isCancelled ? 'text-slate-600' : isPending ? 'text-amber-600' : 'text-emerald-600'}`}>
                   ₦{Number(data.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -172,10 +198,13 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
 
           {/* Security & Escrow Guarantee Footer */}
           <div className="p-4 bg-slate-50 border border-slate-200 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <ShieldCheck className={`w-5 h-5 shrink-0 mt-0.5 ${isCancelled ? 'text-slate-400' : 'text-blue-600'}`} />
             <div className="space-y-0.5 text-xs">
               <p className="text-slate-600 text-[11px] leading-relaxed">
-                This official receipt is generated automatically by Kpugi Media Platform. Funds allocated for campaigns are locked in smart escrow and released to creators upon verified view thresholds.
+                {isCancelled
+                  ? 'This transaction invoice has been cancelled. No funds were processed, charged, or transferred. If you intended to complete this deposit, please start a new deposit session.'
+                  : 'This official receipt is generated automatically by Kpugi Media Platform. Funds allocated for campaigns are locked in smart escrow and released to creators upon verified view thresholds.'
+                }
               </p>
             </div>
           </div>

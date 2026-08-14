@@ -558,11 +558,14 @@ export async function getBrandCampaignDetails(
 // ─────────────────────────────────────────────
 
 export interface BrandWalletData {
+  walletId: string;
   walletBalance: number;
   totalEscrowLocked: number;
   totalPayouts: number;
   totalSpent: number;
   advertiserEmail?: string;
+  lowBalanceAlertEnabled: boolean;
+  lowBalanceAlertThreshold: number;
   transactions: {
     id: string;
     transaction_type: string;
@@ -583,14 +586,26 @@ export interface BrandWalletData {
     creators_assigned: number;
     status: string;
   }[];
+  recentPayouts: {
+    id: string;
+    amount: number;
+    createdAt: string;
+    campaignTitle: string;
+    creatorName: string;
+  }[];
 }
 
 export async function getBrandWalletData(profileId: string): Promise<BrandWalletData> {
   const supabase = createAdminClient();
 
-  // 1. Fetch advertiser profile email and wallet
-  const [profileRes, walletRes] = await Promise.all([
+  // 1. Fetch advertiser profile email, settings, and wallet
+  const [profileRes, advertiserProfileRes, walletRes] = await Promise.all([
     supabase.from('profiles').select('email').eq('id', profileId).maybeSingle(),
+    supabase
+      .from('advertiser_profiles')
+      .select('low_balance_alert_enabled, low_balance_alert_threshold')
+      .eq('profile_id', profileId)
+      .maybeSingle(),
     supabase
       .from('wallets')
       .select('id, balance')
@@ -600,6 +615,7 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
   ]);
 
   const advertiserEmail = profileRes.data?.email || undefined;
+  const advertiserProfile = advertiserProfileRes.data;
   const wallet = walletRes.data;
 
   // 2. Fetch transactions for this wallet, campaigns, and submissions concurrently
@@ -627,6 +643,34 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
   const transactions = transactionsRes.data;
   let campaigns = campaignsRes.data;
   const paidSubmissions = submissionsRes.data;
+
+  // Fetch recent payout releases for this advertiser's campaigns
+  const campaignIds = (campaigns || []).map((c: any) => c.id);
+  const recentPayoutsRes = campaignIds.length > 0
+    ? await supabase
+        .from('wallet_transactions')
+        .select(`
+          id,
+          amount,
+          created_at,
+          campaign:campaigns!left(title),
+          submission:submissions!left(
+            creator:creator_profiles!left(display_name)
+          )
+        `)
+        .eq('type', 'payout_release')
+        .in('campaign_id', campaignIds)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    : { data: [], error: null };
+
+  const recentPayouts = (recentPayoutsRes.data || []).map((t: any) => ({
+    id: t.id,
+    amount: Number(t.amount),
+    createdAt: t.created_at,
+    campaignTitle: t.campaign?.title || 'Campaign',
+    creatorName: t.submission?.creator?.display_name || 'Creator',
+  }));
 
   let totalEscrowLocked = 0;
   const activeCampaignsEscrow = (campaigns || []).map((c: any) => {
@@ -667,13 +711,17 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
   );
 
   return {
+    walletId: wallet?.id || '',
     walletBalance: Number(wallet?.balance || 0),
     totalEscrowLocked,
     totalPayouts,
     totalSpent,
     advertiserEmail,
+    lowBalanceAlertEnabled: advertiserProfile?.low_balance_alert_enabled || false,
+    lowBalanceAlertThreshold: Number(advertiserProfile?.low_balance_alert_threshold || 10000.00),
     transactions: txs,
     activeCampaignsEscrow,
+    recentPayouts,
   };
 }
 

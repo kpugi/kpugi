@@ -359,7 +359,7 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       if (existingCampaign) {
         if (existingCampaign.status === 'live') {
           // Already published (Idempotent return)
-          const receiptNumber = `REC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${payload.id.substring(0, 4).toUpperCase()}`;
+          const receiptNumber = `KPG-PAY-${payload.id.substring(0, 5).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
           return {
             success: true,
             campaignId: existingCampaign.id,
@@ -465,62 +465,165 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       console.error('[Campaign Action] Error saving campaign_creatives:', e);
     }
 
-    // 3. Generate Receipt Record
-    const receiptNumber = `KPG-PAY-${Math.random()
-      .toString(36)
-      .substring(2, 7)
-      .toUpperCase()}`;
+    // 3. Link or Generate Receipt Record
+    let receiptNumber = payload.paystack_reference || '';
+    let isPreCharged = false;
 
-    try {
-      await supabase.from('payment_receipts').insert({
-        receipt_number: receiptNumber,
-        advertiser_id: advertiserId,
-        campaign_id: campaign.id,
-        total_amount: totalPaid,
-        escrow_budget: totalBudget,
-        featured_fee: featuredFee,
-        is_featured: isFeatured,
-        payment_method: payload.payment_method || 'wallet',
-        paystack_reference: payload.paystack_reference || `WALLET-${Date.now()}`,
-        status: 'paid',
-      });
-    } catch (e) {
-      // Table may be migrating, continue cleanly
+    if (receiptNumber) {
+      // Look up if a receipt record already exists for this reference (pre-charged wallet or paystack webhook)
+      const { data: existingReceipt } = await supabase
+        .from('payment_receipts')
+        .select('receipt_number')
+        .eq('advertiser_id', advertiserId)
+        .or(`receipt_number.eq.${receiptNumber},paystack_reference.eq.${receiptNumber}`)
+        .maybeSingle();
+
+      if (existingReceipt) {
+        isPreCharged = true;
+        receiptNumber = existingReceipt.receipt_number;
+      }
     }
 
-    // 3b. Record wallet debit transaction for wallet-funded campaigns
-    if (payload.payment_method === 'wallet' || !payload.paystack_reference) {
+    if (isPreCharged) {
+      // Payment already processed (pre-charged wallet or paystack webhook)
+      // Just link the existing receipt to the new campaign and update details
       try {
-        const { data: advWallet } = await supabase
-          .from('wallets')
-          .select('id')
-          .eq('profile_id', advertiserId)
-          .eq('wallet_type', 'advertiser_funding')
-          .maybeSingle();
+        await supabase
+          .from('payment_receipts')
+          .update({
+            campaign_id: campaign.id,
+            campaign_title: campaign.title,
+            escrow_budget: totalBudget,
+            featured_fee: featuredFee,
+            is_featured: isFeatured,
+          })
+          .eq('receipt_number', receiptNumber)
+          .eq('advertiser_id', advertiserId);
+        
+        // Link the corresponding wallet transaction if it exists
+        await supabase
+          .from('wallet_transactions')
+          .update({ campaign_id: campaign.id })
+          .eq('paystack_reference', receiptNumber);
+      } catch (e) {
+        console.error('[Campaign Action] Error linking existing receipt/transaction:', e);
+      }
+    } else {
+      // Payment is not pre-charged (e.g. Paystack checkout just completed on client,
+      // or first-time creation via other actions).
+      if (!receiptNumber) {
+        receiptNumber = `KPG-PAY-${Math.random()
+          .toString(36)
+          .substring(2, 7)
+          .toUpperCase()}`;
+      }
 
-        if (advWallet) {
+      try {
+        await supabase.from('payment_receipts').insert({
+          receipt_number: receiptNumber,
+          advertiser_id: advertiserId,
+          campaign_id: campaign.id,
+          campaign_title: campaign.title,
+          total_amount: totalPaid,
+          escrow_budget: totalBudget,
+          featured_fee: featuredFee,
+          is_featured: isFeatured,
+          payment_method: payload.payment_method || 'wallet',
+          paystack_reference: payload.paystack_reference || `WALLET-${Date.now()}`,
+          status: 'paid',
+        });
+      } catch (e) {
+        console.error('[Campaign Action] Error inserting receipt:', e);
+      }
+
+      // Wallet balance deduction only if NOT pre-charged AND payment method is wallet
+      if (payload.payment_method === 'wallet') {
+        try {
+          const { data: advWallet } = await supabase
+            .from('wallets')
+            .select('id, balance')
+            .eq('profile_id', advertiserId)
+            .eq('wallet_type', 'advertiser_funding')
+            .maybeSingle();
+
+          if (!advWallet) {
+            return { success: false, error: 'Advertiser wallet not found. Please contact support.' };
+          }
+
+          const currentWalletBalance = Number(advWallet.balance || 0);
+          if (currentWalletBalance < totalBudget) {
+            return {
+              success: false,
+              error: `Insufficient wallet balance. Available: ₦${currentWalletBalance.toLocaleString()}, Required: ₦${totalBudget.toLocaleString()}.`,
+            };
+          }
+
+          // Atomic deduction — gte guard prevents race-condition negative balance
+          const { error: walletDeductErr } = await supabase
+            .from('wallets')
+            .update({ balance: currentWalletBalance - totalBudget })
+            .eq('id', advWallet.id)
+            .gte('balance', totalBudget);
+
+          if (walletDeductErr) {
+            console.error('[createCampaignWizardAction] wallet deduction failed:', walletDeductErr);
+            return { success: false, error: 'Failed to deduct budget from wallet. Please try again.' };
+          }
+
+          // Ledger entry
           const { error: txErr } = await supabase.from('wallet_transactions').insert({
             wallet_id: advWallet.id,
             type: 'campaign_funding',
             amount: totalBudget,
             campaign_id: campaign.id,
             status: 'completed',
-            paystack_reference: `KP-ESC-${Date.now().toString().slice(-8)}`,
+            paystack_reference: receiptNumber,
           });
           if (txErr) {
             console.error('[createCampaignWizardAction] wallet_transactions insert failed:', txErr);
           }
+        } catch (e) {
+          console.error('[createCampaignWizardAction] Error recording wallet debit:', e);
         }
-      } catch (e) {
-        console.error('[createCampaignWizardAction] Error recording wallet debit:', e);
       }
     }
 
-    // 4. Trigger Knock notifications and Resend emails to all creators
+    // 4. Trigger creator notifications
     try {
       await notifyCreatorsNewCampaign(campaign);
     } catch (e) {
       console.error('[Campaign Action] Error dispatching creator notifications:', e);
+    }
+
+    // 4b. Trigger brand confirmation notification + email
+    try {
+      const { data: brandProfile } = await supabase
+        .from('profiles')
+        .select('email, full_name, clerk_id')
+        .eq('id', advertiserId)
+        .maybeSingle();
+      const { data: advProfile } = await supabase
+        .from('advertiser_profiles')
+        .select('company_name')
+        .eq('profile_id', advertiserId)
+        .maybeSingle();
+
+      if (brandProfile?.email && brandProfile?.clerk_id) {
+        const { notifyAdvertiserCampaignLaunched } = await import('@/lib/notifications/advertiser');
+        notifyAdvertiserCampaignLaunched({
+          clerkId: brandProfile.clerk_id,
+          email: brandProfile.email,
+          companyName: advProfile?.company_name || brandProfile.full_name || 'Brand Partner',
+          campaignTitle: campaign.title,
+          campaignId: campaign.id,
+          campaignCode: campaign.campaign_code || '',
+          totalBudget,
+          receiptNumber,
+          profileId: advertiserId,
+        }).catch((e) => console.error('[Campaign Action] Brand notification error:', e));
+      }
+    } catch (e) {
+      console.error('[Campaign Action] Error dispatching brand notification:', e);
     }
 
     revalidatePath('/b/campaigns');
@@ -836,3 +939,82 @@ Return ONLY a valid JSON object in the exact format: {"optimizationTip": "...", 
     };
   }
 }
+
+// ─── Charge Wallet at Payment Step (Step 4) ──────────────────────────────────
+// Called immediately when user clicks Pay with Wallet, BEFORE they publish.
+// This ensures the wallet balance is deducted and visible in the ledger right away.
+
+export async function chargeWalletForCampaignAction(amount: number, walletRef: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // 1. Fetch advertiser wallet
+  const { data: wallet } = await supabase
+    .from('wallets')
+    .select('id, balance')
+    .eq('profile_id', profileId)
+    .eq('wallet_type', 'advertiser_funding')
+    .maybeSingle();
+
+  if (!wallet) {
+    return { success: false, error: 'Advertiser wallet not found. Please contact support.' };
+  }
+
+  const currentBalance = Number(wallet.balance || 0);
+  if (currentBalance < amount) {
+    return {
+      success: false,
+      error: `Insufficient wallet balance. Available: ₦${currentBalance.toLocaleString()}, Required: ₦${amount.toLocaleString()}.`,
+    };
+  }
+
+  // 2. Atomic balance deduction with race-condition guard
+  const { error: deductErr } = await supabase
+    .from('wallets')
+    .update({ balance: currentBalance - amount })
+    .eq('id', wallet.id)
+    .gte('balance', amount);
+
+  if (deductErr) {
+    console.error('[chargeWalletForCampaignAction] deduction error:', deductErr);
+    return { success: false, error: 'Failed to deduct from wallet. Please try again.' };
+  }
+
+  // 3. Ledger entry — pending campaign (no campaign_id yet, will link when published)
+  await supabase.from('wallet_transactions').insert({
+    wallet_id: wallet.id,
+    type: 'campaign_funding',
+    amount,
+    status: 'completed',
+    paystack_reference: walletRef,
+    created_at: new Date().toISOString(),
+  });
+
+  // 4. Payment receipt row — allows lookup by KPG-PAY-* before campaign is even published
+  await supabase.from('payment_receipts').insert({
+    receipt_number: walletRef,
+    advertiser_id: profileId,
+    total_amount: amount,
+    escrow_budget: amount,
+    featured_fee: 0,
+    is_featured: false,
+    payment_method: 'wallet',
+    paystack_reference: walletRef,
+    transaction_type: 'campaign_funding',
+    status: 'paid',
+  }).then(({ error: rErr }) => {
+    if (rErr && !rErr.message.includes('duplicate')) {
+      console.error('[chargeWalletForCampaignAction] payment_receipts error:', rErr);
+    }
+  });
+
+  revalidatePath('/b/wallet');
+
+  return { success: true, walletRef };
+}
+

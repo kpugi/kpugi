@@ -21,9 +21,18 @@ import {
   ExternalLink,
   FileText,
   Info,
+  BellRing,
+  Coins,
+  Clock,
 } from 'lucide-react';
 import { BrandWalletData } from '@/lib/supabase/advertiser';
-import { initializePaystackDepositAction, verifyPaystackDepositAction, logCancelledPaystackDepositAction } from '@/app/actions/advertiser';
+import {
+  initializePaystackDepositAction,
+  verifyPaystackDepositAction,
+  logCancelledPaystackDepositAction,
+  saveAdvertiserAlertSettingsAction,
+  getFilteredTransactionsAction,
+} from '@/app/actions/advertiser';
 import { InvoiceModal, InvoiceData } from '@/components/common/InvoiceModal';
 
 interface AdvertiserWalletViewProps {
@@ -33,12 +42,16 @@ interface AdvertiserWalletViewProps {
 
 export default function AdvertiserWalletView({ data, verificationNotice }: AdvertiserWalletViewProps) {
   const {
+    walletId,
     walletBalance,
     totalEscrowLocked,
     totalPayouts,
     advertiserEmail,
-    transactions: rawTransactions,
+    lowBalanceAlertEnabled,
+    lowBalanceAlertThreshold,
+    transactions: initialTransactions,
     activeCampaignsEscrow: rawEscrow,
+    recentPayouts,
   } = data;
 
   const [mounted, setMounted] = useState(false);
@@ -52,9 +65,64 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [dbTransactions, setDbTransactions] = useState(initialTransactions);
+  const [filterType, setFilterType] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  const [alertEnabled, setAlertEnabled] = useState(lowBalanceAlertEnabled);
+  const [alertThreshold, setAlertThreshold] = useState(String(lowBalanceAlertThreshold));
+  const [isSavingAlert, setIsSavingAlert] = useState(false);
+
+  const handleApplyFilters = async () => {
+    setIsFiltering(true);
+    try {
+      const res = await getFilteredTransactionsAction(
+        walletId,
+        filterType,
+        filterStartDate || null,
+        filterEndDate || null
+      );
+      if (res.success && res.transactions) {
+        setDbTransactions(res.transactions);
+        setCurrentPage(1);
+      } else {
+        setMsg({ text: res.error || 'Failed to apply filters.', type: 'error' });
+      }
+    } catch (err: any) {
+      setMsg({ text: `Failed to fetch filtered list: ${err.message}`, type: 'error' });
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setFilterType('all');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setDbTransactions(initialTransactions);
+    setCurrentPage(1);
+  };
+
+  const handleSaveAlertSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingAlert(true);
+    try {
+      const thresholdNum = parseFloat(alertThreshold.replace(/[^0-9.]/g, '')) || 0;
+      const res = await saveAdvertiserAlertSettingsAction(alertEnabled, thresholdNum);
+      if (res.success) {
+        setMsg({ text: 'Low-balance alert preferences saved successfully in your profile!', type: 'success' });
+      } else {
+        setMsg({ text: res.error || 'Failed to save settings.', type: 'error' });
+      }
+    } catch (err: any) {
+      setMsg({ text: `Failed to save preferences: ${err.message}`, type: 'error' });
+    } finally {
+      setIsSavingAlert(false);
+    }
+  };
+
 
   // Dynamically load Paystack Inline JS V2 for popup checkout
   useEffect(() => {
@@ -88,14 +156,14 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
     return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // Map 100% real database transactions with clear Description column and exact timestamp
-  const transactions = (rawTransactions || []).map((t) => {
+  // Map database transactions to UI shape dynamically
+  const transactions = (dbTransactions || []).map((t) => {
     let typeLabel = 'Deposit';
     let desc = 'Wallet Top Up (Paystack)';
 
     if (t.transaction_type === 'campaign_funding' || t.transaction_type === 'debit') {
       typeLabel = 'Campaign Funding';
-      desc = t.campaign_title ? `${t.campaign_title}` : 'Campaign Escrow Allocation';
+      desc = t.campaign_title ? `${t.campaign_title}` : 'Campaign Budget Allocation';
     } else if (t.transaction_type === 'unspent_refund') {
       typeLabel = 'Unspent Refund';
       desc = 'Unspent Budget Refund';
@@ -208,7 +276,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       setIsSubmitting(false);
       await logCancelledPaystackDepositAction(paystackRef, amtNum);
       setMsg({
-        text: 'Oops!🤭, That Payment didn\'t go through now, did it?',
+        text: 'Oops!🤭...that payment didn\'t go through now, did it?',
         type: 'error',
       });
     };
@@ -407,10 +475,8 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
         </div>
       </div>
 
-      {/* Main Layout Grid: Transaction History (Left 8 cols) & Active Campaign Breakdown (Right 4 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Transaction History */}
-        <div className="lg:col-span-8 space-y-6">
+      {/* Main Layout Grid: Full-Width Transaction History */}
+      <div className="w-full space-y-6">
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
             {/* Card Header (No 'View All' link) */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -420,6 +486,73 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
               <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
                 {transactions.length} Record{transactions.length !== 1 ? 's' : ''}
               </span>
+            </div>
+
+            {/* Ledger Filters Bar */}
+            <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center gap-3">
+              {/* Type Select */}
+              <div className="flex flex-col gap-1 min-w-[130px] flex-1 sm:flex-initial">
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Type</span>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700"
+                >
+                  <option value="all">All Types</option>
+                  <option value="deposit">Deposits</option>
+                  <option value="campaign_funding">Campaign Funding</option>
+                  <option value="unspent_refund">Refunds</option>
+                </select>
+              </div>
+
+              {/* Start Date */}
+              <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Start Date</span>
+                <input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
+                  className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700"
+                />
+              </div>
+
+              {/* End Date */}
+              <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">End Date</span>
+                <input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
+                  className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700"
+                />
+              </div>
+
+              {/* Filter Buttons */}
+              <div className="flex items-end gap-2 self-stretch pt-4 sm:pt-0">
+                <button
+                  type="button"
+                  onClick={handleApplyFilters}
+                  disabled={isFiltering}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors self-end h-[36px]"
+                >
+                  {isFiltering ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Filtering...</span>
+                    </>
+                  ) : (
+                    <span>Apply Filters</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  disabled={isFiltering}
+                  className="px-3 py-2 border border-slate-200 hover:bg-slate-50 disabled:opacity-50 text-slate-600 font-bold text-xs rounded-xl transition-colors h-[36px]"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
 
             {/* Desktop Table View */}
@@ -632,57 +765,86 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
               </div>
             </div>
           </div>
+      </div>
+
+      {/* Settings & Activity Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        {/* Low Balance Alerts Card (1/3 width) */}
+        <div className="md:col-span-1 p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+            <BellRing className="w-4 h-4 text-indigo-600 animate-bounce" />
+            <h3 className="font-display text-sm font-bold text-slate-900">Low Balance Alerts</h3>
+          </div>
+          <form onSubmit={handleSaveAlertSettings} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">Enable Email Alert</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={alertEnabled}
+                  onChange={(e) => setAlertEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                Alert Threshold (₦)
+              </label>
+              <div className="relative rounded-xl border border-slate-200 focus-within:border-indigo-500 transition-colors">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₦</span>
+                <input
+                  type="text"
+                  value={Number(alertThreshold).toLocaleString('en-US')}
+                  onChange={(e) => {
+                    const cleanVal = e.target.value.replace(/[^0-9.]/g, '');
+                    setAlertThreshold(cleanVal);
+                  }}
+                  disabled={!alertEnabled}
+                  className="w-full pl-7 pr-4 py-2.5 bg-transparent text-xs font-mono font-bold text-slate-800 focus:outline-hidden disabled:opacity-40"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={isSavingAlert}
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+            >
+              {isSavingAlert ? 'Saving...' : 'Save Preferences'}
+            </button>
+          </form>
         </div>
 
-        {/* Right Column: Active Campaign Breakdown Card */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-1">
-              <h3 className="font-display text-base font-bold text-slate-900">
-                Active Campaign Breakdown
-              </h3>
-              <button type="button" className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                <MoreVertical className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {escrowItems.length === 0 ? (
-                <p className="text-xs text-slate-400 py-3 text-center">No active campaign breakdown items.</p>
-              ) : (
-                escrowItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3 hover:bg-slate-100/60 transition-colors"
-                  >
-                    <div>
-                      <span className="font-bold text-xs text-slate-900 block truncate max-w-[160px]">
-                        {item.title}
-                      </span>
-                      <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
-                        {item.creators} Creator{item.creators !== 1 ? 's' : ''} assigned
-                      </span>
+        {/* Live Payout Activity Stream Card (2/3 width) */}
+        <div className="md:col-span-2 p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+            <Coins className="w-4 h-4 text-emerald-600 animate-pulse" />
+            <h3 className="font-display text-sm font-bold text-slate-900">Recent Payout Activity</h3>
+          </div>
+          <div className="space-y-3">
+            {recentPayouts.length === 0 ? (
+              <p className="text-xs text-slate-400 py-6 text-center">No recent payouts released from your campaigns.</p>
+            ) : (
+              recentPayouts.map((payout) => (
+                <div key={payout.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between gap-3 hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4" />
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="font-mono font-black text-xs text-slate-900 block">
-                        {formatCompactCurrency(item.amount)}
-                      </span>
-                      <span className="inline-block text-[9px] font-extrabold uppercase tracking-widest text-slate-500 bg-slate-200/70 px-1.5 py-0.5 rounded mt-0.5">
-                        LOCKED
-                      </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Released <span className="font-mono font-extrabold text-slate-900">₦{payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span> to <span className="font-bold text-indigo-600">@{payout.creatorName}</span>
+                      </p>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Campaign: {payout.campaignTitle}</span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-
-            <Link
-              href="/b/campaigns"
-              className="w-full py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 shadow-2xs block text-center"
-            >
-              <span>Manage Escrow</span>
-            </Link>
+                  <span className="text-[9px] font-mono text-slate-400 shrink-0">
+                    {new Date(payout.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

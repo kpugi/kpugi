@@ -65,10 +65,10 @@ export function CampaignStep5Launch({
         <div className="flex items-center justify-between border-b border-[#e2e0fb] pb-3 text-xs">
           <span className="font-bold text-slate-800 flex items-center gap-1.5">
             <Receipt className="w-4 h-4 text-[#4338ca]" />
-            <span>Escrow Payment Reference</span>
+            <span>Payment Reference</span>
           </span>
           <span className="font-mono font-bold text-[#4338ca] bg-white px-3 py-1 rounded-full border border-[#dcd8fc]">
-            {paymentRef || `KP-ESC-${Date.now().toString().slice(-6)}`}
+            {paymentRef || `KPG-PAY-${Date.now().toString(36).slice(-5).toUpperCase()}`}
           </span>
         </div>
 

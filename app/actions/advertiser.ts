@@ -104,19 +104,38 @@ export async function createCampaignAction(formData: FormData) {
   }
 
   // 5. Record Wallet Escrow Allocation Transaction
+  const escrowRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   const { error: txError } = await supabase.from('wallet_transactions').insert({
     wallet_id: wallet!.id,
     type: 'campaign_funding',
     amount: totalBudget,
     campaign_id: campaign.id,
     status: 'completed',
-    paystack_reference: `KP-ESC-${Date.now().toString().slice(-6)}`,
+    paystack_reference: escrowRef,
     created_at: new Date().toISOString(),
   });
 
   if (txError) {
     console.error('[createCampaignAction] wallet_transactions insert failed:', txError);
   }
+
+  // 6. Write payment_receipts row for full lookup
+  await supabase.from('payment_receipts').insert({
+    receipt_number: escrowRef,
+    advertiser_id: userProfile.profile.id,
+    campaign_id: campaign.id,
+    campaign_title: title,
+    total_amount: totalBudget,
+    escrow_budget: totalBudget,
+    featured_fee: 0,
+    is_featured: false,
+    payment_method: 'wallet',
+    paystack_reference: escrowRef,
+    transaction_type: 'campaign_funding',
+    status: 'paid',
+  }).then(({ error: rErr }) => {
+    if (rErr) console.error('[createCampaignAction] payment_receipts insert failed:', rErr);
+  });
 
   revalidatePath('/b/campaigns');
   revalidatePath('/b/dashboard');
@@ -585,6 +604,30 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
       created_at: new Date().toISOString(),
     });
 
+    // 6b. Write payment_receipts row so deposit can be looked up by KPG-PAY-* ID
+    const depositReceiptNum = reference.startsWith('KPG-PAY-')
+      ? reference
+      : `KPG-PAY-${reference.slice(-5).toUpperCase()}`;
+    await supabase.from('payment_receipts').insert({
+      receipt_number: depositReceiptNum,
+      advertiser_id: profileId,
+      total_amount: amountNGN,
+      escrow_budget: amountNGN,
+      featured_fee: 0,
+      is_featured: false,
+      payment_method: 'paystack',
+      paystack_reference: reference,
+      transaction_type: 'wallet_deposit',
+      advertiser_email: userProfile.profile.email || paystackData?.customer?.email || null,
+      notes: `Paystack wallet top-up verified at ${new Date().toISOString()}`,
+      status: 'paid',
+    }).then(({ error: rErr }) => {
+      // Silently skip duplicate (deposit already recorded on retry)
+      if (rErr && !rErr.message.includes('duplicate')) {
+        console.error('[verifyPaystackDepositAction] payment_receipts insert failed:', rErr);
+      }
+    });
+
     // 7. Trigger Notifications (Knock In-App + Resend Email)
     const recipientEmail = userProfile.profile.email || paystackData?.customer?.email;
     if (recipientEmail) {
@@ -697,3 +740,161 @@ export async function updateBrandProfileDetailsAction(formData: FormData) {
   revalidatePath('/b/dashboard');
   return { success: true };
 }
+
+// ─── 6. Save Advertiser Wallet Alert Settings Action ───────────────────────
+
+export async function saveAdvertiserAlertSettingsAction(enabled: boolean, threshold: number) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from('advertiser_profiles')
+    .update({
+      low_balance_alert_enabled: enabled,
+      low_balance_alert_threshold: threshold,
+    })
+    .eq('profile_id', userProfile.profile.id);
+
+  if (error) {
+    console.error('[saveAdvertiserAlertSettingsAction] Error:', error);
+    return { success: false, error: 'Failed to save alert preferences in the database.' };
+  }
+
+  revalidatePath('/b/wallet');
+  return { success: true };
+}
+
+// ─── 7. Get Filtered Transactions Action ─────────────────────────────────────
+
+export async function getFilteredTransactionsAction(
+  walletId: string,
+  type: string | null,
+  startDate: string | null,
+  endDate: string | null
+) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+
+  let query = supabase
+    .from('wallet_transactions')
+    .select('id, wallet_id, type, amount, paystack_reference, status, created_at, campaign_id, campaign:campaigns(id, title, campaign_code)')
+    .eq('wallet_id', walletId);
+
+  if (type && type !== 'all') {
+    query = query.eq('type', type);
+  }
+
+  if (startDate) {
+    const startIso = new Date(startDate);
+    startIso.setHours(0, 0, 0, 0);
+    query = query.gte('created_at', startIso.toISOString());
+  }
+
+  if (endDate) {
+    const endIso = new Date(endDate);
+    endIso.setHours(23, 59, 59, 999);
+    query = query.lte('created_at', endIso.toISOString());
+  }
+
+  const { data: transactions, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (error) {
+    console.error('[getFilteredTransactionsAction] DB error:', error);
+    return { success: false, error: 'Failed to fetch filtered transactions.' };
+  }
+
+  // Map to matching raw layout structure
+  const mapped = (transactions || []).map((t: any) => ({
+    id: t.id,
+    transaction_type: t.type || 'deposit',
+    campaign_id: t.campaign_id || t.campaign?.id || null,
+    campaign_title: t.campaign?.title || null,
+    campaign_code: t.campaign?.campaign_code || null,
+    amount: Number(t.amount),
+    status: (t.status || 'completed').toUpperCase(),
+    reference: t.paystack_reference || `KPG-PAY-${t.id.slice(0, 5).toUpperCase()}`,
+    created_at: t.created_at,
+  }));
+
+  return { success: true, transactions: mapped };
+}
+
+// ─── 8. Get Receipt / Invoice by Reference ID ─────────────────────────────────
+
+export async function getReceiptByIdAction(ref: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // Look up by receipt_number OR paystack_reference, restricted to this advertiser
+  const { data, error } = await supabase
+    .from('payment_receipts')
+    .select(`
+      id,
+      receipt_number,
+      advertiser_id,
+      campaign_id,
+      campaign_title,
+      total_amount,
+      escrow_budget,
+      featured_fee,
+      is_featured,
+      payment_method,
+      paystack_reference,
+      transaction_type,
+      advertiser_email,
+      notes,
+      status,
+      issued_at,
+      created_at
+    `)
+    .eq('advertiser_id', profileId)
+    .or(`receipt_number.eq.${ref},paystack_reference.eq.${ref}`)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[getReceiptByIdAction] DB error:', error);
+    return { success: false, error: 'Failed to look up receipt. Please try again.' };
+  }
+
+  if (!data) {
+    return { success: false, error: `No receipt found for reference "${ref}". Make sure the ID is correct.` };
+  }
+
+  return {
+    success: true,
+    receipt: {
+      id: data.id,
+      receipt_number: data.receipt_number,
+      campaign_id: data.campaign_id,
+      campaign_title: data.campaign_title,
+      total_amount: Number(data.total_amount),
+      escrow_budget: Number(data.escrow_budget),
+      featured_fee: Number(data.featured_fee),
+      is_featured: data.is_featured,
+      payment_method: data.payment_method,
+      paystack_reference: data.paystack_reference,
+      transaction_type: data.transaction_type,
+      advertiser_email: data.advertiser_email,
+      notes: data.notes,
+      status: data.status,
+      issued_at: data.issued_at,
+      created_at: data.created_at,
+    },
+  };
+}
+

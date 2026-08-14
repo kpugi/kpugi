@@ -593,7 +593,7 @@ export default function OnboardingRolePage() {
             fontSize: 15, lineHeight: 1.65,
             maxWidth: 400, margin: '0 auto',
           }}>
-            Hover to explore your path — click to commit.
+            Explore your path — click to commit.
           </p>
         </div>
 
@@ -639,17 +639,6 @@ export default function OnboardingRolePage() {
             loading={loadingRole === 'creator'}
           />
         </div>
-
-        {/* Footer note */}
-        <p style={{
-          marginTop: 44,
-          color: 'rgba(255,255,255,0.18)',
-          fontSize: 11.5, letterSpacing: '0.05em',
-          opacity: mounted ? 1 : 0,
-          transition: 'opacity 0.8s ease 0.9s',
-        }}>
-          You can expand or change your role anytime in settings
-        </p>
       </div>
     </>
   );

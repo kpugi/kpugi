@@ -9,8 +9,7 @@ import { CampaignStep2Creatives } from './steps/CampaignStep2Creatives';
 import { CampaignStep3Targeting } from './steps/CampaignStep3Targeting';
 import { CampaignStep4Payment } from './steps/CampaignStep4Payment';
 import { CampaignStep5Launch } from './steps/CampaignStep5Launch';
-import { CampaignReceiptModal } from './CampaignReceiptModal';
-import { createCampaignWizardAction, saveCampaignDraftAction, verifyPaystackTransactionAction } from '@/app/actions/campaign';
+import { createCampaignWizardAction, saveCampaignDraftAction, verifyPaystackTransactionAction, chargeWalletForCampaignAction } from '@/app/actions/campaign';
 
 interface BrandCampaignWizardViewProps {
   walletBalance?: number;
@@ -27,11 +26,10 @@ export function BrandCampaignWizardView({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
-  const [createdCampaignId, setCreatedCampaignId] = useState<string>('');
 
   // Payment State
   const initialRef = initialData?.paystack_reference || initialData?.requirements?.paystack_reference || '';
@@ -77,9 +75,9 @@ export function BrandCampaignWizardView({
     }));
   };
 
-  // Debounced Auto-Save Effect
+  // Debounced Auto-Save Effect — stops once campaign is published
   useEffect(() => {
-    if (!formData.title?.trim() || isSubmitting) return;
+    if (!formData.title?.trim() || isSubmitting || isPublished) return;
 
     const timer = setTimeout(async () => {
       setAutoSaveStatus('saving');
@@ -237,20 +235,33 @@ export function BrandCampaignWizardView({
       }
 
       const walletRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+      // Charge wallet IMMEDIATELY at payment step — balance deducted now, not on publish
+      setIsSubmitting(true);
+      const chargeRes = await chargeWalletForCampaignAction(totalPayableAmount, walletRef);
+      setIsSubmitting(false);
+
+      if (!chargeRes.success) {
+        setErrorMessage(chargeRes.error || 'Wallet payment failed. Please try again.');
+        return;
+      }
+
       setVerifiedPaymentRef(walletRef);
       setIsPaymentCompleted(true);
-      setFormData((prev) => ({
-        ...prev,
-        paystack_reference: walletRef,
-        is_paid: true,
-      }));
 
-      // Auto-save paid draft state
-      await saveCampaignDraftAction({
+      // Save draft with payment confirmed
+      const draftRes = await saveCampaignDraftAction({
         ...formData,
         paystack_reference: walletRef,
         payment_method: 'wallet',
       });
+
+      setFormData((prev) => ({
+        ...prev,
+        id: (draftRes.success && draftRes.campaignId) ? draftRes.campaignId : prev.id,
+        paystack_reference: walletRef,
+        is_paid: true,
+      }));
 
       setCurrentStep(5);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -280,20 +291,22 @@ export function BrandCampaignWizardView({
       setIsSubmitting(false);
 
       if (verifyRes.success) {
-        setFormData((prev) => ({
-          ...prev,
-          paystack_reference: ref,
-          is_paid: true,
-        }));
         setVerifiedPaymentRef(ref);
         setIsPaymentCompleted(true);
 
         // Auto-save paid draft state
-        await saveCampaignDraftAction({
+        const draftRes = await saveCampaignDraftAction({
           ...formData,
           paystack_reference: ref,
           payment_method: 'paystack',
         });
+
+        setFormData((prev) => ({
+          ...prev,
+          id: (draftRes.success && draftRes.campaignId) ? draftRes.campaignId : prev.id,
+          paystack_reference: ref,
+          is_paid: true,
+        }));
 
         setCurrentStep(5);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -364,13 +377,10 @@ export function BrandCampaignWizardView({
     setIsSubmitting(false);
 
     if (res.success && res.campaignId) {
-      setCreatedCampaignId(res.campaignId);
-      if (res.receipt) {
-        setActiveReceipt(res.receipt);
-      } else {
-        router.push(`/b/campaigns/${res.campaignId}`);
-      }
+      setIsPublished(true);
+      router.push(`/b/campaigns/${res.campaignId}/success`);
     } else {
+      setIsSubmitting(false);
       setErrorMessage(res.error || 'Failed to publish campaign.');
     }
   };
@@ -615,15 +625,6 @@ export function BrandCampaignWizardView({
           </div>
         )}
 
-        {/* Printable Receipt Modal */}
-        {activeReceipt && (
-          <CampaignReceiptModal
-            receipt={activeReceipt}
-            campaignId={createdCampaignId}
-            campaignTitle={formData.title || 'Ad Campaign'}
-            onClose={() => setActiveReceipt(null)}
-          />
-        )}
       </div>
     </div>
   );

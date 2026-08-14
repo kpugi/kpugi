@@ -7,7 +7,12 @@ import {
   Text,
   View,
   StyleSheet,
+  Image,
 } from '@react-pdf/renderer';
+
+const logoUrl = typeof window !== 'undefined'
+  ? `${window.location.origin}/kpugi_logo.png`
+  : '/kpugi_logo.png';
 
 export interface InvoiceData {
   receipt_number: string;
@@ -76,11 +81,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: '#DCFCE7',
-    color: '#166534',
     fontSize: 8,
     fontWeight: 'bold',
     textTransform: 'uppercase',
+  },
+  statusPaid: {
+    backgroundColor: '#DCFCE7',
+    color: '#166534',
+  },
+  statusCancelled: {
+    backgroundColor: '#F1F5F9',
+    color: '#475569',
+  },
+  statusPending: {
+    backgroundColor: '#FEF3C7',
+    color: '#D97706',
   },
   metaGrid: {
     flexDirection: 'row',
@@ -215,6 +230,54 @@ const styles = StyleSheet.create({
     color: '#64748B',
     lineHeight: 1.3,
   },
+  watermarkContainer: {
+    position: 'absolute',
+    top: 115,
+    right: 60,
+    width: 80,
+    height: 80,
+    transform: 'rotate(-12deg)',
+    opacity: 0.12,
+  },
+  watermarkOuterCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderStyle: 'solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  watermarkInnerCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  watermarkTextBrand: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  watermarkTextStatus: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    marginVertical: 1,
+  },
+  watermarkTextOfficial: {
+    fontSize: 5,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
 });
 
 export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) => {
@@ -231,13 +294,25 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
   const descriptionText = isDeposit
     ? 'Wallet Account Top-Up (Paystack Checkout)'
     : data.campaign_title
-      ? `Campaign Escrow Allocation: ${data.campaign_title}`
-      : 'Campaign Escrow Allocation';
+      ? `Campaign Budget Allocation: ${data.campaign_title}`
+      : 'Campaign Budget Allocation';
 
   const amountStr = `N${Number(data.total_amount).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+
+  const isPaid = data.status === 'COMPLETED' || data.status === 'PAID';
+  const isCancelled = data.status === 'CANCELLED' || data.status === 'FAILED';
+  const isPending = data.status === 'PENDING';
+
+  const statusText = isCancelled
+    ? 'CANCELLED'
+    : isPending
+      ? 'PENDING'
+      : 'PAID & VERIFIED ✓';
+
+  const stampColor = isCancelled ? '#E11D48' : isPending ? '#D97706' : '#059669';
 
   return (
     <Document title={`Receipt_${data.receipt_number}`}>
@@ -245,15 +320,18 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
         {/* Header */}
         <View style={styles.headerRow}>
           <View>
-<div className="flex items-center gap-3">
-                <img src="/kpugi_logo.png" alt="Kpugi Logo" className="h-12 w-auto object-contain" />
-              </div>           
-               <Text style={styles.brandSub}>Official Payment Receipt</Text>
+            <Image src={logoUrl} style={{ width: 90, height: 28, objectFit: 'contain', marginBottom: 4 }} />
+            <Text style={styles.brandSub}>Official Payment Receipt</Text>
           </View>
           <View style={styles.receiptBadgeBox}>
             <Text style={styles.docHeaderTitle}>Payment Receipt</Text>
             <Text style={styles.receiptNum}>{data.receipt_number}</Text>
-            <Text style={styles.statusTag}>PAID & VERIFIED ✓</Text>
+            <Text style={[
+              styles.statusTag,
+              isCancelled ? styles.statusCancelled : isPending ? styles.statusPending : styles.statusPaid
+            ]}>
+              {statusText}
+            </Text>
           </View>
         </View>
 
@@ -333,8 +411,15 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
               <Text style={{ fontSize: 9, color: '#0F172A', fontWeight: 'bold' }}>N0.00</Text>
             </View>
             <View style={styles.summaryRowTotal}>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#0F172A' }}>Total Paid:</Text>
-              <Text style={styles.totalText}>{amountStr}</Text>
+              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#0F172A' }}>
+                {isCancelled ? 'Total Amount:' : isPending ? 'Total Pending:' : 'Total Paid:'}
+              </Text>
+              <Text style={[
+                styles.totalText,
+                isCancelled ? { color: '#475569' } : isPending ? { color: '#D97706' } : {}
+              ]}>
+                {amountStr}
+              </Text>
             </View>
           </View>
         </View>
@@ -342,8 +427,24 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            This official payment receipt is generated automatically by Kpugi Media Platform. Funds allocated for campaigns are locked in escrow and released to creators upon verified view thresholds.
+            {isCancelled
+              ? 'This transaction invoice has been cancelled. No funds were processed or charged. For any assistance, please contact billing@kpugi.com.'
+              : 'This official payment receipt is generated automatically by Kpugi Media Platform. Funds allocated for campaigns are locked in escrow and released to creators upon verified view thresholds.'
+            }
           </Text>
+        </View>
+
+        {/* Decorative Stamp Watermark (Rendered last so it overlaps opaque layouts instead of getting covered) */}
+        <View style={styles.watermarkContainer}>
+          <View style={[styles.watermarkOuterCircle, { borderColor: stampColor }]}>
+            <View style={[styles.watermarkInnerCircle, { borderColor: stampColor }]}>
+              <Text style={[styles.watermarkTextBrand, { color: stampColor }]}>KPUGI</Text>
+              <Text style={[styles.watermarkTextStatus, { color: stampColor }]}>
+                {isCancelled ? 'CANCELLED' : isPending ? 'PENDING' : 'PAID'}
+              </Text>
+              <Text style={[styles.watermarkTextOfficial, { color: stampColor }]}>OFFICIAL</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
