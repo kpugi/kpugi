@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { clerkClient } from '@clerk/nextjs/server';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
 
 // ─── 1. Create Campaign Server Action ─────────────────────────────────────────
 
@@ -737,7 +739,7 @@ export async function updateBrandProfileDetailsAction(formData: FormData) {
     .update({
       company_name: companyName,
       industry: industry,
-      website_url: websiteUrl,
+      company_website: websiteUrl,
     })
     .eq('profile_id', userProfile.profile.id);
 
@@ -908,4 +910,303 @@ export async function getReceiptByIdAction(ref: string) {
     },
   };
 }
+
+// ─── 14. Brand Settings & Clerk Synchronization Actions ─────────────────────
+
+export async function updateBrandIdentityAction(payload: {
+  companyName: string;
+  companyWebsite?: string;
+  industry?: string;
+  tagline?: string;
+  location?: string;
+  logoUrl?: string;
+  logoBase64?: string;
+  socialLinks?: {
+    instagram?: string;
+    tiktok?: string;
+    twitter?: string;
+    linkedin?: string;
+    youtube?: string;
+  };
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.profile) {
+    return { success: false, error: 'Unauthorized. Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  let finalLogoUrl = payload.logoUrl || null;
+
+  // If a base64 image was uploaded, store it in Supabase storage
+  if (payload.logoBase64 && payload.logoBase64.startsWith('data:')) {
+    const uploadedUrl = await uploadCampaignImageToStorage(payload.logoBase64, 'brand-logos');
+    if (uploadedUrl) {
+      finalLogoUrl = uploadedUrl;
+    }
+  }
+
+  // 1. Update advertiser_profiles
+  const { error: advError } = await supabase
+    .from('advertiser_profiles')
+    .update({
+      company_name: payload.companyName.trim(),
+      company_website: payload.companyWebsite?.trim() || null,
+      industry: payload.industry?.trim() || 'E-commerce',
+      tagline: payload.tagline?.trim() || null,
+      location: payload.location?.trim() || 'Nigeria',
+      ...(finalLogoUrl ? { company_logo_url: finalLogoUrl } : {}),
+      social_links: payload.socialLinks || {},
+    })
+    .eq('profile_id', profileId);
+
+  if (advError) {
+    console.error('[updateBrandIdentityAction] adv error:', advError);
+    return { success: false, error: 'Failed to update brand profile details.' };
+  }
+
+  // 2. Update profiles table
+  const { error: profError } = await supabase
+    .from('profiles')
+    .update({
+      ...(finalLogoUrl ? { avatar_url: finalLogoUrl } : {}),
+    })
+    .eq('id', profileId);
+
+  if (profError) {
+    console.error('[updateBrandIdentityAction] profile error:', profError);
+  }
+
+  // 3. Two-Way Sync with Clerk Authentication
+  if (userProfile.profile.clerk_id) {
+    try {
+      const client = await clerkClient();
+      const compName = payload.companyName.trim();
+      const nameParts = compName.split(' ');
+      const firstName = nameParts[0] || compName;
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+
+      await client.users.updateUser(userProfile.profile.clerk_id, {
+        firstName,
+        ...(lastName ? { lastName } : {}),
+      });
+    } catch (clerkErr) {
+      console.warn('[updateBrandIdentityAction] Clerk user update warning:', clerkErr);
+    }
+  }
+
+  revalidatePath('/b/settings');
+  revalidatePath('/b/dashboard');
+  revalidatePath('/b/campaigns');
+  revalidatePath('/b/wallet');
+  revalidatePath('/b/analytics');
+  revalidatePath('/b/creators');
+
+  return { success: true, logoUrl: finalLogoUrl };
+}
+
+export async function updateBrandBillingContactAction(payload: {
+  fullName: string;
+  billingEmail: string;
+  phone?: string;
+  taxId?: string;
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.profile) {
+    return { success: false, error: 'Unauthorized. Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // 1. Update profiles table
+  const { error: profError } = await supabase
+    .from('profiles')
+    .update({
+      full_name: payload.fullName.trim(),
+      phone: payload.phone?.trim() || null,
+    })
+    .eq('id', profileId);
+
+  if (profError) {
+    console.error('[updateBrandBillingContactAction] profile error:', profError);
+    return { success: false, error: 'Failed to update contact name.' };
+  }
+
+  // 2. Update advertiser_profiles
+  const { error: advError } = await supabase
+    .from('advertiser_profiles')
+    .update({
+      billing_email: payload.billingEmail.trim().toLowerCase(),
+      tax_id: payload.taxId?.trim() || null,
+    })
+    .eq('profile_id', profileId);
+
+  if (advError) {
+    console.error('[updateBrandBillingContactAction] adv error:', advError);
+    return { success: false, error: 'Failed to update billing details.' };
+  }
+
+  // 3. Two-Way Sync admin contact name with Clerk
+  if (userProfile.profile.clerk_id) {
+    try {
+      const client = await clerkClient();
+      const nameParts = payload.fullName.trim().split(' ');
+      const firstName = nameParts[0] || payload.fullName.trim();
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+
+      await client.users.updateUser(userProfile.profile.clerk_id, {
+        firstName,
+        ...(lastName ? { lastName } : {}),
+      });
+    } catch (clerkErr) {
+      console.warn('[updateBrandBillingContactAction] Clerk name sync warning:', clerkErr);
+    }
+  }
+
+  revalidatePath('/b/settings');
+  return { success: true };
+}
+
+export async function updateBrandFinancialSettingsAction(payload: {
+  lowBalanceAlertEnabled: boolean;
+  lowBalanceAlertThreshold: number;
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.profile) {
+    return { success: false, error: 'Unauthorized. Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('advertiser_profiles')
+    .update({
+      low_balance_alert_enabled: payload.lowBalanceAlertEnabled,
+      low_balance_alert_threshold: Math.max(0, Number(payload.lowBalanceAlertThreshold || 0)),
+    })
+    .eq('profile_id', userProfile.profile.id);
+
+  if (error) {
+    console.error('[updateBrandFinancialSettingsAction] error:', error);
+    return { success: false, error: 'Failed to update financial alert settings.' };
+  }
+
+  revalidatePath('/b/settings');
+  revalidatePath('/b/wallet');
+  return { success: true };
+}
+
+export async function updateBrandCampaignDefaultsAction(payload: {
+  defaultGraceHours: number;
+  defaultLiveHours: number;
+  preferKycCreators: boolean;
+  autoPauseThresholdPct: number;
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.profile) {
+    return { success: false, error: 'Unauthorized. Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('advertiser_profiles')
+    .update({
+      campaign_defaults: {
+        default_grace_hours: payload.defaultGraceHours,
+        default_live_hours: payload.defaultLiveHours,
+        prefer_kyc_creators: payload.preferKycCreators,
+        auto_pause_threshold_pct: payload.autoPauseThresholdPct,
+      },
+    })
+    .eq('profile_id', userProfile.profile.id);
+
+  if (error) {
+    console.error('[updateBrandCampaignDefaultsAction] error:', error);
+    return { success: false, error: 'Failed to update campaign defaults.' };
+  }
+
+  revalidatePath('/b/settings');
+  return { success: true };
+}
+
+export async function updateBrandNotificationPreferencesAction(payload: {
+  emailMilestones: boolean;
+  emailSubmissions: boolean;
+  emailWallet: boolean;
+  weeklyDigest: boolean;
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.profile) {
+    return { success: false, error: 'Unauthorized. Please sign in.' };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('advertiser_profiles')
+    .update({
+      notification_preferences: {
+        email_milestones: payload.emailMilestones,
+        email_submissions: payload.emailSubmissions,
+        email_wallet: payload.emailWallet,
+        weekly_digest: payload.weeklyDigest,
+      },
+    })
+    .eq('profile_id', userProfile.profile.id);
+
+  if (error) {
+    console.error('[updateBrandNotificationPreferencesAction] error:', error);
+    return { success: false, error: 'Failed to update notification preferences.' };
+  }
+
+  revalidatePath('/b/settings');
+  return { success: true };
+}
+
+export async function syncBrandClerkIdentityAction() {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.profile || !userProfile.profile.clerk_id) {
+    return { success: false, error: 'No connected Clerk account found.' };
+  }
+
+  try {
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(userProfile.profile.clerk_id);
+
+    const clerkImageUrl = clerkUser.imageUrl || null;
+    const clerkName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null;
+    const primaryEmail = clerkUser.emailAddresses?.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress || null;
+
+    const supabase = createAdminClient();
+    const updates: Record<string, any> = {};
+    if (clerkImageUrl) updates.avatar_url = clerkImageUrl;
+    if (clerkName) updates.full_name = clerkName;
+    if (primaryEmail) updates.email = primaryEmail;
+
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('profiles').update(updates).eq('id', userProfile.profile.id);
+      if (clerkImageUrl) {
+        await supabase
+          .from('advertiser_profiles')
+          .update({ company_logo_url: clerkImageUrl })
+          .eq('profile_id', userProfile.profile.id);
+      }
+    }
+
+    revalidatePath('/b/settings');
+    revalidatePath('/b/dashboard');
+    return {
+      success: true,
+      data: {
+        imageUrl: clerkImageUrl,
+        name: clerkName,
+        email: primaryEmail,
+      },
+    };
+  } catch (err: any) {
+    console.error('[syncBrandClerkIdentityAction] error:', err);
+    return { success: false, error: err?.message || 'Failed to refresh account data.' };
+  }
+}
+
 

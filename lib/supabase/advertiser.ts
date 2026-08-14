@@ -828,3 +828,157 @@ export async function getBrandCreatorsDirectory(): Promise<DirectoryCreator[]> {
     };
   });
 }
+
+// ─── 8. Comprehensive Brand Settings Data Helper ────────────────────────────
+
+export interface BrandSettingsData {
+  profile: {
+    id: string;
+    clerkId: string;
+    fullName: string;
+    email: string;
+    avatarUrl: string | null;
+    phone: string | null;
+    createdAt: string;
+  };
+  advertiser: {
+    companyName: string;
+    companyWebsite: string | null;
+    billingEmail: string | null;
+    industry: string;
+    tagline: string | null;
+    location: string | null;
+    companyLogoUrl: string | null;
+    taxId: string | null;
+    lowBalanceAlertEnabled: boolean;
+    lowBalanceAlertThreshold: number;
+    socialLinks: {
+      instagram?: string;
+      tiktok?: string;
+      twitter?: string;
+      linkedin?: string;
+      youtube?: string;
+    };
+    campaignDefaults: {
+      defaultGraceHours: number;
+      defaultLiveHours: number;
+      preferKycCreators: boolean;
+      autoPauseThresholdPct: number;
+    };
+    notificationPreferences: {
+      emailMilestones: boolean;
+      emailSubmissions: boolean;
+      emailWallet: boolean;
+      weeklyDigest: boolean;
+    };
+    agreedGlobalRulesAt: string | null;
+  };
+  wallet: {
+    balance: number;
+    escrowLocked: number;
+  };
+  stats: {
+    totalCampaigns: number;
+    totalSpent: number;
+    isVerifiedPartner: boolean;
+  };
+}
+
+export async function getBrandSettingsData(profileId: string): Promise<BrandSettingsData | null> {
+  const supabase = createAdminClient();
+
+  const [profileRes, advRes, walletRes, campaignsRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, clerk_id, full_name, email, avatar_url, phone, created_at')
+      .eq('id', profileId)
+      .maybeSingle(),
+    supabase
+      .from('advertiser_profiles')
+      .select('*')
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+    supabase
+      .from('wallets')
+      .select('balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'advertiser_funding')
+      .maybeSingle(),
+    supabase
+      .from('campaigns')
+      .select('id, total_budget, reserved_budget, spent_budget, status')
+      .eq('advertiser_id', profileId)
+      .eq('deleted', false),
+  ]);
+
+  const profile = profileRes.data;
+  if (!profile) return null;
+
+  const adv = advRes.data || {};
+  const wallet = walletRes.data;
+  const campaigns = campaignsRes.data || [];
+
+  const escrowLocked = campaigns
+    .filter((c: any) => c.status === 'ACTIVE' || c.status === 'ESCROW_PAID')
+    .reduce((sum: number, c: any) => sum + Math.max(0, Number(c.total_budget || 0) - Number(c.spent_budget || 0)), 0);
+
+  const totalSpent = campaigns.reduce((sum: number, c: any) => sum + Number(c.spent_budget || 0), 0);
+
+  const rawDefaults = (adv.campaign_defaults as Record<string, any>) || {};
+  const rawNotifs = (adv.notification_preferences as Record<string, any>) || {};
+  const rawSocial = (adv.social_links as Record<string, any>) || {};
+
+  return {
+    profile: {
+      id: profile.id,
+      clerkId: profile.clerk_id || '',
+      fullName: profile.full_name || 'Brand Partner',
+      email: profile.email || '',
+      avatarUrl: profile.avatar_url || adv.company_logo_url || null,
+      phone: profile.phone || null,
+      createdAt: profile.created_at || new Date().toISOString(),
+    },
+    advertiser: {
+      companyName: adv.company_name || profile.full_name || 'Brand Partner',
+      companyWebsite: adv.company_website || null,
+      billingEmail: adv.billing_email || profile.email || null,
+      industry: adv.industry || 'E-commerce',
+      tagline: adv.tagline || null,
+      location: adv.location || 'Nigeria',
+      companyLogoUrl: adv.company_logo_url || profile.avatar_url || null,
+      taxId: adv.tax_id || null,
+      lowBalanceAlertEnabled: adv.low_balance_alert_enabled ?? true,
+      lowBalanceAlertThreshold: Number(adv.low_balance_alert_threshold ?? 50000),
+      socialLinks: {
+        instagram: rawSocial.instagram || '',
+        tiktok: rawSocial.tiktok || '',
+        twitter: rawSocial.twitter || rawSocial.x || '',
+        linkedin: rawSocial.linkedin || '',
+        youtube: rawSocial.youtube || '',
+      },
+      campaignDefaults: {
+        defaultGraceHours: Number(rawDefaults.default_grace_hours ?? 48),
+        defaultLiveHours: Number(rawDefaults.default_live_hours ?? 24),
+        preferKycCreators: Boolean(rawDefaults.prefer_kyc_creators ?? false),
+        autoPauseThresholdPct: Number(rawDefaults.auto_pause_threshold_pct ?? 95),
+      },
+      notificationPreferences: {
+        emailMilestones: Boolean(rawNotifs.email_milestones ?? true),
+        emailSubmissions: Boolean(rawNotifs.email_submissions ?? true),
+        emailWallet: Boolean(rawNotifs.email_wallet ?? true),
+        weeklyDigest: Boolean(rawNotifs.weekly_digest ?? true),
+      },
+      agreedGlobalRulesAt: adv.agreed_global_rules_at || null,
+    },
+    wallet: {
+      balance: Number(wallet?.balance || 0),
+      escrowLocked,
+    },
+    stats: {
+      totalCampaigns: campaigns.length,
+      totalSpent,
+      isVerifiedPartner: Boolean(adv.agreed_global_rules_at && campaigns.length > 0),
+    },
+  };
+}
+

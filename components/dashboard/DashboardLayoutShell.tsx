@@ -101,6 +101,8 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
     {
       label: 'Creators Directory',
       href: '/b/creators',
+      disabled: true,
+      badge: 'Soon',
       icon: (
         <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -188,6 +190,28 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
         <nav className={`flex-1 overflow-y-auto py-3 space-y-1 ${isCollapsed ? 'px-2' : 'px-3'}`}>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            if ((item as any).disabled) {
+              return (
+                <div
+                  key={item.href}
+                  title={isCollapsed ? `${item.label} (${(item as any).badge || 'Coming Soon'})` : undefined}
+                  className={`flex items-center gap-3 rounded-xl font-sans text-[13px] font-semibold select-none opacity-50 cursor-not-allowed text-kpugi-slate ${
+                    isCollapsed ? 'justify-center w-12 h-11 mx-auto' : 'px-3.5 py-2.5'
+                  }`}
+                  aria-disabled="true"
+                >
+                  <span className="shrink-0">{item.icon}</span>
+                  {!isCollapsed && (
+                    <>
+                      <span className="truncate">{item.label}</span>
+                      <span className="ml-auto text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
+                        {(item as any).badge || 'Soon'}
+                      </span>
+                    </>
+                  )}
+                </div>
+              );
+            }
             return (
               <Link
                 key={item.href}
@@ -320,6 +344,23 @@ export default function DashboardLayoutShell({ children, role, title }: Dashboar
             <nav className="flex-1 overflow-y-auto py-3 space-y-1 px-3">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
+                if ((item as any).disabled) {
+                  return (
+                    <div
+                      key={item.href}
+                      className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl font-sans text-[13px] font-semibold select-none opacity-50 cursor-not-allowed text-kpugi-slate"
+                      aria-disabled="true"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="shrink-0">{item.icon}</span>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
+                        {(item as any).badge || 'Soon'}
+                      </span>
+                    </div>
+                  );
+                }
                 return (
                   <Link
                     key={item.href}
