@@ -73,9 +73,11 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         updated_at,
         cover_image_url,
         requirements,
+        deleted,
         submissions:submissions!left(id, status, final_view_count)
       `)
       .eq('advertiser_id', profileId)
+      .eq('deleted', false)
       .order('created_at', { ascending: false }),
     supabase
       .from('notifications')
@@ -87,7 +89,8 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
 
   const advProfile = advProfileRes.data;
   const wallet = walletRes.data;
-  let campaigns = campaignsRes.data;
+  const rawCampaigns = campaignsRes.data || [];
+  let campaigns = rawCampaigns.filter((c: any) => !c.deleted && !c.requirements?.is_deleted);
   const notifications = notificationsRes.data;
 
   const companyName = advProfile?.company_name || 'Brand Partner';
@@ -113,10 +116,12 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         updated_at,
         cover_image_url,
         requirements,
+        deleted,
         submissions:submissions!left(id, status, final_view_count)
       `)
+      .eq('deleted', false)
       .order('created_at', { ascending: false });
-    campaigns = allCampaigns || [];
+    campaigns = (allCampaigns || []).filter((c: any) => !c.deleted && !c.requirements?.is_deleted);
   }
 
   const campaignIds = (campaigns || []).map((c) => c.id);
@@ -228,6 +233,9 @@ export interface BrandCampaignDetails {
     views_count: number;
     final_view_count: number | null;
     payout_amount: number | null;
+    likes_count?: number;
+    comments_count?: number;
+    shares_count?: number;
     submitted_at: string;
     verified_at: string | null;
     failure_reason?: string | null;
@@ -250,6 +258,9 @@ export interface BrandCampaignDetails {
   }[];
   metrics: {
     totalViews: number;
+    totalLikes: number;
+    totalComments: number;
+    totalShares: number;
     totalPayouts: number;
     creatorsJoined: number;
     totalSubmissions: number;
@@ -293,6 +304,7 @@ export async function getBrandCampaignDetails(
       avg_watch_time_seconds,
       target_engagement_rate,
       created_at,
+      deleted,
       advertiser:advertiser_profiles (
         company_name,
         profile:profiles (
@@ -302,6 +314,10 @@ export async function getBrandCampaignDetails(
     `)
     .or(`id.eq.${campaignId},campaign_code.ilike.${campaignId}`)
     .maybeSingle();
+
+  if (campaign && (campaign.deleted || (campaign.requirements as any)?.is_deleted)) {
+    campaign = null;
+  }
 
   if (!campaign) {
     const { data: firstCampaign } = await supabase
@@ -325,6 +341,7 @@ export async function getBrandCampaignDetails(
         avg_watch_time_seconds,
         target_engagement_rate,
         created_at,
+        deleted,
         advertiser:advertiser_profiles (
           company_name,
           profile:profiles (
@@ -332,10 +349,11 @@ export async function getBrandCampaignDetails(
           )
         )
       `)
+      .eq('deleted', false)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    campaign = firstCampaign;
+    campaign = firstCampaign && !(firstCampaign.requirements as any)?.is_deleted ? firstCampaign : null;
   }
 
   const realCampaignId = campaign ? campaign.id : campaignId;
@@ -420,6 +438,9 @@ export async function getBrandCampaignDetails(
       views_count: views,
       final_view_count: sub.final_view_count ? Number(sub.final_view_count) : null,
       payout_amount: sub.payout_amount ? Number(sub.payout_amount) : null,
+      likes_count: Number(sub.likes_count || 0),
+      comments_count: Number(sub.comments_count || 0),
+      shares_count: Number(sub.shares_count || 0),
       submitted_at: sub.submitted_at,
       verified_at: sub.verified_at,
       failure_reason: sub.failure_reason || null,
@@ -537,6 +558,9 @@ export async function getBrandCampaignDetails(
     audits: allAudits,
     metrics: {
       totalViews,
+      totalLikes,
+      totalComments,
+      totalShares,
       totalPayouts: spentBudget,
       creatorsJoined: new Set(mappedSubmissions.map((s) => s.creator_id)).size,
       totalSubmissions: mappedSubmissions.filter((s) => s.post_url != null && s.status !== 'joined').length,

@@ -765,8 +765,140 @@ export async function archiveCampaignAction(campaignId: string) {
   }
 }
 
+/**
+ * Server action to soft-delete a single archived campaign from the user dashboard.
+ * Campaigns MUST be archived first before they can be deleted.
+ */
+export async function deleteArchivedCampaignAction(campaignId: string) {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    if (!userProfile.advertiserProfile) {
+      return { success: false, error: 'Only registered advertisers can delete campaigns.' };
+    }
+
+    const advertiserId = userProfile.profile.id;
+    const supabase = createAdminClient();
+
+    // Check existing campaign status
+    const { data: campaign, error: fetchErr } = await supabase
+      .from('campaigns')
+      .select('id, status, requirements')
+      .eq('id', campaignId)
+      .eq('advertiser_id', advertiserId)
+      .single();
+
+    if (fetchErr || !campaign) {
+      return { success: false, error: 'Campaign not found or access denied.' };
+    }
+
+    if (campaign.status !== 'archived') {
+      return { success: false, error: 'Campaign must be archived before it can be deleted from your dashboard.' };
+    }
+
+    const updatedReqs = {
+      ...(typeof campaign.requirements === 'object' && campaign.requirements !== null ? campaign.requirements : {}),
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+    };
+
+    const { error: deleteErr } = await supabase
+      .from('campaigns')
+      .update({
+        deleted: true,
+        requirements: updatedReqs,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', campaignId);
+
+    if (deleteErr) {
+      return { success: false, error: `Failed to delete campaign: ${deleteErr.message}` };
+    }
+
+    revalidatePath('/b/campaigns');
+    revalidatePath('/b/dashboard');
+    revalidatePath('/browse');
+
+    return {
+      success: true,
+      message: 'Campaign deleted from your dashboard. Records preserved in database.',
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Server error deleting campaign' };
+  }
+}
+
+/**
+ * Server action to batch delete all archived campaigns from the user dashboard.
+ */
+export async function deleteAllArchivedCampaignsAction() {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    if (!userProfile.advertiserProfile) {
+      return { success: false, error: 'Only registered advertisers can delete campaigns.' };
+    }
+
+    const advertiserId = userProfile.profile.id;
+    const supabase = createAdminClient();
+
+    // Fetch all archived campaigns for this advertiser that are not already deleted
+    const { data: archivedList, error: fetchErr } = await supabase
+      .from('campaigns')
+      .select('id, requirements')
+      .eq('advertiser_id', advertiserId)
+      .eq('status', 'archived')
+      .eq('deleted', false);
+
+    if (fetchErr) {
+      return { success: false, error: `Failed to fetch archived campaigns: ${fetchErr.message}` };
+    }
+
+    if (!archivedList || archivedList.length === 0) {
+      return { success: true, message: 'No archived campaigns to delete.' };
+    }
+
+    // Soft-delete all archived campaigns
+    for (const item of archivedList) {
+      const updatedReqs = {
+        ...(typeof item.requirements === 'object' && item.requirements !== null ? item.requirements : {}),
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      };
+
+      await supabase
+        .from('campaigns')
+        .update({
+          deleted: true,
+          requirements: updatedReqs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', item.id);
+    }
+
+    revalidatePath('/b/campaigns');
+    revalidatePath('/b/dashboard');
+    revalidatePath('/browse');
+
+    return {
+      success: true,
+      message: `Successfully removed ${archivedList.length} archived campaign(s) from your dashboard.`,
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Server error deleting archived campaigns' };
+  }
+}
+
 // Backwards compatibility alias
-export const deleteCampaignAction = archiveCampaignAction;
+export const deleteCampaignAction = deleteArchivedCampaignAction;
 
 /**
  * Server action to update existing campaign details (all parameters)
@@ -805,6 +937,14 @@ export async function updateCampaignDetailsAction(payload: {
 
     if (fetchErr || !existingCampaign) {
       return { success: false, error: 'Campaign not found or access denied.' };
+    }
+
+    if (existingCampaign.status === 'archived') {
+      return { success: false, error: 'Archived campaigns cannot be edited.' };
+    }
+
+    if (existingCampaign.status === 'completed') {
+      return { success: false, error: 'Completed campaigns cannot be edited.' };
     }
 
     const isLive = existingCampaign.status === 'live';

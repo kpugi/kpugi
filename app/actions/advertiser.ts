@@ -172,6 +172,14 @@ export async function updateCampaignStatusAction(formData: FormData) {
     return { success: false, error: 'Campaign not found or access denied.' };
   }
 
+  if (campaign.status === 'archived') {
+    return { success: false, error: 'Archived campaigns cannot be modified.' };
+  }
+
+  if (campaign.status === 'completed') {
+    return { success: false, error: 'Completed campaigns cannot be resumed or modified.' };
+  }
+
   // If concluding/completing campaign, refund remaining unspent budget to brand wallet
   if (newStatus === 'completed' && campaign.status !== 'completed') {
     const unspentBudget = Math.max(0, Number(campaign.total_budget) - Number(campaign.spent_budget));

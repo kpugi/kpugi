@@ -174,7 +174,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     .single();
 
   // Fetch campaigns
-  const { data: campaigns } = await supabase
+  const { data: rawCampaigns } = await supabase
     .from('campaigns')
     .select(`
       id, 
@@ -190,14 +190,19 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       channels,
       created_at, 
       updated_at,
+      requirements,
+      deleted,
       submissions:submissions(id)
     `)
     .eq('advertiser_id', profileId)
+    .eq('deleted', false)
     .order('created_at', { ascending: false })
     .limit(20);
 
+  const campaigns = (rawCampaigns || []).filter((c: any) => !c.deleted && !c.requirements?.is_deleted);
+
   // Fetch pending submission count across all campaigns
-  const campaignIds = (campaigns || []).map((c) => c.id);
+  const campaignIds = campaigns.map((c) => c.id);
   let pendingSubmissions = 0;
   if (campaignIds.length > 0) {
     const { count } = await supabase

@@ -500,10 +500,10 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             <div className="flex items-center justify-between">
               <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <ImageIcon className="w-4 h-4 text-[#4338ca]" />
-                <span>Image Creative Asset for Creators *</span>
+                <span>Campaign Asset*</span>
               </label>
               <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
-                Auto-Optimized JPEG
+                Optimized
               </span>
             </div>
 
