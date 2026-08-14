@@ -164,9 +164,9 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
     if (t.transaction_type === 'campaign_funding' || t.transaction_type === 'debit') {
       typeLabel = 'Campaign Funding';
       desc = t.campaign_title ? `${t.campaign_title}` : 'Campaign Budget Allocation';
-    } else if (t.transaction_type === 'unspent_refund') {
+    } else if (t.transaction_type === 'unspent_refund' || t.transaction_type === 'budget_release_refund') {
       typeLabel = 'Unspent Refund';
-      desc = 'Unspent Budget Refund';
+      desc = t.campaign_title ? `Refund: ${t.campaign_title}` : 'Unspent Budget Refund';
     } else if (t.transaction_type === 'deposit') {
       typeLabel = 'Deposit';
       desc = 'Wallet Top Up (Paystack)';
@@ -617,35 +617,47 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                             </div>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenReceipt(tx)}
-                              title="Click to view official receipt 📄"
-                              className={`group inline-flex items-center gap-1 font-mono font-extrabold hover:underline transition-all ${
-                                isCredit ? 'text-blue-600 hover:text-blue-700' : 'text-slate-900 hover:text-blue-600'
-                              }`}
-                            >
-                              <span>{isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}</span>
-                              <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                            </button>
+                            {tx.type === 'Unspent Refund' ? (
+                              <div className="inline-flex items-center gap-1 font-mono font-extrabold text-emerald-600">
+                                <span>+₦{format2Decimals(tx.amount)}</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenReceipt(tx)}
+                                title="Click to view official receipt 📄"
+                                className={`group inline-flex items-center gap-1 font-mono font-extrabold hover:underline transition-all ${
+                                  isCredit ? 'text-blue-600 hover:text-blue-700' : 'text-slate-900 hover:text-blue-600'
+                                }`}
+                              >
+                                <span>{isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}</span>
+                                <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                              </button>
+                            )}
                           </td>
                           <td className="py-4 px-5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenReceipt(tx)}
-                              title="Click to view official receipt 📄"
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-opacity hover:opacity-80 ${
-                                tx.status === 'COMPLETED'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                                  : tx.status === 'CANCELLED'
-                                    ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
-                                    : tx.status === 'FAILED'
-                                      ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                                      : 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                              }`}
-                            >
-                              {tx.status}
-                            </button>
+                            {tx.type === 'Unspent Refund' ? (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                {tx.status}
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenReceipt(tx)}
+                                title="Click to view official receipt 📄"
+                                className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-opacity hover:opacity-80 ${
+                                  tx.status === 'COMPLETED'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                    : tx.status === 'CANCELLED'
+                                      ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
+                                      : tx.status === 'FAILED'
+                                        ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
+                                        : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                                }`}
+                              >
+                                {tx.status}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -686,17 +698,25 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                             </span>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenReceipt(tx)}
-                          title="Click to view official receipt 📄"
-                          className={`font-mono text-sm font-extrabold shrink-0 flex items-center gap-1 hover:underline ${
-                            isCredit ? 'text-blue-600' : 'text-slate-900'
-                          }`}
-                        >
-                          <span>{isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}</span>
-                          <FileText className="w-3 h-3 text-slate-400" />
-                        </button>
+                        {tx.type === 'Unspent Refund' ? (
+                          <div
+                            className="font-mono text-sm font-extrabold text-emerald-600 shrink-0"
+                          >
+                            <span>+₦{format2Decimals(tx.amount)}</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceipt(tx)}
+                            title="Click to view official receipt 📄"
+                            className={`font-mono text-sm font-extrabold shrink-0 flex items-center gap-1 hover:underline ${
+                              isCredit ? 'text-blue-600' : 'text-slate-900'
+                            }`}
+                          >
+                            <span>{isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}</span>
+                            <FileText className="w-3 h-3 text-slate-400" />
+                          </button>
+                        )}
                       </div>
 
                       {/* Middle Row: Description */}
@@ -717,21 +737,29 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                       {/* Bottom Row: Date & Time + Status Pill */}
                       <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
                         <span>{tx.date} • {tx.time}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenReceipt(tx)}
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${
-                            tx.status === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                              : tx.status === 'CANCELLED'
-                                ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
-                                : tx.status === 'FAILED'
-                                  ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                                  : 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                          }`}
-                        >
-                          {tx.status}
-                        </button>
+                        {tx.type === 'Unspent Refund' ? (
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                          >
+                            {tx.status}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceipt(tx)}
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${
+                              tx.status === 'COMPLETED'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                : tx.status === 'CANCELLED'
+                                  ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
+                                  : tx.status === 'FAILED'
+                                    ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                            }`}
+                          >
+                            {tx.status}
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

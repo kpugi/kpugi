@@ -190,13 +190,14 @@ export async function updateCampaignStatusAction(formData: FormData) {
           .update({ balance: Number(wallet.balance) + unspentBudget })
           .eq('id', wallet.id);
 
+        const refundRef = `KPG-PAY-RFD-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
         await supabase.from('wallet_transactions').insert({
           wallet_id: wallet.id,
           type: 'budget_release_refund',
           amount: unspentBudget,
           campaign_id: campaign.id,
           status: 'completed',
-          paystack_reference: `KP-RFD-${Date.now().toString().slice(-6)}`,
+          paystack_reference: refundRef,
           created_at: new Date().toISOString(),
         });
       }

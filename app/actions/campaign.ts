@@ -609,16 +609,14 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
         .maybeSingle();
 
       if (brandProfile?.email && brandProfile?.clerk_id) {
-        const { notifyAdvertiserCampaignLaunched } = await import('@/lib/notifications/advertiser');
-        notifyAdvertiserCampaignLaunched({
+        const { notifyAdvertiserCampaignLive } = await import('@/lib/notifications/advertiser');
+        notifyAdvertiserCampaignLive({
           clerkId: brandProfile.clerk_id,
           email: brandProfile.email,
-          companyName: advProfile?.company_name || brandProfile.full_name || 'Brand Partner',
           campaignTitle: campaign.title,
-          campaignId: campaign.id,
-          campaignCode: campaign.campaign_code || '',
           totalBudget,
-          receiptNumber,
+          cpmRate,
+          campaignId: campaign.id,
           profileId: advertiserId,
         }).catch((e) => console.error('[Campaign Action] Brand notification error:', e));
       }

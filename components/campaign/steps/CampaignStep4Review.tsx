@@ -272,8 +272,11 @@ export function CampaignStep4Review({
                 type="number"
                 min={10000}
                 step={5000}
-                value={formData.total_budget || 100000}
+                value={formData.total_budget ?? ''}
                 onChange={(e) =>
+                  updateFormData && updateFormData({ total_budget: e.target.value === '' ? 0 : Number(e.target.value) })
+                }
+                onBlur={(e) =>
                   updateFormData && updateFormData({ total_budget: Math.max(10000, Number(e.target.value)) })
                 }
                 placeholder="100000"
