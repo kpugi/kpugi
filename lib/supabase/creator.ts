@@ -73,6 +73,8 @@ export interface CreatorEarningsData {
   totalEarned: number;
   totalWithdrawn: number;
   lastWithdrawalDate: string | null;
+  nextClearanceDate?: string | null;
+  nextClearanceAmount?: number;
   bankDetails: BankAccountItem | null;
   bankAccounts: BankAccountItem[];
   transactions: any[];
@@ -367,9 +369,11 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         payout_amount,
         status,
         settled_at,
+        created_at,
         campaign:campaigns (
           id,
-          title
+          title,
+          cpm_rate
         )
       `)
       .eq('creator_id', profileId)
@@ -390,13 +394,33 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   const lastWithdrawalDate = payoutRequests && payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
 
-  // Calculate Pending Clearance accurately
-  // 1. Unsettled/in-review earnings: submissions with pending_payout_amount > 0 or submitted & pending review with verified views meeting min threshold
-  // 2. Settled earnings within the 24-hour clearance grace window: submissions verified_pass/paid with settled date < 24h ago
+  // Calculate Pending Clearance accurately and detect upcoming clearance milestones
   let computedPendingClearance = 0;
+  let soonestClearanceTime: number | null = null;
+  let soonestClearanceAmount = 0;
+
+  // 1. Add clearing audits (approved / settled within 24h escrow window)
+  submissionAudits.forEach((audit: any) => {
+    const payoutAmt = Number(audit.payout_amount || 0);
+    if (payoutAmt > 0) {
+      const settledDate = audit.settled_at || audit.created_at;
+      const settledTime = settledDate ? new Date(settledDate).getTime() : Date.now();
+      const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
+      const isClearing = Date.now() < clearanceTime;
+
+      if (isClearing) {
+        computedPendingClearance += payoutAmt;
+        if (soonestClearanceTime === null || clearanceTime < soonestClearanceTime) {
+          soonestClearanceTime = clearanceTime;
+          soonestClearanceAmount = payoutAmt;
+        }
+      }
+    }
+  });
+
+  // 2. Add pending audit submissions (new views queued for approval)
   (rawSubmissions || []).forEach((s: any) => {
     const pendingAmt = Number(s.pending_payout_amount || 0);
-    const payoutAmt = Number(s.payout_amount || 0);
     const views = Number(s.final_view_count || 0);
     const minThreshold = Number(s.campaign?.min_view_threshold || 1000);
     const cpm = Number(s.campaign?.cpm_rate || 0);
@@ -405,14 +429,6 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       computedPendingClearance += pendingAmt;
     } else if ((s.status === 'pending' || s.status === 'auditing') && views >= minThreshold && cpm > 0) {
       computedPendingClearance += Math.floor((views / 1000) * cpm);
-    } else if (s.status === 'verified_pass' || s.status === 'paid') {
-      if (s.paid_at || s.verified_at) {
-        const settledTime = new Date(s.paid_at || s.verified_at).getTime();
-        const ageHours = (Date.now() - settledTime) / (1000 * 60 * 60);
-        if (ageHours < 24 && payoutAmt > 0) {
-          computedPendingClearance += payoutAmt;
-        }
-      }
     }
   });
 
@@ -426,17 +442,30 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   // 1. Add settled audits from submission_audits
   submissionAudits.forEach((audit: any) => {
     const ref = `KP-AUD-${audit.id.slice(0, 8).toUpperCase()}`;
-    if (!existingTxKeys.has(ref) && Number(audit.payout_amount || 0) > 0) {
+    const payoutAmt = Number(audit.payout_amount || 0);
+    if (!existingTxKeys.has(ref) && payoutAmt > 0) {
+      const settledDate = audit.settled_at || audit.created_at;
+      const settledTime = settledDate ? new Date(settledDate).getTime() : Date.now();
+      const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
+      const isClearing = Date.now() < clearanceTime;
+
       campaignTxList.push({
         id: audit.id,
         title: `${audit.campaign?.title || 'Video Campaign'}`,
         campaign_title: audit.campaign?.title || 'Campaign',
         reference: ref,
-        amount: Number(audit.payout_amount || 0),
+        amount: payoutAmt,
         type: 'credit',
         transaction_type: 'payout',
-        status: audit.status === 'auto_approved' || audit.status === 'approved' ? 'completed' : audit.status,
-        created_at: audit.settled_at || audit.created_at,
+        status: isClearing ? 'clearing' : (audit.status === 'auto_approved' || audit.status === 'approved' ? 'completed' : audit.status),
+        created_at: settledDate,
+        settled_at: settledDate,
+        clearance_at: new Date(clearanceTime).toISOString(),
+        is_clearing: isClearing,
+        views_scraped: Number(audit.views_scraped || 0),
+        views_delta: Number(audit.views_delta || 0),
+        cpm_rate: Number(audit.campaign?.cpm_rate || 0),
+        settlement_method: audit.status === 'auto_approved' ? 'Automated Grace-Period Approval' : 'Advertiser Verification',
       });
       existingTxKeys.add(ref);
       if (audit.submission_id) {
@@ -453,6 +482,18 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     if (earnedAmt > 0) {
       const ref = `KP-SUB-${sub.id.slice(0, 8).toUpperCase()}`;
       if (!existingTxKeys.has(ref)) {
+        const settledDate = sub.paid_at || sub.verified_at || sub.submitted_at || new Date().toISOString();
+        const settledTime = new Date(settledDate).getTime();
+        const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
+        const isClearing = (sub.status === 'verified_pass' || sub.status === 'paid') && Date.now() < clearanceTime;
+
+        if (isClearing) {
+          if (soonestClearanceTime === null || clearanceTime < soonestClearanceTime) {
+            soonestClearanceTime = clearanceTime;
+            soonestClearanceAmount = earnedAmt;
+          }
+        }
+
         campaignTxList.push({
           id: `sub-tx-${sub.id}`,
           title: `${sub.campaign?.title || 'Video Campaign'}`,
@@ -461,8 +502,15 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
           amount: earnedAmt,
           type: 'credit',
           transaction_type: 'payout',
-          status: sub.status === 'verified_pass' || sub.status === 'paid' ? 'completed' : 'pending',
-          created_at: sub.paid_at || sub.verified_at || sub.submitted_at || new Date().toISOString(),
+          status: isClearing ? 'clearing' : (sub.status === 'verified_pass' || sub.status === 'paid' ? 'completed' : 'pending'),
+          created_at: settledDate,
+          settled_at: settledDate,
+          clearance_at: new Date(clearanceTime).toISOString(),
+          is_clearing: isClearing,
+          views_scraped: Number(sub.final_view_count || 0),
+          views_delta: Number(sub.final_view_count || 0),
+          cpm_rate: Number(sub.campaign?.cpm_rate || 0),
+          settlement_method: 'Campaign Submission Settlement',
         });
         existingTxKeys.add(ref);
         coveredSubmissionIds.add(sub.id);
@@ -508,6 +556,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     totalEarned: Number(creator?.total_earned || 0),
     totalWithdrawn: Number(totalWithdrawn || 0),
     lastWithdrawalDate,
+    nextClearanceDate: soonestClearanceTime ? new Date(soonestClearanceTime).toISOString() : null,
+    nextClearanceAmount: soonestClearanceAmount,
     bankDetails: primaryBank,
     bankAccounts,
     transactions: mergedTransactions,

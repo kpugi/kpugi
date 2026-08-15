@@ -119,7 +119,7 @@ class DatabaseClient:
         url = f"{self.rest_url}/campaigns"
         params = {
             "id": f"in.({','.join(campaign_ids)})",
-            "select": "id,title,cpm_rate,min_view_threshold,budget_remaining,status",
+            "select": "id,title,cpm_rate,min_view_threshold,total_budget,reserved_budget,spent_budget,status",
         }
 
         resp = self._http_request("GET", url, params=params)

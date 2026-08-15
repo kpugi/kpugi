@@ -49,4 +49,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
         run: |
-          python -m .scraper.runner
+          python .scraper/runner.py

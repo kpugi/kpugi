@@ -6,10 +6,85 @@ import { CreatorEarningsData } from '@/lib/supabase/creator';
 import { requestPayoutAction, resolveAndSaveBankAccountAction, getNigerianBanksAction } from '@/app/actions/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
 import BankLogo from '@/components/ui/BankLogo';
-import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, Filter, Download } from 'lucide-react';
+import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, ChevronDown, Clock, Filter, Download, Eye, TrendingUp, Hash } from 'lucide-react';
 
 interface CreatorEarningsViewProps {
   data: CreatorEarningsData;
+}
+
+function formatClearanceDate(dateStr?: string | null) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+  const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  if (isToday) return `Today at ${timeStr}`;
+  if (isTomorrow) return `Tomorrow at ${timeStr}`;
+  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${timeStr}`;
+}
+
+function formatHoursRemaining(dateStr?: string | null) {
+  if (!dateStr) return '';
+  const diff = new Date(dateStr).getTime() - Date.now();
+  if (diff <= 0) return 'Ready to clear';
+  const hrs = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
+  return `in ~${hrs}h`;
+}
+
+function LiveClearanceTicker({ targetDate }: { targetDate: string }) {
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isExpired: boolean }>({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isExpired: false,
+  });
+
+  useEffect(() => {
+    function updateCountdown() {
+      const now = Date.now();
+      const target = new Date(targetDate).getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isExpired: true });
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      setTimeLeft({ hours, minutes, seconds, isExpired: false });
+    }
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  if (timeLeft.isExpired) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold font-mono">
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+        Grace Window Complete (Ready)
+      </span>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 font-mono text-xs font-bold tracking-tight">
+      <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+      <span>
+        {timeLeft.hours}h {timeLeft.minutes.toString().padStart(2, '0')}m {timeLeft.seconds.toString().padStart(2, '0')}s remaining
+      </span>
+    </div>
+  );
 }
 
 export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) {
@@ -18,6 +93,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
   const [showBankModal, setShowBankModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
   // Dynamic Nigerian Banks list from Paystack
   const [bankList, setBankList] = useState<BankOption[]>(FALLBACK_NIGERIAN_BANKS);
@@ -129,16 +205,37 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
     }
   }
 
-  // Real transactions from database
-  const displayTransactions = (data.transactions || []).map((tx: any) => ({
-    id: tx.id,
-    date: new Date(tx.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    title: tx.title || (tx.type === 'withdrawal' || tx.transaction_type === 'withdrawal' ? 'Bank Withdrawal' : 'Campaign Earnings'),
-    sub: tx.reference ? `Ref: ${tx.reference}` : (tx.campaign_title || 'Campaign Payout'),
-    amount: Number(tx.amount || 0),
-    isCredit: tx.type === 'credit' || tx.type === 'payout' || tx.type === 'payout_release' || tx.transaction_type === 'payout',
-    status: tx.status ? (tx.status.charAt(0).toUpperCase() + tx.status.slice(1)) : 'Completed',
-  }));
+  // Real transactions from database with enriched clearance & audit data
+  const displayTransactions = (data.transactions || []).map((tx: any) => {
+    const isCredit = tx.type === 'credit' || tx.type === 'payout' || tx.type === 'payout_release' || tx.transaction_type === 'payout';
+    const isClearing = Boolean(tx.is_clearing);
+
+    let statusLabel = 'Completed';
+    if (isClearing) {
+      statusLabel = 'Clearing';
+    } else if (tx.status) {
+      statusLabel = tx.status.charAt(0).toUpperCase() + tx.status.slice(1);
+    }
+
+    return {
+      id: tx.id,
+      date: new Date(tx.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      time: new Date(tx.created_at || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      title: tx.title || (tx.type === 'withdrawal' || tx.transaction_type === 'withdrawal' ? 'Bank Withdrawal' : 'Campaign Earnings'),
+      sub: tx.campaign_title || 'Campaign Payout',
+      reference: tx.reference || `TX-${tx.id.slice(0, 8).toUpperCase()}`,
+      amount: Number(tx.amount || 0),
+      isCredit,
+      status: statusLabel,
+      isClearing,
+      clearanceAt: tx.clearance_at,
+      settledAt: tx.settled_at || tx.created_at,
+      viewsScraped: tx.views_scraped,
+      viewsDelta: tx.views_delta,
+      cpmRate: tx.cpm_rate,
+      settlementMethod: tx.settlement_method || 'Advertiser Verification',
+    };
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink pb-12 font-sans">
@@ -159,7 +256,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               <div className="flex justify-center sm:justify-start">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-bold font-sans">
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                  +12% vs last month
+                  Ready for instant withdrawal
                 </span>
               </div>
             </div>
@@ -189,12 +286,18 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
         </div>
 
         {/* Right Pending Clearance Card (30% width) */}
-        <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-slate-50 border border-kpugi-border shadow-sm flex flex-col justify-between space-y-6 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-between">
-            <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
+        <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-slate-50 border border-kpugi-border shadow-sm flex flex-col justify-between space-y-5 text-center sm:text-left">
+          <div className="flex items-center justify-between">
+            <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center gap-1.5">
               Pending Clearance
               <Info className="w-3.5 h-3.5 text-kpugi-slate" />
             </span>
+            {data.nextClearanceDate && pendingEscrow > 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                24h Window
+              </span>
+            )}
           </div>
 
           <div>
@@ -203,14 +306,37 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-kpugi-border space-y-2">
-            <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5 font-sans">
-              <span className="text-slate-400">🕒</span> Verification Grace Period
-            </span>
-            <p className="text-[11px] text-kpugi-slate leading-relaxed">
-              Funds are automatically cleared into your wallet 24 hours after anti-fraud view verification.
-            </p>
-          </div>
+          {data.nextClearanceDate && pendingEscrow > 0 ? (
+            <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 space-y-2 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                  Next Release
+                </span>
+                <span className="font-mono font-bold text-xs text-amber-900">
+                  ₦{(data.nextClearanceAmount || pendingEscrow).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-amber-800">
+                <span className="font-medium">{formatClearanceDate(data.nextClearanceDate)}</span>
+                <span className="font-mono font-bold text-[11px] bg-white/80 px-2 py-0.5 rounded border border-amber-200">
+                  {formatHoursRemaining(data.nextClearanceDate)}
+                </span>
+              </div>
+              <p className="text-[10px] text-amber-700/90 leading-tight pt-1 border-t border-amber-200/60">
+                Automatic wallet settlement unlocks upon 24-hour verification maturity.
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-white border border-kpugi-border space-y-1.5 text-left">
+              <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> All Cleared
+              </span>
+              <p className="text-[11px] text-kpugi-slate leading-relaxed">
+                Funds are automatically cleared into your wallet 24 hours after anti-fraud view verification.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -242,38 +368,162 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   <th className="py-3 px-4">Campaign / Type</th>
                   <th className="py-3 px-4">Amount (NGN)</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-2 w-8 text-center"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {displayTransactions.length > 0 ? (
-                  displayTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-bold text-kpugi-ink">{tx.title}</div>
-                        <div className="text-[11px] text-kpugi-slate">{tx.sub}</div>
-                      </td>
-                      <td className="py-4 px-4 font-mono font-bold whitespace-nowrap text-sm">
-                        <span className={tx.isCredit ? 'text-emerald-600' : 'text-slate-900'}>
-                          {tx.isCredit ? '+' : '-'}₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            tx.status === 'Success'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  displayTransactions.map((tx) => {
+                    const isExpanded = expandedTxId === tx.id;
+                    return (
+                      <React.Fragment key={tx.id}>
+                        <tr
+                          onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
+                          className={`hover:bg-slate-50/90 transition-colors cursor-pointer ${
+                            isExpanded ? 'bg-slate-50/70' : ''
                           }`}
                         >
-                          {tx.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                          <td className="py-4 px-4 font-medium text-slate-500 whitespace-nowrap">
+                            <div>{tx.date}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{tx.time}</div>
+                          </td>
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <div className="font-bold text-kpugi-ink">{tx.title}</div>
+                            <div className="text-[11px] text-kpugi-slate flex items-center gap-1.5">
+                              <span>{tx.sub}</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="font-mono text-[10px] text-slate-400">{tx.reference}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 font-mono font-bold whitespace-nowrap text-sm">
+                            <span className={tx.isCredit ? 'text-emerald-600' : 'text-slate-900'}>
+                              {tx.isCredit ? '+' : '-'}₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            {tx.isClearing ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                                <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                                Clearing ({formatHoursRemaining(tx.clearanceAt)})
+                              </span>
+                            ) : tx.status === 'Completed' || tx.status === 'Success' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                Cleared
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                                {tx.status}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-2 text-center text-slate-400">
+                            <ChevronDown
+                              className={`w-4 h-4 transition-transform duration-200 inline-block ${
+                                isExpanded ? 'rotate-180 text-kpugi-blue' : ''
+                              }`}
+                            />
+                          </td>
+                        </tr>
+
+                        {/* Accordion Details Drawer */}
+                        {isExpanded && (
+                          <tr className="bg-slate-50/50">
+                            <td colSpan={5} className="p-3 sm:p-5 pt-0">
+                              <div className="rounded-2xl bg-white border border-slate-200/80 p-5 space-y-4 shadow-xs">
+                                {/* Header / Countdown Ticker Bar */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                          tx.isClearing
+                                            ? 'bg-amber-100 text-amber-800'
+                                            : 'bg-emerald-100 text-emerald-800'
+                                        }`}
+                                      >
+                                        {tx.isClearing ? (
+                                          <>
+                                            <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                                            24h Anti-Fraud Grace Period Active
+                                          </>
+                                        ) : (
+                                          <>
+                                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                            Settled & Cleared to Wallet
+                                          </>
+                                        )}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500">
+                                      {tx.isClearing
+                                        ? 'Views have been validated by anti-fraud audit. Payout is undergoing 24-hour verification maturity before release.'
+                                        : 'Payout has successfully cleared and is available in your balance for instant withdrawal.'}
+                                    </p>
+                                  </div>
+
+                                  {tx.isClearing && tx.clearanceAt && (
+                                    <div className="shrink-0">
+                                      <LiveClearanceTicker targetDate={tx.clearanceAt} />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Audit Metric Cards */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                  {/* Box 1: Verified Traffic */}
+                                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                      <Eye className="w-3 h-3 text-slate-400" /> Verified Traffic
+                                    </span>
+                                    <div className="font-mono font-bold text-base text-slate-900">
+                                      {(tx.viewsScraped || 0).toLocaleString()}{' '}
+                                      <span className="text-xs font-normal text-slate-500">views</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-500">
+                                      Cycle delta: +{(tx.viewsDelta || tx.viewsScraped || 0).toLocaleString()} views
+                                    </div>
+                                  </div>
+
+                                  {/* Box 2: Campaign CPM Rate */}
+                                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                      <TrendingUp className="w-3 h-3 text-slate-400" /> Campaign CPM
+                                    </span>
+                                    <div className="font-mono font-bold text-base text-slate-900">
+                                      ₦{(tx.cpmRate || 2000).toLocaleString()}{' '}
+                                      <span className="text-xs font-normal text-slate-500">/ 1k views</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-500">
+                                      Payout: (Views ÷ 1,000) × CPM
+                                    </div>
+                                  </div>
+
+                                  {/* Box 3: Verification Audit Trail */}
+                                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                      <Hash className="w-3 h-3 text-slate-400" /> Audit Trail & Clearance
+                                    </span>
+                                    <div className="font-mono font-bold text-xs text-slate-800 truncate">
+                                      {tx.reference}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500">
+                                      {tx.isClearing && tx.clearanceAt
+                                        ? `Unlocks: ${formatClearanceDate(tx.clearanceAt)}`
+                                        : `Settled via: ${tx.settlementMethod}`}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={4} className="text-center py-12">
+                    <td colSpan={5} className="text-center py-12">
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
                           <CreditCard className="w-5 h-5" />
