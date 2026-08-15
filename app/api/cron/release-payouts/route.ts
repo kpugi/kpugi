@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { notifyCreatorVerificationPassed } from '@/lib/notifications/creator';
+import { notifyAdvertiserSubmissionVerified } from '@/lib/notifications/advertiser';
 
 export async function GET() {
   try {
@@ -23,6 +24,7 @@ export async function GET() {
         campaign:campaigns (
           id,
           title,
+          advertiser_id,
           cpm_rate,
           spent_budget,
           reserved_budget
@@ -50,7 +52,7 @@ export async function GET() {
       const reservedAmt = Number(sub.reserved_amount || 0);
       const newReservedBudget = Math.max(0, Number(campaign?.reserved_budget || 0) - reservedAmt);
 
-      // 1. Credit creator wallet balance
+      // 1. Credit or initialize creator wallet balance
       const { data: creatorWallet } = await supabase
         .from('wallets')
         .select('id, balance')
@@ -65,15 +67,38 @@ export async function GET() {
           .eq('id', creatorWallet.id);
 
         await supabase.from('wallet_transactions').insert({
-          profile_id: sub.creator_id,
-          creator_id: sub.creator_id,
-          wallet_type: 'creator_earnings',
-          transaction_type: 'payout',
+          wallet_id: creatorWallet.id,
+          type: 'payout',
           amount: pendingPayout,
+          campaign_id: sub.campaign_id,
+          submission_id: sub.id,
+          paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
           status: 'completed',
-          reference: `KP-AUTOPAY-${Date.now().toString().slice(-6)}`,
           created_at: now,
         });
+      } else {
+        const { data: newWallet } = await supabase
+          .from('wallets')
+          .insert({
+            profile_id: sub.creator_id,
+            wallet_type: 'creator_earnings',
+            balance: pendingPayout,
+          })
+          .select('id')
+          .single();
+
+        if (newWallet) {
+          await supabase.from('wallet_transactions').insert({
+            wallet_id: newWallet.id,
+            type: 'payout',
+            amount: pendingPayout,
+            campaign_id: sub.campaign_id,
+            submission_id: sub.id,
+            paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
+            status: 'completed',
+            created_at: now,
+          });
+        }
       }
 
       // 2. Update creator total_earned
@@ -132,9 +157,17 @@ export async function GET() {
       // 5. Fire notification to creator
       const { data: profile } = await supabase
         .from('profiles')
-        .select('clerk_id, email')
+        .select('clerk_id, email, full_name')
         .eq('id', sub.creator_id)
         .maybeSingle();
+
+      const { data: creatorProfRec } = await supabase
+        .from('creator_profiles')
+        .select('display_name')
+        .eq('profile_id', sub.creator_id)
+        .maybeSingle();
+
+      const creatorHandle = creatorProfRec?.display_name || profile?.full_name || 'Creator';
 
       if (profile) {
         notifyCreatorVerificationPassed({
@@ -146,6 +179,27 @@ export async function GET() {
           campaignId: sub.campaign_id,
           profileId: sub.creator_id,
         }).catch((err) => console.error('[release-payouts cron] Notification error:', err));
+      }
+
+      // 6. Fire notification to advertiser
+      if (campaign?.advertiser_id) {
+        const { data: advProfile } = await supabase
+          .from('profiles')
+          .select('clerk_id, email')
+          .eq('id', campaign.advertiser_id)
+          .maybeSingle();
+
+        if (advProfile) {
+          notifyAdvertiserSubmissionVerified({
+            clerkId: advProfile.clerk_id,
+            creatorHandle,
+            campaignTitle: campaign?.title || 'Campaign',
+            payoutAmount: pendingPayout,
+            trackedViews: viewCount,
+            campaignId: sub.campaign_id,
+            profileId: campaign.advertiser_id,
+          }).catch((err) => console.error('[release-payouts cron] Advertiser notify error:', err));
+        }
       }
 
       releasedCount++;

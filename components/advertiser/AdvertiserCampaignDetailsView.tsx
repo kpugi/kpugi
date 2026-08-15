@@ -881,16 +881,41 @@ export default function AdvertiserCampaignDetailsView({
                             </span>
                           </td>
                           <td className="py-3 px-3 text-right">
-                            {sub.post_url ? (
-                              <button
-                                onClick={() => setSelectedSubmission(sub)}
-                                className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
-                              >
-                                Review
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 font-medium italic">Awaiting Post</span>
-                            )}
+                            {(() => {
+                              const isSettled =
+                                (sub.status === 'paid' || sub.status === 'verified_pass') &&
+                                Number(sub.pending_payout_amount || 0) <= 0 &&
+                                Number(sub.last_paid_view_count || 0) >= subViews &&
+                                subViews >= minThreshold;
+
+                              if (isSettled) {
+                                return (
+                                  <button
+                                    disabled
+                                    className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] cursor-not-allowed opacity-90 inline-flex items-center gap-1 shadow-2xs"
+                                    title="This audit run has already been approved and settled. The next audit run will activate when new views are verified."
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    <span>Settled</span>
+                                  </button>
+                                );
+                              }
+
+                              if (sub.post_url) {
+                                return (
+                                  <button
+                                    onClick={() => setSelectedSubmission(sub)}
+                                    className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-colors"
+                                  >
+                                    Review
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <span className="text-[10px] text-slate-400 font-medium italic">Awaiting Post</span>
+                              );
+                            })()}
                           </td>
                         </tr>
                       );
@@ -981,6 +1006,11 @@ export default function AdvertiserCampaignDetailsView({
         const selectedViews = Number(selectedSubmission.views_count || selectedSubmission.final_view_count || 0);
         const minThreshold = campaign.min_view_threshold || 1000;
         const isBelowMinViews = selectedViews < minThreshold || selectedViews === 0;
+        const isCycleSettled =
+          (selectedSubmission.status === 'paid' || selectedSubmission.status === 'verified_pass') &&
+          Number(selectedSubmission.pending_payout_amount || 0) <= 0 &&
+          Number(selectedSubmission.last_paid_view_count || 0) >= selectedViews &&
+          selectedViews >= minThreshold;
 
         const modalContent = (
           <div className="fixed inset-0 z-[99999] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto">
@@ -1008,6 +1038,16 @@ export default function AdvertiserCampaignDetailsView({
                   </div>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
                     This submission has not reached the campaign minimum threshold of <strong>{minThreshold.toLocaleString()} views</strong> required for payout approval. Payout verification activates automatically once views reach the minimum threshold.
+                  </p>
+                </div>
+              ) : isCycleSettled ? (
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-1">
+                  <div className="flex items-center gap-2 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Audit Cycle Settled ({selectedViews.toLocaleString()} Verified Views)</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    This audit cycle has already been approved and settled for this submission. The next 60-min audit run will automatically detect and verify any net new views gained.
                   </p>
                 </div>
               ) : (
@@ -1068,15 +1108,21 @@ export default function AdvertiserCampaignDetailsView({
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => handleReviewDecision('approve')}
-                  disabled={isSubmitting || isBelowMinViews}
+                  disabled={isSubmitting || isBelowMinViews || isCycleSettled}
                   className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-colors shadow-sm ${
-                    isBelowMinViews
+                    isBelowMinViews || isCycleSettled
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                   }`}
-                  title={isBelowMinViews ? 'Cannot approve payout for 0 or sub-threshold views' : undefined}
+                  title={
+                    isCycleSettled
+                      ? 'This audit run is already settled'
+                      : isBelowMinViews
+                      ? 'Cannot approve payout for 0 or sub-threshold views'
+                      : undefined
+                  }
                 >
-                  Approve & Pay Now
+                  {isCycleSettled ? 'Cycle Settled' : 'Approve & Pay Now'}
                 </button>
                 <button
                   onClick={() => handleReviewDecision('reject')}

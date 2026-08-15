@@ -172,10 +172,30 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Missing postUrl' }, { status: 400 });
       }
 
+      // Zero-Trust URL Validation
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(postUrl);
+        if (parsedUrl.protocol !== 'https:') {
+          return NextResponse.json({ error: 'Video URL must start with https://' }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Please enter a valid, complete video URL' }, { status: 400 });
+      }
+
+      const hostname = parsedUrl.hostname.toLowerCase();
+      let platform = 'x';
+      if (hostname.includes('tiktok.com')) platform = 'tiktok';
+      else if (hostname.includes('instagram.com')) platform = 'instagram';
+      else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) platform = 'youtube';
+      else if (hostname.includes('facebook.com')) platform = 'facebook';
+      else if (hostname.includes('linkedin.com')) platform = 'linkedin';
+      else if (hostname.includes('x.com') || hostname.includes('twitter.com')) platform = 'x';
+
       // Check if creator has a 'joined' status record for this campaign
       const { data: existingSub, error: findErr } = await supabase
         .from('submissions')
-        .select('id, status, campaign_id')
+        .select('id, status, campaign_id, campaign:campaigns(channels)')
         .eq('campaign_id', campaignId)
         .eq('creator_id', userProfile.profile.id)
         .maybeSingle();
@@ -186,6 +206,29 @@ export async function POST(req: Request) {
 
       if (existingSub.status !== 'joined') {
         return NextResponse.json({ error: 'Post link has already been submitted for this campaign.' }, { status: 400 });
+      }
+
+      const campaignChannels = (existingSub as any)?.campaign?.channels;
+      if (campaignChannels && campaignChannels.length > 0) {
+        const normalizedAllowed = campaignChannels.map((ch: string) => {
+          const c = ch.toLowerCase().trim();
+          if (c.includes('twitter') || c === 'x') return 'x';
+          if (c.includes('instagram') || c.includes('ig') || c.includes('insta')) return 'instagram';
+          if (c.includes('tiktok')) return 'tiktok';
+          if (c.includes('youtube') || c.includes('shorts') || c.includes('yt')) return 'youtube';
+          if (c.includes('facebook') || c.includes('fb')) return 'facebook';
+          if (c.includes('linkedin')) return 'linkedin';
+          return c;
+        });
+
+        if (!normalizedAllowed.includes(platform)) {
+          const allowedDisplay = campaignChannels.join(', ');
+          const platformDisplay = platform === 'x' ? 'X (Twitter)' : platform.charAt(0).toUpperCase() + platform.slice(1);
+          return NextResponse.json(
+            { error: `This campaign only accepts submissions for ${allowedDisplay}. Your link is from ${platformDisplay}.` },
+            { status: 400 }
+          );
+        }
       }
 
       const now = new Date();

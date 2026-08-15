@@ -306,6 +306,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     payoutRequestsRes,
     rawSubmissionsRes,
     dbBankAccountsRes,
+    submissionAuditsRes,
   ] = await Promise.all([
     supabase
       .from('creator_profiles')
@@ -330,22 +331,58 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       .order('created_at', { ascending: false }),
     supabase
       .from('submissions')
-      .select('reserved_amount, payout_amount, status')
-      .or(`creator_id.eq.${profileId}`),
+      .select(`
+        id,
+        campaign_id,
+        reserved_amount,
+        payout_amount,
+        pending_payout_amount,
+        final_view_count,
+        status,
+        submitted_at,
+        verified_at,
+        paid_at,
+        campaign:campaigns (
+          id,
+          title,
+          cpm_rate,
+          min_view_threshold
+        )
+      `)
+      .eq('creator_id', profileId),
     supabase
       .from('bank_accounts')
       .select('*')
       .eq('profile_id', profileId)
       .order('is_primary', { ascending: false })
       .order('created_at', { ascending: false }),
+    supabase
+      .from('submission_audits')
+      .select(`
+        id,
+        submission_id,
+        campaign_id,
+        views_scraped,
+        views_delta,
+        payout_amount,
+        status,
+        settled_at,
+        campaign:campaigns (
+          id,
+          title
+        )
+      `)
+      .eq('creator_id', profileId)
+      .order('settled_at', { ascending: false }),
   ]);
 
   const creator = creatorRes.data;
   const wallet = walletRes.data;
-  const transactions = transactionsRes.data;
+  const rawTransactions = transactionsRes.data || [];
   const payoutRequests = payoutRequestsRes.data;
   const rawSubmissions = rawSubmissionsRes.data;
   const dbBankAccounts = dbBankAccountsRes.data;
+  const submissionAudits = submissionAuditsRes.data || [];
 
   const totalWithdrawn = (payoutRequests || [])
     .filter((p) => p.status === 'success' || p.status === 'completed')
@@ -353,9 +390,89 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   const lastWithdrawalDate = payoutRequests && payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
 
-  const pendingEscrow = (rawSubmissions || [])
-    .filter((s: any) => s.status === 'reserved' || s.status === 'under_review' || s.status === 'pending' || s.status === 'auditing')
-    .reduce((sum: number, s: any) => sum + (Number(s.reserved_amount || s.payout_amount) || 0), 0);
+  // Calculate Pending Clearance accurately
+  // 1. Unsettled/in-review earnings: submissions with pending_payout_amount > 0 or submitted & pending review with verified views meeting min threshold
+  // 2. Settled earnings within the 24-hour clearance grace window: submissions verified_pass/paid with settled date < 24h ago
+  let computedPendingClearance = 0;
+  (rawSubmissions || []).forEach((s: any) => {
+    const pendingAmt = Number(s.pending_payout_amount || 0);
+    const payoutAmt = Number(s.payout_amount || 0);
+    const views = Number(s.final_view_count || 0);
+    const minThreshold = Number(s.campaign?.min_view_threshold || 1000);
+    const cpm = Number(s.campaign?.cpm_rate || 0);
+
+    if (pendingAmt > 0) {
+      computedPendingClearance += pendingAmt;
+    } else if ((s.status === 'pending' || s.status === 'auditing') && views >= minThreshold && cpm > 0) {
+      computedPendingClearance += Math.floor((views / 1000) * cpm);
+    } else if (s.status === 'verified_pass' || s.status === 'paid') {
+      if (s.paid_at || s.verified_at) {
+        const settledTime = new Date(s.paid_at || s.verified_at).getTime();
+        const ageHours = (Date.now() - settledTime) / (1000 * 60 * 60);
+        if (ageHours < 24 && payoutAmt > 0) {
+          computedPendingClearance += payoutAmt;
+        }
+      }
+    }
+  });
+
+  // Synthesize complete transaction ledger
+  const existingTxKeys = new Set(
+    rawTransactions.map((t: any) => t.reference || t.id)
+  );
+  const coveredSubmissionIds = new Set<string>();
+  const campaignTxList: any[] = [];
+
+  // 1. Add settled audits from submission_audits
+  submissionAudits.forEach((audit: any) => {
+    const ref = `KP-AUD-${audit.id.slice(0, 8).toUpperCase()}`;
+    if (!existingTxKeys.has(ref) && Number(audit.payout_amount || 0) > 0) {
+      campaignTxList.push({
+        id: audit.id,
+        title: `${audit.campaign?.title || 'Video Campaign'}`,
+        campaign_title: audit.campaign?.title || 'Campaign',
+        reference: ref,
+        amount: Number(audit.payout_amount || 0),
+        type: 'credit',
+        transaction_type: 'payout',
+        status: audit.status === 'auto_approved' || audit.status === 'approved' ? 'completed' : audit.status,
+        created_at: audit.settled_at || audit.created_at,
+      });
+      existingTxKeys.add(ref);
+      if (audit.submission_id) {
+        coveredSubmissionIds.add(audit.submission_id);
+      }
+    }
+  });
+
+  // 2. Add submission earnings ONLY for submissions not already covered by submission_audits or rawTransactions
+  (rawSubmissions || []).forEach((sub: any) => {
+    if (coveredSubmissionIds.has(sub.id)) return;
+
+    const earnedAmt = Number(sub.payout_amount || sub.pending_payout_amount || 0);
+    if (earnedAmt > 0) {
+      const ref = `KP-SUB-${sub.id.slice(0, 8).toUpperCase()}`;
+      if (!existingTxKeys.has(ref)) {
+        campaignTxList.push({
+          id: `sub-tx-${sub.id}`,
+          title: `${sub.campaign?.title || 'Video Campaign'}`,
+          campaign_title: sub.campaign?.title || 'Campaign',
+          reference: ref,
+          amount: earnedAmt,
+          type: 'credit',
+          transaction_type: 'payout',
+          status: sub.status === 'verified_pass' || sub.status === 'paid' ? 'completed' : 'pending',
+          created_at: sub.paid_at || sub.verified_at || sub.submitted_at || new Date().toISOString(),
+        });
+        existingTxKeys.add(ref);
+        coveredSubmissionIds.add(sub.id);
+      }
+    }
+  });
+
+  const mergedTransactions = [...rawTransactions, ...campaignTxList].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   const bankAccounts: BankAccountItem[] = (dbBankAccounts || []).map((b: any, idx: number) => ({
     id: b.id,
@@ -387,13 +504,13 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   return {
     availableBalance: Number(wallet?.balance || 0),
-    pendingEscrow: Number(pendingEscrow || 0),
+    pendingEscrow: Number(computedPendingClearance || 0),
     totalEarned: Number(creator?.total_earned || 0),
     totalWithdrawn: Number(totalWithdrawn || 0),
     lastWithdrawalDate,
     bankDetails: primaryBank,
     bankAccounts,
-    transactions: transactions || [],
+    transactions: mergedTransactions,
     kycStatus: (creator?.kyc_status as any) || 'unverified',
   };
 }

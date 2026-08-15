@@ -84,7 +84,7 @@ export async function submitCampaignVideoAction(formData: FormData) {
   // Verify campaign exists and is active ('live')
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
-    .select('id, title, status, cpm_rate')
+    .select('id, title, status, cpm_rate, channels')
     .eq('id', campaignId)
     .maybeSingle();
 
@@ -104,6 +104,30 @@ export async function submitCampaignVideoAction(formData: FormData) {
   else if (hostname.includes('facebook.com')) platform = 'facebook';
   else if (hostname.includes('linkedin.com')) platform = 'linkedin';
   else if (hostname.includes('x.com') || hostname.includes('twitter.com')) platform = 'x';
+
+  // Enforce campaign channel restrictions
+  if (campaign.channels && campaign.channels.length > 0) {
+    const normalizedAllowed = campaign.channels.map((ch: string) => {
+      const c = ch.toLowerCase().trim();
+      if (c.includes('twitter') || c === 'x') return 'x';
+      if (c.includes('instagram') || c.includes('ig') || c.includes('insta')) return 'instagram';
+      if (c.includes('tiktok')) return 'tiktok';
+      if (c.includes('youtube') || c.includes('shorts') || c.includes('yt')) return 'youtube';
+      if (c.includes('facebook') || c.includes('fb')) return 'facebook';
+      if (c.includes('linkedin')) return 'linkedin';
+      return c;
+    });
+
+    const isAllowed = normalizedAllowed.includes(platform);
+    if (!isAllowed) {
+      const allowedDisplay = campaign.channels.join(', ');
+      const platformDisplay = platform === 'x' ? 'X (Twitter)' : platform.charAt(0).toUpperCase() + platform.slice(1);
+      return {
+        success: false,
+        error: `This campaign only accepts submissions for ${allowedDisplay}. Your link is from ${platformDisplay}. Please submit a valid post link from an allowed channel.`,
+      };
+    }
+  }
 
   // Find creator's connected social account
   const { data: socialAcc } = await supabase

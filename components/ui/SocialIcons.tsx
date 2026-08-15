@@ -68,7 +68,7 @@ export function PlatformBadge({ platform, showLabel = false, className = '' }: {
       </span>
     );
   }
-  if (p.includes('youtube') || p.includes('shorts')) {
+  if (p.includes('youtube') || p.includes('shorts') || p.includes('youtu.be')) {
     return (
       <span title="YouTube" className={`inline-flex items-center justify-center p-2 rounded-xl bg-red-600 text-white ${className}`}>
         <YouTubeIcon className="w-4 h-4 fill-current" />
@@ -76,7 +76,7 @@ export function PlatformBadge({ platform, showLabel = false, className = '' }: {
       </span>
     );
   }
-  if (p.includes('facebook') || p.includes('fb')) {
+  if (p.includes('facebook') || p.includes('fb.com') || p.includes('fb')) {
     return (
       <span title="Facebook" className={`inline-flex items-center justify-center p-2 rounded-xl bg-blue-600 text-white ${className}`}>
         <FacebookIcon className="w-4 h-4 fill-current" />
@@ -84,11 +84,19 @@ export function PlatformBadge({ platform, showLabel = false, className = '' }: {
       </span>
     );
   }
-  if (p.includes('twitter') || p.includes('x')) {
+  if (p.includes('twitter') || p.includes('x.com') || p === 'x' || p.startsWith('x/') || p.includes('x-')) {
     return (
       <span title="X / Twitter" className={`inline-flex items-center justify-center p-2 rounded-xl bg-black text-white ${className}`}>
         <TwitterXIcon className="w-4 h-4 fill-current" />
         {showLabel && <span className="ml-1.5 text-xs font-bold font-sans">X</span>}
+      </span>
+    );
+  }
+  if (p.includes('linkedin')) {
+    return (
+      <span title="LinkedIn" className={`inline-flex items-center justify-center p-2 rounded-xl bg-blue-700 text-white ${className}`}>
+        <LinkedInIcon className="w-4 h-4 fill-current" />
+        {showLabel && <span className="ml-1.5 text-xs font-bold font-sans">LinkedIn</span>}
       </span>
     );
   }

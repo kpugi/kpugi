@@ -10,6 +10,13 @@ if str(SCRAPER_DIR) not in sys.path:
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Ensure UTF-8 output encoding across all terminals and OS environments
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
@@ -126,18 +133,18 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     updates.update({
         "pending_payout_amount": incremental_payout,
         "auto_approve_at": auto_approve_at,
-        "status": "auditing",
+        "status": "pending" if sub.get("status") != "verified_pass" else "verified_pass",
     })
 
     db.update_submission(sub_id, updates)
-    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Pending Payout: ₦{incremental_payout:,} | Status: auditing")
+    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Pending Payout: ₦{incremental_payout:,} | Status: {updates['status']}")
 
     return {
         "id": sub_id[:8],
         "platform": result.platform,
         "reachable": True,
         "views": final_views,
-        "status": "auditing",
+        "status": f"verified ({final_views:,} views)",
         "payout": incremental_payout,
     }
 

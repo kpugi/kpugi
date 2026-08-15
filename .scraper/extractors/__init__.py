@@ -70,8 +70,9 @@ def extract_post_metrics(url: str) -> ScrapeResult:
     if platform == 'x':
         fb_result = extract_twitter_syndication(url)
         if fb_result and fb_result.reachable:
+            if fb_result.view_count is not None or not result.reachable:
+                return fb_result
             if result.reachable:
-                # Merge metrics
                 result.view_count = fb_result.view_count or result.view_count
                 result.like_count = fb_result.like_count or result.like_count
                 result.comment_count = fb_result.comment_count or result.comment_count

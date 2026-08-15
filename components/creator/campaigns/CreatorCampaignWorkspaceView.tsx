@@ -299,7 +299,16 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl border border-kpugi-border bg-slate-50/60 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <PlatformBadge platform={submission.social_account_id || 'instagram'} />
+                    {(() => {
+                      const detectedPlat =
+                        (submission as any).social_account_platform ||
+                        (submission.post_url?.includes('x.com') || submission.post_url?.includes('twitter.com') ? 'x' : null) ||
+                        (submission.post_url?.includes('tiktok.com') ? 'tiktok' : null) ||
+                        (submission.post_url?.includes('youtube.com') || submission.post_url?.includes('youtu.be') ? 'youtube' : null) ||
+                        (submission.post_url?.includes('facebook.com') ? 'facebook' : null) ||
+                        'instagram';
+                      return <PlatformBadge platform={detectedPlat} />;
+                    })()}
                     <div className="truncate">
                       <a
                         href={submission.post_url}
@@ -496,12 +505,20 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     <td className="text-right">
                       <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold uppercase text-[10px] ${
                         audit.status === 'auto_approved'
-                          ? 'bg-amber-100 text-amber-800'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
                           : audit.status === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : audit.status === 'pending'
+                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                          : 'bg-red-100 text-red-800 border border-red-200'
                       }`}>
-                        {audit.status === 'auto_approved' ? '⚡ Auto-Credited' : audit.status}
+                        {audit.status === 'auto_approved'
+                          ? '⚡ Auto-Credited'
+                          : audit.status === 'approved'
+                          ? '✓ Settled & Approved'
+                          : audit.status === 'pending'
+                          ? '⏳ Scrape Verified'
+                          : audit.status}
                       </span>
                     </td>
                   </tr>

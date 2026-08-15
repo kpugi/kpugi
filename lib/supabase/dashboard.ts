@@ -305,6 +305,7 @@ export interface CampaignDetailsForCreator {
     submitted_at?: string | null;
     auto_approve_at?: string | null;
     pending_payout_amount?: number | null;
+    social_account_platform?: string | null;
   } | null;
   socialAccounts: {
     id: string;
@@ -428,7 +429,26 @@ export async function getCampaignDetailsForCreator(
   const { data: submission } = creatorProfileId
     ? await supabase
         .from('submissions')
-        .select('id, social_account_id, post_url, screenshot_url, status, reserved_amount, final_view_count, verified_at, paid_at, payout_amount, auto_approve_at, pending_payout_amount, last_paid_view_count, last_scraped_at')
+        .select(`
+          id,
+          social_account_id,
+          post_url,
+          screenshot_url,
+          status,
+          reserved_amount,
+          final_view_count,
+          verified_at,
+          paid_at,
+          payout_amount,
+          auto_approve_at,
+          pending_payout_amount,
+          last_paid_view_count,
+          last_scraped_at,
+          social_accounts:social_accounts!left (
+            platform,
+            handle
+          )
+        `)
         .eq('campaign_id', realCampaignId)
         .eq('creator_id', creatorProfileId)
         .maybeSingle()
@@ -545,6 +565,76 @@ export async function getCampaignDetailsForCreator(
     };
   });
 
+  // Ensure live verification checks for the current creator's submission populate in the Live Audit Log
+  const existingAuditIds = new Set(mappedAudits.map((a) => a.id));
+
+  if (submission?.id) {
+    const { data: verChecks } = await supabase
+      .from('verification_checks')
+      .select('id, submission_id, checked_at, post_reachable, view_count, notes')
+      .eq('submission_id', submission.id)
+      .order('checked_at', { ascending: false });
+
+    (verChecks || []).forEach((vc: any) => {
+      const vcKey = `vc-${vc.id}`;
+      if (!existingAuditIds.has(vcKey)) {
+        const viewsScraped = Number(vc.view_count || 0);
+        const minThresh = Number(campaign?.min_view_threshold || 1000);
+        const cpm = Number(campaign?.cpm_rate || 0);
+        const isPass = viewsScraped >= minThresh;
+        const estPayout = isPass && cpm > 0 ? Math.floor((viewsScraped / 1000) * cpm) : 0;
+
+        mappedAudits.push({
+          id: vcKey,
+          submission_id: vc.submission_id,
+          creator_handle: 'You',
+          creator_avatar_url: null,
+          views_scraped: viewsScraped,
+          views_delta: viewsScraped,
+          payout_amount: estPayout,
+          status: isPass
+            ? (submission.status === 'paid' || submission.status === 'verified_pass' ? 'approved' : 'auto_approved')
+            : 'pending',
+          settled_at: vc.checked_at,
+          failure_reason: vc.post_reachable ? null : 'Post unreachable or deleted',
+        });
+        existingAuditIds.add(vcKey);
+      }
+    });
+  }
+
+  // Fallback audit row if submission is verified / paid but not recorded in submission_audits table
+  if (
+    submission &&
+    (submission.status === 'verified_pass' || submission.status === 'paid' || Number(submission.final_view_count || 0) > 0) &&
+    mappedAudits.length === 0
+  ) {
+    const v = Number(submission.final_view_count || 0);
+    const p = Number(submission.payout_amount || submission.pending_payout_amount || 0);
+    mappedAudits.push({
+      id: `audit-fallback-${submission.id}`,
+      submission_id: submission.id,
+      creator_handle: 'You',
+      creator_avatar_url: null,
+      views_scraped: v,
+      views_delta: v,
+      payout_amount: p,
+      status: submission.status === 'paid' || submission.status === 'verified_pass' ? 'approved' : 'auto_approved',
+      settled_at: submission.verified_at || submission.paid_at || new Date().toISOString(),
+      failure_reason: null,
+    });
+  }
+
+  mappedAudits.sort((a, b) => new Date(b.settled_at).getTime() - new Date(a.settled_at).getTime());
+
+  const subPlatform =
+    (submission as any)?.social_accounts?.platform ||
+    (submission?.post_url?.includes('x.com') || submission?.post_url?.includes('twitter.com') ? 'x' : null) ||
+    (submission?.post_url?.includes('tiktok.com') ? 'tiktok' : null) ||
+    (submission?.post_url?.includes('youtube.com') || submission?.post_url?.includes('youtu.be') ? 'youtube' : null) ||
+    (submission?.post_url?.includes('facebook.com') ? 'facebook' : null) ||
+    (submission?.post_url?.includes('instagram.com') ? 'instagram' : null);
+
   return {
     campaign: campaign
       ? {
@@ -576,6 +666,7 @@ export async function getCampaignDetailsForCreator(
       ? {
           id: submission.id,
           social_account_id: submission.social_account_id,
+          social_account_platform: subPlatform,
           post_url: submission.post_url,
           screenshot_url: submission.screenshot_url,
           status: submission.status,

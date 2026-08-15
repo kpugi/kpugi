@@ -133,11 +133,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
   const displayTransactions = (data.transactions || []).map((tx: any) => ({
     id: tx.id,
     date: new Date(tx.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    title: tx.title || (tx.type === 'withdrawal' || tx.type === 'payout' ? 'Bank Withdrawal' : 'Campaign Payout'),
-    sub: tx.reference ? `Ref: ${tx.reference}` : (tx.campaign_title || 'Earnings Sync'),
+    title: tx.title || (tx.type === 'withdrawal' || tx.transaction_type === 'withdrawal' ? 'Bank Withdrawal' : 'Campaign Earnings'),
+    sub: tx.reference ? `Ref: ${tx.reference}` : (tx.campaign_title || 'Campaign Payout'),
     amount: Number(tx.amount || 0),
-    isCredit: tx.type === 'credit' || tx.type === 'payout',
-    status: tx.status ? (tx.status.charAt(0).toUpperCase() + tx.status.slice(1)) : 'Success',
+    isCredit: tx.type === 'credit' || tx.type === 'payout' || tx.type === 'payout_release' || tx.transaction_type === 'payout',
+    status: tx.status ? (tx.status.charAt(0).toUpperCase() + tx.status.slice(1)) : 'Completed',
   }));
 
   return (
@@ -208,7 +208,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               <span className="text-slate-400">🕒</span> Verification Grace Period
             </span>
             <p className="text-[11px] text-kpugi-slate leading-relaxed">
-              Funds are automatically cleared into your wallet 48 hours after anti-fraud view verification.
+              Funds are automatically cleared into your wallet 24 hours after anti-fraud view verification.
             </p>
           </div>
         </div>
@@ -375,16 +375,14 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           {/* Left Column: Heading & Feature Badges */}
           <div className="space-y-4 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-xs font-bold font-mono uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-            </div>
+           
 
             <h3 className="font-display font-bold text-2xl sm:text-3xl text-white tracking-tight leading-tight">
               Maximize Your Campaign Revenue with Guaranteed Escrow Clearances
             </h3>
 
             <p className="font-sans text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Every video view, engagement, and conversion is verified in real-time by Kpugi's anti-fraud performance network.
+              Every post view, engagement, and conversion is verified in real-time by Kpugi's anti-fraud performance network.
               Funds are ring-fenced upfront in escrow and settle directly into your verified Nigerian bank account.
             </p>
 

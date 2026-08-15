@@ -21,8 +21,11 @@ HEADERS = {
     'Accept-Language': 'en-US,en;q=0.5',
 }
 
-def _http_get_json(url: str) -> Optional[Dict[str, Any]]:
-    req = urllib.request.Request(url, headers=HEADERS)
+def _http_get_json(url: str, headers: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
+    req_headers = dict(HEADERS)
+    if headers:
+        req_headers.update(headers)
+    req = urllib.request.Request(url, headers=req_headers)
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
             if response.getcode() == 200:
@@ -45,19 +48,48 @@ def _http_get_text(url: str) -> Optional[str]:
 
 def extract_twitter_syndication(url: str) -> Optional[ScrapeResult]:
     """
-    Fallback for X / Twitter using the Twitter Syndication API.
-    Does not require Twitter API keys or authentication.
+    High-fidelity extractor for X / Twitter using FixTweet API (primary)
+    and Twitter Syndication + oEmbed (secondary fallbacks).
+    Zero API keys required.
     """
     tweet_id_match = re.search(r'(?:status|statuses)/(\d+)', url)
     if not tweet_id_match:
         return None
 
     tweet_id = tweet_id_match.group(1)
+
+    # 1. FixTweet Public API (Returns exact views, likes, retweets, replies, video duration)
+    fx_url = f"https://api.fxtwitter.com/status/{tweet_id}"
+    fx_data = _http_get_json(fx_url)
+    if fx_data and fx_data.get('code') == 200 and 'tweet' in fx_data:
+        tweet = fx_data['tweet']
+        author = tweet.get('author', {})
+        views = tweet.get('views')
+        likes = tweet.get('likes')
+        retweets = tweet.get('retweets')
+        replies = tweet.get('replies')
+        bookmarks = tweet.get('bookmarks')
+
+        return ScrapeResult(
+            reachable=True,
+            view_count=int(views) if views is not None else None,
+            like_count=int(likes) if likes is not None else None,
+            comment_count=int(replies) if replies is not None else None,
+            share_count=int(retweets) if retweets is not None else None,
+            uploader=author.get('screen_name'),
+            title=f"Tweet by @{author.get('screen_name')}",
+            description=tweet.get('text'),
+            platform="x",
+            extractor="twitter_fxtweet_api",
+            raw=tweet
+        )
+
+    # 2. Twitter Syndication API Fallback
     token = ((int(tweet_id) / 1e15) * 3.141592653589793 * 1.5).hex() if hasattr(float, 'hex') else "x"
     api_url = f"https://cdn.syndication.twimg.com/tweet-result?id={tweet_id}&lang=en&token={token}"
 
     data = _http_get_json(api_url)
-    if data:
+    if data and data.get('__typename') != 'TweetTombstone':
         user_data = data.get('user', {})
         views = None
         if 'views' in data and isinstance(data['views'], dict):
@@ -77,7 +109,7 @@ def extract_twitter_syndication(url: str) -> Optional[ScrapeResult]:
             raw=data
         )
 
-    # Fallback to Twitter oEmbed
+    # 3. Twitter oEmbed Fallback
     oembed_url = f"https://publish.twitter.com/oembed?url={urllib.parse.quote(url)}&omit_script=true"
     oembed_data = _http_get_json(oembed_url)
     if oembed_data:

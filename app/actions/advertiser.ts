@@ -5,6 +5,11 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
+import {
+  notifyCreatorVerificationPassed,
+  notifyCreatorVerificationFailed,
+} from '@/lib/notifications/creator';
+import { triggerNotification } from '@/lib/knock/notify';
 
 // ─── 1. Create Campaign Server Action ─────────────────────────────────────────
 
@@ -309,11 +314,23 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
       return { success: false, error: 'No new payable views delivered since last settled audit run.' };
     }
 
+    // IDEMPOTENCY GUARD: Check if this audit cycle has already been settled in submission_audits
+    const { data: existingAudit } = await supabase
+      .from('submission_audits')
+      .select('id')
+      .eq('submission_id', sub.id)
+      .eq('views_scraped', views)
+      .maybeSingle();
+
+    if (existingAudit) {
+      return { success: true, message: 'This audit cycle has already been approved and settled.' };
+    }
+
     const newTotalPayout = Number(sub.payout_amount || 0) + payout;
     const newReservedBudget = Math.max(0, currentReservedBudget - payout);
 
     // 1. Update submission
-    await supabase
+    const { data: updatedSub, error: updateErr } = await supabase
       .from('submissions')
       .update({
         status: 'verified_pass',
@@ -325,7 +342,12 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
         paid_at: now,
         verified_at: now,
       })
-      .eq('id', submissionId);
+      .eq('id', submissionId)
+      .select('id');
+
+    if (updateErr || !updatedSub || updatedSub.length === 0) {
+      return { success: false, error: 'Failed to update submission or submission already modified.' };
+    }
 
     // 2. Update campaign spent_budget and deduct from reserved_budget
     await supabase
@@ -337,7 +359,7 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
       })
       .eq('id', campaign.id);
 
-    // 3. Update creator wallet & total_earned
+    // 3. Update or initialize creator wallet & total_earned
     const { data: creatorWallet } = await supabase
       .from('wallets')
       .select('id, balance')
@@ -352,15 +374,38 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
         .eq('id', creatorWallet.id);
 
       await supabase.from('wallet_transactions').insert({
-        profile_id: sub.creator_id,
-        creator_id: sub.creator_id,
-        wallet_type: 'creator_earnings',
-        transaction_type: 'payout',
+        wallet_id: creatorWallet.id,
+        type: 'payout',
         amount: payout,
+        campaign_id: campaign.id,
+        submission_id: sub.id,
+        paystack_reference: `KP-PAY-${Date.now().toString().slice(-6)}`,
         status: 'completed',
-        reference: `KP-PAY-${Date.now().toString().slice(-6)}`,
         created_at: now,
       });
+    } else {
+      const { data: newWallet } = await supabase
+        .from('wallets')
+        .insert({
+          profile_id: sub.creator_id,
+          wallet_type: 'creator_earnings',
+          balance: payout,
+        })
+        .select('id')
+        .single();
+
+      if (newWallet) {
+        await supabase.from('wallet_transactions').insert({
+          wallet_id: newWallet.id,
+          type: 'payout',
+          amount: payout,
+          campaign_id: campaign.id,
+          submission_id: sub.id,
+          paystack_reference: `KP-PAY-${Date.now().toString().slice(-6)}`,
+          status: 'completed',
+          created_at: now,
+        });
+      }
     }
 
     const { data: creatorProf } = await supabase
@@ -387,6 +432,55 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
       status: 'approved',
       settled_at: now,
     });
+
+    // 5. Fire notifications to both Advertiser and Creator
+    try {
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('id, clerk_id, email, full_name')
+        .eq('id', sub.creator_id)
+        .maybeSingle();
+
+      const { data: creatorDetails } = await supabase
+        .from('creator_profiles')
+        .select('display_name')
+        .eq('profile_id', sub.creator_id)
+        .maybeSingle();
+
+      const rawHandle = creatorDetails?.display_name || creatorProfile?.full_name || 'Creator';
+      const cleanHandle = rawHandle.replace(/^@/, '');
+
+      // In-app & Knock notification to Advertiser: "Creator @handle submitted X views to your campaign and ₦Y was approved"
+      await triggerNotification({
+        workflowKey: 'creator-verified',
+        recipients: [userProfile.profile.clerk_id],
+        data: {
+          creatorHandle: `@${cleanHandle}`,
+          campaignTitle: campaign.title || 'Campaign',
+          trackedViews: views.toLocaleString(),
+          payoutAmount: `₦${payout.toLocaleString()}`,
+          campaignId: campaign.id,
+          message: `Creator @${cleanHandle} submitted ${views.toLocaleString()} views to "${campaign.title}" and ₦${payout.toLocaleString()} was approved.`,
+          action_url: `/b/campaigns/${campaign.id}`,
+        },
+        profileId: userProfile.profile.id,
+      });
+
+      // Notification & Email to Creator: "Your submission has gathered X views and you've earned ₦Y payout"
+      if (creatorProfile) {
+        await notifyCreatorVerificationPassed({
+          clerkId: creatorProfile.clerk_id,
+          email: creatorProfile.email,
+          campaignTitle: campaign.title || 'Campaign',
+          trackedViews: views,
+          payoutAmount: payout,
+          campaignId: campaign.id,
+          profileId: creatorProfile.id,
+        });
+      }
+    } catch (notifErr) {
+      console.error('[Settlement Notification Error]', notifErr);
+    }
   } else {
     // Reject submission & release reserved_budget
     const newReservedBudget = Math.max(0, currentReservedBudget - reservedAmount);
@@ -422,6 +516,28 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
       failure_reason: rejectionReason || 'Content did not meet brand requirements.',
       settled_at: now,
     });
+
+    // Notify Creator of rejection
+    try {
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('id, clerk_id, email, full_name')
+        .eq('id', sub.creator_id)
+        .maybeSingle();
+
+      if (creatorProfile) {
+        await notifyCreatorVerificationFailed({
+          clerkId: creatorProfile.clerk_id,
+          email: creatorProfile.email,
+          campaignTitle: campaign.title || 'Campaign',
+          failureReason: rejectionReason || 'Content did not meet brand requirements.',
+          campaignId: campaign.id,
+          profileId: creatorProfile.id,
+        });
+      }
+    } catch (notifErr) {
+      console.error('[Rejection Notification Error]', notifErr);
+    }
   }
 
   // Revalidate advertiser and creator views so changes reflect across the platform immediately
