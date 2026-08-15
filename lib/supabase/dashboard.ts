@@ -35,7 +35,11 @@ export interface CreatorDashboardData {
   activeSubmissions: number;
   pendingAudits: number;
   completedCampaigns: number;
+  totalVerifiedViews: number;
   submissions: CreatorSubmission[];
+  featuredSubmission?: CreatorSubmission;
+  recommendedCampaigns: any[];
+  recentSettlements: any[];
   recentNotifications: {
     id: string;
     knock_workflow_key: string;
@@ -52,65 +56,181 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
   // Fetch creator profile for total_earned & kyc_status
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
-    .select('total_earned, kyc_status')
-    .eq('profile_id', profileId)
+    .select('id, total_earned, kyc_status')
+    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
     .maybeSingle();
 
-  // Fetch wallet balance
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('balance')
-    .eq('profile_id', profileId)
-    .eq('wallet_type', 'creator_earnings')
-    .maybeSingle();
+  const creatorProfileId = creatorProfile?.id;
+  const creatorIds = [profileId, creatorProfileId].filter(Boolean) as string[];
+  const creatorOrFilter = creatorIds.map((id) => `creator_id.eq.${id}`).join(',');
 
-  // Fetch submissions with joined campaign data
-  const { data: submissions } = await supabase
-    .from('submissions')
+  // Fetch wallet balance, submissions, notifications, and audits concurrently
+  const [walletRes, rawSubmissionsRes, notificationsRes, auditsRes] = await Promise.all([
+    supabase
+      .from('wallets')
+      .select('balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle(),
+    supabase
+      .from('submissions')
+      .select(`
+        id,
+        post_url,
+        status,
+        submitted_at,
+        reserved_amount,
+        final_view_count,
+        verified_at,
+        payout_amount,
+        campaign:campaigns (
+          id,
+          title,
+          status,
+          channels,
+          ad_format,
+          cpm_rate,
+          total_budget,
+          min_view_threshold,
+          created_at,
+          updated_at,
+          cover_image_url,
+          advertiser:advertiser_profiles (
+            company_name,
+            profile:profiles (
+              avatar_url
+            )
+          )
+        )
+      `)
+      .or(creatorOrFilter)
+      .order('submitted_at', { ascending: false })
+      .limit(20),
+    supabase
+      .from('notifications')
+      .select('id, knock_workflow_key, channel, payload, sent_at')
+      .eq('profile_id', profileId)
+      .order('sent_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('submission_audits')
+      .select(`
+        id,
+        submission_id,
+        campaign_id,
+        views_scraped,
+        views_delta,
+        payout_amount,
+        status,
+        settled_at,
+        created_at,
+        campaign:campaigns (
+          id,
+          title,
+          cpm_rate
+        )
+      `)
+      .or(creatorOrFilter)
+      .order('created_at', { ascending: false })
+      .limit(6),
+  ]);
+
+  const rawSubmissions = rawSubmissionsRes.data || [];
+  const notifications = notificationsRes.data || [];
+  const rawAudits = auditsRes.data || [];
+
+  const subs: CreatorSubmission[] = rawSubmissions.map((sub: any) => {
+    const campaignObj = Array.isArray(sub.campaign) ? sub.campaign[0] : sub.campaign;
+    const adv = campaignObj?.advertiser as any;
+    const campaignImg = campaignObj?.cover_image_url || adv?.profile?.avatar_url || null;
+
+    return {
+      id: sub.id,
+      post_url: sub.post_url,
+      status: sub.status,
+      submitted_at: sub.submitted_at,
+      reserved_amount: sub.reserved_amount,
+      final_view_count: sub.final_view_count,
+      verified_at: sub.verified_at,
+      payout_amount: sub.payout_amount,
+      campaign: {
+        ...campaignObj,
+        company_name: adv?.company_name || 'Brand Partner',
+        company_logo: campaignImg,
+      },
+    };
+  });
+
+  const activeSubmissions = subs.filter(
+    (s) => s.status === 'pending' || s.status === 'under_review' || s.status === 'approved' || s.status === 'reserved' || s.status === 'joined'
+  ).length;
+
+  const pendingAudits = subs.filter((s) => s.status === 'under_review' || s.status === 'pending').length;
+  const completedCampaigns = subs.filter((s) => s.status === 'paid' || s.status === 'completed' || s.status === 'verified_pass').length;
+  const totalVerifiedViews = subs.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
+  const featured = subs.find((s) => s.status === 'under_review' || s.status === 'pending' || s.status === 'reserved' || s.status === 'joined') || subs[0];
+
+  const joinedCampaignIds = subs.map((s) => s.campaign?.id).filter(Boolean);
+  const { data: rawRecs } = await supabase
+    .from('campaigns')
     .select(`
       id,
-      post_url,
+      title,
       status,
-      submitted_at,
-      reserved_amount,
-      final_view_count,
-      verified_at,
-      payout_amount,
-      campaign:campaigns (
-        id,
-        title,
-        status,
-        channels,
-        ad_format,
-        cpm_rate,
-        total_budget,
-        min_view_threshold,
-        created_at,
-        updated_at
+      channels,
+      ad_format,
+      cpm_rate,
+      total_budget,
+      min_view_threshold,
+      created_at,
+      cover_image_url,
+      advertiser:advertiser_profiles (
+        company_name,
+        profile:profiles (
+          avatar_url
+        )
       )
     `)
-    .or(`creator_id.eq.${profileId}`)
-    .order('submitted_at', { ascending: false })
-    .limit(20);
+    .in('status', ['active', 'live'])
+    .order('cpm_rate', { ascending: false })
+    .limit(6);
 
-  // Fetch recent notifications
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('id, knock_workflow_key, channel, payload, sent_at')
-    .eq('profile_id', profileId)
-    .order('sent_at', { ascending: false })
-    .limit(10);
+  const recommendedCampaigns = (rawRecs || [])
+    .filter((c: any) => !joinedCampaignIds.includes(c.id))
+    .slice(0, 3)
+    .map((c: any) => {
+      const adv = Array.isArray(c.advertiser) ? c.advertiser[0] : c.advertiser;
+      return {
+        ...c,
+        company_name: adv?.company_name || 'Brand Partner',
+        company_logo: c.cover_image_url || adv?.profile?.avatar_url || null,
+      };
+    });
 
-  const subs = (submissions || []) as unknown as CreatorSubmission[];
+  const recentSettlements = rawAudits.map((a: any) => {
+    const camp = Array.isArray(a.campaign) ? a.campaign[0] : a.campaign;
+    return {
+      id: a.id,
+      campaignTitle: camp?.title || 'Brand Campaign',
+      payoutAmount: Number(a.payout_amount || 0),
+      viewsDelta: Number(a.views_delta || a.views_scraped || 0),
+      status: a.status,
+      settledAt: a.settled_at || a.created_at,
+    };
+  });
 
   return {
     totalEarned: Number(creatorProfile?.total_earned || 0),
-    walletBalance: Number(wallet?.balance || 0),
-    activeSubmissions: subs.filter((s) => s.status === 'pending').length,
-    pendingAudits: subs.filter((s) => s.status === 'pending').length,
-    completedCampaigns: subs.filter((s) => s.status === 'paid' || s.status === 'verified_pass').length,
+    walletBalance: Number(walletRes.data?.balance || 0),
+    activeSubmissions,
+    pendingAudits,
+    completedCampaigns,
+    totalVerifiedViews,
     submissions: subs,
-    recentNotifications: notifications || [],
+    featuredSubmission: featured,
+    recommendedCampaigns,
+    recentSettlements,
+    recentNotifications: notifications,
     kycStatus: (creatorProfile?.kyc_status as any) || 'unverified',
   };
 }

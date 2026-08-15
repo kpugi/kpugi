@@ -129,6 +129,25 @@ export async function submitCampaignVideoAction(formData: FormData) {
     }
   }
 
+  // Prevent duplicate post link submissions for the same campaign
+  const creatorProfileId = userProfile.creatorProfile?.id;
+  const creatorIds = [userProfile.profile.id, creatorProfileId].filter(Boolean) as string[];
+  const creatorFilter = creatorIds.map((id) => `creator_id.eq.${id}`).join(',');
+
+  const { data: existingSub } = await supabase
+    .from('submissions')
+    .select('id, post_url, status')
+    .eq('campaign_id', campaignId)
+    .or(creatorFilter)
+    .maybeSingle();
+
+  if (existingSub?.post_url && existingSub.status !== 'rejected') {
+    return {
+      success: false,
+      error: 'You have already submitted a post link for this campaign. Duplicate submissions are disabled.',
+    };
+  }
+
   // Find creator's connected social account
   const { data: socialAcc } = await supabase
     .from('social_accounts')

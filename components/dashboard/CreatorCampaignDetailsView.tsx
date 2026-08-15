@@ -371,9 +371,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
               >
                 Join Campaign
               </button>
+            ) : submission.status === 'joined' ? (
+              <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#0B1026] border border-blue-500/50 text-blue-400 text-xs font-bold font-sans uppercase tracking-wider shadow-md">
+                Slot Reserved ✓
+              </span>
             ) : (
               <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#0B1026] border border-emerald-500/50 text-emerald-400 text-xs font-bold font-sans uppercase tracking-wider shadow-md">
-                Joined ✓
+                Post Link Active ✓
               </span>
             )}
           </div>

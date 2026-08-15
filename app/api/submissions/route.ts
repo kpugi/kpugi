@@ -177,10 +177,10 @@ export async function POST(req: Request) {
       try {
         parsedUrl = new URL(postUrl);
         if (parsedUrl.protocol !== 'https:') {
-          return NextResponse.json({ error: 'Video URL must start with https://' }, { status: 400 });
+          return NextResponse.json({ error: 'Post URL must start with https://' }, { status: 400 });
         }
       } catch {
-        return NextResponse.json({ error: 'Please enter a valid, complete video URL' }, { status: 400 });
+        return NextResponse.json({ error: 'Please enter a valid, complete post URL' }, { status: 400 });
       }
 
       const hostname = parsedUrl.hostname.toLowerCase();

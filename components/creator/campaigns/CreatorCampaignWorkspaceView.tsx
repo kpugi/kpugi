@@ -188,13 +188,20 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             >
               View Briefing
             </button>
-            <button
-              onClick={() => setShowSubmitModal(true)}
-              className="px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4 text-kpugi-blue" />
-              <span>Submit Post Link</span>
-            </button>
+            {hasSubmittedLink ? (
+              <div className="px-5 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center gap-2 backdrop-blur-md cursor-default">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>Post Link Submitted</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSubmitModal(true)}
+                className="px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4 text-kpugi-blue" />
+                <span>Submit Post Link</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -390,16 +397,16 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             ) : (
               <div className="p-8 text-center border-2 border-dashed border-kpugi-border rounded-3xl space-y-3">
                 <FileText className="w-8 h-8 text-kpugi-slate mx-auto" />
-                <h4 className="font-display font-bold text-base text-kpugi-ink">No video post submitted yet</h4>
+                <h4 className="font-display font-bold text-base text-kpugi-ink">No post link submitted yet</h4>
                 <p className="text-xs text-kpugi-slate max-w-xs mx-auto">
-                  Paste your live video link (TikTok, Instagram Reels, YouTube Shorts) to start real-time view auditing.
+                  Paste your live post link (TikTok, Instagram, YouTube, X, Facebook, LinkedIn) to start real-time view auditing.
                 </p>
                 <button
                   onClick={() => setShowSubmitModal(true)}
                   className="px-5 py-2.5 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Submit Video Link Now</span>
+                  <span>Submit Post Link Now</span>
                 </button>
               </div>
             )}
@@ -590,7 +597,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
       </div>
 
-      {/* SUBMIT VIDEO LINK MODAL (PORTALED WITH BLUR BACKDROP) */}
+      {/* SUBMIT POST LINK MODAL (PORTALED WITH BLUR BACKDROP) */}
       {showSubmitModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-slate-100 relative">
@@ -605,9 +612,9 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-kpugi-blue text-[11px] font-bold font-mono uppercase tracking-wider mb-2">
                 Verification Pipeline
               </div>
-              <h3 className="font-display font-bold text-2xl text-kpugi-ink">Submit Video Link</h3>
+              <h3 className="font-display font-bold text-2xl text-kpugi-ink">Submit Post Link</h3>
               <p className="text-xs text-kpugi-slate mt-1 leading-relaxed">
-                Paste the public URL of your posted video (TikTok, Instagram Reels, YouTube Shorts).
+                Paste the public URL of your posted content (TikTok, Instagram, YouTube, X/Twitter, Facebook, LinkedIn).
               </p>
             </div>
 
@@ -615,12 +622,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               <input type="hidden" name="campaignId" value={campaign.id} />
               <div>
                 <label className="block text-xs font-bold text-kpugi-slate mb-1.5 uppercase tracking-wider">
-                  Public Video URL
+                  Public Post URL
                 </label>
                 <input
                   type="url"
                   name="videoUrl"
-                  placeholder="https://www.tiktok.com/@creator/video/..."
+                  placeholder="https://www.tiktok.com/@creator/video/... or https://x.com/..."
                   required
                   className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-xs text-slate-900 font-bold placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
                 />
@@ -645,7 +652,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                   disabled={loading}
                   className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20"
                 >
-                  {loading ? 'Submitting...' : 'Submit Link'}
+                  {loading ? 'Submitting...' : 'Submit Post Link'}
                 </button>
               </div>
             </form>

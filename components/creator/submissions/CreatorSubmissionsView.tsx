@@ -522,66 +522,93 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             {submitError && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{submitError}</p>}
             {submitSuccess && <p className="text-xs text-emerald-600 font-bold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">{submitSuccess}</p>}
 
-            <form onSubmit={handleFormSubmit} className="space-y-4 font-sans text-xs">
-              <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
-                  Select Campaign
-                </label>
-                <select
-                  value={selectedCampaignId}
-                  onChange={(e) => setSelectedCampaignId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white font-bold text-slate-900"
-                  required
-                >
-                  {data.activeCampaigns.map((camp) => (
-                    <option key={camp.id} value={camp.id}>
-                      {camp.title} ({camp.campaignCode})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {(() => {
+              const availableCampaigns = data.activeCampaigns.filter(
+                (camp) => !submissionsList.some((s) => s.campaignId === camp.id && s.postUrl && s.status !== 'rejected')
+              );
 
-              <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
-                  Post URL Link
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    type="url"
-                    placeholder="https://tiktok.com/@user/video/..."
-                    value={postUrlInput}
-                    onChange={(e) => setPostUrlInput(e.target.value)}
-                    required
-                    className="w-full pl-4 pr-10 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-xs text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
-                  />
-                  {postUrlInput && (
-                    <div className="absolute right-3">
-                      {renderPlatformIcon(detectPlatform(postUrlInput), 'w-4 h-4')}
+              if (availableCampaigns.length === 0) {
+                return (
+                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-3">
+                    <ShieldCheck className="w-8 h-8 text-emerald-600 mx-auto" />
+                    <h4 className="font-display font-bold text-sm text-kpugi-ink">All Campaign Posts Active</h4>
+                    <p className="text-xs text-kpugi-slate leading-relaxed">
+                      You have already submitted post links for all joined campaigns. Automated hourly view audits are currently running.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowSubmitModal(false)}
+                      className="w-full py-2.5 rounded-xl bg-kpugi-ink text-white font-bold text-xs hover:bg-slate-800 transition-all"
+                    >
+                      Close
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <form onSubmit={handleFormSubmit} className="space-y-4 font-sans text-xs">
+                  <div>
+                    <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                      Select Campaign
+                    </label>
+                    <select
+                      value={selectedCampaignId || availableCampaigns[0]?.id}
+                      onChange={(e) => setSelectedCampaignId(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white font-bold text-slate-900"
+                      required
+                    >
+                      {availableCampaigns.map((camp) => (
+                        <option key={camp.id} value={camp.id}>
+                          {camp.title} ({camp.campaignCode})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                      Post URL Link
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="url"
+                        placeholder="https://tiktok.com/@user/video/... or https://x.com/..."
+                        value={postUrlInput}
+                        onChange={(e) => setPostUrlInput(e.target.value)}
+                        required
+                        className="w-full pl-4 pr-10 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-xs text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
+                      />
+                      {postUrlInput && (
+                        <div className="absolute right-3">
+                          {renderPlatformIcon(detectPlatform(postUrlInput), 'w-4 h-4')}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <span className="text-[11px] text-kpugi-slate mt-1 block">
-                  Detected Platform: <strong className="text-kpugi-ink uppercase">{detectPlatform(postUrlInput)}</strong>
-                </span>
-              </div>
+                    <span className="text-[11px] text-kpugi-slate mt-1 block">
+                      Detected Platform: <strong className="text-kpugi-ink uppercase">{detectPlatform(postUrlInput)}</strong>
+                    </span>
+                  </div>
 
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowSubmitModal(false)}
-                  className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20"
-                >
-                  {submitting ? 'Submitting...' : 'Submit Post Link'}
-                </button>
-              </div>
-            </form>
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSubmitModal(false)}
+                      className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20"
+                    >
+                      {submitting ? 'Submitting...' : 'Submit Post Link'}
+                    </button>
+                  </div>
+                </form>
+              );
+            })()}
           </div>
         </div>,
         document.body
