@@ -1,0 +1,52 @@
+name: Automated Social Metric Scraper & View Auditor
+
+on:
+  # 1. Scheduled cron: Runs every 15 minutes 24/7
+  schedule:
+    - cron: '*/15 * * * *'
+
+  # 2. Manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of submissions to audit'
+        required: false
+        default: '50'
+
+  # 3. Webhook trigger from App Server Action on submission
+  repository_dispatch:
+    types: [trigger-scraper, new-submission]
+
+concurrency:
+  group: scraper-audit-runner
+  cancel-in-progress: false
+
+jobs:
+  audit-submissions:
+    name: Scrape & Audit Submissions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: '.scraper/requirements.txt'
+
+      - name: Install Scraper Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .scraper/requirements.txt
+
+      - name: Run Metric Scraper & View Auditor
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
+        run: |
+          python -m .scraper.runner

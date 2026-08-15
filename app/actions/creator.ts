@@ -169,6 +169,11 @@ export async function submitCampaignVideoAction(formData: FormData) {
     profileId: userProfile.profile.id,
   }).catch((err) => console.error('[notifyCreatorJoinedCampaign] Error:', err));
 
+  // Trigger scraper audit
+  import('@/lib/scraper/trigger')
+    .then(({ triggerScraperRun }) => triggerScraperRun())
+    .catch((err) => console.warn('[triggerScraperRun] Warning:', err));
+
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath('/campaigns');
   revalidatePath('/dashboard');
@@ -546,6 +551,11 @@ export async function resyncSubmissionScraperAction(submissionId: string) {
   if (error) {
     return { success: false, error: error.message };
   }
+
+  // Trigger scraper audit
+  import('@/lib/scraper/trigger')
+    .then(({ triggerScraperRun }) => triggerScraperRun())
+    .catch((err) => console.warn('[triggerScraperRun] Warning:', err));
 
   revalidatePath('/submissions');
   revalidatePath('/c/submissions');

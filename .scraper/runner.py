@@ -1,0 +1,182 @@
+import os
+import sys
+from pathlib import Path
+
+# Add .scraper directory and project root to sys.path to allow standalone or module execution
+SCRAPER_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRAPER_DIR.parent
+if str(SCRAPER_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRAPER_DIR))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import logging
+from datetime import datetime, timezone, timedelta
+from typing import Dict, Any
+
+from config import (
+    DEFAULT_AUTO_APPROVE_HOURS,
+    SURGE_AUTO_APPROVE_HOURS,
+    SURGE_VIEW_THRESHOLD,
+)
+from db import DatabaseClient
+from extractors import extract_post_metrics
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("ScraperRunner")
+
+
+def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any]:
+    sub_id = sub['id']
+    post_url = sub['post_url']
+    campaign = sub.get('campaign', {})
+    cpm_rate = float(campaign.get('cpm_rate') or 2000)
+    min_view_threshold = int(campaign.get('min_view_threshold') or 1000)
+
+    logger.info(f"Auditing submission {sub_id[:8]}... | URL: {post_url}")
+
+    # 1. Scrape post metrics
+    result = extract_post_metrics(post_url)
+    now_utc = datetime.now(timezone.utc)
+    now_iso = now_utc.isoformat()
+
+    # 2. Record verification audit log
+    db.record_verification_check(
+        submission_id=sub_id,
+        post_reachable=result.reachable,
+        view_count=result.view_count,
+        raw_scrape=result.to_dict(),
+        notes=f"Extractor: {result.extractor} | Platform: {result.platform} | Error: {result.error_message or 'None'}"
+    )
+
+    # 3. Handle unreachable / deleted posts
+    if not result.reachable:
+        logger.warning(f"Submission {sub_id[:8]} post is unreachable: {result.error_message}")
+        updates = {
+            "last_scraped_at": now_iso,
+            "status": "verified_fail",
+            "failure_reason": result.error_message or "Post is private, unreachable, or deleted.",
+        }
+        db.update_submission(sub_id, updates)
+        return {
+            "id": sub_id[:8],
+            "platform": result.platform,
+            "reachable": False,
+            "views": 0,
+            "status": "verified_fail",
+            "payout": 0,
+        }
+
+    # 4. Process live view metrics
+    scraped_views = result.view_count if result.view_count is not None else 0
+    # Retain the highest observed view count (views don't decrease in reality)
+    current_max_views = int(sub.get('final_view_count') or 0)
+    final_views = max(scraped_views, current_max_views)
+
+    last_paid_views = max(
+        int(sub.get('last_paid_view_count') or 0),
+        int(sub.get('max_verified_views') or 0)
+    )
+
+    updates: Dict[str, Any] = {
+        "final_view_count": final_views,
+        "last_scraped_at": now_iso,
+        "verified_at": now_iso,
+    }
+
+    if result.like_count is not None:
+        updates["likes_count"] = result.like_count
+    if result.comment_count is not None:
+        updates["comments_count"] = result.comment_count
+    if result.share_count is not None:
+        updates["shares_count"] = result.share_count
+
+    # Check minimum threshold
+    if final_views < min_view_threshold:
+        logger.info(f"Submission {sub_id[:8]} views ({final_views}) < threshold ({min_view_threshold}). Keeping in pending.")
+        updates.update({
+            "pending_payout_amount": 0,
+            "auto_approve_at": None,
+            "status": "pending",
+        })
+        db.update_submission(sub_id, updates)
+        return {
+            "id": sub_id[:8],
+            "platform": result.platform,
+            "reachable": True,
+            "views": final_views,
+            "status": "pending (below threshold)",
+            "payout": 0,
+        }
+
+    # Views exceed or equal minimum threshold -> Compute pending incremental payout
+    new_views = max(0, final_views - last_paid_views)
+    incremental_payout = round((new_views / 1000.0) * cpm_rate)
+
+    # Surge Protection: Surge >= 50k views gets 24h grace window, else 1h
+    is_surge = new_views >= SURGE_VIEW_THRESHOLD
+    grace_hours = SURGE_AUTO_APPROVE_HOURS if is_surge else DEFAULT_AUTO_APPROVE_HOURS
+    auto_approve_at = (now_utc + timedelta(hours=grace_hours)).isoformat()
+
+    updates.update({
+        "pending_payout_amount": incremental_payout,
+        "auto_approve_at": auto_approve_at,
+        "status": "auditing",
+    })
+
+    db.update_submission(sub_id, updates)
+    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Pending Payout: ₦{incremental_payout:,} | Status: auditing")
+
+    return {
+        "id": sub_id[:8],
+        "platform": result.platform,
+        "reachable": True,
+        "views": final_views,
+        "status": "auditing",
+        "payout": incremental_payout,
+    }
+
+
+def main():
+    logger.info("=== Starting Social Metric Scraper & View Auditor ===")
+    
+    try:
+        db = DatabaseClient()
+    except Exception as e:
+        logger.error(f"Failed to initialize database client: {e}")
+        sys.exit(1)
+
+    submissions = db.fetch_active_submissions()
+    logger.info(f"Found {len(submissions)} submission(s) queued for auditing.")
+
+    if not submissions:
+        logger.info("No active submissions require auditing at this time. Exiting cleanly.")
+        return
+
+    summary_records = []
+    for sub in submissions:
+        try:
+            record = process_submission(db, sub)
+            summary_records.append(record)
+        except Exception as e:
+            logger.error(f"Error processing submission {sub.get('id')}: {e}")
+
+    # Output Summary Table
+    print("\n" + "=" * 78)
+    print(f"{'SUBMISSION ID':<16} {'PLATFORM':<12} {'REACHABLE':<12} {'VIEWS':<10} {'PAYOUT':<12} {'STATUS':<14}")
+    print("=" * 78)
+    for rec in summary_records:
+        reachable_str = "YES" if rec.get('reachable') else "NO"
+        payout_str = f"NGN {rec.get('payout', 0):,}"
+        print(f"{rec['id']:<16} {rec.get('platform', 'unknown'):<12} {reachable_str:<12} {rec.get('views', 0):<10} {payout_str:<12} {rec.get('status', 'unknown'):<14}")
+    print("=" * 78 + "\n")
+    logger.info("=== Social Metric Scraper Execution Finished Successfully ===")
+
+
+if __name__ == '__main__':
+    main()
