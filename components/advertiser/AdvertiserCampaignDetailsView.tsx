@@ -947,7 +947,7 @@ export default function AdvertiserCampaignDetailsView({
                     <thead>
                       <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
                         <th className="py-2.5 px-3">Creator</th>
-                        <th className="py-2.5 px-3">Views Scraped</th>
+                        <th className="py-2.5 px-3">Verified Views</th>
                         <th className="py-2.5 px-3">Net New Views</th>
                         <th className="py-2.5 px-3">Payout Released</th>
                         <th className="py-2.5 px-3">Settlement Type</th>

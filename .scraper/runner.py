@@ -123,7 +123,14 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
 
     # Views exceed or equal minimum threshold -> Compute pending incremental payout
     new_views = max(0, final_views - last_paid_views)
-    incremental_payout = round((new_views / 1000.0) * cpm_rate)
+    raw_payout = round((new_views / 1000.0) * cpm_rate)
+
+    # 25% Creator Campaign Pool Cap Enforcement
+    total_budget = float(campaign.get('total_budget') or 0)
+    creator_cap = (total_budget * 0.25) if total_budget > 0 else float('inf')
+    already_paid = float(sub.get('payout_amount') or 0)
+    max_allowable = max(0.0, creator_cap - already_paid)
+    incremental_payout = min(raw_payout, int(max_allowable))
 
     # Surge Protection: Surge >= 50k views gets 24h grace window, else 1h
     is_surge = new_views >= SURGE_VIEW_THRESHOLD
@@ -137,7 +144,7 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     })
 
     db.update_submission(sub_id, updates)
-    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Pending Payout: ₦{incremental_payout:,} | Status: {updates['status']}")
+    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Pending Payout: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: {updates['status']}")
 
     return {
         "id": sub_id[:8],

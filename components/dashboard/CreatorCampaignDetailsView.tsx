@@ -735,12 +735,12 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
                       <span>🛡️</span> Auditing Requirements
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">Key rules enforced by our automated view scraper and escrow verification bot.</p>
+                    <p className="text-xs text-slate-400 mt-1">Key rules enforced by our automated view verification and escrow settlement system.</p>
                   </div>
                   <ul className="space-y-4 font-sans text-sm text-slate-300 list-disc pl-5 leading-relaxed">
                     <li>Your post must remain publicly visible and reachable for a minimum of <strong>{campaign.required_live_duration_hours} hours</strong> from the time of submission.</li>
-                    <li>Our verification scraper checks view count progress automatically hourly.</li>
-                    <li>A grace period of <strong>{campaign.verification_grace_hours} hours</strong> is allowed for final scraping settling.</li>
+                    <li>Our verification auditor checks view count progress automatically hourly.</li>
+                    <li>A review window of <strong>{campaign.verification_grace_hours} hours</strong> is allowed for final metric settling.</li>
                     <li>Deleting, archiving, or restricting access to the post during the audit phase violates terms and results in immediate forfeiture of reserved escrow funds.</li>
                   </ul>
                 </div>
@@ -765,7 +765,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                         <span>72-Hour Public Visibility Lock</span>
                       </div>
                       <p className="text-xs text-slate-300 leading-relaxed pl-1">
-                        Do not archive, set to private, or delete your video post for at least {campaign.required_live_duration_hours} hours after submitting your link. The automated scraper audits view counts hourly.
+                        Do not archive, set to private, or delete your video post for at least {campaign.required_live_duration_hours} hours after submitting your link. The automated auditor audits view counts hourly.
                       </p>
                     </div>
 
@@ -787,7 +787,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                         <span>Mandatory Tags & Handles</span>
                       </div>
                       <p className="text-xs text-slate-300 leading-relaxed pl-1">
-                        Tag the official brand handle and include the campaign hashtag or unique identifier in your post caption so our scraper can verify ownership.
+                        Tag the official brand handle and include the campaign hashtag or unique identifier in your post caption so our auditor can verify ownership.
                       </p>
                     </div>
 
@@ -1138,7 +1138,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scraper settles backup screenshot</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Backup Verification Screenshot</label>
                     <input
                       type="text"
                       placeholder="Screenshot image URL (optional)"
@@ -1157,7 +1157,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   </button>
                 </form>
               ) : (
-                /* Link Submitted / Under Scraper Audit */
+                /* Link Submitted / Under View Audit */
                 <div className="space-y-4">
                   <div className={`p-4 rounded-2xl border ${
                     submission.status === 'pending'
@@ -1167,11 +1167,11 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       : 'bg-red-500/10 border-red-500/20 text-red-300'
                   }`}>
                     <div className="flex items-center gap-2 font-bold font-sans text-xs uppercase mb-1">
-                      <span>{submission.status === 'pending' ? '⏳ Scraper Audit active' : `✓ ${submission.status.replace(/_/g, ' ')}`}</span>
+                      <span>{submission.status === 'pending' ? '⏳ View Audit Active' : `✓ ${submission.status.replace(/_/g, ' ')}`}</span>
                     </div>
                     <p className="font-sans text-xs text-slate-300 mt-1">
                       {submission.status === 'pending'
-                        ? 'Scrapers are verifying conversion and views hourly. Do not delete the post.'
+                        ? 'Automated auditors are verifying engagement and views hourly. Do not delete the post.'
                         : 'Audit verified. Escrow earnings released.'}
                     </p>
                   </div>

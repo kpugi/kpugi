@@ -53,7 +53,7 @@ export default function Footer() {
             <h4 className="font-display font-semibold text-sm text-kpugi-ink mb-4">Platform</h4>
             <ul className="space-y-2.5 text-xs text-kpugi-slate">
               <li><span className="text-kpugi-ink font-medium">No Manual Gatekeepers</span></li>
-              <li><span className="text-kpugi-ink font-medium">Automated Scraper Audit</span></li>
+              <li><span className="text-kpugi-ink font-medium">Automated View Audit</span></li>
               <li><span className="text-kpugi-ink font-medium">10% Platform Commission</span></li>
             </ul>
           </div>

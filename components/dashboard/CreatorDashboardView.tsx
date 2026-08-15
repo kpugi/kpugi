@@ -426,7 +426,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </h3>
           <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1.5 font-sans">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            Scraper Active
+            Auditor Active
           </span>
         </div>
 

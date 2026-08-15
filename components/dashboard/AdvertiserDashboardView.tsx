@@ -188,7 +188,7 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
                 {pendingSubmissionsCount} Creator Proof{pendingSubmissionsCount > 1 ? 's' : ''} in Verification Audit
               </h2>
               <p className="text-xs text-blue-800/90 mt-0.5">
-                Automated view scrapers are verifying live metrics across creator submissions.
+                Automated view auditors are verifying live metrics across creator submissions.
               </p>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
                 All Systems Operational
               </span>
               <span className="text-[11px] text-emerald-800/80 block">
-                Escrow protected & real-time scrapers active across all running briefs.
+                Escrow protected & real-time view verification active across all running briefs.
               </span>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
             </div>
             <div className="flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-emerald-600">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>100% Scraped & Verified</span>
+              <span>100% Audited & Verified</span>
             </div>
           </div>
         </div>
@@ -611,7 +611,7 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
                 <Users className="w-7 h-7 text-slate-300 mx-auto" />
                 <p className="text-xs font-bold text-slate-700">No recent submissions yet</p>
                 <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                  When creators post your campaign briefs and view scrapers audit their metrics, live submissions will appear here.
+                  When creators post your campaign briefs and view auditors verify their metrics, live submissions will appear here.
                 </p>
               </div>
             )}

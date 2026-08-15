@@ -36,16 +36,33 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const [msg, setMsg] = useState('');
   const [copiedHashtag, setCopiedHashtag] = useState<string | null>(null);
   const hasSubmittedLink = Boolean(submission && submission.post_url && submission.post_url.trim().length > 0);
-  const [secondsToNextAudit, setSecondsToNextAudit] = useState(3600); // 60 minutes (3600s)
+
+  const totalCampaignBudget = Number(campaign?.total_budget || 0);
+  const maxCreatorPoolCap = totalCampaignBudget > 0 ? totalCampaignBudget * 0.25 : 0;
+
+  // Real 60-minute countdown calculation based on submission or last audit timestamp
+  const computeRemainingSeconds = () => {
+    if (!hasSubmittedLink) return 3600;
+    const baseTimeStr = (submission as any)?.last_scraped_at || (submission as any)?.submitted_at;
+    if (!baseTimeStr) return 3600;
+    const baseTimestamp = new Date(baseTimeStr).getTime();
+    if (isNaN(baseTimestamp)) return 3600;
+    const nextAuditTime = baseTimestamp + 60 * 60 * 1000;
+    const diffSeconds = Math.floor((nextAuditTime - Date.now()) / 1000);
+    return Math.max(0, diffSeconds);
+  };
+
+  const [secondsToNextAudit, setSecondsToNextAudit] = useState<number>(3600);
 
   React.useEffect(() => {
     if (!hasSubmittedLink) return;
+    setSecondsToNextAudit(computeRemainingSeconds());
 
     const timer = setInterval(() => {
-      setSecondsToNextAudit((prev) => (prev > 0 ? prev - 1 : 3600));
+      setSecondsToNextAudit(computeRemainingSeconds());
     }, 1000);
     return () => clearInterval(timer);
-  }, [hasSubmittedLink]);
+  }, [hasSubmittedLink, (submission as any)?.last_scraped_at, (submission as any)?.submitted_at]);
 
   const formatTimer = (totalSec: number) => {
     const m = Math.floor(totalSec / 60);
@@ -65,7 +82,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
     if (!res.success) {
       setMsg(`Error: ${res.error}`);
     } else {
-      setMsg('Video submitted successfully!');
+      setMsg('Video submitted successfully! View audit cycle initiated.');
       setShowSubmitModal(false);
     }
   }
@@ -84,9 +101,11 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   
   // Reserve is met when verified views reach target threshold or payout is released
   const isReserveMet = totalViews >= targetThreshold || Number(submission?.payout_amount || 0) > 0 || submission?.status === 'paid';
-  const earnedAmount = isReserveMet
+  const rawEarned = isReserveMet
     ? (submission?.payout_amount || Math.floor((totalViews / 1000) * campaign.cpm_rate)) 
     : 0;
+  const earnedAmount = maxCreatorPoolCap > 0 ? Math.min(rawEarned, maxCreatorPoolCap) : rawEarned;
+  const isCapReached = maxCreatorPoolCap > 0 && rawEarned >= maxCreatorPoolCap;
 
   const docUrl = campaign.requirements?.google_doc_url || campaign.requirements?.brand_guide_url || campaign.requirements?.doc_url;
   const driveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.asset_pack_url || campaign.requirements?.drive_url;
@@ -219,8 +238,24 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           <div className="flex items-center justify-between text-[11px] text-kpugi-slate font-medium pt-1">
             <span>Goal: {targetThreshold.toLocaleString()} views</span>
             <span className="inline-flex items-center gap-1 font-mono font-bold text-kpugi-blue bg-blue-50/80 px-2 py-0.5 rounded-md text-[10px] border border-blue-100">
-              <Clock className="w-3 h-3 text-kpugi-blue animate-spin" />
-              <span>Next Audit: {formatTimer(secondsToNextAudit)}</span>
+              {hasSubmittedLink ? (
+                secondsToNextAudit > 0 ? (
+                  <>
+                    <Clock className="w-3 h-3 text-kpugi-blue animate-spin" />
+                    <span>Next Audit: {formatTimer(secondsToNextAudit)}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Audit in progress...</span>
+                  </>
+                )
+              ) : (
+                <>
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span>Awaiting Post Link</span>
+                </>
+              )}
             </span>
           </div>
         </div>
@@ -234,7 +269,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           <div>
             <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue flex items-baseline gap-2 flex-wrap">
               <span>{formatCompactCurrency(earnedAmount)}</span>
-              {!isReserveMet && (
+              {isCapReached && (
+                <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-lg shrink-0">
+                  Pool Cap Reached
+                </span>
+              )}
+              {!isReserveMet && !isCapReached && (
                 <span className="text-[11px] font-mono font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
                   (₦{baseReserve.toLocaleString()} reserved)
                 </span>
@@ -242,14 +282,21 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </div>
             <span className="text-[11px] text-kpugi-slate block mt-1">
               {isReserveMet 
-                ? `Est. Payout in ${campaign.verification_grace_hours || 48} hours after audit`
+                ? (isCapReached 
+                    ? `Max creator earnings reached for this campaign (25% pool limit: ₦${maxCreatorPoolCap.toLocaleString()}).` 
+                    : `Est. Payout in ${campaign.verification_grace_hours || 48} hours after audit`)
                 : `Initial slot reserve held in escrow until minimum view threshold (${targetThreshold.toLocaleString()} views) is reached.`
               }
             </span>
           </div>
-          <span className="text-[11px] text-kpugi-slate font-medium">
-            CPM Rate: ₦{campaign.cpm_rate.toLocaleString()} / 1k views
-          </span>
+          <div className="flex items-center justify-between text-[11px] text-kpugi-slate font-medium pt-1">
+            <span>CPM: ₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
+            {maxCreatorPoolCap > 0 && (
+              <span className="font-mono text-[10px] text-kpugi-slate bg-slate-100 px-2 py-0.5 rounded-md">
+                Cap: {formatCompactCurrency(maxCreatorPoolCap)} (25% pool)
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Card 3: Escrow Status */}
@@ -463,7 +510,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-kpugi-blue animate-pulse" />
             <h3 className="font-display font-bold text-xl text-kpugi-ink">Live Audit Log</h3>
-            <span className="text-xs text-kpugi-slate ml-2 font-medium hidden sm:inline">Syncing with Kpugi API...</span>
+            <span className="text-xs text-kpugi-slate ml-2 font-medium hidden sm:inline">Live Metric Sync Active</span>
           </div>
 
           <button
@@ -517,7 +564,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                           : audit.status === 'approved'
                           ? '✓ Settled & Approved'
                           : audit.status === 'pending'
-                          ? '⏳ Scrape Verified'
+                          ? '⏳ Verified & Auditing'
                           : audit.status}
                       </span>
                     </td>
@@ -532,7 +579,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                       </div>
                       <p className="font-bold text-sm text-kpugi-ink">No Settled Audit Runs Yet</p>
                       <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
-                        Hourly view scraper audits will settle payouts into your available balance automatically after the 60-min review window.
+                        Hourly view audits verify engagement and settle payouts into your available balance automatically after the review window.
                       </p>
                     </div>
                   </td>

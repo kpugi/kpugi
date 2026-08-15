@@ -98,7 +98,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
     setSubmitting(false);
 
     if (res.success) {
-      setSubmitSuccess('Post submitted successfully! Scraper audit initiated.');
+      setSubmitSuccess('Post submitted successfully! Automated view audit initiated.');
       const newSub: DetailedSubmissionItem = {
         id: `sub-${Date.now()}`,
         campaignId: selectedCampaignId,
@@ -183,7 +183,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             Submissions & Audits
           </h1>
           <p className="font-sans text-xs sm:text-sm text-kpugi-slate mt-1">
-            Real-time scraper verification and performance clearing across all connected platforms
+            Real-time metric verification and performance clearing across all connected platforms
           </p>
         </div>
 
@@ -197,21 +197,21 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       </div>
 
       {/* ─────────────────────────────────────────────────────
-         TOP STATS CARDS ROW (4 CARDS MATCHING MOCKUP)
+         TOP 4 STATS CARDS
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: TOTAL POSTS SUBMITTED */}
+        {/* Card 1: TOTAL SUBMITTED */}
         <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col justify-between space-y-4">
           <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
-            Total Posts Submitted
+            Total Submitted
           </span>
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-center justify-between">
             <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
               {data.totalSubmitted}
             </span>
-            <span className="text-[11px] font-bold text-kpugi-blue bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-              +{data.submittedThisWeek} this week
-            </span>
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
           </div>
         </div>
 
@@ -230,10 +230,10 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
           </div>
         </div>
 
-        {/* Card 3: AUDITING / PENDING SCRAPER */}
+        {/* Card 3: AUDITING / VERIFICATION */}
         <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col justify-between space-y-4">
           <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
-            Auditing / Pending Scraper
+            Auditing / Verification
           </span>
           <div className="flex items-center justify-between">
             <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
@@ -424,13 +424,13 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         )}
                       </button>
 
-                      {/* Resync Scraper */}
+                      {/* Resync Audit */}
                       {(item.status === 'auditing' || item.status === 'pending') && (
                         <button
                           onClick={() => handleResync(item.id)}
                           disabled={resyncingId === item.id}
                           className="p-2 rounded-xl border border-kpugi-border bg-white text-kpugi-blue hover:bg-blue-50 transition-colors disabled:opacity-50"
-                          title="Re-sync Scraper Audit"
+                          title="Re-sync View Audit"
                         >
                           <RefreshCw className={`w-4 h-4 ${resyncingId === item.id ? 'animate-spin' : ''}`} />
                         </button>
@@ -515,7 +515,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink">Submit Campaign Post</h3>
               <p className="font-sans text-xs text-kpugi-slate mt-1">
-                Paste your post URL (TikTok, Instagram, YouTube, X/Twitter, Facebook, Threads, LinkedIn). Scraper audit will begin instantly.
+                Paste your post URL (TikTok, Instagram, YouTube, X/Twitter, Facebook, Threads, LinkedIn). View audit will begin shortly.
               </p>
             </div>
 
@@ -604,9 +604,9 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             </div>
 
             <div className="p-4 rounded-2xl bg-red-50/70 border border-red-200 space-y-2">
-              <span className="text-xs font-bold text-red-900 block uppercase tracking-wider">Scraper Error Report:</span>
+              <span className="text-xs font-bold text-red-900 block uppercase tracking-wider">Verification Audit Report:</span>
               <p className="text-xs text-red-800 leading-relaxed font-sans">
-                {rejectionModalItem.rejectionReason || 'Video settings set to private or post URL unreachable by anti-fraud scrapers. Switch post visibility to public and resubmit.'}
+                {rejectionModalItem.rejectionReason || 'Video settings set to private or post URL unreachable by verification auditors. Switch post visibility to public and resubmit.'}
               </p>
             </div>
 

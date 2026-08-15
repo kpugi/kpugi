@@ -44,10 +44,28 @@ export async function GET() {
 
     for (const sub of expiredSubs || []) {
       const campaign = (sub as any).campaign;
-      const pendingPayout = Number(sub.pending_payout_amount || 0);
-      if (pendingPayout <= 0) continue;
+      const rawPendingPayout = Number(sub.pending_payout_amount || 0);
+      if (rawPendingPayout <= 0) continue;
 
-      const newTotalPayout = Number(sub.payout_amount || 0) + pendingPayout;
+      const totalBudget = Number(campaign?.total_budget || 0);
+      const maxCreatorCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
+      const currentPaid = Number(sub.payout_amount || 0);
+      const maxAllowable = Math.max(0, maxCreatorCap - currentPaid);
+      const pendingPayout = Math.min(rawPendingPayout, maxAllowable);
+
+      if (pendingPayout <= 0) {
+        // Creator reached max pool cap, clear pending amount
+        await supabase
+          .from('submissions')
+          .update({
+            pending_payout_amount: 0,
+            auto_approve_at: null,
+          })
+          .eq('id', sub.id);
+        continue;
+      }
+
+      const newTotalPayout = currentPaid + pendingPayout;
       const viewCount = Number(sub.final_view_count || 0);
       const reservedAmt = Number(sub.reserved_amount || 0);
       const newReservedBudget = Math.max(0, Number(campaign?.reserved_budget || 0) - reservedAmt);

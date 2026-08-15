@@ -306,12 +306,18 @@ export async function reviewCreatorSubmissionAction(formData: FormData) {
 
   // Calculate incremental payout for this cycle based on net-new verified views
   const netNewViews = Math.max(0, views - maxVerifiedViews);
-  const payout = pendingPayout > 0 ? pendingPayout : Math.round((netNewViews / 1000) * Number(campaign.cpm_rate));
+  const rawPayout = pendingPayout > 0 ? pendingPayout : Math.round((netNewViews / 1000) * Number(campaign.cpm_rate));
+
+  const totalBudget = Number(campaign.total_budget || 0);
+  const maxCreatorCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
+  const currentPaid = Number(sub.payout_amount || 0);
+  const maxAllowable = Math.max(0, maxCreatorCap - currentPaid);
+  const payout = Math.min(rawPayout, maxAllowable);
   const now = new Date().toISOString();
 
   if (decision === 'approve') {
     if (payout <= 0) {
-      return { success: false, error: 'No new payable views delivered since last settled audit run.' };
+      return { success: false, error: 'No new payable views delivered (or max 25% creator pool cap reached).' };
     }
 
     // IDEMPOTENCY GUARD: Check if this audit cycle has already been settled in submission_audits
