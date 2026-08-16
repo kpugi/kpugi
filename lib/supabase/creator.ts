@@ -9,6 +9,7 @@ export interface CreatorSubmission {
   final_view_count: number | null;
   verified_at: string | null;
   payout_amount: number | null;
+  pending_payout_amount?: number | null;
   campaign: {
     id: string;
     title: string;
@@ -117,6 +118,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
         final_view_count,
         verified_at,
         payout_amount,
+        pending_payout_amount,
         campaign:campaigns (
           id,
           title,
@@ -188,6 +190,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
       final_view_count: sub.final_view_count,
       verified_at: sub.verified_at,
       payout_amount: sub.payout_amount,
+      pending_payout_amount: sub.pending_payout_amount,
       campaign: {
         ...campaignObj,
         company_name: adv?.company_name || 'Brand Partner',
@@ -338,7 +341,12 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
       status: sub.status,
       postUrl: sub.post_url,
       viewsCount: sub.final_view_count || 0,
-      earnedAmount: sub.payout_amount || 0,
+      earnedAmount: Math.max(
+        Number(sub.payout_amount || 0) + Number(sub.pending_payout_amount || 0),
+        (sub.final_view_count || 0) >= (campaign?.min_view_threshold || 500)
+          ? Math.floor(((sub.final_view_count || 0) / 1000) * (campaign?.cpm_rate || 0))
+          : 0
+      ),
       submittedAt: sub.submitted_at,
     };
   });
@@ -1177,7 +1185,9 @@ export async function getCreatorSubmissionsData(
       const platform = (campaign.channels?.[0] || extractPlatformFromUrl(sub.post_url) || 'tiktok').toLowerCase();
       const views = sub.final_view_count || 0;
       const cpmRate = campaign.cpm_rate || 3500;
-      const earned = sub.payout_amount || (views > 0 ? (views / 1000) * cpmRate : 0);
+      const minThresh = campaign.min_view_threshold || 1000;
+      const viewsEarned = views >= minThresh ? Math.floor((views / 1000) * cpmRate) : 0;
+      const earned = Math.max(Number(sub.payout_amount || 0) + Number(sub.pending_payout_amount || 0), viewsEarned);
 
       return {
         id: sub.id,

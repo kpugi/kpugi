@@ -56,7 +56,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   // Database aggregate calculations for Live Reach
   const activeSubs = allSubmissions.filter(s => s.status !== 'joined');
   const dbViews = allSubmissions.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
-  const dbPayouts = allSubmissions.reduce((sum, s) => sum + (s.payout_amount || 0), 0);
+  const dbPayouts = allSubmissions.reduce((sum, s) => {
+    const paid = Number(s.payout_amount || 0);
+    const viewsAmt = (s.final_view_count || 0) >= (campaign.min_view_threshold || 1000)
+      ? Math.floor(((s.final_view_count || 0) / 1000) * (campaign.cpm_rate || 0))
+      : 0;
+    return sum + Math.max(paid, viewsAmt);
+  }, 0);
   const dbCreatorsJoined = allSubmissions.length;
   const dbSubmissions = activeSubs.length;
 

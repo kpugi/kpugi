@@ -101,9 +101,9 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   
   // Reserve is met when verified views reach target threshold or payout is released
   const isReserveMet = totalViews >= targetThreshold || Number(submission?.payout_amount || 0) > 0 || submission?.status === 'paid';
-  const rawEarned = isReserveMet
-    ? (submission?.payout_amount || Math.floor((totalViews / 1000) * campaign.cpm_rate)) 
-    : 0;
+  const calculatedViewsEarned = isReserveMet ? Math.floor((totalViews / 1000) * campaign.cpm_rate) : 0;
+  const paidAndPending = Number(submission?.payout_amount || 0) + Number(submission?.pending_payout_amount || 0);
+  const rawEarned = isReserveMet ? Math.max(paidAndPending, calculatedViewsEarned) : 0;
   const earnedAmount = maxCreatorPoolCap > 0 ? Math.min(rawEarned, maxCreatorPoolCap) : rawEarned;
   const isCapReached = maxCreatorPoolCap > 0 && rawEarned >= maxCreatorPoolCap;
 
@@ -562,7 +562,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                           ? 'bg-amber-100 text-amber-800 border border-amber-200'
                           : audit.status === 'approved'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : audit.status === 'pending'
+                          : audit.status === 'pending' || audit.status === 'accumulating'
                           ? 'bg-blue-100 text-blue-800 border border-blue-200'
                           : 'bg-red-100 text-red-800 border border-red-200'
                       }`}>
@@ -570,8 +570,10 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                           ? '⚡ Auto-Credited'
                           : audit.status === 'approved'
                           ? '✓ Settled & Approved'
-                          : audit.status === 'pending'
-                          ? '⏳ Verified & Auditing'
+                          : audit.status === 'pending' || audit.status === 'accumulating'
+                          ? (audit.views_delta > 0 && audit.payout_amount > 0 ? '⏳ Verified & Auditing' : '⏳ Accumulating Views')
+                          : audit.status === 'failed'
+                          ? '❌ Unreachable'
                           : audit.status}
                       </span>
                     </td>

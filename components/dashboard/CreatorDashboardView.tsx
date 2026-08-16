@@ -90,7 +90,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md active:scale-95"
             >
               <Compass className="w-4 h-4 text-kpugi-blue" />
-              <span>Browse Briefs</span>
+              <span>Browse Campaigns</span>
             </Link>
           </div>
         </div>
@@ -288,10 +288,21 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
 
                     <div className="text-right shrink-0">
                       <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-blue">
-                        {formatCompactCurrency(Number(featuredSub.payout_amount || featuredSub.reserved_amount || 0))}
+                        {(() => {
+                          const v = featuredSub.final_view_count || 0;
+                          const thresh = featuredSub.campaign.min_view_threshold || 1000;
+                          const cpm = featuredSub.campaign.cpm_rate || 0;
+                          const viewsAmt = v >= thresh && cpm > 0 ? Math.floor((v / 1000) * cpm) : 0;
+                          const totalAmt = Math.max(
+                            Number(featuredSub.payout_amount || 0) + Number(featuredSub.pending_payout_amount || 0),
+                            viewsAmt,
+                            Number(featuredSub.reserved_amount || 0)
+                          );
+                          return formatCompactCurrency(totalAmt);
+                        })()}
                       </div>
                       <span className="font-sans text-[10px] font-bold text-kpugi-slate uppercase tracking-wider block">
-                        {featuredSub.status === 'paid' || featuredSub.status === 'completed' ? 'Cleared Payout' : 'Reserved Escrow'}
+                        {featuredSub.status === 'paid' || featuredSub.status === 'completed' ? 'Cleared Payout' : 'Earned Escrow'}
                       </span>
                     </div>
                   </div>

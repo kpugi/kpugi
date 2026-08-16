@@ -669,59 +669,102 @@ export async function getCampaignDetailsForCreator(
     .eq('campaign_id', realCampaignId)
     .order('settled_at', { ascending: false });
 
-  const mappedAudits = (rawAudits || []).map((audit: any) => {
-    const handle = audit.creator?.display_name || audit.creator?.profile?.full_name || 'Creator';
-    return {
-      id: audit.id,
-      submission_id: audit.submission_id,
-      creator_handle: handle.startsWith('@') ? handle : `@${handle}`,
-      creator_avatar_url: audit.creator?.profile?.avatar_url || null,
-      views_scraped: Number(audit.views_scraped || 0),
-      views_delta: Number(audit.views_delta || 0),
-      payout_amount: Number(audit.payout_amount || 0),
-      status: audit.status,
-      settled_at: audit.settled_at,
-      failure_reason: audit.failure_reason || null,
-    };
-  });
+  // Build real-time audit ledger for the Live Audit Log
+  const mappedAudits: Array<{
+    id: string;
+    submission_id: string;
+    creator_handle: string;
+    creator_avatar_url: string | null;
+    views_scraped: number;
+    views_delta: number;
+    payout_amount: number;
+    status: string;
+    settled_at: string;
+    failure_reason: string | null;
+  }> = [];
 
-  // Ensure live verification checks for the current creator's submission populate in the Live Audit Log
-  const existingAuditIds = new Set(mappedAudits.map((a) => a.id));
+  const settledAuditList = rawAudits || [];
 
   if (submission?.id) {
     const { data: verChecks } = await supabase
       .from('verification_checks')
       .select('id, submission_id, checked_at, post_reachable, view_count, notes')
       .eq('submission_id', submission.id)
-      .order('checked_at', { ascending: false });
+      .order('checked_at', { ascending: true }); // chronological order
 
-    (verChecks || []).forEach((vc: any) => {
-      const vcKey = `vc-${vc.id}`;
-      if (!existingAuditIds.has(vcKey)) {
-        const viewsScraped = Number(vc.view_count || 0);
-        const minThresh = Number(campaign?.min_view_threshold || 1000);
-        const cpm = Number(campaign?.cpm_rate || 0);
-        const isPass = viewsScraped >= minThresh;
-        const estPayout = isPass && cpm > 0 ? Math.floor((viewsScraped / 1000) * cpm) : 0;
+    if (verChecks && verChecks.length > 0) {
+      let prevViews = 0;
+      const cpm = Number(campaign?.cpm_rate || 0);
+      const minThresh = Number(campaign?.min_view_threshold || 1000);
+
+      verChecks.forEach((vc: any) => {
+        const vcKey = `vc-${vc.id}`;
+        const currentViews = vc.view_count !== null && vc.view_count !== undefined ? Number(vc.view_count) : 0;
+        const deltaViews = Math.max(0, currentViews - prevViews);
+        prevViews = Math.max(prevViews, currentViews);
+
+        // Check if there is a matching settled audit record in submission_audits
+        const matchingSettledAudit = settledAuditList.find(
+          (sa: any) =>
+            sa.submission_id === submission.id &&
+            (sa.views_scraped === currentViews || Math.abs(new Date(sa.settled_at).getTime() - new Date(vc.checked_at).getTime()) < 300000)
+        );
+
+        let status = 'pending';
+        let payoutForCycle = 0;
+
+        if (!vc.post_reachable) {
+          status = 'failed';
+        } else if (matchingSettledAudit) {
+          status = matchingSettledAudit.status === 'auto_approved' ? 'auto_approved' : 'approved';
+          payoutForCycle = Number(matchingSettledAudit.payout_amount || 0);
+        } else if (currentViews >= minThresh && deltaViews > 0) {
+          payoutForCycle = Math.floor((deltaViews / 1000) * cpm);
+          if (submission.status === 'paid' && currentViews <= Number(submission.last_paid_view_count || 0)) {
+            status = 'approved';
+          } else {
+            status = 'pending';
+          }
+        } else {
+          status = 'pending';
+          payoutForCycle = 0;
+        }
 
         mappedAudits.push({
           id: vcKey,
           submission_id: vc.submission_id,
           creator_handle: 'You',
           creator_avatar_url: null,
-          views_scraped: viewsScraped,
-          views_delta: viewsScraped,
-          payout_amount: estPayout,
-          status: isPass
-            ? (submission.status === 'paid' || submission.status === 'verified_pass' ? 'approved' : 'auto_approved')
-            : 'pending',
+          views_scraped: currentViews,
+          views_delta: deltaViews,
+          payout_amount: payoutForCycle,
+          status,
           settled_at: vc.checked_at,
           failure_reason: vc.post_reachable ? null : 'Post unreachable or deleted',
         });
-        existingAuditIds.add(vcKey);
-      }
-    });
+      });
+    }
   }
+
+  // Include any other settled audits from other creators or not matching verification_checks
+  const recordedVcSubIds = new Set(mappedAudits.map((a) => a.submission_id));
+  settledAuditList.forEach((audit: any) => {
+    if (!recordedVcSubIds.has(audit.submission_id)) {
+      const handle = audit.creator?.display_name || audit.creator?.profile?.full_name || 'Creator';
+      mappedAudits.push({
+        id: audit.id,
+        submission_id: audit.submission_id,
+        creator_handle: handle.startsWith('@') ? handle : `@${handle}`,
+        creator_avatar_url: audit.creator?.profile?.avatar_url || null,
+        views_scraped: Number(audit.views_scraped || 0),
+        views_delta: Number(audit.views_delta || 0),
+        payout_amount: Number(audit.payout_amount || 0),
+        status: audit.status,
+        settled_at: audit.settled_at,
+        failure_reason: audit.failure_reason || null,
+      });
+    }
+  });
 
   // Fallback audit row if submission is verified / paid but not recorded in submission_audits table
   if (
@@ -739,7 +782,7 @@ export async function getCampaignDetailsForCreator(
       views_scraped: v,
       views_delta: v,
       payout_amount: p,
-      status: submission.status === 'paid' || submission.status === 'verified_pass' ? 'approved' : 'auto_approved',
+      status: submission.status === 'paid' || submission.status === 'verified_pass' ? 'approved' : 'pending',
       settled_at: submission.verified_at || submission.paid_at || new Date().toISOString(),
       failure_reason: null,
     });
