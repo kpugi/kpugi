@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CreatorEarningsData } from '@/lib/supabase/creator';
-import { requestPayoutAction, resolveAndSaveBankAccountAction, getNigerianBanksAction } from '@/app/actions/creator';
+import { requestPayoutAction, resolveAndSaveBankAccountAction, getNigerianBanksAction, deleteBankAccountAction, setDefaultBankAccountAction } from '@/app/actions/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
 import BankLogo from '@/components/ui/BankLogo';
-import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, ChevronDown, Clock, Filter, Download, Eye, TrendingUp, Hash } from 'lucide-react';
+import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, ChevronDown, Clock, Filter, Download, Eye, TrendingUp, Hash, Trash2 } from 'lucide-react';
 
 interface CreatorEarningsViewProps {
   data: CreatorEarningsData;
@@ -37,6 +37,10 @@ function formatHoursRemaining(dateStr?: string | null) {
 }
 
 function LiveClearanceTicker({ targetDate }: { targetDate: string }) {
+  return <ClearanceCountdown targetDate={targetDate} />;
+}
+
+function ClearanceCountdown({ targetDate }: { targetDate: string }) {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isExpired: boolean }>({
     hours: 0,
     minutes: 0,
@@ -78,10 +82,11 @@ function LiveClearanceTicker({ targetDate }: { targetDate: string }) {
   }
 
   return (
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 font-mono text-xs font-bold tracking-tight">
+    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 font-mono text-xs font-bold shadow-2xs">
       <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-      <span>
-        {timeLeft.hours}h {timeLeft.minutes.toString().padStart(2, '0')}m {timeLeft.seconds.toString().padStart(2, '0')}s remaining
+      <span>Unlocks in:</span>
+      <span className="text-amber-800 font-extrabold tracking-wide">
+        {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
       </span>
     </div>
   );
@@ -94,6 +99,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
+
+  // Selected withdrawal destination account
+  const defaultBankId = data.bankAccounts?.find(b => b.isPrimary)?.id || data.bankAccounts?.[0]?.id || '';
+  const [selectedWithdrawBankId, setSelectedWithdrawBankId] = useState<string>(defaultBankId);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Dynamic Nigerian Banks list from Paystack
   const [bankList, setBankList] = useState<BankOption[]>(FALLBACK_NIGERIAN_BANKS);
@@ -116,6 +126,16 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       }
     });
   }, []);
+
+  // Sync default withdraw bank ID if accounts change
+  useEffect(() => {
+    if (data.bankAccounts && data.bankAccounts.length > 0) {
+      const primary = data.bankAccounts.find(b => b.isPrimary) || data.bankAccounts[0];
+      if (primary && (!selectedWithdrawBankId || !data.bankAccounts.some(b => b.id === selectedWithdrawBankId))) {
+        setSelectedWithdrawBankId(primary.id);
+      }
+    }
+  }, [data.bankAccounts]);
 
   // Real creator balances from Supabase
   const availableBalance = data.availableBalance || 0;
@@ -144,12 +164,48 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       setLoading(false);
       return;
     }
+
+    if (selectedWithdrawBankId) {
+      formData.set('bankAccountId', selectedWithdrawBankId);
+    }
+
     const res = await requestPayoutAction(formData);
     setLoading(false);
     if (!res.success) {
       setErrorMsg(res.error || 'Failed to request payout');
     } else {
       setShowPayoutModal(false);
+    }
+  }
+
+  async function handleDeleteAccount(accountId: string) {
+    if (!confirm('Are you sure you want to delete this payout account?')) return;
+    setActionLoadingId(accountId);
+    try {
+      const res = await deleteBankAccountAction(accountId);
+      if (!res.success) {
+        alert(res.error || 'Failed to delete account');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Network error deleting account');
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleSetDefaultAccount(accountId: string) {
+    setActionLoadingId(accountId);
+    try {
+      const res = await setDefaultBankAccountAction(accountId);
+      if (!res.success) {
+        alert(res.error || 'Failed to set default account');
+      } else {
+        setSelectedWithdrawBankId(accountId);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Network error setting default account');
+    } finally {
+      setActionLoadingId(null);
     }
   }
 
@@ -202,6 +258,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       setErrorMsg(res.error || 'Failed to save bank account');
     } else {
       setShowBankModal(false);
+      setAccountNumber('');
+      setResolvedAccountName('');
     }
   }
 
@@ -561,25 +619,49 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 data.bankAccounts.map((acc, idx) => (
                   <div
                     key={acc.id || idx}
-                    className={`p-4 rounded-2xl border-2 flex items-center gap-3.5 ${
-                      acc.isPrimary ? 'bg-blue-50/50 border-kpugi-blue' : 'bg-white border-kpugi-border'
+                    className={`p-4 rounded-2xl border-2 flex items-start justify-between gap-3 transition-all ${
+                      acc.isPrimary ? 'bg-blue-50/50 border-kpugi-blue shadow-2xs' : 'bg-white border-kpugi-border hover:border-slate-300'
                     }`}
                   >
-                    <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="md" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-kpugi-ink truncate">{acc.bankName}</span>
-                        {acc.isPrimary && <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0 fill-kpugi-blue/10" />}
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="md" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-kpugi-ink truncate">{acc.bankName}</span>
+                          {acc.isPrimary && <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0 fill-kpugi-blue/10" />}
+                        </div>
+                        <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">
+                          {acc.accountName} (**** {acc.accountNumber?.slice(-4) || '****'})
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          {acc.isPrimary ? (
+                            <span className="inline-block text-[9px] font-bold text-kpugi-blue bg-blue-100/60 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              PRIMARY DESTINATION
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefaultAccount(acc.id)}
+                              disabled={actionLoadingId === acc.id}
+                              className="text-[10px] font-bold text-slate-600 hover:text-kpugi-blue hover:underline transition-colors disabled:opacity-50"
+                            >
+                              {actionLoadingId === acc.id ? 'Setting...' : 'Set as Primary'}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">
-                        {acc.accountName} (**** {acc.accountNumber?.slice(-4) || '****'})
-                      </div>
-                      {acc.isPrimary && (
-                        <span className="inline-block text-[9px] font-bold text-kpugi-blue uppercase tracking-wider mt-1">
-                          PRIMARY ACCOUNT
-                        </span>
-                      )}
                     </div>
+
+                    {/* Delete Account Action */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAccount(acc.id)}
+                      disabled={actionLoadingId === acc.id}
+                      title="Delete payout account"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 disabled:opacity-40"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))
               ) : (
@@ -598,19 +680,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   </button>
                 </div>
               )}
-
-              {data.bankAccounts && data.bankAccounts.length > 0 && (
-                <button
-                  onClick={() => setShowBankModal(true)}
-                  className="w-full p-3 rounded-2xl border-2 border-dashed border-kpugi-border hover:border-kpugi-blue text-kpugi-slate hover:text-kpugi-blue transition-colors flex items-center justify-center gap-2 font-bold text-xs bg-slate-50/50"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Another Bank Account</span>
-                </button>
-              )}
             </div>
           </div>
-
         </div>
       </div>
 
@@ -625,8 +696,6 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           {/* Left Column: Heading & Feature Badges */}
           <div className="space-y-4 max-w-3xl">
-           
-
             <h3 className="font-display font-bold text-2xl sm:text-3xl text-white tracking-tight leading-tight">
               Maximize Your Campaign Revenue with Guaranteed Escrow Clearances
             </h3>
@@ -649,44 +718,48 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
                 <ArrowUpRight className="w-5 h-5 text-blue-400 shrink-0" />
                 <div className="text-left">
-                  <span className="text-[11px] font-bold text-white block">Instant Direct NUBAN</span>
-                  <span className="text-[10px] text-slate-400 block">Paystack real-time transfers</span>
+                  <span className="text-[11px] font-bold text-white block">Instant Settlement</span>
+                  <span className="text-[10px] text-slate-400 block">Immediate NUBAN dispatch</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
-                <Info className="w-5 h-5 text-indigo-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-purple-400 shrink-0" />
                 <div className="text-left">
-                  <span className="text-[11px] font-bold text-white block">Automated Audit</span>
-                  <span className="text-[10px] text-slate-400 block">Zero manual review delays</span>
+                  <span className="text-[11px] font-bold text-white block">Transparent Audits</span>
+                  <span className="text-[10px] text-slate-400 block">Real-time view milestones</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: CTA Buttons */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 justify-center">
-            <a
-              href="/c/campaigns"
-              className="px-6 py-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-lg shadow-kpugi-blue/30 flex items-center justify-center gap-2 group"
-            >
-              <span>Browse Active Campaigns</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </a>
+          {/* Right Column: CTA Box */}
+          <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-3 shrink-0">
             <button
-              onClick={() => setShowPayoutModal(true)}
-              disabled={availableBalance < 10000}
-              className="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 font-sans text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              onClick={() => {
+                if (data.kycStatus !== 'verified') {
+                  window.location.href = '/c/settings';
+                } else {
+                  setShowPayoutModal(true);
+                }
+              }}
+              className="w-full sm:w-auto lg:w-full px-8 py-4 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-sm font-bold shadow-lg shadow-kpugi-blue/30 transition-all text-center flex items-center justify-center gap-2"
             >
-              <CreditCard className="w-4 h-4 text-blue-300" />
-              <span>Withdraw Available Earnings</span>
+              <span>{data.kycStatus === 'verified' ? 'Withdraw Earnings' : 'Verify ID to Withdraw'}</span>
+              <ArrowUpRight className="w-4 h-4" />
             </button>
+            <a
+              href="/browse"
+              className="w-full sm:w-auto lg:w-full px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-sans text-sm font-bold backdrop-blur-md transition-all text-center border border-white/10"
+            >
+              Browse Active Campaigns
+            </a>
           </div>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────
-         MODAL 1: WITHDRAWAL REQUEST MODAL
+         MODAL 1: REQUEST WITHDRAWAL MODAL
       ───────────────────────────────────────────────────── */}
       {showPayoutModal && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
@@ -739,12 +812,49 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-kpugi-border text-xs text-slate-700 flex items-center gap-3">
-                <BankLogo bankName={data.bankDetails?.bankName || 'Zenith Bank PLC'} bankCode={data.bankDetails?.bankCode || '057'} size="sm" />
-                <span className="font-medium">
-                  Payout destination: <strong className="text-kpugi-ink">{data.bankDetails?.bankName || 'Zenith Bank PLC'}</strong> (****{' '}
-                  {data.bankDetails?.accountNumber?.slice(-4) || '4492'})
-                </span>
+              {/* Destination Account Selection */}
+              <div>
+                <label className="block text-xs font-bold text-kpugi-slate mb-1.5 uppercase tracking-wider">
+                  Payout Destination Account
+                </label>
+                {data.bankAccounts && data.bankAccounts.length > 1 ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {data.bankAccounts.map((acc) => {
+                      const isSelected = (selectedWithdrawBankId || defaultBankId) === acc.id;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setSelectedWithdrawBankId(acc.id)}
+                          className={`w-full p-3 rounded-xl border-2 text-left flex items-center justify-between gap-3 transition-all ${
+                            isSelected
+                              ? 'border-kpugi-blue bg-blue-50/60 shadow-2xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="sm" />
+                            <div className="min-w-0">
+                              <div className="font-bold text-xs text-kpugi-ink truncate">
+                                {acc.bankName} • ****{acc.accountNumber?.slice(-4)}
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">{acc.accountName}</div>
+                            </div>
+                          </div>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-kpugi-border text-xs text-slate-700 flex items-center gap-3">
+                    <BankLogo bankName={data.bankDetails?.bankName || 'Zenith Bank PLC'} bankCode={data.bankDetails?.bankCode || '057'} size="sm" />
+                    <span className="font-medium">
+                      <strong className="text-kpugi-ink">{data.bankDetails?.bankName || 'Zenith Bank PLC'}</strong> (****{' '}
+                      {data.bankDetails?.accountNumber?.slice(-4) || '4492'})
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 pt-2">

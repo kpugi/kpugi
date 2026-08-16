@@ -165,6 +165,58 @@ export async function POST(req: Request) {
     }
 
     // ─────────────────────────────────────────────────────
+    // ACTION: UNJOIN CAMPAIGN (Cancel / Leave Slot)
+    // ─────────────────────────────────────────────────────
+    if (action === 'unjoin') {
+      const { data: subToUnjoin, error: findErr } = await supabase
+        .from('submissions')
+        .select('id, status, reserved_amount, campaign_id')
+        .eq('campaign_id', campaignId)
+        .eq('creator_id', userProfile.profile.id)
+        .maybeSingle();
+
+      if (findErr || !subToUnjoin) {
+        return NextResponse.json({ error: 'You have not joined this campaign.' }, { status: 404 });
+      }
+
+      if (subToUnjoin.status !== 'joined') {
+        return NextResponse.json({ 
+          error: 'Cannot unjoin a campaign after a post link has been submitted or verified.' 
+        }, { status: 400 });
+      }
+
+      // 1. Fetch Campaign and release reserved budget
+      const { data: campaign } = await supabase
+        .from('campaigns')
+        .select('id, reserved_budget')
+        .eq('id', campaignId)
+        .single();
+
+      if (campaign) {
+        const currentReserved = Number(campaign.reserved_budget || 0);
+        const subReserved = Number(subToUnjoin.reserved_amount || 0);
+        const newReserved = Math.max(0, currentReserved - subReserved);
+
+        await supabase
+          .from('campaigns')
+          .update({ reserved_budget: newReserved })
+          .eq('id', campaignId);
+      }
+
+      // 2. Delete the joined submission record
+      const { error: delErr } = await supabase
+        .from('submissions')
+        .delete()
+        .eq('id', subToUnjoin.id);
+
+      if (delErr) {
+        return NextResponse.json({ error: 'Failed to unjoin campaign. Please try again.' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'unjoin' });
+    }
+
+    // ─────────────────────────────────────────────────────
     // ACTION: SUBMIT POST LINK (Step 2)
     // ─────────────────────────────────────────────────────
     if (action === 'submit_link') {
@@ -183,14 +235,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Please enter a valid, complete post URL' }, { status: 400 });
       }
 
-      const hostname = parsedUrl.hostname.toLowerCase();
-      let platform = 'x';
-      if (hostname.includes('tiktok.com')) platform = 'tiktok';
-      else if (hostname.includes('instagram.com')) platform = 'instagram';
-      else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) platform = 'youtube';
-      else if (hostname.includes('facebook.com')) platform = 'facebook';
-      else if (hostname.includes('linkedin.com')) platform = 'linkedin';
-      else if (hostname.includes('x.com') || hostname.includes('twitter.com')) platform = 'x';
+      const cleanPostUrl = postUrl.trim().replace(/\/+$/, '');
 
       // Check if creator has a 'joined' status record for this campaign
       const { data: existingSub, error: findErr } = await supabase
@@ -207,6 +252,29 @@ export async function POST(req: Request) {
       if (existingSub.status !== 'joined') {
         return NextResponse.json({ error: 'Post link has already been submitted for this campaign.' }, { status: 400 });
       }
+
+      // Anti-Fraud Constraint: Ensure no two creators submit the same post URL
+      const { data: dupCheck } = await supabase
+        .from('submissions')
+        .select('id, creator_id, campaign_id')
+        .eq('post_url', cleanPostUrl)
+        .neq('id', existingSub.id)
+        .maybeSingle();
+
+      if (dupCheck) {
+        return NextResponse.json({
+          error: 'This post URL has already been submitted by another creator. Each submitted video URL must be unique.'
+        }, { status: 400 });
+      }
+
+      const hostname = parsedUrl.hostname.toLowerCase();
+      let platform = 'x';
+      if (hostname.includes('tiktok.com')) platform = 'tiktok';
+      else if (hostname.includes('instagram.com')) platform = 'instagram';
+      else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) platform = 'youtube';
+      else if (hostname.includes('facebook.com')) platform = 'facebook';
+      else if (hostname.includes('linkedin.com')) platform = 'linkedin';
+      else if (hostname.includes('x.com') || hostname.includes('twitter.com')) platform = 'x';
 
       const campaignChannels = (existingSub as any)?.campaign?.channels;
       if (campaignChannels && campaignChannels.length > 0) {
@@ -237,7 +305,7 @@ export async function POST(req: Request) {
       const { data: submission, error: subErr } = await supabase
         .from('submissions')
         .update({
-          post_url: postUrl,
+          post_url: cleanPostUrl,
           screenshot_url: screenshotUrl || 'https://via.placeholder.com/150',
           status: 'pending',
           auto_approve_at: null,

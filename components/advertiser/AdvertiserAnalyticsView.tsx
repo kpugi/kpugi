@@ -62,25 +62,28 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
 
   const allSupportedPlatforms = ['TikTok', 'Instagram', 'YouTube', 'Twitter', 'Facebook', 'LinkedIn'];
 
-  // Exclusively filter for Live/Active or Completed campaigns (discard draft, archived, or pending setup)
+  // Exclusively filter for Live/Active, Paused, or Completed campaigns (discard draft, archived, or pending setup)
   const validCampaigns = (rawCampaigns || []).filter((c) => {
     const st = (c.status || '').toLowerCase();
-    return st === 'live' || st === 'active' || st === 'completed' || st === 'paid';
+    return st === 'live' || st === 'active' || st === 'completed' || st === 'paid' || st === 'paused' || st === 'budget_committed';
   });
 
   // Map database campaigns with 100% true values
   const campaigns = validCampaigns.map((c) => {
     const views = Number(c.views_delivered || 0);
     const spent = Number(c.spent_budget || 0);
-    const primaryChannel = Array.isArray(c.channels) && c.channels.length > 0
-      ? c.channels[0]
-      : (c.ad_format?.includes('Reel') ? 'Instagram' : (c.ad_format?.includes('Shorts') ? 'YouTube' : 'TikTok'));
+    const channelsList: string[] = Array.isArray(c.channels) && c.channels.length > 0
+      ? c.channels
+      : [(c.ad_format?.includes('Reel') ? 'Instagram' : (c.ad_format?.includes('Shorts') ? 'YouTube' : 'TikTok'))];
+
+    const primaryChannel = channelsList[0];
 
     return {
       id: c.id,
       title: c.title,
       ad_format: c.ad_format || 'Video Asset',
       channel: primaryChannel,
+      channels: channelsList,
       cpm_rate: Number(c.cpm_rate || 0),
       status: c.status || 'live',
       views_delivered: views,
@@ -118,11 +121,30 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
     }
   }, [totalViews, campaigns.length]);
 
-  // Dynamic Multi-Platform channel distribution from live campaigns (No Snapchat)
-  const getChannelViews = (name: string) => {
-    return campaigns
-      .filter((c) => c.channel.toLowerCase().includes(name.toLowerCase()) || c.ad_format.toLowerCase().includes(name.toLowerCase()))
-      .reduce((sum, c) => sum + c.views_delivered, 0);
+  // Dynamic Multi-Platform channel distribution from live campaigns (supports X, TikTok, IG, YT, FB, LinkedIn)
+  const getChannelViews = (targetKey: string) => {
+    return campaigns.reduce((sum, c) => {
+      const channelStrings = [
+        c.channel,
+        ...(Array.isArray(c.channels) ? c.channels : []),
+        c.ad_format,
+      ].map((s) => (s || '').toLowerCase());
+
+      const matches = channelStrings.some((s) => {
+        if (targetKey === 'tiktok') return s.includes('tiktok');
+        if (targetKey === 'instagram') return s.includes('instagram') || s.includes('ig') || s.includes('reel');
+        if (targetKey === 'youtube') return s.includes('youtube') || s.includes('yt') || s.includes('short');
+        if (targetKey === 'twitter') return s.includes('twitter') || s === 'x' || s.includes('x ') || s.includes(' x') || s.startsWith('x');
+        if (targetKey === 'facebook') return s.includes('facebook') || s.includes('fb');
+        if (targetKey === 'linkedin') return s.includes('linkedin');
+        return s.includes(targetKey);
+      });
+
+      if (!matches) return sum;
+
+      const activeChannelsCount = (c.channels && c.channels.length > 0) ? c.channels.length : 1;
+      return sum + Math.round(c.views_delivered / activeChannelsCount);
+    }, 0);
   };
 
   const platformDist = [

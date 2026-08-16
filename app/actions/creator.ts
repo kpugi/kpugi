@@ -238,6 +238,7 @@ export async function requestPayoutAction(formData: FormData) {
     return { success: false, error: "Hold on now 🛑... Minimum withdrawal is ₦10,000!" };
   }
 
+  const requestedBankAccountId = (formData.get('bankAccountId') as string)?.trim();
   const supabase = createAdminClient();
 
   // 1. Fetch creator profile & KYC status
@@ -253,6 +254,24 @@ export async function requestPayoutAction(formData: FormData) {
       error:
         'Identity Verification Required: You must verify your government ID (NIN, Voter Card, or Passport) on the Settings page before initiating earnings withdrawals.',
     };
+  }
+
+  // Resolve specific destination account if requested
+  let targetBankName = creator?.bank_name || 'Bank';
+  let targetAccountNumber = creator?.bank_account_number || '';
+
+  if (requestedBankAccountId) {
+    const { data: specificBank } = await supabase
+      .from('bank_accounts')
+      .select('bank_name, account_number, bank_code')
+      .eq('id', requestedBankAccountId)
+      .eq('profile_id', userProfile.profile.id)
+      .maybeSingle();
+
+    if (specificBank) {
+      targetBankName = specificBank.bank_name;
+      targetAccountNumber = specificBank.account_number;
+    }
   }
 
   // 2. Fetch creator wallet balance
@@ -295,15 +314,15 @@ export async function requestPayoutAction(formData: FormData) {
   });
 
   // 5. Fire Withdrawal Notification (Knock feed + Resend email)
-  const maskedAcc = creator?.bank_account_number
-    ? `****${creator.bank_account_number.slice(-4)}`
+  const maskedAcc = targetAccountNumber
+    ? `****${targetAccountNumber.slice(-4)}`
     : '****Bank';
 
   notifyCreatorWithdrawalCompleted({
     clerkId: userProfile.profile.clerk_id,
     email: userProfile.profile.email,
     amount,
-    bankName: creator?.bank_name || 'Bank',
+    bankName: targetBankName,
     accountMasked: maskedAcc,
     reference: refCode,
     profileId: userProfile.profile.id,
@@ -311,6 +330,7 @@ export async function requestPayoutAction(formData: FormData) {
 
   revalidatePath('/c/wallet');
   revalidatePath('/c/dashboard');
+  revalidatePath('/c/payouts');
   return { success: true, reference: refCode };
 }
 
@@ -358,11 +378,21 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
     const supabase = createAdminClient();
     const profileId = userProfile.profile.id;
 
-    // Reset previous primary accounts
-    await supabase
+    // Check if creator has any existing accounts to determine if this should be primary
+    const { data: existingAccounts } = await supabase
       .from('bank_accounts')
-      .update({ is_primary: false })
+      .select('id')
       .eq('profile_id', profileId);
+
+    const isFirstAccount = !existingAccounts || existingAccounts.length === 0;
+
+    // If it's the first account, set it as primary
+    if (isFirstAccount) {
+      await supabase
+        .from('bank_accounts')
+        .update({ is_primary: false })
+        .eq('profile_id', profileId);
+    }
 
     await supabase.from('bank_accounts').upsert(
       {
@@ -371,34 +401,256 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
         bank_code: bankCode,
         account_number: accountNumber,
         account_name: accountName,
-        is_primary: true,
+        is_primary: isFirstAccount,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'profile_id,account_number,bank_code' }
     );
 
-    const bankDetailsJson = JSON.stringify({
-      bank_code: bankCode,
-      bank_name: bankName || 'Bank',
-      account_number: accountNumber,
-      account_name: accountName,
-    });
-
-    await supabase
-      .from('creator_profiles')
-      .update({
-        paystack_recipient_code: bankDetailsJson,
-        bank_account_number: accountNumber,
+    if (isFirstAccount) {
+      const bankDetailsJson = JSON.stringify({
         bank_code: bankCode,
         bank_name: bankName || 'Bank',
-      })
-      .eq('profile_id', profileId);
+        account_number: accountNumber,
+        account_name: accountName,
+      });
+
+      await supabase
+        .from('creator_profiles')
+        .update({
+          paystack_recipient_code: bankDetailsJson,
+          bank_account_number: accountNumber,
+          bank_code: bankCode,
+          bank_name: bankName || 'Bank',
+        })
+        .eq('profile_id', profileId);
+    }
 
     revalidatePath('/c/wallet');
+    revalidatePath('/c/payouts');
+    revalidatePath('/settings');
     return { success: true, accountName };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to resolve account via Paystack.' };
   }
+}
+
+// ─── 3B. Delete Payout Account Action ─────────────────────────────────────────
+
+export async function deleteBankAccountAction(accountId: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!accountId) {
+    return { success: false, error: 'Account ID is required' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // 1. Fetch account to check if it was primary
+  const { data: targetAccount } = await supabase
+    .from('bank_accounts')
+    .select('id, is_primary')
+    .eq('id', accountId)
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  if (!targetAccount) {
+    return { success: false, error: 'Account not found' };
+  }
+
+  // 2. Delete the account
+  const { error: delErr } = await supabase
+    .from('bank_accounts')
+    .delete()
+    .eq('id', accountId)
+    .eq('profile_id', profileId);
+
+  if (delErr) {
+    return { success: false, error: delErr.message };
+  }
+
+  // 3. If primary account was deleted, designate next available account as primary
+  if (targetAccount.is_primary) {
+    const { data: remainingAccounts } = await supabase
+      .from('bank_accounts')
+      .select('id, bank_name, bank_code, account_number, account_name')
+      .eq('profile_id', profileId)
+      .order('created_at', { ascending: false });
+
+    if (remainingAccounts && remainingAccounts.length > 0) {
+      const nextPrimary = remainingAccounts[0];
+      await supabase
+        .from('bank_accounts')
+        .update({ is_primary: true })
+        .eq('id', nextPrimary.id);
+
+      const bankDetailsJson = JSON.stringify({
+        bank_code: nextPrimary.bank_code,
+        bank_name: nextPrimary.bank_name,
+        account_number: nextPrimary.account_number,
+        account_name: nextPrimary.account_name,
+      });
+
+      await supabase
+        .from('creator_profiles')
+        .update({
+          paystack_recipient_code: bankDetailsJson,
+          bank_account_number: nextPrimary.account_number,
+          bank_code: nextPrimary.bank_code,
+          bank_name: nextPrimary.bank_name,
+        })
+        .eq('profile_id', profileId);
+    } else {
+      // Clear creator profile bank details
+      await supabase
+        .from('creator_profiles')
+        .update({
+          paystack_recipient_code: null,
+          bank_account_number: null,
+          bank_code: null,
+          bank_name: null,
+        })
+        .eq('profile_id', profileId);
+    }
+  }
+
+  revalidatePath('/c/wallet');
+  revalidatePath('/c/payouts');
+  revalidatePath('/settings');
+  return { success: true };
+}
+
+// ─── 3C. Set Default / Primary Payout Destination Action ─────────────────────
+
+export async function setDefaultBankAccountAction(accountId: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!accountId) {
+    return { success: false, error: 'Account ID is required' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // 1. Fetch the target account
+  const { data: targetAccount } = await supabase
+    .from('bank_accounts')
+    .select('id, bank_name, bank_code, account_number, account_name')
+    .eq('id', accountId)
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  if (!targetAccount) {
+    return { success: false, error: 'Account not found' };
+  }
+
+  // 2. Unset primary from all user accounts
+  await supabase
+    .from('bank_accounts')
+    .update({ is_primary: false })
+    .eq('profile_id', profileId);
+
+  // 3. Set primary on selected account
+  await supabase
+    .from('bank_accounts')
+    .update({ is_primary: true })
+    .eq('id', accountId);
+
+  // 4. Sync with creator_profiles
+  const bankDetailsJson = JSON.stringify({
+    bank_code: targetAccount.bank_code,
+    bank_name: targetAccount.bank_name,
+    account_number: targetAccount.account_number,
+    account_name: targetAccount.account_name,
+  });
+
+  await supabase
+    .from('creator_profiles')
+    .update({
+      paystack_recipient_code: bankDetailsJson,
+      bank_account_number: targetAccount.account_number,
+      bank_code: targetAccount.bank_code,
+      bank_name: targetAccount.bank_name,
+    })
+    .eq('profile_id', profileId);
+
+  revalidatePath('/c/wallet');
+  revalidatePath('/c/payouts');
+  revalidatePath('/settings');
+  return { success: true };
+}
+
+// ─── 3D. Creator Unjoin Campaign Action ─────────────────────────────────────────
+
+export async function unjoinCampaignAction(campaignId: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!campaignId) {
+    return { success: false, error: 'Campaign ID is required' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // 1. Find the submission in 'joined' status
+  const { data: submission, error: findErr } = await supabase
+    .from('submissions')
+    .select('id, status, reserved_amount, campaign_id')
+    .eq('campaign_id', campaignId)
+    .eq('creator_id', profileId)
+    .maybeSingle();
+
+  if (findErr || !submission) {
+    return { success: false, error: 'You have not joined this campaign.' };
+  }
+
+  if (submission.status !== 'joined') {
+    return { success: false, error: 'Cannot unjoin after a post link has already been submitted.' };
+  }
+
+  // 2. Release reserved budget on campaign
+  const { data: campaign } = await supabase
+    .from('campaigns')
+    .select('id, reserved_budget')
+    .eq('id', campaignId)
+    .maybeSingle();
+
+  if (campaign) {
+    const currentReserved = Number(campaign.reserved_budget || 0);
+    const subReserved = Number(submission.reserved_amount || 0);
+    const newReserved = Math.max(0, currentReserved - subReserved);
+
+    await supabase
+      .from('campaigns')
+      .update({ reserved_budget: newReserved })
+      .eq('id', campaignId);
+  }
+
+  // 3. Delete the submission record
+  const { error: delErr } = await supabase
+    .from('submissions')
+    .delete()
+    .eq('id', submission.id);
+
+  if (delErr) {
+    return { success: false, error: delErr.message || 'Failed to unjoin campaign.' };
+  }
+
+  revalidatePath(`/campaigns/${campaignId}`);
+  revalidatePath('/c/campaigns');
+  revalidatePath('/campaigns');
+  revalidatePath('/dashboard');
+  return { success: true };
 }
 
 // ─── 4. Zero-Trust Social Account Link Action ─────────────────────────────────

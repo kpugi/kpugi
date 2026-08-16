@@ -55,19 +55,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const baseSlotReserve = Math.round((minThreshold / 1000) * (campaign.cpm_rate || 0));
 
   const totalSpentFromCampaign = Number(campaign.spent_budget || 0);
-  const totalEarnedOrReserved = allSubmissions.reduce((sum, s) => {
-    const paid = Number(s.payout_amount || 0);
-    const views = Number(s.final_view_count || 0);
-    if (paid > 0) return sum + paid;
-    if (views >= minThreshold) return sum + Math.floor((views / 1000) * (campaign.cpm_rate || 0));
-    return sum + (s.reserved_amount || baseSlotReserve);
-  }, 0);
-
-  const activeCommittedBudget = Math.max(
-    totalSpentFromCampaign,
-    totalEarnedOrReserved,
-    Number(campaign.reserved_budget || 0)
-  );
+  const totalSubmissionPayouts = allSubmissions.reduce((sum, s) => sum + Number(s.payout_amount || 0), 0);
+  const activeCommittedBudget = totalSpentFromCampaign > 0
+    ? totalSpentFromCampaign
+    : (totalSubmissionPayouts > 0 ? totalSubmissionPayouts : Number(campaign.reserved_budget || 0));
 
   const budgetFillPercent = totalBudget > 0
     ? Math.min(100, Math.round((activeCommittedBudget / totalBudget) * 100))
@@ -76,22 +67,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   // Database aggregate calculations for Live Reach
   const activeSubs = allSubmissions.filter(s => s.status !== 'joined');
   const dbViews = allSubmissions.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
-  
-  const actualReleasedPayouts = Math.max(
-    Number(campaign.spent_budget || 0),
-    allSubmissions.reduce((sum, s) => sum + Number(s.payout_amount || 0), 0),
-    (data.audits || []).reduce((sum, a) => sum + Number(a.payout_amount || 0), 0)
-  );
-
-  const earnedViewsPayouts = allSubmissions.reduce((sum, s) => {
-    const paid = Number(s.payout_amount || 0);
-    const viewsAmt = (s.final_view_count || 0) >= (campaign.min_view_threshold || 1000)
-      ? Math.floor(((s.final_view_count || 0) / 1000) * (campaign.cpm_rate || 0))
-      : 0;
-    return sum + Math.max(paid, viewsAmt);
-  }, 0);
-
-  const dbPayouts = Math.max(actualReleasedPayouts, earnedViewsPayouts);
+  const dbPayouts = totalSpentFromCampaign > 0 ? totalSpentFromCampaign : totalSubmissionPayouts;
   const dbCreatorsJoined = allSubmissions.length;
   const dbSubmissions = activeSubs.length;
 
@@ -228,6 +204,42 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       setErrorMsg('An unexpected error occurred. Please try again.');
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const [isUnjoining, setIsUnjoining] = useState(false);
+
+  // Unjoin Campaign (Release Slot)
+  const handleUnjoinCampaign = async () => {
+    if (!confirm('Are you sure you want to unjoin this campaign? Your reserved slot and budget will be released.')) {
+      return;
+    }
+
+    setIsUnjoining(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'unjoin',
+          campaignId: campaign.id,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        setErrorMsg(result.error || 'Failed to unjoin campaign.');
+      } else {
+        setSuccessMsg('You have unjoined the campaign. Your slot has been released.');
+        router.refresh();
+      }
+    } catch (err) {
+      setErrorMsg('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsUnjoining(false);
     }
   };
 
@@ -1332,13 +1344,24 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 disabled:bg-white/10 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/20 transition-all"
-                  >
-                    {isSubmitting ? 'Submitting Link...' : '🚀 Submit Post Link'}
-                  </button>
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || isUnjoining}
+                      className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 disabled:bg-white/10 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/20 transition-all"
+                    >
+                      {isSubmitting ? 'Submitting Link...' : '🚀 Submit Post Link'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUnjoinCampaign}
+                      disabled={isSubmitting || isUnjoining}
+                      className="w-full py-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
+                    >
+                      <span>🚪</span>
+                      <span>{isUnjoining ? 'Leaving Slot...' : 'Unjoin Campaign & Release Slot'}</span>
+                    </button>
+                  </div>
                 </form>
               ) : (
                 /* Link Submitted / Under View Audit */

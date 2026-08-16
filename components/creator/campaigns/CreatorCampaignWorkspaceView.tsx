@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
-import { submitCampaignVideoAction } from '@/app/actions/creator';
+import { submitCampaignVideoAction, unjoinCampaignAction } from '@/app/actions/creator';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 
@@ -33,6 +33,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const { campaign, submission, creatives, allSubmissions } = data;
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isUnjoining, setIsUnjoining] = useState(false);
   const [msg, setMsg] = useState('');
   const [copiedHashtag, setCopiedHashtag] = useState<string | null>(null);
   const hasSubmittedLink = Boolean(submission && submission.post_url && submission.post_url.trim().length > 0);
@@ -158,7 +159,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
 
               {campaign.channels && campaign.channels.length > 0 && (
                 <div className="flex items-center gap-1.5 pt-1">
-                  {Array.from(
+                  {(Array.from(
                     new Set(
                       campaign.channels.map((ch: string) => {
                         const p = ch.toLowerCase();
@@ -170,7 +171,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                         return ch;
                       })
                     )
-                  ).map((platform: string) => (
+                  ) as string[]).map((platform: string) => (
                     <PlatformBadge key={platform} platform={platform} />
                   ))}
                 </div>
@@ -194,13 +195,39 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                 <span>Post Link Submitted</span>
               </div>
             ) : (
-              <button
-                onClick={() => setShowSubmitModal(true)}
-                className="px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4 text-kpugi-blue" />
-                <span>Submit Post Link</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (!confirm('Are you sure you want to unjoin this campaign? Your reserved slot and budget will be released.')) return;
+                    setIsUnjoining(true);
+                    try {
+                      const res = await unjoinCampaignAction(campaignId);
+                      if (res.success) {
+                        window.location.href = '/c/campaigns';
+                      } else {
+                        setMsg(`Error: ${res.error}`);
+                      }
+                    } catch (err: any) {
+                      setMsg(`Error: ${err.message || 'Failed to unjoin campaign'}`);
+                    } finally {
+                      setIsUnjoining(false);
+                    }
+                  }}
+                  disabled={isUnjoining}
+                  className="px-3.5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all backdrop-blur-md flex items-center gap-1.5 disabled:opacity-50"
+                  title="Release reserved slot"
+                >
+                  <X className="w-3.5 h-3.5 text-rose-400" />
+                  <span>{isUnjoining ? 'Leaving...' : 'Unjoin'}</span>
+                </button>
+                <button
+                  onClick={() => setShowSubmitModal(true)}
+                  className="px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4 text-kpugi-blue" />
+                  <span>Submit Post Link</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -542,7 +569,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </thead>
             <tbody>
               {data.audits && data.audits.length > 0 ? (
-                data.audits.map((audit, idx) => (
+                data.audits.map((audit: any, idx: number) => (
                   <tr key={audit.id || idx} className="border-b border-slate-100">
                     <td className="font-mono text-kpugi-slate">
                       {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
