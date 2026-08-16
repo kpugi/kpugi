@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { Heart, MessageCircle, Share2 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { getSafeExternalUrl } from '@/lib/utils/url';
@@ -48,21 +49,49 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
     );
   }
 
-  // Calculate budget fill percentage
-  const totalBudget = campaign.total_budget || 1;
-  const reservedBudget = campaign.reserved_budget || 0;
-  const budgetFillPercent = Math.min(100, Math.round((reservedBudget / totalBudget) * 100));
+  // Calculate live dynamic budget allocation
+  const totalBudget = Number(campaign.total_budget || 0);
+  const minThreshold = campaign.min_view_threshold || 1000;
+  const baseSlotReserve = Math.round((minThreshold / 1000) * (campaign.cpm_rate || 0));
+
+  const totalSpentFromCampaign = Number(campaign.spent_budget || 0);
+  const totalEarnedOrReserved = allSubmissions.reduce((sum, s) => {
+    const paid = Number(s.payout_amount || 0);
+    const views = Number(s.final_view_count || 0);
+    if (paid > 0) return sum + paid;
+    if (views >= minThreshold) return sum + Math.floor((views / 1000) * (campaign.cpm_rate || 0));
+    return sum + (s.reserved_amount || baseSlotReserve);
+  }, 0);
+
+  const activeCommittedBudget = Math.max(
+    totalSpentFromCampaign,
+    totalEarnedOrReserved,
+    Number(campaign.reserved_budget || 0)
+  );
+
+  const budgetFillPercent = totalBudget > 0
+    ? Math.min(100, Math.round((activeCommittedBudget / totalBudget) * 100))
+    : 0;
 
   // Database aggregate calculations for Live Reach
   const activeSubs = allSubmissions.filter(s => s.status !== 'joined');
   const dbViews = allSubmissions.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
-  const dbPayouts = allSubmissions.reduce((sum, s) => {
+  
+  const actualReleasedPayouts = Math.max(
+    Number(campaign.spent_budget || 0),
+    allSubmissions.reduce((sum, s) => sum + Number(s.payout_amount || 0), 0),
+    (data.audits || []).reduce((sum, a) => sum + Number(a.payout_amount || 0), 0)
+  );
+
+  const earnedViewsPayouts = allSubmissions.reduce((sum, s) => {
     const paid = Number(s.payout_amount || 0);
     const viewsAmt = (s.final_view_count || 0) >= (campaign.min_view_threshold || 1000)
       ? Math.floor(((s.final_view_count || 0) / 1000) * (campaign.cpm_rate || 0))
       : 0;
     return sum + Math.max(paid, viewsAmt);
   }, 0);
+
+  const dbPayouts = Math.max(actualReleasedPayouts, earnedViewsPayouts);
   const dbCreatorsJoined = allSubmissions.length;
   const dbSubmissions = activeSubs.length;
 
@@ -475,13 +504,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <div className="rounded-3xl overflow-hidden border border-white/10 bg-[#0B1021] shadow-2xl">
                       {/* Header bar */}
                       <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10 bg-white/[0.03]">
-                        <span className="text-xl">🎬</span>
+                       
                         <div>
-                          <h3 className="font-display font-bold text-white text-base">Brand Creative Asset</h3>
+                          <h3 className="font-display font-bold text-white text-base">Brand Asset</h3>
                           <p className="text-xs text-slate-400 mt-0.5">Use this asset in your post — it's required for campaign participation</p>
                         </div>
                         <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-wider">
-                          ⚠ Required
+                          Required
                         </span>
                       </div>
 
@@ -743,14 +772,14 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
-                      <span>🛡️</span> Auditing Requirements
+                      Auditing Requirements
                     </h3>
                     <p className="text-xs text-slate-400 mt-1">Key rules enforced by our automated view verification and escrow settlement system.</p>
                   </div>
                   <ul className="space-y-4 font-sans text-sm text-slate-300 list-disc pl-5 leading-relaxed">
                     <li>Your post must remain publicly visible and reachable for a minimum of <strong>{campaign.required_live_duration_hours} hours</strong> from the time of submission.</li>
                     <li>Our verification auditor checks view count progress automatically hourly.</li>
-                    <li>A review window of <strong>{campaign.verification_grace_hours} hours</strong> is allowed for final metric settling.</li>
+                    <li>A settlement window of <strong>{campaign.verification_grace_hours} hours</strong> is allocated for automated metric collation and final settling.</li>
                     <li>Deleting, archiving, or restricting access to the post during the audit phase violates terms and results in immediate forfeiture of reserved escrow funds.</li>
                   </ul>
                 </div>
@@ -759,7 +788,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
-                      <span>📌</span> Guidelines & Rules
+                     Guidelines & Rules
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                       Follow these step-by-step rules to guarantee your post passes automated audit and unlocks instant CPM payouts.
@@ -805,7 +834,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
                       <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
                         <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">⚡</span>
-                        <span>Automated Escrow Payout Settlement</span>
+                        <span>Automated Payout Settlement</span>
                       </div>
                       <p className="text-xs text-slate-300 leading-relaxed pl-1">
                         Once your post reaches the view threshold ({campaign.min_view_threshold.toLocaleString()} min views), earnings are calculated at ₦{campaign.cpm_rate.toLocaleString()} CPM and released directly to your wallet.
@@ -830,11 +859,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   </div>
                 </div>
 
-                {/* Leaderboard Table Headers */}
-                <div className="grid grid-cols-12 text-[10px] uppercase tracking-wider font-bold text-slate-500 pb-2 border-b border-white/5 px-4">
-                  <div className="col-span-2">Rank</div>
-                  <div className="col-span-8">Creator</div>
-                  <div className="col-span-2 text-right">Views</div>
+                {/* Leaderboard Table Headers (Desktop) */}
+                <div className="hidden sm:flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-slate-500 pb-2 border-b border-white/5 px-4">
+                  <span>Creator & Rank</span>
+                  <div className="flex items-center gap-8">
+                    <span className="w-24 text-right">Views</span>
+                    <span className="w-44 text-right">Post Engagement</span>
+                  </div>
                 </div>
 
                 {/* Leaderboard Rows */}
@@ -857,64 +888,145 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     return sortedSubs.map((sub, index) => {
                       const rankNum = index + 1;
                       const formattedRank = rankNum < 10 ? `0${rankNum}` : `${rankNum}`;
+                      const likes = Number(sub.likes_count || 0);
+                      const comments = Number(sub.comments_count || 0);
+                      const shares = Number(sub.shares_count || 0);
 
-                      // Medal styling & indicators
-                      let medalBadge = null;
-                      let rankClass = "text-slate-500";
+                      // Card accent border
                       let rowStyle = "bg-transparent border-white/5";
-
                       if (rankNum === 1) {
-                        medalBadge = <span className="text-xs shrink-0 animate-bounce">👑</span>;
-                        rankClass = "text-yellow-500 font-extrabold";
                         rowStyle = "bg-white/[0.03] border-l-4 border-l-yellow-500 border-white/5";
                       } else if (rankNum === 2) {
-                        medalBadge = <span className="text-xs shrink-0">🥈</span>;
-                        rankClass = "text-slate-300 font-bold";
                         rowStyle = "bg-white/[0.01] border-l-4 border-l-slate-400 border-white/5";
                       } else if (rankNum === 3) {
-                        medalBadge = <span className="text-xs shrink-0">🥉</span>;
-                        rankClass = "text-amber-600 font-bold";
                         rowStyle = "bg-white/[0.01] border-l-4 border-l-amber-700 border-white/5";
                       }
+
+                      // Calculate recent audit deltas
+                      const subAudits = (data.audits || []).filter((a) => a.submission_id === sub.id);
+                      const latestAudit = subAudits.length > 0 ? subAudits[0] : null;
+                      const subViews = Number(sub.final_view_count || 0);
+                      const viewsDelta = latestAudit?.views_delta || (subViews > 0 ? Math.round(subViews * 0.12) : 0);
+                      const viewsRatio = subViews > 0 && viewsDelta > 0 ? viewsDelta / subViews : 0.08;
+                      const likesDelta = Math.round(likes * viewsRatio);
+                      const commentsDelta = Math.round(comments * viewsRatio);
+                      const sharesDelta = Math.round(shares * viewsRatio);
 
                       return (
                         <div
                           key={sub.id}
-                          className={`grid grid-cols-12 items-center p-4 border rounded-r-2xl shadow-sm transition-all duration-300 hover:scale-[1.02] hover:bg-white/[0.06] hover:border-white/10 ${rowStyle}`}
+                          className={`p-3.5 sm:p-4 border rounded-2xl shadow-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rowStyle}`}
                         >
-                          {/* Rank */}
-                          <div className={`col-span-2 flex items-center gap-1.5 font-mono text-base ${rankClass}`}>
-                            {formattedRank} {medalBadge}
-                          </div>
+                          {/* Top row on Mobile / Left on Desktop: Creator & Platform */}
+                          <div className="flex items-center justify-between sm:justify-start gap-3 min-w-0">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {/* Creator Avatar with Position Icon Overlay */}
+                              <div className="relative shrink-0">
+                                {sub.creator_avatar_url ? (
+                                  <img
+                                    src={sub.creator_avatar_url}
+                                    alt={sub.creator_handle}
+                                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border border-white/10 shadow-sm"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-300 shadow-sm">
+                                    {sub.creator_handle.slice(1, 3).toUpperCase()}
+                                  </div>
+                                )}
 
-                          {/* Profile */}
-                          <div className="col-span-8 flex items-center gap-3">
-                            {sub.creator_avatar_url ? (
-                              <img
-                                src={sub.creator_avatar_url}
-                                alt={sub.creator_handle}
-                                className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-sm"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-400">
-                                {sub.creator_handle.slice(1, 3).toUpperCase()}
+                                {/* Rank Icon Overlay on DP */}
+                                <span
+                                  className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-xs shadow-md border leading-none ${
+                                    rankNum === 1
+                                      ? 'bg-amber-400/90 border-amber-300 ring-2 ring-[#0B1021]'
+                                      : rankNum === 2
+                                      ? 'bg-slate-300/90 border-white ring-2 ring-[#0B1021]'
+                                      : rankNum === 3
+                                      ? 'bg-amber-700/90 border-amber-500 ring-2 ring-[#0B1021]'
+                                      : 'bg-slate-800/90 text-slate-300 text-[9px] font-mono font-bold border-slate-600 ring-1 ring-[#0B1021]'
+                                  }`}
+                                  title={`Rank #${rankNum} in campaign`}
+                                >
+                                  {rankNum === 1 ? '👑' : rankNum === 2 ? '🥈' : rankNum === 3 ? '🥉' : `#${rankNum}`}
+                                </span>
                               </div>
-                            )}
-                            <div className="space-y-0.5">
-                              <div className="font-sans text-xs font-bold text-white">
-                                {sub.creator_handle}
+
+                              {/* Creator Handle, Level Name & Platform */}
+                              <div className="space-y-0.5 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-sans text-xs sm:text-sm font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
+                                    {sub.creator_handle}
+                                  </span>
+                                  {sub.creator_level && (
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-sans font-bold border shrink-0 ${sub.creator_level.badgeBg} ${sub.creator_level.badgeText} ${sub.creator_level.badgeBorder}`}
+                                      title={`Creator Rank: Level ${sub.creator_level.level} (${sub.creator_level.title})`}
+                                    >
+                                      <span>{sub.creator_level.icon}</span>
+                                      <span>{sub.creator_level.title}</span>
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-sans text-[10px] text-slate-400 uppercase font-medium">
+                                  {sub.social_account_platform || 'Video Placement'}
+                                </div>
                               </div>
-                              <div className="font-sans text-[10px] text-slate-500">Nigeria</div>
+                            </div>
+
+                            {/* Views (Visible on top-right for Mobile only) */}
+                            <div className="sm:hidden text-right shrink-0">
+                              <div className="font-mono text-xs font-bold text-white">
+                                {formatCompactNumber(sub.final_view_count || 0)} <span className="text-[10px] text-slate-400 font-normal">views</span>
+                              </div>
+                              <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
+                                <span>📈</span> {viewsDelta > 0 ? `+${formatCompactNumber(viewsDelta)}` : '+8%'}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Views */}
-                          <div className="col-span-2 text-right">
-                            <div className="font-mono text-xs font-bold text-white">
-                              {formatCompactNumber(sub.final_view_count || 0)}
+                          {/* Bottom on Mobile / Right on Desktop: Views (Desktop) & Engagement metrics */}
+                          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 border-t sm:border-t-0 border-white/5 pt-2.5 sm:pt-0 relative z-10">
+                            {/* Views (Desktop) */}
+                            <div className="hidden sm:block text-right w-24">
+                              <div className="font-mono text-sm font-bold text-white">
+                                {formatCompactNumber(sub.final_view_count || 0)}
+                              </div>
+                              <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
+                                <span>📈</span> {viewsDelta > 0 ? `+${formatCompactNumber(viewsDelta)}` : '+8%'}
+                              </div>
                             </div>
-                            <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5 mt-0.5">
-                              <span>📈</span> +{(sub.final_view_count || 0) > 100000 ? '12%' : '8%'}
+
+                            {/* Engagement metrics pill */}
+                            <div className="w-full sm:w-auto flex items-center justify-around sm:justify-end gap-3 sm:gap-3.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl font-mono text-[11px] font-bold">
+                              <span className="inline-flex items-center gap-1 text-rose-400" title="Likes">
+                                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20 shrink-0" />
+                                <span>{formatCompactNumber(likes)}</span>
+                                {likesDelta > 0 && (
+                                  <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/15 px-1 rounded">
+                                    +{formatCompactNumber(likesDelta)}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-white/10 hidden sm:inline">•</span>
+                              <span className="inline-flex items-center gap-1 text-indigo-400" title="Comments">
+                                <MessageCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                <span>{formatCompactNumber(comments)}</span>
+                                {commentsDelta > 0 && (
+                                  <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/15 px-1 rounded">
+                                    +{formatCompactNumber(commentsDelta)}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-white/10 hidden sm:inline">•</span>
+                              <span className="inline-flex items-center gap-1 text-emerald-400" title="Shares">
+                                <Share2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <span>{formatCompactNumber(shares)}</span>
+                                {sharesDelta > 0 && (
+                                  <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/15 px-1 rounded">
+                                    +{formatCompactNumber(sharesDelta)}
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -934,54 +1046,109 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-xl text-white">Live Campaign Reach</h3>
-                    <p className="text-xs text-slate-400 mt-1">Real-time aggregate performance of all active creator placements.</p>
+                    <p className="text-xs text-slate-400 mt-1">Real-time aggregate performance and engagement across all active creator placements.</p>
                   </div>
 
-                  {/* 6 Grid Metrics */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Views</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">
-                        {formatCompactNumber(dbViews)}
+                  {/* 9 Grid Metrics */}
+                  {(() => {
+                    const totalLikes = (allSubmissions || []).reduce((sum, s) => sum + Number(s.likes_count || 0), 0);
+                    const totalComments = (allSubmissions || []).reduce((sum, s) => sum + Number(s.comments_count || 0), 0);
+                    const totalShares = (allSubmissions || []).reduce((sum, s) => sum + Number(s.shares_count || 0), 0);
+
+                    return (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {/* 1. Views */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Views</div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {formatCompactNumber(dbViews)}
+                          </div>
+                          <div className="text-[9px] text-emerald-400">📊 Real-time verified</div>
+                        </div>
+
+                        {/* 2. Payouts */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Payouts</div>
+                          <div className="font-mono text-2xl font-extrabold text-emerald-400">
+                            {formatCompactCurrency(dbPayouts)}
+                          </div>
+                          <div className="text-[9px] text-slate-400">Released from Escrow</div>
+                        </div>
+
+                        {/* 3. Engagement Rate */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Engagement Rate</div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {(campaign as any)?.target_engagement_rate != null ? `${(campaign as any).target_engagement_rate}%` : '0%'}
+                          </div>
+                          <div className="text-[9px] text-slate-400">Like & Comment ratio</div>
+                        </div>
+
+                        {/* 4. Total Likes */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1">
+                            <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20" />
+                            <span>Total Likes</span>
+                          </div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {formatCompactNumber(totalLikes)}
+                          </div>
+                          <div className="text-[9px] text-rose-400">Audience reactions</div>
+                        </div>
+
+                        {/* 5. Total Comments */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                            <MessageCircle className="w-3 h-3 text-indigo-400" />
+                            <span>Total Comments</span>
+                          </div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {formatCompactNumber(totalComments)}
+                          </div>
+                          <div className="text-[9px] text-indigo-400">User discussions</div>
+                        </div>
+
+                        {/* 6. Total Shares */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                            <Share2 className="w-3 h-3 text-emerald-400" />
+                            <span>Total Shares</span>
+                          </div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {formatCompactNumber(totalShares)}
+                          </div>
+                          <div className="text-[9px] text-emerald-400">Viral amplification</div>
+                        </div>
+
+                        {/* 7. Avg Watch Time */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {dbViews > 0 && (campaign as any)?.avg_watch_time_seconds ? `${(campaign as any).avg_watch_time_seconds}s` : '0s'}
+                          </div>
+                          <div className="text-[9px] text-cyan-400">Retention benchmark</div>
+                        </div>
+
+                        {/* 8. Creators Joined */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Creators Joined</div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {dbCreatorsJoined}
+                          </div>
+                          <div className="text-[9px] text-slate-400">Active slots locked</div>
+                        </div>
+
+                        {/* 9. Submissions */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Submissions</div>
+                          <div className="font-mono text-2xl font-extrabold text-white">
+                            {dbSubmissions}
+                          </div>
+                          <div className="text-[9px] text-slate-400">Verified & Pending</div>
+                        </div>
                       </div>
-                      <div className="text-[9px] text-emerald-400">📊 Real-time</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Payouts</div>
-                      <div className="font-mono text-2xl font-extrabold text-emerald-400">
-                        {formatCompactCurrency(dbPayouts)}
-                      </div>
-                      <div className="text-[9px] text-slate-400">Released from Escrow</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Creators Joined</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">
-                        {dbCreatorsJoined}
-                      </div>
-                      <div className="text-[9px] text-slate-400">Active slots locked</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Submissions</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">
-                        {dbSubmissions}
-                      </div>
-                      <div className="text-[9px] text-slate-400">Verified & Pending</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Engagement</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">
-                        {(campaign as any)?.target_engagement_rate != null ? `${(campaign as any).target_engagement_rate}%` : '0%'}
-                      </div>
-                      <div className="text-[9px] text-slate-400">Like & Comment ratio</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">
-                        {dbViews > 0 && (campaign as any)?.avg_watch_time_seconds ? `${(campaign as any).avg_watch_time_seconds}s` : '0s'}
-                      </div>
-                      <div className="text-[9px] text-slate-400">Retention benchmark</div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Channel Share Breakdown */}
@@ -1026,11 +1193,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl relative overflow-hidden">
               <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
                 <span>BUDGET</span>
-                <span className="text-emerald-500 font-sans">🛡️ Secured</span>
+                <span className="text-emerald-400 font-sans flex items-center gap-1 font-bold">
+                  <span>🛡️</span> Secured
+                </span>
               </div>
 
-              <div className="font-mono text-2xl sm:text-3xl font-bold text-white">
-                {formatCompactCurrency(campaign.total_budget)}
+              <div>
+                <div className="font-mono text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  {formatCompactCurrency(totalBudget)}
+                </div>
+                <span className="text-[11px] text-slate-400 font-sans block mt-0.5">
+                  Campaign Budget Pool
+                </span>
               </div>
 
               <div className="space-y-2">
@@ -1041,8 +1215,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   />
                 </div>
                 <div className="flex items-center justify-between font-mono text-[10px] text-slate-400">
-                  <span>{formatCompactCurrency(reservedBudget)} Reserved</span>
-                  <span>{budgetFillPercent}% Filled</span>
+                  <span>{formatCompactCurrency(activeCommittedBudget)} Spent</span>
+                  <span className="text-emerald-400 font-bold">{budgetFillPercent}% Filled</span>
                 </div>
               </div>
 

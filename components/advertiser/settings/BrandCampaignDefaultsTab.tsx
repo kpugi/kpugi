@@ -101,12 +101,12 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
               onChange={(e) => setDefaultGraceHours(Number(e.target.value))}
               className="w-full p-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             >
-              <option value={24}>24 Hours (Fast Verification)</option>
-              <option value={48}>48 Hours (Recommended Standard)</option>
-              <option value={72}>72 Hours (Extended Review Window)</option>
+              <option value={24}>24 Hours (Fast Settlement)</option>
+              <option value={48}>48 Hours (Standard Settlement)</option>
+              <option value={72}>72 Hours (Extended Settlement Window)</option>
             </select>
             <p className="text-[11px] text-slate-400 mt-1">
-              Time window for AI view audit scraping and manual submission approvals.
+              Window for automated system metric scraping, audit verification, and direct escrow payout settlement.
             </p>
           </div>
 

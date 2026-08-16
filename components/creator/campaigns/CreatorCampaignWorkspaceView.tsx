@@ -588,7 +588,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                       </div>
                       <p className="font-bold text-sm text-kpugi-ink">No Settled Audit Runs Yet</p>
                       <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
-                        Hourly view audits verify engagement and settle payouts into your available balance automatically after the review window.
+                        Automated view audits verify engagement and settle payouts into your available balance automatically as milestones are reached.
                       </p>
                     </div>
                   </td>

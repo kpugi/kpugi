@@ -249,6 +249,8 @@ export async function notifyAdvertiserCreatorSubmitted({
       <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:8px; margin:16px 0;">
         <p style="margin:0; font-size:14px; color:#64748b;"><strong>Live Post:</strong> <a href="${postUrl}" style="color:#2563eb;">${postUrl}</a></p>
       </div>
+
+      <p style="font-size:13px; color:#64748b;">Our automated verification system is now tracking view performance and will automatically settle creator payouts as verified milestones are achieved.</p>
     `,
   });
 }

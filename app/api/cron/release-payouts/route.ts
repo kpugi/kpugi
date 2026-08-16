@@ -8,7 +8,7 @@ export async function GET() {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
 
-    // Fetch all submissions with an expired 60-minute review timer
+    // Fetch all submissions with pending payout amounts ready for automated settlement
     const { data: expiredSubs, error: fetchErr } = await supabase
       .from('submissions')
       .select(`
@@ -30,8 +30,6 @@ export async function GET() {
           reserved_budget
         )
       `)
-      .not('auto_approve_at', 'is', null)
-      .lte('auto_approve_at', now)
       .gt('pending_payout_amount', 0);
 
     if (fetchErr) {
@@ -168,7 +166,7 @@ export async function GET() {
         views_scraped: viewCount,
         views_delta: Math.max(0, viewCount - Number(sub.last_paid_view_count || 0)),
         payout_amount: pendingPayout,
-        status: 'auto_approved',
+        status: 'system_verified',
         settled_at: now,
       });
 

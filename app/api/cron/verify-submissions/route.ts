@@ -44,7 +44,7 @@ export async function GET() {
 
       // Require meeting minimum view threshold before queuing for audit/verification
       if (scrapedViews < minViewThreshold) {
-        // Keep in pending status without pending payout or auto approval timer
+        // Keep in pending status without pending payout
         await supabase
           .from('submissions')
           .update({
@@ -63,16 +63,12 @@ export async function GET() {
       if (newViews > 0) {
         const incrementalPayout = Math.round((newViews / 1000) * cpmRate);
 
-        // Anti-Fraud Surge Protection: If view surge exceeds 50k in 1 hour, extend grace window to 24h
-        const isSurge = newViews >= 50000;
-        const autoApproveAt = new Date(now.getTime() + (isSurge ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000)).toISOString();
-
         const { error: updateErr } = await supabase
           .from('submissions')
           .update({
             final_view_count: scrapedViews,
             pending_payout_amount: incrementalPayout,
-            auto_approve_at: autoApproveAt,
+            auto_approve_at: null,
             last_scraped_at: now.toISOString(),
             status: 'auditing',
           })
@@ -86,7 +82,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ success: true, updatedCount, autoApproveAt });
+    return NextResponse.json({ success: true, updatedCount });
   } catch (err: any) {
     console.error('[verify-submissions cron] Execution error:', err);
     return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });

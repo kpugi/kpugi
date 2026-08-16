@@ -232,7 +232,6 @@ export async function POST(req: Request) {
       }
 
       const now = new Date();
-      const autoApproveAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
 
       // Update the submission record
       const { data: submission, error: subErr } = await supabase
@@ -241,7 +240,7 @@ export async function POST(req: Request) {
           post_url: postUrl,
           screenshot_url: screenshotUrl || 'https://via.placeholder.com/150',
           status: 'pending',
-          auto_approve_at: autoApproveAt,
+          auto_approve_at: null,
           submitted_at: now.toISOString()
         })
         .eq('id', existingSub.id)
