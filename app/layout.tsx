@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import KnockProviderWrapper from '@/components/providers/KnockProviderWrapper';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
@@ -10,6 +10,18 @@ export const metadata: Metadata = {
   icons: {
     icon: '/kpugi_favicon.png',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Kpugi',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#090A0F',
+  viewportFit: 'cover',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

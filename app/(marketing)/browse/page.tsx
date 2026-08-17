@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { CampaignGridSkeleton, FeaturedHeroSkeleton } from '@/components/ui/Skeletons';
 
@@ -106,9 +107,36 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
     return () => clearInterval(timer);
   }, [items.length]);
 
-  if (items.length === 0) return null;
-
   const current = items[currentIndex];
+
+  // Dynamic ambient theme-color synchronization for phone status bar / header
+  useEffect(() => {
+    if (!current) return;
+    
+    // Pick tailored ambient color based on category/brand
+    let ambientColor = '#090A0F';
+    const cat = (current.category || '').toLowerCase();
+    if (cat.includes('tech') || current.brand === 'Kpugi') ambientColor = '#0B1026';
+    else if (cat.includes('finance')) ambientColor = '#081814';
+    else if (cat.includes('beauty') || cat.includes('fashion')) ambientColor = '#190C18';
+    else if (cat.includes('gaming')) ambientColor = '#100E26';
+    else if (cat.includes('food') || cat.includes('drink')) ambientColor = '#1A1208';
+    else ambientColor = '#0E1322';
+
+    // Update <meta name="theme-color"> dynamically for iOS Safari / Android Chrome status bar
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute('content', ambientColor);
+
+    return () => {
+      // Revert on unmount
+      metaThemeColor?.setAttribute('content', '#090A0F');
+    };
+  }, [current]);
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -129,6 +157,23 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
 
   return (
     <div className="relative w-full h-[420px] sm:h-[500px] overflow-hidden group cursor-pointer mb-10 select-none bg-[#090A0F]">
+      {/* Dynamic top ambient glow bleeding upwards toward navbar & status bar */}
+      <div 
+        className="absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl h-44 rounded-full blur-[100px] opacity-50 transition-colors duration-1000 pointer-events-none z-10"
+        style={{
+          backgroundColor:
+            (current?.category || '').toLowerCase().includes('tech') || current?.brand === 'Kpugi'
+              ? '#2F49E8'
+              : (current?.category || '').toLowerCase().includes('finance')
+              ? '#10B981'
+              : (current?.category || '').toLowerCase().includes('beauty')
+              ? '#EC4899'
+              : (current?.category || '').toLowerCase().includes('food')
+              ? '#F59E0B'
+              : '#6366F1'
+        }}
+      />
+
       {/* Background Slides */}
       {items.map((item, idx) => (
         <div
@@ -182,7 +227,7 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
             <div>
               <Link href={`/browse/${current.id}`}>
                 <button className="bg-white text-black px-8 py-3.5 rounded-full font-bold text-sm hover:bg-white/90 transition-transform hover:scale-105 active:scale-95">
-                  View Program
+                  View Campaign
                 </button>
               </Link>
             </div>
@@ -346,7 +391,165 @@ function CampaignCard({ c, index }: { c: Campaign, index: number }) {
         <div className="h-full bg-white transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
       </div>
     </article>
-  )
+  );
+}
+
+/* ─────────────────────────────────────────────────────
+   SPONSORED AD CARD (Blends seamlessly with Campaign Cards)
+───────────────────────────────────────────────────── */
+function SponsoredAdCard({ index }: { index: number }) {
+  return (
+    <Link href="/onboarding/advertiser" className="group">
+      <article className="relative flex flex-col bg-gradient-to-b from-[#161B2E] to-[#12141A] rounded-2xl overflow-hidden hover:bg-[#1A2038] transition-all duration-300 hover:scale-[1.01] border border-blue-500/30 hover:border-blue-500/60 shadow-lg shadow-blue-500/5 cursor-pointer h-full">
+        {/* Thumbnail Area */}
+        <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
+          {/* Sponsored Badge Overlay */}
+          <div className="absolute top-3 right-3 z-20">
+            <div className="px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border backdrop-blur-md bg-amber-500/20 border-amber-400/40 text-amber-300">
+              <span>⚡</span>
+              <span>Sponsored</span>
+            </div>
+          </div>
+
+          <img 
+            src="/images/kpugi_promo_banner.png" 
+            alt="Launch Brand Campaign on Kpugi" 
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#12141A] via-[#12141A]/30 to-transparent" />
+        </div>
+
+        {/* Content Area */}
+        <div className="p-5 flex flex-col flex-1">
+          {/* Brand & Platform Row */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-kpugi-blue flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                K
+              </div>
+              <span className="text-[13px] font-semibold text-white/90 truncate">Kpugi Official</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#E4A12C] shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span className="text-[13px] text-white/40 shrink-0">·</span>
+              <span className="text-[11px] text-blue-400 font-bold uppercase tracking-wider">Promoted</span>
+            </div>
+            
+            <div className="flex items-center gap-1.5 shrink-0">
+              {['TikTok', 'Instagram', 'X'].map(p => (
+                <div key={p} className="w-5 h-5 rounded-full bg-black flex items-center justify-center border border-white/10">
+                  <PlatformIcon platform={p} className="w-[11px] h-[11px]" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Title */}
+          <h3 className="font-display font-semibold text-white text-[15px] leading-snug mb-2 line-clamp-2 group-hover:text-blue-300 transition-colors">
+            Scale Your Brand Reach
+          </h3>
+          
+          {/* Tone/Audience */}
+          <p className="text-[12px] text-white/50 mb-6 italic line-clamp-2">
+            Reach 100k+ viral video views in 48 hours
+          </p>
+
+          {/* Bottom Stats */}
+          <div className="mt-auto flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="text-[12px] font-semibold flex items-center gap-1 text-emerald-400">
+              
+              </div>
+              
+              <div className="flex items-center gap-2">
+           
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-1 rounded-md text-[11px] font-bold text-white shadow-sm flex items-center gap-1">
+                  <span>Launch Now</span>
+                  <span>➔</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Progress Bar at bottom edge */}
+        <div className="w-full h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400" />
+      </article>
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
+   SPONSORED AD ROW (For List View / Table Mode)
+───────────────────────────────────────────────────── */
+function SponsoredAdRow() {
+  return (
+    <tr className="bg-gradient-to-r from-blue-950/30 via-[#13151A] to-[#13151A] hover:bg-blue-950/50 transition-colors border-b border-blue-500/20 group">
+      {/* Campaign & Brand */}
+      <td className="py-4 px-5">
+        <Link href="/onboarding/advertiser" className="flex items-center gap-3 min-w-[220px]">
+          <div className="w-10 h-10 rounded-xl bg-kpugi-blue flex items-center justify-center text-white font-bold text-base shrink-0 shadow-md">
+            K
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-sm text-white group-hover:text-blue-300 transition-colors truncate block">
+                Scale Your Brand on Kpugi
+              </span>
+              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Ad
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400 block truncate">
+              Kpugi Verified Escrow Platform
+            </span>
+          </div>
+        </Link>
+      </td>
+
+      {/* Platforms */}
+      <td className="py-4 px-4 whitespace-nowrap">
+        <div className="flex items-center gap-1">
+          {['TikTok', 'Instagram', 'X'].map(p => (
+            <div key={p} className="w-5 h-5 rounded-full bg-black flex items-center justify-center border border-white/10">
+              <PlatformIcon platform={p} className="w-3 h-3" />
+            </div>
+          ))}
+        </div>
+      </td>
+
+      {/* Category */}
+      <td className="py-4 px-4 whitespace-nowrap">
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20">
+          ✨ Brand Sponsor
+        </span>
+      </td>
+
+      {/* CPM Rate */}
+      <td className="py-4 px-4 whitespace-nowrap font-mono text-emerald-400 font-bold text-xs">
+        100% Escrow
+      </td>
+
+      {/* Min Threshold */}
+      <td className="py-4 px-4 whitespace-nowrap font-mono text-slate-300 text-xs">
+        Instant Setup
+      </td>
+
+      {/* Budget / Slots */}
+      <td className="py-4 px-4 whitespace-nowrap text-xs text-white/70">
+        Unlimited Reach
+      </td>
+
+      {/* Action */}
+      <td className="py-4 px-5 text-right whitespace-nowrap">
+        <Link
+          href="/onboarding/advertiser"
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs transition-all shadow-md shadow-blue-500/20"
+        >
+          <span>Launch Campaign</span>
+          <span>➔</span>
+        </Link>
+      </td>
+    </tr>
+  );
 }
 
 /* ─────────────────────────────────────────────────────
@@ -354,8 +557,61 @@ function CampaignCard({ c, index }: { c: Campaign, index: number }) {
 ───────────────────────────────────────────────────── */
 export default function BrowsePage() {
   const [activePlatform, setActivePlatform] = useState<Platform | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedContent, setSelectedContent] = useState<string>('All');
+  const [minCpm, setMinCpm] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<string>('featured');
+  const [sortColumn, setSortColumn] = useState<string>('featured');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [dbCampaigns, setDbCampaigns] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection(column === 'title' || column === 'category' ? 'asc' : 'desc');
+    }
+  };
+
+  // Restore saved view mode preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('kpugi_browse_view_mode');
+      if (saved === 'grid' || saved === 'list') {
+        setViewMode(saved);
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  const handleViewModeChange = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('kpugi_browse_view_mode', mode);
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  };
+
+  // Keyboard shortcut: ⌘K or Ctrl+K to focus search input
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     async function fetchCampaigns() {
@@ -380,12 +636,26 @@ export default function BrowsePage() {
       const thumbnailUrl = c.cover_image_url || c.creatives?.[0]?.file_url || null;
       const creatorsCount = c.submissions ? c.submissions.length : 0;
 
-      // Map dynamic categories based on brand names for various niches
+      // Extract or map dynamic category
       let category: Category = 'Tech';
-      if (brandName === 'PiggyVest') category = 'Finance';
-      else if (brandName === 'Chowdeck') category = 'Food & Drink';
-      else if (brandName === 'Zaron Cosmetics') category = 'Beauty';
-      else if (brandName === 'Kpugi') category = 'Lifestyle';
+      const reqCat = c.requirements?.category || '';
+      if (reqCat) {
+        if (reqCat.toLowerCase().includes('finance')) category = 'Finance';
+        else if (reqCat.toLowerCase().includes('food')) category = 'Food & Drink';
+        else if (reqCat.toLowerCase().includes('beauty')) category = 'Beauty';
+        else if (reqCat.toLowerCase().includes('fashion')) category = 'Fashion';
+        else if (reqCat.toLowerCase().includes('gaming')) category = 'Gaming';
+        else if (reqCat.toLowerCase().includes('lifestyle')) category = 'Lifestyle';
+        else if (reqCat.toLowerCase().includes('sport')) category = 'Sports';
+      } else {
+        if (brandName === 'PiggyVest' || brandName.toLowerCase().includes('bank') || brandName.toLowerCase().includes('pay')) category = 'Finance';
+        else if (brandName === 'Chowdeck' || brandName.toLowerCase().includes('food') || brandName.toLowerCase().includes('drink')) category = 'Food & Drink';
+        else if (brandName === 'Zaron Cosmetics' || brandName.toLowerCase().includes('beauty')) category = 'Beauty';
+        else if (brandName === 'Kpugi' || brandName.toLowerCase().includes('style')) category = 'Lifestyle';
+      }
+
+      // Extract content format
+      const adFormat = (c.ad_format || c.requirements?.ad_format || 'video').toLowerCase();
 
       return {
         id: c.id,
@@ -393,16 +663,19 @@ export default function BrowsePage() {
         brandLogo: brandLogo,
         thumbnailUrl: thumbnailUrl,
         brief: c.title,
+        description: c.description || '',
         platform: (c.channels || []) as Platform[],
         category: category,
-        cpm: Number(c.cpm_rate),
+        adFormat: adFormat,
+        cpm: Number(c.cpm_rate || 2000),
         slotsTotal: 100,
         slotsFilled: creatorsCount,
-        budgetTotal: Number(c.total_budget),
+        budgetTotal: Number(c.total_budget || 0),
         budgetSpent: Number(c.spent_budget || 0),
-        minViews: c.min_view_threshold,
+        minViews: c.min_view_threshold || 1000,
         daysLeft: 14,
-        tone: c.description.slice(0, 100) + '...',
+        tone: (c.description || '').slice(0, 100) + '...',
+        createdAt: c.created_at,
         timePosted: (() => {
           const diff = Math.floor((Date.now() - new Date(c.created_at).getTime()) / 1000);
           if (diff < 60) return `${diff}s`;
@@ -412,6 +685,7 @@ export default function BrowsePage() {
         })(),
         is_featured: !!c.is_featured,
         matchScore: c.match_score || 94,
+        status: c.status || 'live',
       };
     });
   }, [dbCampaigns]);
@@ -427,19 +701,179 @@ export default function BrowsePage() {
       category: c.category,
       cpm: c.cpm,
       budget: c.budgetTotal,
-      badge: c.brand === 'Kpugi' ? 'Kpugi Launch Special' : `${c.brand} Campaign`,
+      badge: c.brand === 'Kpugi' ? 'Kpugi Official' : c.brand,
       imageUrl: c.thumbnailUrl,
     }));
   }, [mappedCampaigns]);
 
+  // Comprehensive Filter & Search Pipeline
   const filtered = useMemo(() => {
     let list = [...mappedCampaigns];
-    if (activePlatform) list = list.filter((c) => c.platform.includes(activePlatform));
+
+    // 1. Platform Filter
+    if (activePlatform) {
+      list = list.filter((c) => c.platform.some(p => p.toLowerCase() === activePlatform.toLowerCase()));
+    }
+
+    // 2. Search Query (Ajax-style local search & prepared for Google Custom Search Engine)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((c) => 
+        c.brief.toLowerCase().includes(q) ||
+        c.brand.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q) ||
+        c.platform.some(p => p.toLowerCase().includes(q))
+      );
+    }
+
+    // 3. Status Filter Dropdown
+    if (selectedStatus !== 'All') {
+      if (selectedStatus === 'Open') {
+        list = list.filter((c) => c.budgetSpent < c.budgetTotal);
+      } else if (selectedStatus === 'Filling Fast') {
+        list = list.filter((c) => (c.budgetSpent / (c.budgetTotal || 1)) >= 0.5 || c.slotsFilled >= 10);
+      } else if (selectedStatus === 'High CPM') {
+        list = list.filter((c) => c.cpm >= 3500);
+      }
+    }
+
+    // 4. Category Filter Dropdown
+    if (selectedCategory !== 'All') {
+      list = list.filter((c) => c.category.toLowerCase() === selectedCategory.toLowerCase());
+    }
+
+    // 5. Content Format Filter Dropdown
+    if (selectedContent !== 'All') {
+      const target = selectedContent.toLowerCase();
+      if (target === 'video') {
+        list = list.filter((c) => c.adFormat.includes('video') || c.adFormat.includes('reel') || c.adFormat.includes('ugc'));
+      } else if (target === 'image') {
+        list = list.filter((c) => c.adFormat.includes('image') || c.adFormat.includes('post') || c.adFormat.includes('graphic'));
+      } else if (target === 'story') {
+        list = list.filter((c) => c.adFormat.includes('story') || c.adFormat.includes('carousel'));
+      } else if (target === 'text') {
+        list = list.filter((c) => c.adFormat.includes('text') || c.adFormat.includes('tweet') || c.adFormat.includes('x'));
+      }
+    }
+
+    // 6. Minimum CPM Filter
+    if (minCpm > 0) {
+      list = list.filter((c) => c.cpm >= minCpm);
+    }
+
+    // 7. Sorting Pipeline (Syncs with both dropdown and table column headers)
+    if (sortColumn === 'cpm' || sortBy === 'cpm_high' || sortBy === 'cpm_low') {
+      const dir = sortColumn === 'cpm' ? sortDirection : sortBy === 'cpm_low' ? 'asc' : 'desc';
+      list.sort((a, b) => dir === 'asc' ? a.cpm - b.cpm : b.cpm - a.cpm);
+    } else if (sortColumn === 'minViews') {
+      list.sort((a, b) => sortDirection === 'asc' ? a.minViews - b.minViews : b.minViews - a.minViews);
+    } else if (sortColumn === 'budget') {
+      list.sort((a, b) => sortDirection === 'asc' ? a.budgetTotal - b.budgetTotal : b.budgetTotal - a.budgetTotal);
+    } else if (sortColumn === 'title') {
+      list.sort((a, b) => sortDirection === 'asc' ? a.brief.localeCompare(b.brief) : b.brief.localeCompare(a.brief));
+    } else if (sortColumn === 'category') {
+      list.sort((a, b) => sortDirection === 'asc' ? a.category.localeCompare(b.category) : b.category.localeCompare(a.category));
+    } else if (sortColumn === 'newest' || sortBy === 'newest') {
+      const dir = sortColumn === 'newest' ? sortDirection : 'desc';
+      list.sort((a, b) => dir === 'asc' ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === 'match') {
+      list.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    } else {
+      // Default: Featured first
+      list.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+    }
+
     return list;
-  }, [mappedCampaigns, activePlatform]);
+  }, [mappedCampaigns, activePlatform, searchQuery, selectedStatus, selectedCategory, selectedContent, minCpm, sortBy, sortColumn, sortDirection]);
+
+  // Active filters count for badge
+  const activeFiltersCount = (activePlatform ? 1 : 0) +
+    (selectedStatus !== 'All' ? 1 : 0) +
+    (selectedCategory !== 'All' ? 1 : 0) +
+    (selectedContent !== 'All' ? 1 : 0) +
+    (minCpm > 0 ? 1 : 0) +
+    (sortBy !== 'featured' ? 1 : 0) +
+    (searchQuery.trim() ? 1 : 0);
+
+  const resetAllFilters = () => {
+    setActivePlatform(null);
+    setSearchQuery('');
+    setSelectedStatus('All');
+    setSelectedCategory('All');
+    setSelectedContent('All');
+    setMinCpm(0);
+    setSortBy('featured');
+  };
+
+  const [showGseSearch, setShowGseSearch] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#090A0F] font-sans pb-16">
+      {/* Load Google Programmable Search Engine Script */}
+      <Script 
+        src="https://cse.google.com/cse.js?cx=b1dd03166a4a6402e" 
+        strategy="afterInteractive" 
+      />
+
+      {/* Global CSS Overrides for Google Custom Search Dark Theme */}
+      <style jsx global>{`
+        .gsc-control-cse {
+          background-color: transparent !important;
+          border: none !important;
+          padding: 0 !important;
+          font-family: inherit !important;
+        }
+        .gsc-search-box {
+          margin-bottom: 12px !important;
+        }
+        .gsc-input-box {
+          background: #13151A !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 9999px !important;
+        }
+        .gsc-input {
+          background: transparent !important;
+          color: #ffffff !important;
+        }
+        .gsc-search-button-v2 {
+          background-color: #2F49E8 !important;
+          border-color: #2F49E8 !important;
+          border-radius: 9999px !important;
+          padding: 8px 16px !important;
+        }
+        .gsc-results-wrapper-overlay {
+          background-color: rgba(9, 10, 15, 0.95) !important;
+          backdrop-filter: blur(16px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 24px !important;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+        }
+        .gsc-resultsbox-invisible {
+          display: none !important;
+        }
+        .gsc-webResult.gsc-result {
+          background-color: #13151A !important;
+          border: 1px solid rgba(255, 255, 255, 0.05) !important;
+          border-radius: 16px !important;
+          margin-bottom: 12px !important;
+          padding: 16px !important;
+        }
+        .gs-title, .gs-title * {
+          color: #60a5fa !important;
+          text-decoration: none !important;
+        }
+        .gs-snippet {
+          color: #94a3b8 !important;
+        }
+        .gsc-url-top, .gsc-url-bottom {
+          color: #34d399 !important;
+        }
+        .gsc-modal-background-image {
+          background-color: rgba(0, 0, 0, 0.7) !important;
+          backdrop-filter: blur(8px) !important;
+        }
+      `}</style>
       
       {/* Full width hero - dynamically powered */}
       {isLoading || featuredItems.length === 0 ? (
@@ -450,76 +884,494 @@ export default function BrowsePage() {
 
       <div className="max-w-7xl mx-auto px-6">
 
-        {/* Toolbar */}
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
-          
-          {/* Search */}
-          <div className="relative w-full md:w-[320px]">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input 
-              type="text" 
-              placeholder="Campaigns and creators" 
-              className="w-full bg-[#13151A] border border-white/5 rounded-full pl-11 pr-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/20 transition-colors" 
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-white/30 font-mono border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
-          </div>
-          
-          {/* Platform Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
-            <button className="w-11 h-11 shrink-0 rounded-full bg-[#13151A] border border-white/5 flex items-center justify-center hover:bg-white/10 transition-colors text-white">
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-            </button>
-            <button 
-              onClick={() => setActivePlatform(null)}
-              className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-colors text-sm font-semibold
-                ${!activePlatform ? 'bg-white text-black' : 'bg-[#13151A] border border-white/5 text-white/70 hover:text-white hover:bg-white/10'}
-              `}
-            >
-              All
-            </button>
-            {PLATFORMS.map(p => (
+        {/* Toolbar (Responsive Mobile & Desktop Layout) */}
+        <div className="flex flex-col gap-3 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 w-full">
+            
+            {/* Top / Left Group: Search Bar + Filter Toggle Button */}
+            <div className="flex items-center gap-2.5 w-full md:w-auto flex-1 min-w-0">
+              <div className="relative flex-1 md:max-w-[320px]">
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input 
+                  ref={searchInputRef}
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search campaigns, brands..." 
+                  className="w-full bg-[#13151A] border border-white/10 rounded-full pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white placeholder-white/40 focus:outline-none focus:border-kpugi-blue focus:ring-1 focus:ring-kpugi-blue transition-all" 
+                />
+                {searchQuery ? (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-xs font-bold bg-white/10 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-white/30 font-mono border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
+                )}
+              </div>
+
+              {/* Filter Drawer Toggle Button */}
               <button 
-                key={p} 
-                onClick={() => setActivePlatform(p)}
-                className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-colors
-                  ${activePlatform === p ? 'bg-white text-black' : 'bg-[#13151A] border border-white/5 text-white/70 hover:text-white hover:bg-white/10'}
-                `}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                title="Toggle Advanced Filters"
+                className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full border flex items-center justify-center transition-all relative ${
+                  showAdvancedFilters || activeFiltersCount > 0 
+                    ? 'bg-kpugi-blue border-kpugi-blue text-white shadow-md shadow-blue-500/20' 
+                    : 'bg-[#13151A] border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
               >
-                <PlatformIcon platform={p} className="w-5 h-5" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-black font-extrabold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                    {activeFiltersCount}
+                  </span>
+                )}
               </button>
-            ))}
+            </div>
+
+            {/* Platform Filter Pills & Dropdowns (Clean, non-overlapping horizontal scroll on mobile, inline on desktop) */}
+            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1 pt-0.5 w-full md:w-auto shrink-0">
+              {/* Platform Pills */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button 
+                  onClick={() => setActivePlatform(null)}
+                  className={`h-9 px-3.5 shrink-0 rounded-full flex items-center justify-center transition-colors text-xs font-semibold
+                    ${!activePlatform ? 'bg-white text-black font-bold' : 'bg-[#13151A] border border-white/10 text-white/70 hover:text-white hover:bg-white/10'}
+                  `}
+                >
+                  All
+                </button>
+                {PLATFORMS.map(p => (
+                  <button 
+                    key={p} 
+                    onClick={() => setActivePlatform(activePlatform === p ? null : p)}
+                    className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors
+                      ${activePlatform === p ? 'bg-white text-black' : 'bg-[#13151A] border border-white/10 text-white/70 hover:text-white hover:bg-white/10'}
+                    `}
+                  >
+                    <PlatformIcon platform={p} className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Separator on desktop */}
+              <div className="w-[1px] h-6 bg-white/10 shrink-0 mx-1 hidden md:block" />
+
+              {/* Dropdowns (Status, Category, Content) */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Status Filter */}
+                <div className="relative shrink-0">
+                  <select 
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="bg-[#13151A] border border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-white appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue"
+                  >
+                    <option value="All" className="bg-[#13151A] text-white">Status: All</option>
+                    <option value="Open" className="bg-[#13151A] text-white">🟢 Open & Active</option>
+                    <option value="Filling Fast" className="bg-[#13151A] text-white">🔥 Filling Fast</option>
+                    <option value="High CPM" className="bg-[#13151A] text-white">💰 High CPM (₦3.5k+)</option>
+                  </select>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+
+                {/* Category Filter */}
+                <div className="relative shrink-0">
+                  <select 
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-[#13151A] border border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-white appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue"
+                  >
+                    <option value="All" className="bg-[#13151A] text-white">Category: All</option>
+                    <option value="Tech" className="bg-[#13151A] text-white">💻 Tech & SaaS</option>
+                    <option value="Finance" className="bg-[#13151A] text-white">💳 Finance & Fintech</option>
+                    <option value="Food & Drink" className="bg-[#13151A] text-white">🍔 Food & Drink</option>
+                    <option value="Fashion" className="bg-[#13151A] text-white">👗 Fashion & Apparel</option>
+                    <option value="Beauty" className="bg-[#13151A] text-white">💄 Beauty & Wellness</option>
+                    <option value="Lifestyle" className="bg-[#13151A] text-white">✨ Lifestyle</option>
+                    <option value="Gaming" className="bg-[#13151A] text-white">🎮 Gaming</option>
+                  </select>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+
+                {/* Content Format Filter */}
+                <div className="relative shrink-0">
+                  <select 
+                    value={selectedContent}
+                    onChange={(e) => setSelectedContent(e.target.value)}
+                    className="bg-[#13151A] border border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-white appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue"
+                  >
+                    <option value="All" className="bg-[#13151A] text-white">Content: All</option>
+                    <option value="video" className="bg-[#13151A] text-white">🎬 Short-form Video</option>
+                    <option value="image" className="bg-[#13151A] text-white">📸 Static Post</option>
+                    <option value="story" className="bg-[#13151A] text-white">📱 Story / Carousel</option>
+                    <option value="text" className="bg-[#13151A] text-white">✍️ Text / Tweet</option>
+                  </select>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* Dropdowns */}
-          <div className="md:ml-auto flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
-            {['Status', 'Category', 'Content'].map(label => (
-              <div key={label} className="relative shrink-0">
-                <select className="bg-[#13151A] border border-white/5 rounded-full pl-5 pr-10 py-3 text-sm text-white/80 appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none">
-                  <option>{label}</option>
+          {/* Expandable Advanced Filter Drawer */}
+          {showAdvancedFilters && (
+            <div className="p-5 rounded-2xl bg-[#13151A] border border-white/10 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+              
+              {/* Sort By Option */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-white/60 block mb-2">
+                  Sort Campaigns By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-kpugi-blue"
+                >
+                  <option value="featured">✨ Featured & AI Recommended</option>
+                  <option value="cpm_high">💰 Highest Rate (CPM)</option>
+                  <option value="cpm_low">📉 Lowest Rate (CPM)</option>
+                  <option value="newest">🕒 Recently Published</option>
+                  <option value="match">🎯 Highest Audience Match</option>
                 </select>
-                <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </div>
-            ))}
+
+              {/* Min CPM Filter */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-white/60">
+                    Minimum CPM Rate
+                  </label>
+                  <span className="font-mono text-xs font-bold text-kpugi-blue">
+                    {minCpm === 0 ? 'Any' : `₦${minCpm.toLocaleString()}+`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  {[0, 2000, 3000, 5000].map((rate) => (
+                    <button
+                      key={rate}
+                      onClick={() => setMinCpm(rate)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                        minCpm === rate
+                          ? 'bg-kpugi-blue text-white'
+                          : 'bg-white/5 hover:bg-white/10 text-white/70'
+                      }`}
+                    >
+                      {rate === 0 ? 'All' : `₦${rate / 1000}k+`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reset Action */}
+              <div className="flex flex-col justify-end">
+                <button
+                  onClick={resetAllFilters}
+                  className="w-full py-2.5 rounded-xl border border-white/10 hover:border-red-500/40 text-white/70 hover:text-red-400 hover:bg-red-500/10 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  <span>Reset All Filters</span>
+                </button>
+              </div>
+
+            </div>
+          )}
+
+          {/* Active Filter Badges */}
+          {activeFiltersCount > 0 && (
+            <div className="flex items-center gap-2 flex-wrap pt-2">
+              <span className="text-xs text-white/40">Active Filters:</span>
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                  <span>Search: &ldquo;{searchQuery}&rdquo;</span>
+                  <button onClick={() => setSearchQuery('')} className="hover:text-red-400 font-bold">✕</button>
+                </span>
+              )}
+              {activePlatform && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                  <span>Platform: {activePlatform}</span>
+                  <button onClick={() => setActivePlatform(null)} className="hover:text-red-400 font-bold">✕</button>
+                </span>
+              )}
+              {selectedStatus !== 'All' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                  <span>Status: {selectedStatus}</span>
+                  <button onClick={() => setSelectedStatus('All')} className="hover:text-red-400 font-bold">✕</button>
+                </span>
+              )}
+              {selectedCategory !== 'All' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                  <span>Category: {selectedCategory}</span>
+                  <button onClick={() => setSelectedCategory('All')} className="hover:text-red-400 font-bold">✕</button>
+                </span>
+              )}
+              {selectedContent !== 'All' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                  <span>Content: {selectedContent}</span>
+                  <button onClick={() => setSelectedContent('All')} className="hover:text-red-400 font-bold">✕</button>
+                </span>
+              )}
+              {minCpm > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                  <span>Min CPM: ₦{minCpm.toLocaleString()}</span>
+                  <button onClick={() => setMinCpm(0)} className="hover:text-red-400 font-bold">✕</button>
+                </span>
+              )}
+              <button
+                onClick={resetAllFilters}
+                className="text-xs text-kpugi-blue hover:underline font-bold ml-1"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Featured Section Title & Result Count + Grid/List Switcher */}
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="flex items-baseline gap-2 min-w-0">
+            <h2 className="font-display font-bold text-white text-lg sm:text-xl tracking-tight truncate">
+              {searchQuery || activeFiltersCount > 0 ? 'Filtered Campaigns' : 'Featured Campaigns'}
+            </h2>
+            <span className="text-xs text-white/50 font-medium shrink-0">
+              ({filtered.length})
+            </span>
+          </div>
+
+          {/* Grid / List View Toggle */}
+          <div className="flex items-center gap-1 bg-[#13151A] p-1 rounded-xl border border-white/10 shrink-0">
+            <button
+              onClick={() => handleViewModeChange('grid')}
+              title="Grid View"
+              className={`px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
+                viewMode === 'grid' ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+            <button
+              onClick={() => handleViewModeChange('list')}
+              title="List View"
+              className={`px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
+                viewMode === 'list' ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span className="hidden sm:inline">List</span>
+            </button>
           </div>
         </div>
 
-        {/* Featured Section Title */}
-        <h2 className="font-display font-bold text-white text-xl mb-6 tracking-tight">Featured</h2>
-
-        {/* Campaign Grid */}
+        {/* Campaign Listings (Grid vs List View) */}
         {isLoading ? (
           <CampaignGridSkeleton count={8} />
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filtered.map((c, i) => (
-              <Link key={c.id} href={`/browse/${c.id}`}>
-                <CampaignCard c={c} index={i} />
-              </Link>
-            ))}
-          </div>
+          viewMode === 'grid' ? (
+            /* GRID VIEW */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filtered.map((c, i) => (
+                <React.Fragment key={c.id}>
+                  {i === 2 && <SponsoredAdCard index={99} />}
+                  <Link href={`/browse/${c.id}`}>
+                    <CampaignCard c={c} index={i} />
+                  </Link>
+                </React.Fragment>
+              ))}
+              {filtered.length < 2 && <SponsoredAdCard index={99} />}
+            </div>
+          ) : (
+            /* LIST VIEW (TABLE) */
+            <div className="bg-[#12141A] rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-sans text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-[#161820] text-white/50 uppercase text-[10px] tracking-wider font-bold">
+                      {/* Campaign & Brand */}
+                      <th 
+                        onClick={() => handleSort('title')}
+                        className="py-4 px-5 cursor-pointer hover:text-white transition-colors select-none group/th"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className={sortColumn === 'title' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Campaign & Brand</span>
+                          <span className={`text-[10px] ${sortColumn === 'title' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                            {sortColumn === 'title' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                          </span>
+                        </div>
+                      </th>
+
+                      {/* Platforms */}
+                      <th className="py-4 px-4">Platforms</th>
+
+                      {/* Category */}
+                      <th 
+                        onClick={() => handleSort('category')}
+                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className={sortColumn === 'category' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Category</span>
+                          <span className={`text-[10px] ${sortColumn === 'category' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                            {sortColumn === 'category' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                          </span>
+                        </div>
+                      </th>
+
+                      {/* CPM Rate */}
+                      <th 
+                        onClick={() => handleSort('cpm')}
+                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className={sortColumn === 'cpm' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>CPM Rate</span>
+                          <span className={`text-[10px] ${sortColumn === 'cpm' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                            {sortColumn === 'cpm' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                          </span>
+                        </div>
+                      </th>
+
+                      {/* Min Views */}
+                      <th 
+                        onClick={() => handleSort('minViews')}
+                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className={sortColumn === 'minViews' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Min Views</span>
+                          <span className={`text-[10px] ${sortColumn === 'minViews' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                            {sortColumn === 'minViews' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                          </span>
+                        </div>
+                      </th>
+
+                      {/* Spent / Budget */}
+                      <th 
+                        onClick={() => handleSort('budget')}
+                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className={sortColumn === 'budget' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Spent / Budget</span>
+                          <span className={`text-[10px] ${sortColumn === 'budget' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                            {sortColumn === 'budget' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                          </span>
+                        </div>
+                      </th>
+
+                      {/* Action */}
+                      <th className="py-4 px-5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filtered.map((c, i) => (
+                      <React.Fragment key={c.id}>
+                        {i === 2 && <SponsoredAdRow />}
+                        <tr className="hover:bg-white/[0.03] transition-colors group">
+                          {/* Campaign & Brand */}
+                          <td className="py-4 px-5">
+                            <Link href={`/browse/${c.id}`} className="flex items-center gap-3 min-w-[220px]">
+                              {c.thumbnailUrl ? (
+                                <img src={c.thumbnailUrl} alt={c.brief} className="w-10 h-10 rounded-xl object-cover border border-white/10 shrink-0" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                  {c.brand.charAt(0)}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <span className="font-bold text-sm text-white group-hover:text-kpugi-blue transition-colors truncate block">
+                                  {c.brief}
+                                </span>
+                                <div className="flex items-center gap-1 text-[11px] text-white/40">
+                                  <span className="truncate">{c.brand}</span>
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-[#E4A12C] shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                  <span>·</span>
+                                  <span>{c.timePosted}</span>
+                                </div>
+                              </div>
+                            </Link>
+                          </td>
+
+                          {/* Platforms */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              {c.platform.map((p) => (
+                                <div key={p} className="w-5 h-5 rounded-full bg-black flex items-center justify-center border border-white/10">
+                                  <PlatformIcon platform={p} className="w-3 h-3" />
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+
+                          {/* Category */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/5 text-white/80 border border-white/10">
+                              {c.category}
+                            </span>
+                          </td>
+
+                          {/* CPM Rate */}
+                          <td className="py-4 px-4 whitespace-nowrap font-mono text-white font-bold text-xs">
+                            {formatCompactCurrency(c.cpm)}
+                            <span className="text-[10px] text-white/40 block font-sans">/ 1k views</span>
+                          </td>
+
+                          {/* Min Threshold */}
+                          <td className="py-4 px-4 whitespace-nowrap font-mono text-white/80 text-xs">
+                            {formatCompactNumber(c.minViews)} views
+                          </td>
+
+                          {/* Budget / Slots */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="font-mono text-xs font-semibold text-white block">
+                              {formatCompactCurrency(c.budgetSpent)} / {formatCompactCurrency(c.budgetTotal)}
+                            </span>
+                            <span className="text-[10px] text-white/40 block">
+                              {c.slotsFilled} creators joined
+                            </span>
+                          </td>
+
+                          {/* Action */}
+                          <td className="py-4 px-5 text-right whitespace-nowrap">
+                            <Link
+                              href={`/browse/${c.id}`}
+                              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-kpugi-blue text-white font-bold text-xs transition-all shadow-sm group-hover:bg-kpugi-blue"
+                            >
+                              <span>View Program</span>
+                              <span>➔</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                    {filtered.length < 2 && <SponsoredAdRow />}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
         ) : (
-          <div className="p-12 text-center bg-[#12141A] rounded-2xl border border-white/5 text-slate-400">
-            No live campaigns found.
+          <div className="p-12 text-center bg-[#12141A] rounded-3xl border border-white/5 text-slate-400 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-xl">
+              🔍
+            </div>
+            <div>
+              <p className="text-white font-bold text-base">No matching campaigns found</p>
+              <p className="text-xs text-white/40 mt-1">Try adjusting your filters or search keywords.</p>
+            </div>
+            <button
+              onClick={resetAllFilters}
+              className="px-5 py-2.5 bg-kpugi-blue text-white rounded-xl text-xs font-bold hover:bg-blue-600 transition-colors shadow-sm"
+            >
+              Reset All Filters
+            </button>
           </div>
         )}
 
