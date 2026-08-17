@@ -14,7 +14,7 @@ export default function Navbar() {
     <header 
       className={`sticky top-0 z-50 transition-colors duration-500 backdrop-blur-xl ${
         isDarkPage 
-          ? 'bg-[#090A0F]/80 border-b border-white/10 text-white' 
+          ? 'bg-[#090A0F]/60 border-b border-white/5 text-white' 
           : 'bg-white/90 border-b border-kpugi-border text-kpugi-ink'
       }`}
     >

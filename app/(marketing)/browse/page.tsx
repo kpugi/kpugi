@@ -156,7 +156,7 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
   ];
 
   return (
-    <div className="relative w-full h-[420px] sm:h-[500px] overflow-hidden group cursor-pointer mb-10 select-none bg-[#090A0F]">
+    <div className="relative w-full h-[460px] sm:h-[520px] overflow-hidden group cursor-pointer mb-10 select-none bg-[#090A0F]">
       {/* Dynamic top ambient glow bleeding upwards toward navbar & status bar */}
       <div 
         className="absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl h-44 rounded-full blur-[100px] opacity-50 transition-colors duration-1000 pointer-events-none z-10"
@@ -200,25 +200,25 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
 
       {/* Content overlay */}
       <div className="absolute inset-0 flex flex-col justify-end z-20 pointer-events-none">
-        <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 pb-10 sm:pb-14 flex items-end justify-between">
-          <div className="pointer-events-auto">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded-full bg-[#E4A12C] flex items-center justify-center text-[10px] font-bold text-black">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 pb-8 sm:pb-12 pt-16 flex items-end justify-between">
+          <div className="pointer-events-auto max-w-3xl">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-5 h-5 rounded-full bg-[#E4A12C] flex items-center justify-center text-[10px] font-bold text-black shrink-0">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
               </div>
-              <span className="text-sm font-semibold text-white/90">{current.badge}</span>
+              <span className="text-xs sm:text-sm font-semibold text-white/90 truncate">{current.badge}</span>
             </div>
             
-            <h1 className="font-display font-bold text-white text-3xl sm:text-6xl mb-4 tracking-tight max-w-4xl leading-tight">
+            <h1 className="font-display font-bold text-white text-2xl sm:text-4xl md:text-5xl mb-3 tracking-tight leading-tight line-clamp-2">
               {current.title}
             </h1>
             
-            <div className="flex items-center gap-2 text-sm text-white/60 font-medium mb-8">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-white/60 font-medium mb-6 flex-wrap">
               <span>{current.category}</span>
               <span>·</span>
-              <span className="text-white">
+              <span className="text-white font-semibold">
                 {formatCompactCurrency(current.cpm)}
-                <span className="text-white/60">/1K views</span>
+                <span className="text-white/60 font-normal">/1K views</span>
               </span>
               <span>·</span>
               <span>{formatCompactCurrency(current.budget)} Budget</span>
@@ -226,7 +226,7 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
             
             <div>
               <Link href={`/browse/${current.id}`}>
-                <button className="bg-white text-black px-8 py-3.5 rounded-full font-bold text-sm hover:bg-white/90 transition-transform hover:scale-105 active:scale-95">
+                <button className="bg-white text-black px-6 py-3 sm:px-8 sm:py-3.5 rounded-full font-bold text-xs sm:text-sm hover:bg-white/90 transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-white/10">
                   View Campaign
                 </button>
               </Link>
