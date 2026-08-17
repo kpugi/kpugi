@@ -141,6 +141,8 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredCampaigns.map((item) => {
             const badge = getStatusBadge(item.status);
+            const isOnlyReserved = item.status === 'joined' || item.status === 'reserved' || !item.postUrl || (item.earnedAmount || 0) === 0;
+
             return (
               <Link
                 key={item.id}
@@ -177,10 +179,10 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
                 <div className="pt-4 border-t border-kpugi-border flex items-center justify-between text-xs font-sans">
                   <div>
                     <span className="text-[10px] font-bold uppercase text-kpugi-slate block tracking-wider">
-                      {item.earnedAmount ? 'EARNED' : 'RESERVED'}
+                      {isOnlyReserved ? 'RESERVED' : 'EARNED'}
                     </span>
                     <span className="font-mono font-bold text-kpugi-blue">
-                      {formatCompactCurrency(item.earnedAmount || item.reservedAmount || 0)}
+                      {formatCompactCurrency(isOnlyReserved ? (item.reservedAmount || 0) : (item.earnedAmount || 0))}
                     </span>
                   </div>
                   <div className="text-right">
@@ -213,6 +215,8 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
               <tbody className="divide-y divide-slate-100">
                 {filteredCampaigns.map((item) => {
                   const badge = getStatusBadge(item.status);
+                  const isOnlyReserved = item.status === 'joined' || item.status === 'reserved' || !item.postUrl || (item.earnedAmount || 0) === 0;
+
                   return (
                     <tr
                       key={item.id}
@@ -262,10 +266,10 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
                       {/* Reserved / Earned */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         <span className="font-mono font-bold text-kpugi-blue text-sm block">
-                          {formatCompactCurrency(item.earnedAmount || item.reservedAmount || 0)}
+                          {formatCompactCurrency(isOnlyReserved ? (item.reservedAmount || 0) : (item.earnedAmount || 0))}
                         </span>
                         <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">
-                          {item.earnedAmount ? 'Verified Payout' : 'Escrow Reserved'}
+                          {isOnlyReserved ? 'Escrow Reserved' : 'Verified Payout'}
                         </span>
                       </td>
 

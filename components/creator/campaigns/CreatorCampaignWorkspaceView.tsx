@@ -18,6 +18,8 @@ import {
   Check,
   Clock,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { submitCampaignVideoAction, unjoinCampaignAction } from '@/app/actions/creator';
@@ -34,6 +36,8 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isUnjoining, setIsUnjoining] = useState(false);
+  const [auditPage, setAuditPage] = useState(1);
+  const auditPageSize = 8;
   const [msg, setMsg] = useState('');
   const [copiedHashtag, setCopiedHashtag] = useState<string | null>(null);
   const hasSubmittedLink = Boolean(submission && submission.post_url && submission.post_url.trim().length > 0);
@@ -179,23 +183,36 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </div>
           </div>
 
-          <div className="flex items-center justify-center md:justify-end gap-3 shrink-0 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
+          <div className="flex items-center justify-center md:justify-end gap-2.5 shrink-0 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
+            {/* 1. View Briefing Button */}
             <button
               onClick={() => {
                 const el = document.getElementById('content-brief-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold transition-all border border-white/15 backdrop-blur-md"
+              title="View Campaign Briefing"
+              className="group h-10 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold transition-all duration-300 ease-out border border-white/15 backdrop-blur-md flex items-center overflow-hidden shadow-2xs"
             >
-              View Briefing
+              <FileText className="w-4 h-4 text-white shrink-0 group-hover:text-blue-300 transition-colors" />
+              <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
+                View Briefing
+              </span>
             </button>
+
             {hasSubmittedLink ? (
-              <div className="px-5 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center gap-2 backdrop-blur-md cursor-default">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Post Link Submitted</span>
+              /* 2. Submitted Link Indicator */
+              <div
+                title="Post link has been submitted and view verification is active"
+                className="group h-10 px-3 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center backdrop-blur-md cursor-default overflow-hidden transition-all duration-300 ease-out"
+              >
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
+                  Post Link Submitted
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
+                {/* 3. Unjoin Button */}
                 <button
                   onClick={async () => {
                     if (!confirm('Are you sure you want to unjoin this campaign? Your reserved slot and budget will be released.')) return;
@@ -214,18 +231,25 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     }
                   }}
                   disabled={isUnjoining}
-                  className="px-3.5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all backdrop-blur-md flex items-center gap-1.5 disabled:opacity-50"
-                  title="Release reserved slot"
+                  title="Unjoin Campaign & Release Slot"
+                  className="group h-10 px-3 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all duration-300 ease-out backdrop-blur-md flex items-center overflow-hidden disabled:opacity-50 shadow-2xs"
                 >
-                  <X className="w-3.5 h-3.5 text-rose-400" />
-                  <span>{isUnjoining ? 'Leaving...' : 'Unjoin'}</span>
+                  <X className="w-4 h-4 text-rose-400 shrink-0 group-hover:rotate-90 transition-transform duration-300" />
+                  <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
+                    {isUnjoining ? 'Leaving...' : 'Unjoin'}
+                  </span>
                 </button>
+
+                {/* 4. Submit Post Link Button */}
                 <button
                   onClick={() => setShowSubmitModal(true)}
-                  className="px-5 py-2.5 rounded-xl bg-white text-kpugi-ink font-sans text-xs font-bold hover:bg-slate-100 transition-all shadow-md flex items-center gap-2"
+                  title="Submit Published Post Link"
+                  className="group h-10 px-3 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-kpugi-ink font-sans text-xs font-bold transition-all duration-300 ease-out shadow-md flex items-center overflow-hidden"
                 >
-                  <Plus className="w-4 h-4 text-kpugi-blue" />
-                  <span>Submit Post Link</span>
+                  <Plus className="w-4 h-4 text-kpugi-blue shrink-0 group-hover:rotate-90 transition-transform duration-300" />
+                  <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
+                    Submit Post Link
+                  </span>
                 </button>
               </div>
             )}
@@ -271,26 +295,33 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           </div>
           <div className="flex items-center justify-between text-[11px] text-kpugi-slate font-medium pt-1">
             <span>Goal: {targetThreshold.toLocaleString()} views</span>
-            <span className="inline-flex items-center gap-1 font-mono font-bold text-kpugi-blue bg-blue-50/80 px-2 py-0.5 rounded-md text-[10px] border border-blue-100">
-              {hasSubmittedLink ? (
-                secondsToNextAudit > 0 ? (
-                  <>
-                    <Clock className="w-3 h-3 text-kpugi-blue animate-spin" />
-                    <span>Next Audit: {formatTimer(secondsToNextAudit)}</span>
-                  </>
+            {isCapReached ? (
+              <span className="inline-flex items-center gap-1 font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200/60">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                <span>Audits Complete</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 font-mono font-bold text-kpugi-blue bg-blue-50/80 px-2 py-0.5 rounded-md text-[10px] border border-blue-100">
+                {hasSubmittedLink ? (
+                  secondsToNextAudit > 0 ? (
+                    <>
+                      <Clock className="w-3 h-3 text-kpugi-blue animate-spin" />
+                      <span>Next Audit: {formatTimer(secondsToNextAudit)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Audit in progress...</span>
+                    </>
+                  )
                 ) : (
                   <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Audit in progress...</span>
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    <span>Awaiting Post Link</span>
                   </>
-                )
-              ) : (
-                <>
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  <span>Awaiting Post Link</span>
-                </>
-              )}
-            </span>
+                )}
+              </span>
+            )}
           </div>
         </div>
 
@@ -298,14 +329,15 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">EARNED SO FAR</span>
-            <Wallet className="w-5 h-5 text-kpugi-blue" />
+            <span className="font-mono font-black text-sm text-kpugi-blue leading-none">₦</span>
           </div>
           <div>
             <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue flex items-baseline gap-2 flex-wrap">
               <span>{formatCompactCurrency(earnedAmount)}</span>
               {isCapReached && (
-                <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-lg shrink-0">
-                  Pool Cap Reached
+                <span className="inline-flex items-center gap-1 text-[10px] font-sans font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  <span>Pool Cap</span>
                 </span>
               )}
               {!isReserveMet && !isCapReached && (
@@ -315,11 +347,11 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               )}
             </div>
             <span className="text-[11px] text-kpugi-slate block mt-1">
-              {isReserveMet 
-                ? (isCapReached 
-                    ? `Max creator earnings reached for this campaign (25% pool limit: ₦${maxCreatorPoolCap.toLocaleString()}).` 
-                    : `Est. Payout in ${campaign.verification_grace_hours || 48} hours after audit`)
-                : `Initial slot reserve held in escrow until minimum view threshold (${targetThreshold.toLocaleString()} views) is reached.`
+              {isCapReached 
+                ? 'Maximum creator pool limit achieved.' 
+                : isReserveMet 
+                ? `Est. Payout in ${campaign.verification_grace_hours || 48} hours after audit`
+                : `Initial slot reserve held in escrow until threshold is reached.`
               }
             </span>
           </div>
@@ -367,13 +399,20 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           <div>
             <div className="flex items-center justify-between border-b border-kpugi-border pb-4 mb-6">
               <h3 className="font-display font-bold text-xl text-kpugi-ink">Submission Tracker</h3>
-              <button
-                onClick={() => setShowSubmitModal(true)}
-                className="px-4 py-2 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Submit New Link</span>
-              </button>
+              {hasSubmittedLink ? (
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Link Active</span>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setShowSubmitModal(true)}
+                  className="px-4 py-2 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Submit Post Link</span>
+                </button>
+              )}
             </div>
 
             {submission && submission.post_url ? (
@@ -542,9 +581,11 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-kpugi-blue animate-pulse" />
+            <span className={`w-2.5 h-2.5 rounded-full ${isCapReached ? 'bg-emerald-500' : 'bg-kpugi-blue animate-pulse'}`} />
             <h3 className="font-display font-bold text-xl text-kpugi-ink">Live Audit Log</h3>
-            <span className="text-xs text-kpugi-slate ml-2 font-medium hidden sm:inline">Live Metric Sync Active</span>
+            <span className="text-xs text-kpugi-slate ml-2 font-medium hidden sm:inline">
+              {isCapReached ? 'Audits Concluded • Maximum Cap Settled' : 'Live Metric Sync Active'}
+            </span>
           </div>
 
           <button
@@ -569,43 +610,48 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </thead>
             <tbody>
               {data.audits && data.audits.length > 0 ? (
-                data.audits.map((audit: any, idx: number) => (
-                  <tr key={audit.id || idx} className="border-b border-slate-100">
-                    <td className="font-mono text-kpugi-slate">
-                      {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="font-bold text-kpugi-ink">
-                      Cycle #{data.audits!.length - idx}
-                    </td>
-                    <td className="font-mono font-bold text-emerald-600">
-                      +{formatCompactNumber(audit.views_delta)}
-                    </td>
-                    <td className="font-mono font-bold text-kpugi-blue">
-                      {formatCompactCurrency(audit.payout_amount)}
-                    </td>
-                    <td className="text-right">
-                      <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold uppercase text-[10px] ${
-                        audit.status === 'auto_approved'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : audit.status === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : audit.status === 'pending' || audit.status === 'accumulating'
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                          : 'bg-red-100 text-red-800 border border-red-200'
-                      }`}>
-                        {audit.status === 'auto_approved'
-                          ? '⚡ Auto-Credited'
-                          : audit.status === 'approved'
-                          ? '✓ Settled & Approved'
-                          : audit.status === 'pending' || audit.status === 'accumulating'
-                          ? (audit.views_delta > 0 && audit.payout_amount > 0 ? '⏳ Verified & Auditing' : '⏳ Accumulating Views')
-                          : audit.status === 'failed'
-                          ? '❌ Unreachable'
-                          : audit.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                data.audits
+                  .slice((auditPage - 1) * auditPageSize, auditPage * auditPageSize)
+                  .map((audit: any, idx: number) => {
+                    const cycleIndex = data.audits!.length - ((auditPage - 1) * auditPageSize + idx);
+                    return (
+                      <tr key={audit.id || idx} className="border-b border-slate-100">
+                        <td className="font-mono text-kpugi-slate">
+                          {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="font-bold text-kpugi-ink">
+                          Cycle #{cycleIndex}
+                        </td>
+                        <td className="font-mono font-bold text-emerald-600">
+                          +{formatCompactNumber(audit.views_delta)}
+                        </td>
+                        <td className="font-mono font-bold text-kpugi-blue">
+                          {formatCompactCurrency(audit.payout_amount)}
+                        </td>
+                        <td className="text-right">
+                          <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold uppercase text-[10px] ${
+                            audit.status === 'auto_approved'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : audit.status === 'approved'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : audit.status === 'pending' || audit.status === 'accumulating'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : 'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            {audit.status === 'auto_approved'
+                              ? '⚡ Auto-Credited'
+                              : audit.status === 'approved'
+                              ? '✓ Settled & Approved'
+                              : audit.status === 'pending' || audit.status === 'accumulating'
+                              ? (audit.views_delta > 0 && audit.payout_amount > 0 ? '⏳ Verified & Auditing' : '⏳ Accumulating Views')
+                              : audit.status === 'failed'
+                              ? '❌ Unreachable'
+                              : audit.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
               ) : (
                 <tr>
                   <td colSpan={5} className="text-center py-10">
@@ -624,6 +670,57 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </tbody>
           </table>
         </div>
+
+        {/* Audit Log Pagination Controls */}
+        {data.audits && data.audits.length > auditPageSize && (() => {
+          const totalAudits = data.audits.length;
+          const totalAuditPages = Math.ceil(totalAudits / auditPageSize);
+          return (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-kpugi-border text-xs font-sans">
+              <span className="text-kpugi-slate text-[11px] font-medium">
+                Showing <strong className="text-kpugi-ink">{(auditPage - 1) * auditPageSize + 1}</strong> to{' '}
+                <strong className="text-kpugi-ink">{Math.min(auditPage * auditPageSize, totalAudits)}</strong> of{' '}
+                <strong className="text-kpugi-ink">{totalAudits}</strong> audit runs
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
+                  disabled={auditPage === 1}
+                  className="px-2.5 py-1.5 rounded-xl border border-kpugi-border bg-white hover:bg-slate-50 text-kpugi-ink font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Prev</span>
+                </button>
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalAuditPages }).map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setAuditPage(i + 1)}
+                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${
+                        auditPage === i + 1
+                          ? 'bg-kpugi-blue text-white shadow-2xs'
+                          : 'text-kpugi-slate hover:bg-slate-100'
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuditPage((p) => Math.min(totalAuditPages, p + 1))}
+                  disabled={auditPage === totalAuditPages}
+                  className="px-2.5 py-1.5 rounded-xl border border-kpugi-border bg-white hover:bg-slate-50 text-kpugi-ink font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* SUBMIT POST LINK MODAL (PORTALED WITH BLUR BACKDROP) */}

@@ -306,6 +306,7 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
         title,
         channels,
         cpm_rate,
+        total_budget,
         min_view_threshold,
         cover_image_url,
         requirements,
@@ -327,6 +328,23 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
     const adv = campaign?.advertiser as any;
     const campaignImg = campaign?.cover_image_url || campaign?.requirements?.creative_image_url || adv?.profile?.avatar_url || null;
 
+    const maxCreatorCap = Number(campaign?.total_budget || 0) > 0 ? Number(campaign.total_budget) * 0.25 : 0;
+    const isJoinedOnly = !sub.post_url || sub.status === 'joined' || sub.status === 'reserved';
+
+    let earnedAmount = 0;
+    if (!isJoinedOnly) {
+      const settledPayout = Number(sub.payout_amount || 0) + Number(sub.pending_payout_amount || 0);
+      const minThreshold = campaign?.min_view_threshold || 500;
+      const views = sub.final_view_count || 0;
+      const estEarnings = views >= minThreshold ? Math.floor((views / 1000) * (campaign?.cpm_rate || 0)) : 0;
+      const rawEarned = Math.max(settledPayout, estEarnings);
+      earnedAmount = maxCreatorCap > 0 ? Math.min(rawEarned, maxCreatorCap) : rawEarned;
+    }
+
+    const targetThreshold = campaign?.min_view_threshold || 500;
+    const fallbackReserve = Math.round((targetThreshold / 1000) * (campaign?.cpm_rate || 0));
+    const reservedAmount = Number(sub.reserved_amount) || fallbackReserve;
+
     return {
       id: sub.id,
       campaignId: campaign?.id || sub.id,
@@ -336,17 +354,12 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
       coverImageUrl: campaign?.cover_image_url || null,
       platform: campaign?.channels?.[0] || 'tiktok',
       ratePer1k: campaign?.cpm_rate || 0,
-      minThreshold: campaign?.min_view_threshold || 500,
-      reservedAmount: sub.reserved_amount || sub.payout_amount || 0,
+      minThreshold: targetThreshold,
+      reservedAmount: reservedAmount,
       status: sub.status,
       postUrl: sub.post_url,
       viewsCount: sub.final_view_count || 0,
-      earnedAmount: Math.max(
-        Number(sub.payout_amount || 0) + Number(sub.pending_payout_amount || 0),
-        (sub.final_view_count || 0) >= (campaign?.min_view_threshold || 500)
-          ? Math.floor(((sub.final_view_count || 0) / 1000) * (campaign?.cpm_rate || 0))
-          : 0
-      ),
+      earnedAmount: earnedAmount,
       submittedAt: sub.submitted_at,
     };
   });

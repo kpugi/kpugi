@@ -728,8 +728,10 @@ export async function getCampaignDetailsForCreator(
 
     if (verChecks && verChecks.length > 0) {
       let prevViews = 0;
+      let cumulativePayout = 0;
       const cpm = Number(campaign?.cpm_rate || 0);
       const minThresh = Number(campaign?.min_view_threshold || 1000);
+      const maxCreatorCap = Number(campaign?.total_budget || 0) > 0 ? Number(campaign?.total_budget || 0) * 0.25 : Infinity;
 
       verChecks.forEach((vc: any) => {
         const vcKey = `vc-${vc.id}`;
@@ -752,15 +754,20 @@ export async function getCampaignDetailsForCreator(
         } else if (matchingSettledAudit) {
           status = matchingSettledAudit.status === 'auto_approved' ? 'auto_approved' : 'approved';
           payoutForCycle = Number(matchingSettledAudit.payout_amount || 0);
+          cumulativePayout += payoutForCycle;
         } else if (currentViews >= minThresh && deltaViews > 0) {
-          payoutForCycle = Math.floor((deltaViews / 1000) * cpm);
-          if (submission.status === 'paid' && currentViews <= Number(submission.last_paid_view_count || 0)) {
+          const rawCyclePayout = Math.floor((deltaViews / 1000) * cpm);
+          const maxRemaining = Math.max(0, maxCreatorCap - cumulativePayout);
+          payoutForCycle = Math.min(rawCyclePayout, maxRemaining);
+          cumulativePayout += payoutForCycle;
+
+          if (submission.status === 'paid' || submission.status === 'completed' || cumulativePayout >= maxCreatorCap) {
             status = 'approved';
           } else {
             status = 'pending';
           }
         } else {
-          status = 'pending';
+          status = submission.status === 'completed' || cumulativePayout >= maxCreatorCap ? 'approved' : 'pending';
           payoutForCycle = 0;
         }
 

@@ -24,6 +24,7 @@ export async function GET() {
         campaign:campaigns (
           id,
           title,
+          total_budget,
           advertiser_id,
           cpm_rate,
           spent_budget,
@@ -52,12 +53,13 @@ export async function GET() {
       const pendingPayout = Math.min(rawPendingPayout, maxAllowable);
 
       if (pendingPayout <= 0) {
-        // Creator reached max pool cap, clear pending amount
+        // Creator reached max pool cap, transition status to completed
         await supabase
           .from('submissions')
           .update({
             pending_payout_amount: 0,
             auto_approve_at: null,
+            status: 'completed',
           })
           .eq('id', sub.id);
         continue;
@@ -147,7 +149,7 @@ export async function GET() {
       await supabase
         .from('submissions')
         .update({
-          status: 'verified_pass',
+          status: newTotalPayout >= maxCreatorCap ? 'completed' : 'verified_pass',
           payout_amount: newTotalPayout,
           last_paid_view_count: viewCount,
           max_verified_views: Math.max(viewCount, Number(sub.max_verified_views || 0)),

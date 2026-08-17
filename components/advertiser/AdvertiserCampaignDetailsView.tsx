@@ -14,6 +14,7 @@ import {
   Clock,
   Play,
   Pause,
+  ChevronLeft,
   ChevronRight,
   ExternalLink,
   ShieldCheck,
@@ -21,7 +22,7 @@ import {
   FileText,
   Sparkles,
   ArrowLeft,
-  DollarSign,
+  Send,
   Eye,
   TrendingUp,
   Activity,
@@ -56,6 +57,8 @@ export default function AdvertiserCampaignDetailsView({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [auditPage, setAuditPage] = useState(1);
+  const auditPageSize = 8;
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const { campaign, creatives, submissions, metrics } = data;
@@ -349,7 +352,7 @@ export default function AdvertiserCampaignDetailsView({
         <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-emerald-600">
             <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Total Payouts</span>
-            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="font-mono font-black text-xs text-emerald-600 leading-none">₦</span>
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
             ₦{metrics.totalPayouts.toLocaleString()}
@@ -373,7 +376,7 @@ export default function AdvertiserCampaignDetailsView({
         <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-amber-600">
             <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Submissions</span>
-            <Video className="w-3.5 h-3.5 text-amber-600" />
+            <Send className="w-3.5 h-3.5 text-amber-600" />
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
             {submissions.filter((s) => s.post_url != null && s.status !== 'joined').length}
@@ -978,63 +981,116 @@ export default function AdvertiserCampaignDetailsView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-sans">
-                      {data.audits.map((audit) => {
-                        const auditDate = new Date(audit.settled_at);
-                        const isToday = new Date().toDateString() === auditDate.toDateString();
-                        const rank = creatorRankMap.get(audit.creator_handle);
+                      {data.audits
+                        .slice((auditPage - 1) * auditPageSize, auditPage * auditPageSize)
+                        .map((audit) => {
+                          const auditDate = new Date(audit.settled_at);
+                          const isToday = new Date().toDateString() === auditDate.toDateString();
+                          const rank = creatorRankMap.get(audit.creator_handle);
 
-                        return (
-                          <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-slate-900 flex items-center gap-2">
-                              {audit.creator_avatar_url ? (
-                                <Image src={audit.creator_avatar_url} alt="" width={20} height={20} className="rounded-full object-cover shrink-0" />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[9px] font-bold flex items-center justify-center shrink-0">
-                                  {audit.creator_handle[1]?.toUpperCase() || 'C'}
-                                </div>
-                              )}
-                              <span>{audit.creator_handle}</span>
-                              {rank !== undefined && (
-                                <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                                  #{rank}
+                          return (
+                            <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-2.5 px-3 font-bold text-slate-900 flex items-center gap-2">
+                                {audit.creator_avatar_url ? (
+                                  <Image src={audit.creator_avatar_url} alt="" width={20} height={20} className="rounded-full object-cover shrink-0" />
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[9px] font-bold flex items-center justify-center shrink-0">
+                                    {audit.creator_handle[1]?.toUpperCase() || 'C'}
+                                  </div>
+                                )}
+                                <span>{audit.creator_handle}</span>
+                                {rank !== undefined && (
+                                  <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                    #{rank}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
+                                {audit.views_scraped.toLocaleString()}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
+                                +{audit.views_delta.toLocaleString()}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                                ₦{audit.payout_amount.toLocaleString()}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                  audit.status === 'auto_approved' || audit.status === 'system_verified'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : audit.status === 'approved'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-red-100 text-red-800 border border-red-200'
+                                }`}>
+                                  {audit.status === 'auto_approved' || audit.status === 'system_verified' ? '⚡ System Verified' : audit.status}
                                 </span>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
-                              {audit.views_scraped.toLocaleString()}
-                            </td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
-                              +{audit.views_delta.toLocaleString()}
-                            </td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                              ₦{audit.payout_amount.toLocaleString()}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                                audit.status === 'auto_approved' || audit.status === 'system_verified'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                  : audit.status === 'approved'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                  : 'bg-red-100 text-red-800 border border-red-200'
-                              }`}>
-                                {audit.status === 'auto_approved' || audit.status === 'system_verified' ? '⚡ System Verified' : audit.status}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 text-right">
-                              <span className="font-mono font-bold text-[11px] text-slate-800 block">
-                                {auditDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-medium">
-                                {isToday ? 'Latest fetch' : auditDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <span className="font-mono font-bold text-[11px] text-slate-800 block">
+                                  {auditDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  {isToday ? 'Latest fetch' : auditDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
               )}
+
+              {/* Audit History Pagination Controls */}
+              {data.audits && data.audits.length > auditPageSize && (() => {
+                const totalAudits = data.audits.length;
+                const totalAuditPages = Math.ceil(totalAudits / auditPageSize);
+                return (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs font-sans">
+                    <span className="text-slate-500 text-[11px]">
+                      Showing <strong>{(auditPage - 1) * auditPageSize + 1}</strong> to{' '}
+                      <strong>{Math.min(auditPage * auditPageSize, totalAudits)}</strong> of{' '}
+                      <strong>{totalAudits}</strong> audit runs
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
+                        disabled={auditPage === 1}
+                        className="px-2.5 py-1.5 rounded-xl border border-kpugi-border bg-white hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs text-xs"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>Prev</span>
+                      </button>
+                      <div className="flex items-center gap-1 px-1">
+                        {Array.from({ length: totalAuditPages }).map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setAuditPage(i + 1)}
+                            className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${
+                              auditPage === i + 1
+                                ? 'bg-kpugi-blue text-white shadow-2xs'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAuditPage((p) => Math.min(totalAuditPages, p + 1))}
+                        disabled={auditPage === totalAuditPages}
+                        className="px-2.5 py-1.5 rounded-xl border border-kpugi-border bg-white hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs text-xs"
+                      >
+                        <span>Next</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );
@@ -1068,12 +1124,15 @@ export default function AdvertiserCampaignDetailsView({
               .sort((a, b) => b.views_count - a.views_count)
               .slice(0, 5)
               .map((sub, idx) => (
-                <div key={sub.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="font-display font-bold text-sm text-kpugi-blue">#{idx + 1}</span>
-                    <span className="font-bold text-xs text-slate-900">{sub.creator_handle}</span>
+                <div key={sub.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="font-display font-bold text-sm text-kpugi-blue shrink-0">#{idx + 1}</span>
+                    <span className="font-bold text-xs text-slate-900 truncate">{sub.creator_handle}</span>
                   </div>
-                  <span className="font-mono font-bold text-xs text-emerald-600">{sub.views_count.toLocaleString()} Views Delivered</span>
+                  <div className="flex items-center gap-1 font-mono font-bold text-xs text-emerald-600 shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>{sub.views_count.toLocaleString()}</span>
+                  </div>
                 </div>
               ))}
           </div>
