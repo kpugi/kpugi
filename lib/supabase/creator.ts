@@ -405,8 +405,190 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
 
 
 
+/**
+ * Checks for any submissions where auto_approve_at <= now() and pending_payout_amount > 0,
+ * and automatically releases the funds into the creator's wallet balance.
+ */
+export async function autoReleaseMaturedSubmissions(supabaseClient?: any, creatorProfileId?: string): Promise<number> {
+  const supabase = supabaseClient || createAdminClient();
+  const now = new Date().toISOString();
+
+  let query = supabase
+    .from('submissions')
+    .select(`
+      id,
+      creator_id,
+      campaign_id,
+      pending_payout_amount,
+      payout_amount,
+      final_view_count,
+      reserved_amount,
+      max_verified_views,
+      last_paid_view_count,
+      auto_approve_at,
+      campaign:campaigns (
+        id,
+        title,
+        total_budget,
+        advertiser_id,
+        cpm_rate,
+        spent_budget,
+        reserved_budget
+      )
+    `)
+    .gt('pending_payout_amount', 0)
+    .lte('auto_approve_at', now);
+
+  if (creatorProfileId) {
+    query = query.eq('creator_id', creatorProfileId);
+  }
+
+  const { data: expiredSubs, error: fetchErr } = await query;
+  if (fetchErr || !expiredSubs || expiredSubs.length === 0) return 0;
+
+  let releasedCount = 0;
+
+  for (const sub of expiredSubs) {
+    const campaign = (sub as any).campaign;
+    const rawPendingPayout = Number(sub.pending_payout_amount || 0);
+    if (rawPendingPayout <= 0) continue;
+
+    const totalBudget = Number(campaign?.total_budget || 0);
+    const maxCreatorCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
+    const currentPaid = Number(sub.payout_amount || 0);
+    const maxAllowable = Math.max(0, maxCreatorCap - currentPaid);
+    const pendingPayout = Math.min(rawPendingPayout, maxAllowable);
+
+    if (pendingPayout <= 0) {
+      await supabase
+        .from('submissions')
+        .update({
+          pending_payout_amount: 0,
+          auto_approve_at: null,
+          status: 'completed',
+        })
+        .eq('id', sub.id);
+      continue;
+    }
+
+    const newTotalPayout = currentPaid + pendingPayout;
+    const viewCount = Number(sub.final_view_count || 0);
+    const reservedAmt = Number(sub.reserved_amount || 0);
+    const newReservedBudget = Math.max(0, Number(campaign?.reserved_budget || 0) - reservedAmt);
+
+    // 1. Credit or initialize creator wallet balance
+    const { data: creatorWallet } = await supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', sub.creator_id)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle();
+
+    if (creatorWallet) {
+      await supabase
+        .from('wallets')
+        .update({ balance: Number(creatorWallet.balance || 0) + pendingPayout })
+        .eq('id', creatorWallet.id);
+
+      await supabase.from('wallet_transactions').insert({
+        wallet_id: creatorWallet.id,
+        type: 'payout',
+        amount: pendingPayout,
+        campaign_id: sub.campaign_id,
+        submission_id: sub.id,
+        paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
+        status: 'completed',
+        created_at: now,
+      });
+    } else {
+      const { data: newWallet } = await supabase
+        .from('wallets')
+        .insert({
+          profile_id: sub.creator_id,
+          wallet_type: 'creator_earnings',
+          balance: pendingPayout,
+        })
+        .select('id')
+        .single();
+
+      if (newWallet) {
+        await supabase.from('wallet_transactions').insert({
+          wallet_id: newWallet.id,
+          type: 'payout',
+          amount: pendingPayout,
+          campaign_id: sub.campaign_id,
+          submission_id: sub.id,
+          paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
+          status: 'completed',
+          created_at: now,
+        });
+      }
+    }
+
+    // 2. Update creator total_earned
+    const { data: creatorProf } = await supabase
+      .from('creator_profiles')
+      .select('total_earned')
+      .eq('profile_id', sub.creator_id)
+      .maybeSingle();
+
+    if (creatorProf) {
+      await supabase
+        .from('creator_profiles')
+        .update({ total_earned: Number(creatorProf.total_earned || 0) + pendingPayout })
+        .eq('profile_id', sub.creator_id);
+    }
+
+    // 3. Update campaign spent_budget and reserved_budget
+    if (campaign) {
+      await supabase
+        .from('campaigns')
+        .update({
+          spent_budget: Number(campaign.spent_budget || 0) + pendingPayout,
+          reserved_budget: newReservedBudget,
+          updated_at: now,
+        })
+        .eq('id', campaign.id);
+    }
+
+    // 4. Update submission record state to settled
+    await supabase
+      .from('submissions')
+      .update({
+        status: newTotalPayout >= maxCreatorCap ? 'completed' : 'verified_pass',
+        payout_amount: newTotalPayout,
+        last_paid_view_count: viewCount,
+        max_verified_views: Math.max(viewCount, Number(sub.max_verified_views || 0)),
+        pending_payout_amount: 0,
+        auto_approve_at: null,
+        paid_at: now,
+        verified_at: now,
+      })
+      .eq('id', sub.id);
+
+    // 5. Log immutable Audit History Record
+    await supabase.from('submission_audits').insert({
+      submission_id: sub.id,
+      campaign_id: sub.campaign_id,
+      creator_id: sub.creator_id,
+      views_scraped: viewCount,
+      views_delta: Math.max(0, viewCount - Number(sub.last_paid_view_count || 0)),
+      payout_amount: pendingPayout,
+      status: 'auto_approved',
+      settled_at: now,
+    });
+
+    releasedCount++;
+  }
+
+  return releasedCount;
+}
+
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
+
+  // Auto-release any matured 24h clearances before reading balances
+  await autoReleaseMaturedSubmissions(supabase, profileId);
 
   const [
     creatorRes,
@@ -424,7 +606,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       .maybeSingle(),
     supabase
       .from('wallets')
-      .select('balance')
+      .select('id, balance')
       .eq('profile_id', profileId)
       .eq('wallet_type', 'creator_earnings')
       .maybeSingle(),
@@ -451,6 +633,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         submitted_at,
         verified_at,
         paid_at,
+        auto_approve_at,
         campaign:campaigns (
           id,
           title,
@@ -506,44 +689,54 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   let soonestClearanceTime: number | null = null;
   let soonestClearanceAmount = 0;
 
-  // 1. Add clearing audits (approved / settled within 24h escrow window)
-  submissionAudits.forEach((audit: any) => {
-    const payoutAmt = Number(audit.payout_amount || 0);
-    if (payoutAmt > 0) {
-      const settledDate = audit.settled_at || audit.created_at;
-      const settledTime = settledDate ? new Date(settledDate).getTime() : Date.now();
-      const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
-      const isClearing = Date.now() < clearanceTime;
-
-      if (isClearing) {
-        computedPendingClearance += payoutAmt;
-        if (soonestClearanceTime === null || clearanceTime < soonestClearanceTime) {
-          soonestClearanceTime = clearanceTime;
-          soonestClearanceAmount = payoutAmt;
+  // Submissions with pending payout awaiting the 24-hour clearance window
+  (rawSubmissions || []).forEach((s: any) => {
+    const pendingAmt = Number(s.pending_payout_amount || 0);
+    if (pendingAmt > 0) {
+      computedPendingClearance += pendingAmt;
+      if (s.auto_approve_at) {
+        const clTime = new Date(s.auto_approve_at).getTime();
+        if (clTime > Date.now()) {
+          if (soonestClearanceTime === null || clTime < soonestClearanceTime) {
+            soonestClearanceTime = clTime;
+            soonestClearanceAmount = pendingAmt;
+          }
         }
       }
     }
   });
 
-  // 2. Add pending audit submissions (new views queued for approval)
-  (rawSubmissions || []).forEach((s: any) => {
-    const pendingAmt = Number(s.pending_payout_amount || 0);
-    const views = Number(s.final_view_count || 0);
-    const minThreshold = Number(s.campaign?.min_view_threshold || 1000);
-    const cpm = Number(s.campaign?.cpm_rate || 0);
-
-    if (pendingAmt > 0) {
-      computedPendingClearance += pendingAmt;
-    } else if ((s.status === 'pending' || s.status === 'auditing') && views >= minThreshold && cpm > 0) {
-      computedPendingClearance += Math.floor((views / 1000) * cpm);
+  // 1. Reconcile Available Wallet Balance with Cleared Audits
+  let totalClearedEarnings = 0;
+  submissionAudits.forEach((audit: any) => {
+    const payoutAmt = Number(audit.payout_amount || 0);
+    if (payoutAmt > 0 && audit.status !== 'failed' && audit.status !== 'rejected') {
+      const settledDate = audit.settled_at || audit.created_at;
+      const settledTime = settledDate ? new Date(settledDate).getTime() : Date.now();
+      const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
+      if (Date.now() >= clearanceTime || audit.status === 'auto_approved' || audit.status === 'approved' || audit.status === 'completed') {
+        totalClearedEarnings += payoutAmt;
+      }
     }
   });
+
+  const expectedAvailableBalance = Math.max(0, totalClearedEarnings - totalWithdrawn);
+  let availableBalance = Number(wallet?.balance || 0);
+
+  if (availableBalance < expectedAvailableBalance) {
+    availableBalance = expectedAvailableBalance;
+    if (wallet?.id) {
+      await supabase
+        .from('wallets')
+        .update({ balance: expectedAvailableBalance })
+        .eq('id', wallet.id);
+    }
+  }
 
   // Synthesize complete transaction ledger
   const existingTxKeys = new Set(
     rawTransactions.map((t: any) => t.reference || t.id)
   );
-  const coveredSubmissionIds = new Set<string>();
   const campaignTxList: any[] = [];
 
   // 1. Add settled audits from submission_audits
@@ -554,7 +747,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       const settledDate = audit.settled_at || audit.created_at;
       const settledTime = settledDate ? new Date(settledDate).getTime() : Date.now();
       const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
-      const isClearing = Date.now() < clearanceTime;
+      const isClearing = Date.now() < clearanceTime && audit.status !== 'auto_approved' && audit.status !== 'completed';
 
       campaignTxList.push({
         id: audit.id,
@@ -575,52 +768,40 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         settlement_method: audit.status === 'auto_approved' ? 'Automated Grace-Period Approval' : 'Advertiser Verification',
       });
       existingTxKeys.add(ref);
-      if (audit.submission_id) {
-        coveredSubmissionIds.add(audit.submission_id);
-      }
     }
   });
 
-  // 2. Add submission earnings ONLY for submissions not already covered by submission_audits or rawTransactions
+  // 2. Add active pending clearances so they display in transaction history
   (rawSubmissions || []).forEach((sub: any) => {
-    if (coveredSubmissionIds.has(sub.id)) return;
-
-    const earnedAmt = Number(sub.payout_amount || sub.pending_payout_amount || 0);
-    if (earnedAmt > 0) {
-      const ref = `KP-SUB-${sub.id.slice(0, 8).toUpperCase()}`;
+    const pendingAmt = Number(sub.pending_payout_amount || 0);
+    if (pendingAmt > 0) {
+      const ref = `KP-CLR-${sub.id.slice(0, 8).toUpperCase()}`;
       if (!existingTxKeys.has(ref)) {
-        const settledDate = sub.paid_at || sub.verified_at || sub.submitted_at || new Date().toISOString();
-        const settledTime = new Date(settledDate).getTime();
-        const clearanceTime = settledTime + 24 * 60 * 60 * 1000;
-        const isClearing = (sub.status === 'verified_pass' || sub.status === 'paid') && Date.now() < clearanceTime;
-
-        if (isClearing) {
-          if (soonestClearanceTime === null || clearanceTime < soonestClearanceTime) {
-            soonestClearanceTime = clearanceTime;
-            soonestClearanceAmount = earnedAmt;
-          }
-        }
+        const createdAt = sub.last_scraped_at || sub.submitted_at || new Date().toISOString();
+        const clearanceTime = sub.auto_approve_at
+          ? new Date(sub.auto_approve_at).getTime()
+          : new Date(createdAt).getTime() + 24 * 60 * 60 * 1000;
+        const isClearing = Date.now() < clearanceTime;
 
         campaignTxList.push({
-          id: `sub-tx-${sub.id}`,
+          id: `pending-tx-${sub.id}`,
           title: `${sub.campaign?.title || 'Video Campaign'}`,
           campaign_title: sub.campaign?.title || 'Campaign',
           reference: ref,
-          amount: earnedAmt,
+          amount: pendingAmt,
           type: 'credit',
           transaction_type: 'payout',
-          status: isClearing ? 'clearing' : (sub.status === 'verified_pass' || sub.status === 'paid' ? 'completed' : 'pending'),
-          created_at: settledDate,
-          settled_at: settledDate,
+          status: isClearing ? 'clearing' : 'completed',
+          created_at: createdAt,
+          settled_at: createdAt,
           clearance_at: new Date(clearanceTime).toISOString(),
           is_clearing: isClearing,
           views_scraped: Number(sub.final_view_count || 0),
           views_delta: Number(sub.final_view_count || 0),
           cpm_rate: Number(sub.campaign?.cpm_rate || 0),
-          settlement_method: 'Campaign Submission Settlement',
+          settlement_method: 'Verified 24h Escrow Release',
         });
         existingTxKeys.add(ref);
-        coveredSubmissionIds.add(sub.id);
       }
     }
   });
@@ -658,17 +839,17 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   const primaryBank = bankAccounts.length > 0 ? bankAccounts[0] : null;
 
   return {
-    availableBalance: Number(wallet?.balance || 0),
+    availableBalance: Number(availableBalance || 0),
     pendingEscrow: Number(computedPendingClearance || 0),
-    totalEarned: Number(creator?.total_earned || 0),
+    totalEarned: Number(creator?.total_earned || availableBalance + computedPendingClearance),
     totalWithdrawn: Number(totalWithdrawn || 0),
     lastWithdrawalDate,
-    nextClearanceDate: soonestClearanceTime ? new Date(soonestClearanceTime).toISOString() : null,
-    nextClearanceAmount: soonestClearanceAmount,
     bankDetails: primaryBank,
     bankAccounts,
     transactions: mergedTransactions,
-    kycStatus: (creator?.kyc_status as any) || 'unverified',
+    nextClearanceDate: soonestClearanceTime ? new Date(soonestClearanceTime).toISOString() : null,
+    nextClearanceAmount: soonestClearanceAmount,
+    kycStatus: creator?.kyc_status || 'unverified',
   };
 }
 

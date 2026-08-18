@@ -379,7 +379,7 @@ export default function AdvertiserCampaignDetailsView({
             <Send className="w-3.5 h-3.5 text-amber-600" />
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
-            {submissions.filter((s) => s.post_url != null && s.status !== 'joined').length}
+            {submissions.filter((s) => Boolean(s.post_url && s.post_url.trim().length > 0 && s.status !== 'joined')).length}
           </p>
           <span className="text-[9px] text-amber-600 font-medium block">Verified & Pending</span>
         </div>

@@ -21,6 +21,7 @@ export async function GET() {
         reserved_amount,
         max_verified_views,
         last_paid_view_count,
+        auto_approve_at,
         campaign:campaigns (
           id,
           title,
@@ -31,7 +32,8 @@ export async function GET() {
           reserved_budget
         )
       `)
-      .gt('pending_payout_amount', 0);
+      .gt('pending_payout_amount', 0)
+      .lte('auto_approve_at', now);
 
     if (fetchErr) {
       console.error('[release-payouts cron] Error fetching expired submissions:', fetchErr);

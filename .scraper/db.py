@@ -87,7 +87,7 @@ class DatabaseClient:
         """
         url = f"{self.rest_url}/submissions"
         params = {
-            "select": "id,creator_id,campaign_id,post_url,status,final_view_count,last_paid_view_count,max_verified_views,pending_payout_amount,submitted_at,last_scraped_at",
+            "select": "id,creator_id,campaign_id,social_account_id,post_url,status,final_view_count,last_paid_view_count,max_verified_views,pending_payout_amount,submitted_at,last_scraped_at",
             "post_url": "not.is.null",
             "status": "in.(pending,auditing,verified_pass)",
             "order": "last_scraped_at.asc.nullsfirst,submitted_at.desc",
@@ -107,8 +107,15 @@ class DatabaseClient:
         campaign_ids = list(set([s['campaign_id'] for s in submissions if s.get('campaign_id')]))
         campaigns_map = self._fetch_campaigns_by_ids(campaign_ids)
 
+        # Fetch connected social account handles for author ownership matching
+        social_ids = list(set([s['social_account_id'] for s in submissions if s.get('social_account_id')]))
+        social_map = self._fetch_social_accounts_by_ids(social_ids)
+
         for sub in submissions:
             sub['campaign'] = campaigns_map.get(sub.get('campaign_id'), {})
+            social_acc = social_map.get(sub.get('social_account_id'), {})
+            sub['social_account_handle'] = social_acc.get('handle')
+            sub['social_account_platform'] = social_acc.get('platform')
 
         return submissions
 
@@ -125,6 +132,22 @@ class DatabaseClient:
         resp = self._http_request("GET", url, params=params)
         if resp["status_code"] == 200 and resp["data"]:
             return {c['id']: c for c in resp["data"]}
+
+        return {}
+
+    def _fetch_social_accounts_by_ids(self, social_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+        if not social_ids:
+            return {}
+
+        url = f"{self.rest_url}/social_accounts"
+        params = {
+            "id": f"in.({','.join(social_ids)})",
+            "select": "id,platform,handle,display_name",
+        }
+
+        resp = self._http_request("GET", url, params=params)
+        if resp["status_code"] == 200 and resp["data"]:
+            return {s['id']: s for s in resp["data"]}
 
         return {}
 

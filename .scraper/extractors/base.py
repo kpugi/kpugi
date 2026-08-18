@@ -10,6 +10,9 @@ class ScrapeResult:
     share_count: Optional[int] = None
     duration: Optional[float] = None
     uploader: Optional[str] = None
+    uploader_id: Optional[str] = None
+    channel: Optional[str] = None
+    channel_url: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
     platform: str = "unknown"

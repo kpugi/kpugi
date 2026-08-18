@@ -67,7 +67,10 @@ def extract_with_ytdlp(url: str, platform: str = "generic") -> ScrapeResult:
             comment_count = info.get('comment_count')
             repost_count = info.get('repost_count') or info.get('retweet_count')
             duration = info.get('duration')
-            uploader = info.get('uploader') or info.get('channel') or info.get('uploader_id')
+            uploader = info.get('uploader')
+            uploader_id = info.get('uploader_id')
+            channel = info.get('channel')
+            channel_url = info.get('channel_url') or info.get('uploader_url')
             title = info.get('title')
             description = info.get('description')
 
@@ -75,6 +78,9 @@ def extract_with_ytdlp(url: str, platform: str = "generic") -> ScrapeResult:
                 'id': info.get('id'),
                 'title': title,
                 'uploader': uploader,
+                'uploader_id': uploader_id,
+                'channel': channel,
+                'channel_url': channel_url,
                 'view_count': view_count,
                 'like_count': like_count,
                 'comment_count': comment_count,
@@ -93,7 +99,10 @@ def extract_with_ytdlp(url: str, platform: str = "generic") -> ScrapeResult:
                 comment_count=int(comment_count) if comment_count is not None else None,
                 share_count=int(repost_count) if repost_count is not None else None,
                 duration=float(duration) if duration is not None else None,
-                uploader=str(uploader) if uploader else None,
+                uploader=str(uploader) if uploader else (str(channel) if channel else (str(uploader_id) if uploader_id else None)),
+                uploader_id=str(uploader_id) if uploader_id else None,
+                channel=str(channel) if channel else None,
+                channel_url=str(channel_url) if channel_url else None,
                 title=str(title) if title else None,
                 description=str(description)[:500] if description else None,
                 platform=platform,

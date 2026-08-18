@@ -79,6 +79,59 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
             "payout": 0,
         }
 
+    # 3.5 Author Handle Ownership Verification (Anti-Fraud)
+    connected_handle = sub.get('social_account_handle')
+    if connected_handle:
+        norm_handle = str(connected_handle).strip().lstrip('@').lower()
+
+        # Collect all candidate author identifiers returned by scraper
+        candidates = []
+        for cand_val in [result.uploader, result.uploader_id, result.channel]:
+            if cand_val is not None:
+                cand_str = str(cand_val).strip().lstrip('@').lower()
+                if cand_str and cand_str not in candidates:
+                    candidates.append(cand_str)
+
+        # Extract handle from channel_url if available
+        if result.channel_url:
+            import re
+            url_match = re.search(r'/(?:@)?([a-zA-Z0-9_.-]{1,30})/?$', str(result.channel_url))
+            if url_match:
+                url_handle = url_match.group(1).lower()
+                if url_handle not in candidates:
+                    candidates.append(url_handle)
+
+        if candidates:
+            # Separate text usernames from purely numeric internal platform IDs (e.g. '100084729182')
+            text_candidates = [c for c in candidates if not c.isdigit()]
+
+            # Only evaluate mismatch if we have text usernames (avoid false positives on raw numeric IDs)
+            if text_candidates:
+                matched = any(
+                    norm_handle == c or norm_handle in c or c in norm_handle
+                    for c in text_candidates
+                )
+
+                if not matched:
+                    primary_author = text_candidates[0]
+                    logger.warning(
+                        f"Author mismatch for sub {sub_id[:8]}: scraped author '@{primary_author}' != connected handle '@{connected_handle}'"
+                    )
+                    updates = {
+                        "last_scraped_at": now_iso,
+                        "status": "verified_fail",
+                        "failure_reason": f"Author ownership mismatch: This post was published by @{primary_author}, but your connected account is @{connected_handle}. You may only submit posts from your own account.",
+                    }
+                    db.update_submission(sub_id, updates)
+                    return {
+                        "id": sub_id[:8],
+                        "platform": result.platform,
+                        "reachable": True,
+                        "views": 0,
+                        "status": "verified_fail",
+                        "payout": 0,
+                    }
+
     # 4. Process live view metrics
     scraped_views = result.view_count if result.view_count is not None else 0
     # Retain the highest observed view count (views don't decrease in reality)

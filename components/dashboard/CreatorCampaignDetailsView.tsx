@@ -70,7 +70,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
     : 0;
 
   // Database aggregate calculations for Live Reach
-  const activeSubs = allSubmissions.filter(s => s.status !== 'joined');
+  const activeSubs = allSubmissions.filter(s => Boolean(s.post_url && s.post_url.trim().length > 0 && s.status !== 'joined'));
   const dbViews = allSubmissions.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
   const dbPayouts = totalSpentFromCampaign > 0 ? totalSpentFromCampaign : totalSubmissionPayouts;
   const dbCreatorsJoined = allSubmissions.length;

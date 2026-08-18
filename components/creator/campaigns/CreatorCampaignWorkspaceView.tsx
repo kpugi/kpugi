@@ -444,8 +444,8 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               {isCapReached 
                 ? 'Maximum creator pool limit achieved.' 
                 : isReserveMet 
-                ? `Est. Payout in ${campaign.verification_grace_hours || 48} hours after audit`
-                : `Initial slot reserve held in escrow until threshold is reached.`
+                ? 'Clears to your wallet balance 24 hours after verified run.'
+                : 'Initial slot reserve held in escrow until threshold is reached.'
               }
             </span>
           </div>

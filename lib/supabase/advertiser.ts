@@ -112,34 +112,6 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
   const companyName = advProfile?.company_name || 'Brand Partner';
   const advertiserAvatarUrl = (advProfile as any)?.profile?.avatar_url || null;
 
-  // If no campaigns belong to this specific profile yet, fetch all live platform campaigns so the brand console isn't blank
-  if (!campaigns || campaigns.length === 0) {
-    const { data: allCampaigns } = await supabase
-      .from('campaigns')
-      .select(`
-        id, 
-        title, 
-        campaign_code,
-        description, 
-        ad_format, 
-        cpm_rate, 
-        total_budget, 
-        reserved_budget, 
-        spent_budget, 
-        status, 
-        channels,
-        created_at, 
-        updated_at,
-        cover_image_url,
-        requirements,
-        deleted,
-        submissions:submissions!left(id, status, final_view_count)
-      `)
-      .eq('deleted', false)
-      .order('created_at', { ascending: false });
-    campaigns = (allCampaigns || []).filter((c: any) => !c.deleted && !c.requirements?.is_deleted);
-  }
-
   const campaignIds = (campaigns || []).map((c) => c.id);
   let pendingSubmissions = 0;
   let recentActivity: DashboardRecentActivity[] = [];
@@ -360,11 +332,12 @@ export async function getBrandCampaignDetails(
 ): Promise<BrandCampaignDetails> {
   const supabase = createAdminClient();
 
-  // 1. Fetch Campaign (by UUID or campaign_code)
+  // 1. Fetch Campaign (by UUID or campaign_code) strictly owned by this advertiser
   let { data: campaign } = await supabase
     .from('campaigns')
     .select(`
       id,
+      advertiser_id,
       title,
       campaign_code,
       description,
@@ -391,50 +364,38 @@ export async function getBrandCampaignDetails(
       )
     `)
     .or(`id.eq.${campaignId},campaign_code.ilike.${campaignId}`)
+    .eq('advertiser_id', advertiserProfileId)
+    .eq('deleted', false)
     .maybeSingle();
 
-  if (campaign && (campaign.deleted || (campaign.requirements as any)?.is_deleted)) {
-    campaign = null;
+  if (!campaign || (campaign.requirements as any)?.is_deleted) {
+    return {
+      campaign: null,
+      creatives: [],
+      submissions: [],
+      audits: [],
+      metrics: {
+        totalViews: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        totalShares: 0,
+        totalPayouts: 0,
+        creatorsJoined: 0,
+        totalSubmissions: 0,
+        verifiedSubmissions: 0,
+        pendingAudits: 0,
+        rejectedSubmissions: 0,
+        cpmEfficiency: 0,
+        engagementRate: 0,
+        avgWatchTime: 0,
+        reservedBudget: 0,
+        budgetFilledPercent: 0,
+        auditDurationHours: 72,
+      },
+    };
   }
 
-  if (!campaign) {
-    const { data: firstCampaign } = await supabase
-      .from('campaigns')
-      .select(`
-        id,
-        title,
-        campaign_code,
-        description,
-        ad_format,
-        requirements,
-        cpm_rate,
-        total_budget,
-        reserved_budget,
-        spent_budget,
-        min_view_threshold,
-        required_live_duration_hours,
-        verification_grace_hours,
-        status,
-        channels,
-        avg_watch_time_seconds,
-        target_engagement_rate,
-        created_at,
-        deleted,
-        advertiser:advertiser_profiles (
-          company_name,
-          profile:profiles (
-            avatar_url
-          )
-        )
-      `)
-      .eq('deleted', false)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    campaign = firstCampaign && !(firstCampaign.requirements as any)?.is_deleted ? firstCampaign : null;
-  }
-
-  const realCampaignId = campaign ? campaign.id : campaignId;
+  const realCampaignId = campaign.id;
 
   const adv = campaign?.advertiser as any;
   const companyName = adv?.company_name || 'Brand Partner';
