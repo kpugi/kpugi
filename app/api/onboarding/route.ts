@@ -141,6 +141,13 @@ export async function POST(req: Request) {
         // Safe fallback if wallets table is created in later phase
       }
 
+      // Trigger async vector embedding sync for creator matching
+      import('@/lib/ai/embeddings').then(({ syncCreatorProfileEmbedding }) => {
+        syncCreatorProfileEmbedding(profileId).catch((err) =>
+          console.error('[Onboarding API] Creator embedding sync error:', err)
+        );
+      });
+
       // Trigger Creator Welcome Notifications
       const { notifyCreatorWelcome } = await import('@/lib/notifications/creator');
       notifyCreatorWelcome({

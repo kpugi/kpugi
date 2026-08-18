@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
+import { useUser } from '@clerk/nextjs';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { CampaignGridSkeleton, FeaturedHeroSkeleton } from '@/components/ui/Skeletons';
 
@@ -277,7 +278,7 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
 /* ─────────────────────────────────────────────────────
    CAMPAIGN CARD
 ───────────────────────────────────────────────────── */
-function CampaignCard({ c, index }: { c: Campaign, index: number }) {
+function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: number, userRole?: string }) {
   const progress = c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0;
   
   // Deterministic gradient fallback if no thumbnail exists
@@ -293,19 +294,20 @@ function CampaignCard({ c, index }: { c: Campaign, index: number }) {
     <article className="group relative flex flex-col bg-[#12141A] rounded-2xl overflow-hidden hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-white/5 hover:border-white/10 cursor-pointer">
       {/* Thumbnail Area */}
       <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
-        {/* AI Match Score Badge Overlay */}
-        <div className="absolute top-3 right-3 z-20">
-          <div className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border backdrop-blur-md ${
-            (c.matchScore || 88) >= 85
-              ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20'
-              : (c.matchScore || 88) >= 65
-              ? 'bg-blue-950/80 border-blue-500/50 text-blue-300'
-              : 'bg-slate-900/80 border-white/20 text-slate-300'
-          }`}>
-            <span>✨</span>
-            <span>{c.matchScore || 88}% Match</span>
+        {/* AI Match Score Badge Overlay (Only for creators & guests, hidden for advertisers) */}
+        {userRole !== 'advertiser' && (
+          <div className="absolute top-3 right-3 z-20">
+            <div className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border backdrop-blur-md ${
+              (c.matchScore || 88) >= 85
+                ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20'
+                : (c.matchScore || 88) >= 65
+                ? 'bg-blue-950/80 border-blue-500/50 text-blue-300'
+                : 'bg-slate-900/80 border-white/20 text-slate-300'
+            }`}>
+              <span>{c.matchScore || 88}%</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {c.thumbnailUrl ? (
           <img 
@@ -613,13 +615,20 @@ export default function BrowsePage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const { user } = useUser();
+  const [currentUserRole, setCurrentUserRole] = useState<string>('public');
+
   useEffect(() => {
     async function fetchCampaigns() {
       try {
-        const res = await fetch('/api/campaigns');
+        const queryUrl = user?.id ? `/api/campaigns?creatorClerkId=${user.id}` : '/api/campaigns';
+        const res = await fetch(queryUrl);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to fetch campaigns');
         setDbCampaigns(data.campaigns || []);
+        if (data.userRole) {
+          setCurrentUserRole(data.userRole);
+        }
       } catch (err) {
         console.error('Error fetching campaigns:', err);
       } finally {
@@ -627,7 +636,7 @@ export default function BrowsePage() {
       }
     }
     fetchCampaigns();
-  }, []);
+  }, [user?.id]);
 
   const mappedCampaigns = useMemo(() => {
     return dbCampaigns.map((c) => {
@@ -1185,7 +1194,7 @@ export default function BrowsePage() {
                 <React.Fragment key={c.id}>
                   {i === 2 && <SponsoredAdCard index={99} />}
                   <Link href={`/browse/${c.id}`}>
-                    <CampaignCard c={c} index={i} />
+                    <CampaignCard c={c} index={i} userRole={currentUserRole} />
                   </Link>
                 </React.Fragment>
               ))}

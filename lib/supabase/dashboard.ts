@@ -405,6 +405,7 @@ export interface CampaignDetailsForCreator {
     company_logo: string | null;
     avg_watch_time_seconds?: number;
     target_engagement_rate?: number;
+    match_score?: number;
   } | null;
   creatives: {
     id: string;
@@ -839,6 +840,22 @@ export async function getCampaignDetailsForCreator(
     (submission?.post_url?.includes('facebook.com') ? 'facebook' : null) ||
     (submission?.post_url?.includes('instagram.com') ? 'instagram' : null);
 
+  // 7. Fetch personalized AI match score for creator
+  let matchScore = 94;
+  if (creatorProfileId && realCampaignId) {
+    try {
+      const { data: score } = await supabase.rpc('get_campaign_match_score', {
+        p_creator_id: creatorProfileId,
+        p_campaign_id: realCampaignId,
+      });
+      if (typeof score === 'number') {
+        matchScore = score;
+      }
+    } catch (e) {
+      console.warn('[getCampaignDetailsForCreator] match score error:', e);
+    }
+  }
+
   return {
     campaign: campaign
       ? {
@@ -863,6 +880,7 @@ export async function getCampaignDetailsForCreator(
           company_logo: companyLogo,
           avg_watch_time_seconds: computedAvgWatchTime,
           target_engagement_rate: computedEngagementRate,
+          match_score: matchScore,
         }
       : null,
     creatives: creatives || [],

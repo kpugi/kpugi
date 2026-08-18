@@ -7,9 +7,28 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const creatorId = searchParams.get('creatorId');
+    const creatorClerkId = searchParams.get('creatorClerkId');
     const isFresh = searchParams.get('fresh') === 'true';
 
-    const cacheKey = creatorId ? `campaigns:creator_${creatorId}` : 'campaigns:public';
+    const supabase = createAdminClient();
+    let effectiveCreatorId = creatorId;
+
+    let userRole = 'public';
+    if (!effectiveCreatorId && creatorClerkId) {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('clerk_id', creatorClerkId)
+        .maybeSingle();
+      if (prof?.id) {
+        userRole = prof.role || 'creator';
+        if (userRole !== 'advertiser') {
+          effectiveCreatorId = prof.id;
+        }
+      }
+    }
+
+    const cacheKey = effectiveCreatorId ? `campaigns:creator_${effectiveCreatorId}` : `campaigns:${userRole}`;
 
     if (isFresh) {
       await deleteRedisCache(cacheKey);
@@ -17,7 +36,7 @@ export async function GET(request: Request) {
       const cachedCampaigns = await getRedisCache<any[]>(cacheKey);
       if (cachedCampaigns) {
         return NextResponse.json(
-          { campaigns: cachedCampaigns, cached: true },
+          { campaigns: cachedCampaigns, userRole, cached: true },
           {
             headers: {
               'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
@@ -26,8 +45,6 @@ export async function GET(request: Request) {
         );
       }
     }
-
-    const supabase = createAdminClient();
 
     const { data: campaigns, error } = await supabase
       .from('campaigns')
@@ -70,43 +87,47 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Attach AI match scores and sanitize oversized base64 cover images
-    const enrichedCampaigns = await Promise.all(
-      (campaigns || []).map(async (camp) => {
-        let matchScore = 94;
-        if (creatorId) {
-          try {
-            const { data: scoreData } = await supabase.rpc('get_campaign_match_score', {
-              p_creator_id: creatorId,
-              p_campaign_id: camp.id,
-            });
-            if (typeof scoreData === 'number') {
-              matchScore = scoreData;
+    // Fetch bulk AI match scores for the creator if logged in
+    const matchScoreMap: Record<string, number> = {};
+    if (effectiveCreatorId) {
+      try {
+        const { data: bulkScores } = await supabase.rpc('get_creator_campaign_match_scores', {
+          p_creator_id: effectiveCreatorId,
+        });
+        if (Array.isArray(bulkScores)) {
+          for (const item of bulkScores) {
+            if (item.campaign_id && typeof item.match_score === 'number') {
+              matchScoreMap[item.campaign_id] = item.match_score;
             }
-          } catch (e) {
-            // Fallback match score
           }
         }
+      } catch (e) {
+        console.warn('[Campaigns API] Bulk match score fetch error:', e);
+      }
+    }
 
-        // Sanitize cover_image_url if it's an oversized base64 data URI (> 50KB) to prevent JSON API bloat
-        let safeCoverUrl = camp.cover_image_url || null;
-        if (safeCoverUrl && safeCoverUrl.startsWith('data:image/') && safeCoverUrl.length > 50000) {
-          safeCoverUrl = camp.creatives?.[0]?.file_url || null;
-        }
+    // Attach AI match scores and sanitize oversized base64 cover images
+    const enrichedCampaigns = (campaigns || []).map((camp) => {
+      const matchScore = matchScoreMap[camp.id] ?? (effectiveCreatorId ? 75 : 94);
 
-        return {
-          ...camp,
-          cover_image_url: safeCoverUrl,
-          match_score: matchScore,
-        };
-      })
-    );
+      // Sanitize cover_image_url if it's an oversized base64 data URI (> 50KB) to prevent JSON API bloat
+      let safeCoverUrl = camp.cover_image_url || null;
+      if (safeCoverUrl && safeCoverUrl.startsWith('data:image/') && safeCoverUrl.length > 50000) {
+        safeCoverUrl = camp.creatives?.[0]?.file_url || null;
+      }
+
+      return {
+        ...camp,
+        cover_image_url: safeCoverUrl,
+        match_score: matchScore,
+      };
+    });
 
     // Save to Redis Cache (TTL: 45 seconds)
     await setRedisCache(cacheKey, enrichedCampaigns, 45);
 
     return NextResponse.json(
-      { campaigns: enrichedCampaigns, cached: false },
+      { campaigns: enrichedCampaigns, userRole, cached: false },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',

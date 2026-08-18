@@ -377,22 +377,31 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
           {/* Hero CTA button: Join Campaign / Status & AI Match Badge */}
           <div className="shrink-0 pb-2 flex items-center gap-3">
-            {/* AI Match Badge Pill */}
-            {!isSignedIn ? (
-              <Link
-                href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
-                className="flex items-center gap-2 bg-[#0B1026] border border-white/20 hover:border-white/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md transition-all group"
-              >
-                <span className="text-sm">🔒</span>
-                <span className="font-mono text-xs font-bold text-slate-300 group-hover:text-white">Sign in for AI Score</span>
-              </Link>
-            ) : (
-              <div className="flex items-center gap-2.5 bg-[#0B1026] border border-emerald-500/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md">
-                <span className="text-sm">✨</span>
-                <div className="flex flex-col">
-                  <span className="font-mono text-xs font-extrabold text-emerald-400">94% AI Match Score</span>
+            {/* AI Match Badge Pill (Only for creators & guests, hidden for advertisers) */}
+            {userRole !== 'advertiser' && (
+              !isSignedIn ? (
+                <Link
+                  href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
+                  className="flex items-center gap-2 bg-[#0B1026] border border-white/20 hover:border-white/40 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md transition-all group"
+                >
+                  <span className="text-sm">🔒</span>
+                  <span className="font-mono text-xs font-bold text-slate-300 group-hover:text-white">Sign in for AI Score</span>
+                </Link>
+              ) : (
+                <div className={`flex items-center gap-2.5 bg-[#0B1026] px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md border ${
+                  (campaign.match_score ?? 85) >= 80
+                    ? 'border-emerald-500/40 text-emerald-400'
+                    : (campaign.match_score ?? 85) >= 65
+                    ? 'border-blue-500/40 text-blue-400'
+                    : 'border-slate-500/40 text-slate-300'
+                }`}>
+                  <div className="flex flex-col">
+                    <span className="font-mono text-xs font-extrabold">
+                      {campaign.match_score ?? 85}% Match Score
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )
             )}
 
             {userRole === 'advertiser' ? (
@@ -420,11 +429,11 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
               </button>
             ) : submission.status === 'joined' ? (
               <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#0B1026] border border-blue-500/50 text-blue-400 text-xs font-bold font-sans uppercase tracking-wider shadow-md">
-                Slot Reserved ✓
+                Joined
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#0B1026] border border-emerald-500/50 text-emerald-400 text-xs font-bold font-sans uppercase tracking-wider shadow-md">
-                Post Link Active ✓
+                Post Active
               </span>
             )}
           </div>
@@ -587,9 +596,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   );
                 })()}
 
-                {/* ⚡ AI-POWERED SYNC CARD (Clean 2-Column Layout) */}
-                {(() => {
-                  const dbMatchScore = (campaign as any).match_score || 94;
+                {/* ⚡ AI-POWERED SYNC CARD (Only for creators & guests, hidden for advertisers) */}
+                {userRole !== 'advertiser' && (() => {
+                  const dbMatchScore = campaign.match_score ?? 85;
 
                   return (
                     <div className="mt-8 bg-[#0B1021] border border-blue-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
