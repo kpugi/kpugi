@@ -10,6 +10,7 @@ import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { getSafeExternalUrl } from '@/lib/utils/url';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 interface CreatorCampaignDetailsViewProps {
   data: CampaignDetailsForCreator;
@@ -38,6 +39,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState<boolean>(false);
   const [isJoining, setIsJoining] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isDeletingLink, setIsDeletingLink] = useState<boolean>(false);
+  const [showDeleteLinkConfirm, setShowDeleteLinkConfirm] = useState<boolean>(false);
+  const [showUnjoinConfirm, setShowUnjoinConfirm] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
 
@@ -212,10 +216,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
   // Unjoin Campaign (Release Slot)
   const handleUnjoinCampaign = async () => {
-    if (!confirm('Are you sure you want to unjoin this campaign? Your reserved slot and budget will be released.')) {
-      return;
-    }
-
     setIsUnjoining(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -235,6 +235,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
         setErrorMsg(result.error || 'Failed to unjoin campaign.');
       } else {
         setSuccessMsg('You have unjoined the campaign. Your slot has been released.');
+        setShowUnjoinConfirm(false);
         router.refresh();
       }
     } catch (err) {
@@ -292,6 +293,39 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       setErrorMsg('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Step 3: Delete / Reset Published Post Link
+  const handleDeletePostLink = async () => {
+    setIsDeletingLink(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete_link',
+          campaignId: campaign.id,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        setErrorMsg(result.error || 'Failed to remove post link.');
+      } else {
+        setSuccessMsg('Post link removed. You can now submit a new link.');
+        setPostUrl('');
+        setScreenshotUrl('');
+        setShowDeleteLinkConfirm(false);
+        router.refresh();
+      }
+    } catch (err) {
+      setErrorMsg('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsDeletingLink(false);
     }
   };
 
@@ -1377,7 +1411,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     </button>
                     <button
                       type="button"
-                      onClick={handleUnjoinCampaign}
+                      onClick={() => setShowUnjoinConfirm(true)}
                       disabled={isSubmitting || isUnjoining}
                       className="w-full py-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
                     >
@@ -1417,6 +1451,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       <span>Reserved payout</span>
                       <span className="text-white font-mono">{formatCompactCurrency(submission.reserved_amount)}</span>
                     </div>
+
+                    {submission.status !== 'paid' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteLinkConfirm(true)}
+                        disabled={isDeletingLink}
+                        className="w-full mt-3 py-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
+                      >
+                        <span>🗑️</span>
+                        <span>{isDeletingLink ? 'Removing Link...' : 'Remove Link & Start Afresh'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1501,6 +1547,34 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
         return mounted ? createPortal(modalContent, document.body) : modalContent;
       })()}
+
+      {/* Confirmation Modal: Delete / Reset Post Link */}
+      <ConfirmModal
+        isOpen={showDeleteLinkConfirm}
+        onClose={() => setShowDeleteLinkConfirm(false)}
+        onConfirm={handleDeletePostLink}
+        title="Remove Post Link?"
+        description="All verified stats and views for this link will be reset to 0. You will return to the Joined state so you can submit a new link afresh."
+        confirmText="Remove Link & Reset"
+        cancelText="Keep Post Link"
+        variant="danger"
+        isLoading={isDeletingLink}
+        theme="dark"
+      />
+
+      {/* Confirmation Modal: Unjoin Campaign */}
+      <ConfirmModal
+        isOpen={showUnjoinConfirm}
+        onClose={() => setShowUnjoinConfirm(false)}
+        onConfirm={handleUnjoinCampaign}
+        title="Unjoin Campaign?"
+        description="Are you sure you want to leave this campaign? Your reserved slot and budget will be released."
+        confirmText="Unjoin Campaign"
+        cancelText="Stay in Campaign"
+        variant="danger"
+        isLoading={isUnjoining}
+        theme="dark"
+      />
 
     </div>
   );

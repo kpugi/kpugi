@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -18,13 +19,17 @@ import {
   Check,
   Clock,
   X,
+  Trash2,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
-import { submitCampaignVideoAction, unjoinCampaignAction } from '@/app/actions/creator';
+import { submitCampaignVideoAction, unjoinCampaignAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
+import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 interface CreatorCampaignWorkspaceViewProps {
   data: CampaignDetailsForCreator;
@@ -32,15 +37,79 @@ interface CreatorCampaignWorkspaceViewProps {
 }
 
 export default function CreatorCampaignWorkspaceView({ data, campaignId }: CreatorCampaignWorkspaceViewProps) {
-  const { campaign, submission, creatives, allSubmissions } = data;
+  const router = useRouter();
+  const { campaign, submission, creatives, allSubmissions, socialAccounts = [] } = data;
+  const [submissionState, setSubmissionState] = useState(submission);
+
+  useEffect(() => {
+    setSubmissionState(submission);
+  }, [submission]);
+
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isUnjoining, setIsUnjoining] = useState(false);
+  const [isDeletingLink, setIsDeletingLink] = useState(false);
+  const [showDeleteLinkConfirm, setShowDeleteLinkConfirm] = useState(false);
+  const [showUnjoinConfirm, setShowUnjoinConfirm] = useState(false);
   const [auditPage, setAuditPage] = useState(1);
   const auditPageSize = 8;
   const [msg, setMsg] = useState('');
+
+  async function handleConfirmDeleteLink() {
+    setIsDeletingLink(true);
+    try {
+      const res = await deleteSubmissionLinkAction(campaignId);
+      if (res.success) {
+        setSubmissionState((prev: any) => prev ? {
+          ...prev,
+          post_url: null,
+          screenshot_url: null,
+          status: 'joined',
+          final_view_count: 0,
+          likes_count: 0,
+          comments_count: 0,
+          shares_count: 0,
+          pending_payout_amount: 0,
+          payout_amount: null,
+          last_scraped_at: null,
+          verified_at: null,
+          submitted_at: new Date().toISOString(),
+        } : null);
+        setMsg('Post link removed. You can now submit a new link afresh.');
+        setShowDeleteLinkConfirm(false);
+        router.refresh();
+      } else {
+        setMsg(`Error: ${res.error}`);
+        setShowDeleteLinkConfirm(false);
+      }
+    } catch (err: any) {
+      setMsg(`Error: ${err.message || 'Failed to remove post link'}`);
+      setShowDeleteLinkConfirm(false);
+    } finally {
+      setIsDeletingLink(false);
+    }
+  }
+
+  async function handleConfirmUnjoin() {
+    setIsUnjoining(true);
+    try {
+      const res = await unjoinCampaignAction(campaignId);
+      if (res.success) {
+        setShowUnjoinConfirm(false);
+        router.push('/c/campaigns');
+      } else {
+        setMsg(`Error: ${res.error}`);
+        setShowUnjoinConfirm(false);
+      }
+    } catch (err: any) {
+      setMsg(`Error: ${err.message || 'Failed to unjoin campaign'}`);
+      setShowUnjoinConfirm(false);
+    } finally {
+      setIsUnjoining(false);
+    }
+  }
   const [copiedHashtag, setCopiedHashtag] = useState<string | null>(null);
-  const hasSubmittedLink = Boolean(submission && submission.post_url && submission.post_url.trim().length > 0);
+  const hasSubmittedLink = Boolean(submissionState && submissionState.post_url && submissionState.post_url.trim().length > 0);
 
   const totalCampaignBudget = Number(campaign?.total_budget || 0);
   const maxCreatorPoolCap = totalCampaignBudget > 0 ? totalCampaignBudget * 0.25 : 0;
@@ -48,7 +117,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   // Real 60-minute countdown calculation based on submission or last audit timestamp
   const computeRemainingSeconds = () => {
     if (!hasSubmittedLink) return 3600;
-    const baseTimeStr = (submission as any)?.last_scraped_at || (submission as any)?.submitted_at;
+    const baseTimeStr = (submissionState as any)?.last_scraped_at || (submissionState as any)?.submitted_at;
     if (!baseTimeStr) return 3600;
     const baseTimestamp = new Date(baseTimeStr).getTime();
     if (isNaN(baseTimestamp)) return 3600;
@@ -67,7 +136,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       setSecondsToNextAudit(computeRemainingSeconds());
     }, 1000);
     return () => clearInterval(timer);
-  }, [hasSubmittedLink, (submission as any)?.last_scraped_at, (submission as any)?.submitted_at]);
+  }, [hasSubmittedLink, (submissionState as any)?.last_scraped_at, (submissionState as any)?.submitted_at]);
 
   const formatTimer = (totalSec: number) => {
     const m = Math.floor(totalSec / 60);
@@ -79,16 +148,39 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
 
   async function handleSubmitVideo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     setMsg('');
+
     const formData = new FormData(e.currentTarget);
+    const videoUrl = (formData.get('videoUrl') as string)?.trim();
+
+    // Instant Anti-Fraud Handle Ownership Check
+    const registeredAccount = socialAccounts.find(s => s.id === submissionState?.social_account_id);
+    const ownershipCheck = validatePostUrlOwnership(
+      videoUrl,
+      registeredAccount?.handle,
+      registeredAccount?.platform || (submissionState as any)?.social_account_platform
+    );
+
+    if (!ownershipCheck.isValid) {
+      setMsg(`Error: ${ownershipCheck.error || 'Invalid post URL format or ownership mismatch.'}`);
+      return;
+    }
+
+    setLoading(true);
     const res = await submitCampaignVideoAction(formData);
     setLoading(false);
     if (!res.success) {
       setMsg(`Error: ${res.error}`);
     } else {
-      setMsg('Video submitted successfully! View audit cycle initiated.');
+      setMsg('Post submitted successfully! View audit cycle initiated.');
       setShowSubmitModal(false);
+      setSubmissionState((prev: any) => prev ? {
+        ...prev,
+        post_url: videoUrl,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+      } : null);
+      router.refresh();
     }
   }
 
@@ -99,15 +191,15 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   }
 
   // Calculate analytics values strictly based on verified views
-  const totalViews = submission?.final_view_count || 0;
+  const totalViews = submissionState?.final_view_count || 0;
   const targetThreshold = campaign.min_view_threshold || 1000;
   const viewsPct = Math.min(100, Math.round((totalViews / targetThreshold) * 100));
   const baseReserve = Math.round((targetThreshold / 1000) * campaign.cpm_rate);
   
   // Reserve is met when verified views reach target threshold or payout is released
-  const isReserveMet = totalViews >= targetThreshold || Number(submission?.payout_amount || 0) > 0 || submission?.status === 'paid';
+  const isReserveMet = totalViews >= targetThreshold || Number(submissionState?.payout_amount || 0) > 0 || submissionState?.status === 'paid';
   const calculatedViewsEarned = isReserveMet ? Math.floor((totalViews / 1000) * campaign.cpm_rate) : 0;
-  const paidAndPending = Number(submission?.payout_amount || 0) + Number(submission?.pending_payout_amount || 0);
+  const paidAndPending = Number(submissionState?.payout_amount || 0) + Number(submissionState?.pending_payout_amount || 0);
   const rawEarned = isReserveMet ? Math.max(paidAndPending, calculatedViewsEarned) : 0;
   const earnedAmount = maxCreatorPoolCap > 0 ? Math.min(rawEarned, maxCreatorPoolCap) : rawEarned;
   const isCapReached = maxCreatorPoolCap > 0 && rawEarned >= maxCreatorPoolCap;
@@ -200,36 +292,38 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </button>
 
             {hasSubmittedLink ? (
-              /* 2. Submitted Link Indicator */
-              <div
-                title="Post link has been submitted and view verification is active"
-                className="group h-10 px-3 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center backdrop-blur-md cursor-default overflow-hidden transition-all duration-300 ease-out"
-              >
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
-                  Post Link Submitted
-                </span>
+              <div className="flex items-center gap-2">
+                {/* 2. Submitted Link Indicator */}
+                <div
+                  title="Post link has been submitted and view verification is active"
+                  className="group h-10 px-3 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center backdrop-blur-md cursor-default overflow-hidden transition-all duration-300 ease-out shadow-2xs"
+                >
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
+                    Post Link Active
+                  </span>
+                </div>
+
+                {/* 3. Delete / Remove Post Link Button */}
+                {submissionState?.status !== 'paid' && (
+                  <button
+                    onClick={() => setShowDeleteLinkConfirm(true)}
+                    disabled={isDeletingLink}
+                    title="Remove Post Link & Reset Stats"
+                    className="group h-10 px-3 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all duration-300 ease-out backdrop-blur-md flex items-center overflow-hidden disabled:opacity-50 shadow-2xs"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
+                      {isDeletingLink ? 'Removing...' : 'Remove Link'}
+                    </span>
+                  </button>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 {/* 3. Unjoin Button */}
                 <button
-                  onClick={async () => {
-                    if (!confirm('Are you sure you want to unjoin this campaign? Your reserved slot and budget will be released.')) return;
-                    setIsUnjoining(true);
-                    try {
-                      const res = await unjoinCampaignAction(campaignId);
-                      if (res.success) {
-                        window.location.href = '/c/campaigns';
-                      } else {
-                        setMsg(`Error: ${res.error}`);
-                      }
-                    } catch (err: any) {
-                      setMsg(`Error: ${err.message || 'Failed to unjoin campaign'}`);
-                    } finally {
-                      setIsUnjoining(false);
-                    }
-                  }}
+                  onClick={() => setShowUnjoinConfirm(true)}
                   disabled={isUnjoining}
                   title="Unjoin Campaign & Release Slot"
                   className="group h-10 px-3 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all duration-300 ease-out backdrop-blur-md flex items-center overflow-hidden disabled:opacity-50 shadow-2xs"
@@ -415,48 +509,61 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               )}
             </div>
 
-            {submission && submission.post_url ? (
+            {submissionState && submissionState.post_url ? (
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl border border-kpugi-border bg-slate-50/60 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 overflow-hidden">
                     {(() => {
                       const detectedPlat =
-                        (submission as any).social_account_platform ||
-                        (submission.post_url?.includes('x.com') || submission.post_url?.includes('twitter.com') ? 'x' : null) ||
-                        (submission.post_url?.includes('tiktok.com') ? 'tiktok' : null) ||
-                        (submission.post_url?.includes('youtube.com') || submission.post_url?.includes('youtu.be') ? 'youtube' : null) ||
-                        (submission.post_url?.includes('facebook.com') ? 'facebook' : null) ||
+                        (submissionState as any).social_account_platform ||
+                        (submissionState.post_url?.includes('x.com') || submissionState.post_url?.includes('twitter.com') ? 'x' : null) ||
+                        (submissionState.post_url?.includes('tiktok.com') ? 'tiktok' : null) ||
+                        (submissionState.post_url?.includes('youtube.com') || submissionState.post_url?.includes('youtu.be') ? 'youtube' : null) ||
+                        (submissionState.post_url?.includes('facebook.com') ? 'facebook' : null) ||
                         'instagram';
                       return <PlatformBadge platform={detectedPlat} />;
                     })()}
                     <div className="truncate">
                       <a
-                        href={submission.post_url}
+                        href={submissionState.post_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-mono text-xs font-bold text-kpugi-ink hover:text-kpugi-blue hover:underline truncate block"
                       >
-                        {submission.post_url}
+                        {submissionState.post_url}
                       </a>
                       <span className="text-[11px] text-kpugi-slate font-sans block mt-0.5">
-                        Submitted {new Date(submission.submitted_at || Date.now()).toLocaleDateString()}
+                        Submitted {new Date(submissionState.submitted_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span className="font-mono font-bold text-xs text-kpugi-ink block">
-                      {formatCompactNumber(submission.final_view_count || 0)} VIEWS
-                    </span>
-                    <span
-                      className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase mt-1 ${
-                        submission.status === 'verified_pass' || submission.status === 'paid'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {submission.status === 'verified_pass' ? 'Verified' : submission.status}
-                    </span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <span className="font-mono font-bold text-xs text-kpugi-ink block">
+                        {formatCompactNumber(submissionState.final_view_count || 0)} VIEWS
+                      </span>
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase mt-1 ${
+                          submissionState.status === 'verified_pass' || submissionState.status === 'paid'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {submissionState.status === 'verified_pass' ? 'Verified' : submissionState.status}
+                      </span>
+                    </div>
+
+                    {submissionState.status !== 'paid' && (
+                      <button
+                        onClick={() => setShowDeleteLinkConfirm(true)}
+                        disabled={isDeletingLink}
+                        title="Remove Post Link & Start Afresh"
+                        className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-200 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -786,6 +893,34 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>,
         document.body
       )}
+
+      {/* Confirmation Modal: Delete Post Link */}
+      <ConfirmModal
+        isOpen={showDeleteLinkConfirm}
+        onClose={() => setShowDeleteLinkConfirm(false)}
+        onConfirm={handleConfirmDeleteLink}
+        title="Remove Post Link?"
+        description="All verified views and audit stats for this post link will be reset to 0. Your reserved slot will remain active in the Joined state so you can submit a new link afresh."
+        confirmText="Remove Link & Reset"
+        cancelText="Keep Post Link"
+        variant="danger"
+        isLoading={isDeletingLink}
+        theme="light"
+      />
+
+      {/* Confirmation Modal: Unjoin Campaign */}
+      <ConfirmModal
+        isOpen={showUnjoinConfirm}
+        onClose={() => setShowUnjoinConfirm(false)}
+        onConfirm={handleConfirmUnjoin}
+        title="Unjoin Campaign?"
+        description="Are you sure you want to leave this campaign? Your reserved slot and budget will be released back to the campaign pool."
+        confirmText="Unjoin Campaign"
+        cancelText="Stay in Campaign"
+        variant="danger"
+        isLoading={isUnjoining}
+        theme="light"
+      />
     </div>
   );
 }

@@ -218,6 +218,65 @@ export async function POST(req: Request) {
     }
 
     // ─────────────────────────────────────────────────────
+    // ACTION: DELETE / RESET POST LINK (Reset back to Joined state)
+    // ─────────────────────────────────────────────────────
+    if (action === 'delete_link') {
+      const { data: subToReset, error: findErr } = await supabase
+        .from('submissions')
+        .select('id, status, post_url')
+        .eq('campaign_id', campaignId)
+        .eq('creator_id', userProfile.profile.id)
+        .maybeSingle();
+
+      if (findErr || !subToReset) {
+        return NextResponse.json({ error: 'Submission not found for this campaign.' }, { status: 404 });
+      }
+
+      if (subToReset.status === 'paid') {
+        return NextResponse.json({ 
+          error: 'Cannot delete link for a campaign that has already completed payout.' 
+        }, { status: 400 });
+      }
+
+      // 1. Delete associated verification checks for this submission
+      await supabase
+        .from('verification_checks')
+        .delete()
+        .eq('submission_id', subToReset.id);
+
+      // 2. Reset submission back to 'joined' state with 0 stats
+      const { data: updatedSub, error: updateErr } = await supabase
+        .from('submissions')
+        .update({
+          post_url: null,
+          screenshot_url: null,
+          status: 'joined',
+          final_view_count: 0,
+          likes_count: 0,
+          comments_count: 0,
+          shares_count: 0,
+          watch_time_seconds: 0,
+          pending_payout_amount: 0,
+          payout_amount: null,
+          last_scraped_at: null,
+          verified_at: null,
+          submitted_at: new Date().toISOString(),
+          auto_approve_at: null,
+          failure_reason: null,
+        })
+        .eq('id', subToReset.id)
+        .select('*')
+        .single();
+
+      if (updateErr) {
+        console.error('[Submissions API] Error resetting post link:', updateErr);
+        return NextResponse.json({ error: 'Failed to delete post link. Please try again.' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'delete_link', submission: updatedSub });
+    }
+
+    // ─────────────────────────────────────────────────────
     // ACTION: SUBMIT POST LINK (Step 2)
     // ─────────────────────────────────────────────────────
     if (action === 'submit_link') {

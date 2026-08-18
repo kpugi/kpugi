@@ -662,6 +662,77 @@ export async function unjoinCampaignAction(campaignId: string) {
   return { success: true };
 }
 
+// ─── 3E. Creator Delete / Reset Post Link Action ─────────────────────────────
+
+export async function deleteSubmissionLinkAction(campaignId: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized: Creator profile required.' };
+  }
+
+  if (!campaignId) {
+    return { success: false, error: 'Campaign ID is required.' };
+  }
+
+  const supabase = createAdminClient();
+  const profileId = userProfile.profile.id;
+
+  // 1. Find the submission for this campaign
+  const { data: submission, error: findErr } = await supabase
+    .from('submissions')
+    .select('id, status, post_url')
+    .eq('campaign_id', campaignId)
+    .eq('creator_id', profileId)
+    .maybeSingle();
+
+  if (findErr || !submission) {
+    return { success: false, error: 'Submission not found for this campaign.' };
+  }
+
+  if (submission.status === 'paid') {
+    return { success: false, error: 'Cannot delete link for a campaign that has already completed payout.' };
+  }
+
+  // 2. Delete verification checks for this submission
+  await supabase
+    .from('verification_checks')
+    .delete()
+    .eq('submission_id', submission.id);
+
+  // 3. Reset submission back to 'joined' state with 0 stats
+  const { error: updateErr } = await supabase
+    .from('submissions')
+    .update({
+      post_url: null,
+      screenshot_url: null,
+      status: 'joined',
+      final_view_count: 0,
+      likes_count: 0,
+      comments_count: 0,
+      shares_count: 0,
+      watch_time_seconds: 0,
+      pending_payout_amount: 0,
+      payout_amount: null,
+      last_scraped_at: null,
+      verified_at: null,
+      submitted_at: new Date().toISOString(),
+      auto_approve_at: null,
+      failure_reason: null,
+    })
+    .eq('id', submission.id);
+
+  if (updateErr) {
+    return { success: false, error: updateErr.message || 'Failed to remove post link.' };
+  }
+
+  revalidatePath(`/campaigns/${campaignId}`);
+  revalidatePath(`/c/campaigns/${campaignId}`);
+  revalidatePath(`/browse/${campaignId}`);
+  revalidatePath('/c/campaigns');
+  revalidatePath('/c/submissions');
+  return { success: true };
+}
+
 // ─── 4. Zero-Trust Social Account Link Action ─────────────────────────────────
 
 export async function linkSocialAccountAction(formData: FormData) {

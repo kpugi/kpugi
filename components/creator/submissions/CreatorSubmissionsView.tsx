@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { CreatorSubmissionsData, DetailedSubmissionItem } from '@/lib/supabase/creator';
-import { submitCampaignVideoAction, resyncSubmissionScraperAction } from '@/app/actions/creator';
+import { submitCampaignVideoAction, resyncSubmissionScraperAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import {
   TikTokIcon,
   InstagramIcon,
@@ -22,6 +23,7 @@ import {
   Rocket,
   RefreshCw,
   Info,
+  Trash2,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -81,6 +83,30 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       setSubmissionsList((prev) =>
         prev.map((item) => (item.id === id ? { ...item, status: 'auditing' } : item))
       );
+    }
+  }
+
+  // Delete / Reset link handler
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ campaignId: string; submissionId: string } | null>(null);
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeletingId(deleteTarget.submissionId);
+    try {
+      const res = await deleteSubmissionLinkAction(deleteTarget.campaignId);
+      if (res.success) {
+        setSubmissionsList(prev => prev.filter(s => s.id !== deleteTarget.submissionId));
+        setDeleteTarget(null);
+      } else {
+        alert(res.error || 'Failed to remove link');
+        setDeleteTarget(null);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove link');
+      setDeleteTarget(null);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -447,12 +473,24 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
 
                       {/* Open Campaign Workspace */}
                       <Link
-                        href={`/campaigns`}
+                        href={`/c/campaigns/${item.campaignId}`}
                         className="p-2 rounded-xl bg-kpugi-blue text-white hover:bg-blue-700 transition-colors shadow-xs"
                         title="Open Campaign Workspace"
                       >
                         <Rocket className="w-4 h-4" />
                       </Link>
+
+                      {/* Delete / Reset Post Link */}
+                      {item.status !== 'approved' && (
+                        <button
+                          onClick={() => setDeleteTarget({ campaignId: item.campaignId, submissionId: item.id })}
+                          disabled={deletingId === item.id}
+                          className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50"
+                          title="Remove Post Link & Reset Stats"
+                        >
+                          <Trash2 className={`w-4 h-4 ${deletingId === item.id ? 'animate-spin' : ''}`} />
+                        </button>
+                      )}
 
                       {/* Rejection Info */}
                       {item.status === 'rejected' && (
@@ -659,6 +697,20 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
         </div>,
         document.body
       )}
+
+      {/* Confirmation Modal: Delete / Reset Post Link */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Remove Post Link?"
+        description="All verified stats and views for this post link will be reset to 0. You will return to the Joined state so you can submit a new link afresh."
+        confirmText="Remove Link & Reset"
+        cancelText="Keep Post Link"
+        variant="danger"
+        isLoading={Boolean(deletingId)}
+        theme="light"
+      />
     </div>
   );
 }
