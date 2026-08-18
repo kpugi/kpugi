@@ -9,6 +9,7 @@ import { Heart, MessageCircle, Share2 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { getSafeExternalUrl } from '@/lib/utils/url';
+import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 
 interface CreatorCampaignDetailsViewProps {
   data: CampaignDetailsForCreator;
@@ -248,6 +249,19 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
     e.preventDefault();
     if (!postUrl) {
       setErrorMsg('Please paste your published post URL.');
+      return;
+    }
+
+    // Instant Anti-Fraud Handle Ownership Check
+    const registeredAcc = socialAccounts.find(s => s.id === submission?.social_account_id);
+    const ownershipCheck = validatePostUrlOwnership(
+      postUrl,
+      registeredAcc?.handle,
+      registeredAcc?.platform || (submission as any)?.social_account_platform
+    );
+
+    if (!ownershipCheck.isValid) {
+      setErrorMsg(ownershipCheck.error || 'Invalid post URL format or ownership mismatch.');
       return;
     }
 

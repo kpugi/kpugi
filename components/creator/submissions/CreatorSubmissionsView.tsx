@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { CreatorSubmissionsData, DetailedSubmissionItem } from '@/lib/supabase/creator';
 import { submitCampaignVideoAction, resyncSubmissionScraperAction } from '@/app/actions/creator';
+import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 import {
   TikTokIcon,
   InstagramIcon,
@@ -86,9 +87,17 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
   // Submit new post link handler
   async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitting(true);
     setSubmitError('');
     setSubmitSuccess('');
+
+    // Instant Anti-Fraud URL Check
+    const ownershipCheck = validatePostUrlOwnership(postUrlInput);
+    if (!ownershipCheck.isValid) {
+      setSubmitError(ownershipCheck.error || 'Please enter a valid post link from your account.');
+      return;
+    }
+
+    setSubmitting(true);
 
     const formData = new FormData();
     formData.append('campaignId', selectedCampaignId);

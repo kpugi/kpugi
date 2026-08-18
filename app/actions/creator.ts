@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { saveSocialAccount } from '@/lib/supabase/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
 import { notifyCreatorWithdrawalCompleted, notifyCreatorJoinedCampaign } from '@/lib/notifications/creator';
+import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 
 export async function getNigerianBanksAction(): Promise<BankOption[]> {
   try {
@@ -151,10 +152,18 @@ export async function submitCampaignVideoAction(formData: FormData) {
   // Find creator's connected social account
   const { data: socialAcc } = await supabase
     .from('social_accounts')
-    .select('id')
+    .select('id, platform, handle')
     .eq('creator_id', userProfile.profile.id)
     .eq('platform', platform)
     .maybeSingle();
+
+  const connectedHandle = socialAcc?.handle || userProfile.creatorProfile?.display_name || userProfile.profile.full_name;
+  
+  // Anti-Fraud Handle Ownership Verification
+  const ownershipCheck = validatePostUrlOwnership(rawVideoUrl, connectedHandle, platform);
+  if (!ownershipCheck.isValid) {
+    return { success: false, error: ownershipCheck.error };
+  }
 
   let socialAccountId = socialAcc?.id;
   if (!socialAccountId) {

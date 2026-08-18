@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { calculateBudgetReservation } from '@/lib/utils/budget';
+import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 
 export async function GET() {
   return NextResponse.json({ submissions: [] });
@@ -240,7 +241,7 @@ export async function POST(req: Request) {
       // Check if creator has a 'joined' status record for this campaign
       const { data: existingSub, error: findErr } = await supabase
         .from('submissions')
-        .select('id, status, campaign_id, campaign:campaigns(channels)')
+        .select('id, status, campaign_id, social_account_id, campaign:campaigns(channels), social_account:social_accounts(platform, handle)')
         .eq('campaign_id', campaignId)
         .eq('creator_id', userProfile.profile.id)
         .maybeSingle();
@@ -251,6 +252,15 @@ export async function POST(req: Request) {
 
       if (existingSub.status !== 'joined') {
         return NextResponse.json({ error: 'Post link has already been submitted for this campaign.' }, { status: 400 });
+      }
+
+      // Anti-Fraud Handle Ownership & URL Verification
+      const connectedHandle = (existingSub as any)?.social_account?.handle;
+      const connectedPlatform = (existingSub as any)?.social_account?.platform;
+
+      const ownershipCheck = validatePostUrlOwnership(cleanPostUrl, connectedHandle, connectedPlatform);
+      if (!ownershipCheck.isValid) {
+        return NextResponse.json({ error: ownershipCheck.error }, { status: 400 });
       }
 
       // Anti-Fraud Constraint: Ensure no two creators submit the same post URL
@@ -267,14 +277,7 @@ export async function POST(req: Request) {
         }, { status: 400 });
       }
 
-      const hostname = parsedUrl.hostname.toLowerCase();
-      let platform = 'x';
-      if (hostname.includes('tiktok.com')) platform = 'tiktok';
-      else if (hostname.includes('instagram.com')) platform = 'instagram';
-      else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) platform = 'youtube';
-      else if (hostname.includes('facebook.com')) platform = 'facebook';
-      else if (hostname.includes('linkedin.com')) platform = 'linkedin';
-      else if (hostname.includes('x.com') || hostname.includes('twitter.com')) platform = 'x';
+      const platform = ownershipCheck.platform;
 
       const campaignChannels = (existingSub as any)?.campaign?.channels;
       if (campaignChannels && campaignChannels.length > 0) {
