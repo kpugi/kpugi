@@ -391,12 +391,33 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> All Cleared
               </span>
               <p className="text-[11px] text-kpugi-slate leading-relaxed">
-                Funds are automatically cleared into your wallet 24 hours after anti-fraud view verification.
+                Funds are automatically cleared into your wallet 24 hours after daily verification maturity.
               </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Today's In-Cycle Accrual (00:01 - 23:59) */}
+      {Number(data.todayAccrual || 0) > 0 && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-blue-50/90 border border-blue-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-3">
+            
+            <div>
+              <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <span>Today's Live Accrual</span>
+               
+              </div>
+              <p className="text-slate-600 text-xs mt-0.5">
+                Verified views gathered today will close at midnight into a single 24-hour pending escrow batch.
+              </p>
+            </div>
+          </div>
+          <div className="text-right font-mono font-black text-kpugi-blue text-lg sm:text-xl shrink-0 bg-white/80 px-4 py-2 rounded-2xl border border-blue-100">
+            +₦{Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+        </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────
          BOTTOM ROW: TRANSACTION HISTORY & PAYOUT METHODS

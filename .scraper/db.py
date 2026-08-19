@@ -192,3 +192,35 @@ class DatabaseClient:
         else:
             logger.error(f"Failed to update submission {submission_id} (HTTP {resp['status_code']}): {resp['error']}")
             return False
+
+    def record_submission_audit(
+        self,
+        submission_id: str,
+        campaign_id: str,
+        creator_id: str,
+        views_scraped: int,
+        views_delta: int,
+        payout_amount: float,
+        status: str = "auto_approved"
+    ) -> bool:
+        """
+        Inserts an audit record into submission_audits ledger upon scraper verification.
+        """
+        url = f"{self.rest_url}/submission_audits"
+        payload = {
+            "submission_id": submission_id,
+            "campaign_id": campaign_id,
+            "creator_id": creator_id,
+            "views_scraped": views_scraped,
+            "views_delta": views_delta,
+            "payout_amount": payout_amount,
+            "status": status,
+            "settled_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        resp = self._http_request("POST", url, data=payload)
+        if resp["status_code"] in (200, 201):
+            return True
+        else:
+            logger.error(f"Failed to insert submission audit record (HTTP {resp['status_code']}): {resp['error']}")
+            return False

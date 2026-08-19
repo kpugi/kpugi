@@ -60,7 +60,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const baseSlotReserve = Math.round((minThreshold / 1000) * (campaign.cpm_rate || 0));
 
   const totalSpentFromCampaign = Number(campaign.spent_budget || 0);
-  const totalSubmissionPayouts = allSubmissions.reduce((sum, s) => sum + Number(s.payout_amount || 0), 0);
+  const totalSubmissionPayouts = allSubmissions.reduce(
+    (sum, s) => sum + Number(s.payout_amount || 0) + Number((s as any).pending_payout_amount || 0),
+    0
+  );
   const activeCommittedBudget = totalSpentFromCampaign > 0
     ? totalSpentFromCampaign
     : (totalSubmissionPayouts > 0 ? totalSubmissionPayouts : Number(campaign.reserved_budget || 0));

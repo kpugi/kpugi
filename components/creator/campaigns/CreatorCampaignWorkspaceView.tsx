@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { submitCampaignVideoAction, unjoinCampaignAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
-import { validatePostUrlOwnership } from '@/lib/utils/social-url';
+import { validatePostUrlOwnership, parseSocialPostUrl } from '@/lib/utils/social-url';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -153,12 +153,24 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
     const formData = new FormData(e.currentTarget);
     const videoUrl = (formData.get('videoUrl') as string)?.trim();
 
-    // Instant Anti-Fraud Handle Ownership Check
-    const registeredAccount = socialAccounts.find(s => s.id === submissionState?.social_account_id);
+    // Dynamic Anti-Fraud Handle Ownership Check based on the submitted URL's platform
+    const parsed = parseSocialPostUrl(videoUrl);
+    const matchingAccount = socialAccounts.find(
+      s => s.platform.toLowerCase() === parsed.platform.toLowerCase() ||
+           (parsed.platform === 'x' && (s.platform.toLowerCase() === 'twitter' || s.platform.toLowerCase() === 'x'))
+    );
+
+    const platformDisplay = parsed.platform === 'x' ? 'X (Twitter)' : parsed.platform.charAt(0).toUpperCase() + parsed.platform.slice(1);
+
+    if (!matchingAccount && parsed.platform !== 'unknown') {
+      setMsg(`Error: No connected ${platformDisplay} account found. Please connect your ${platformDisplay} account under Connected Accounts before submitting.`);
+      return;
+    }
+
     const ownershipCheck = validatePostUrlOwnership(
       videoUrl,
-      registeredAccount?.handle,
-      registeredAccount?.platform || (submissionState as any)?.social_account_platform
+      matchingAccount?.handle,
+      matchingAccount?.platform || parsed.platform
     );
 
     if (!ownershipCheck.isValid) {
@@ -177,6 +189,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       setSubmissionState((prev: any) => prev ? {
         ...prev,
         post_url: videoUrl,
+        social_account_id: matchingAccount?.id || prev.social_account_id,
         status: 'pending',
         submitted_at: new Date().toISOString(),
       } : null);
@@ -554,16 +567,14 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                       </span>
                     </div>
 
-                    {submissionState.status !== 'paid' && (
-                      <button
-                        onClick={() => setShowDeleteLinkConfirm(true)}
-                        disabled={isDeletingLink}
-                        title="Remove Post Link & Start Afresh"
-                        className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-200 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setShowDeleteLinkConfirm(true)}
+                      disabled={isDeletingLink}
+                      title="Remove Post Link & Start Afresh"
+                      className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-200 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -723,8 +734,13 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     const cycleIndex = data.audits!.length - ((auditPage - 1) * auditPageSize + idx);
                     return (
                       <tr key={audit.id || idx} className="border-b border-slate-100">
-                        <td className="font-mono text-kpugi-slate">
-                          {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <td className="font-mono text-kpugi-slate whitespace-nowrap py-3">
+                          <span className="font-bold text-kpugi-ink text-xs block">
+                            {new Date(audit.settled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                            {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </td>
                         <td className="font-bold text-kpugi-ink">
                           Cycle #{cycleIndex}
@@ -900,7 +916,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         onClose={() => setShowDeleteLinkConfirm(false)}
         onConfirm={handleConfirmDeleteLink}
         title="Remove Post Link?"
-        description="All verified views and audit stats for this post link will be reset to 0. Your reserved slot will remain active in the Joined state so you can submit a new link afresh."
+        description="All verified views, audit history, and associated earnings for this post will be removed. Any cleared earnings will be deducted from your wallet balance and refunded to the campaign budget."
         confirmText="Remove Link & Reset"
         cancelText="Keep Post Link"
         variant="danger"

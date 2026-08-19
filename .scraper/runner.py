@@ -82,22 +82,27 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     # 3.5 Author Handle Ownership Verification (Anti-Fraud)
     connected_handle = sub.get('social_account_handle')
     if connected_handle:
-        norm_handle = str(connected_handle).strip().lstrip('@').lower()
+        import re
+        def clean_handle(val: Any) -> str:
+            if not val:
+                return ""
+            return re.sub(r'[\s\-_\.@]+', '', str(val).lower().strip())
+
+        norm_handle = clean_handle(connected_handle)
 
         # Collect all candidate author identifiers returned by scraper
         candidates = []
         for cand_val in [result.uploader, result.uploader_id, result.channel]:
             if cand_val is not None:
-                cand_str = str(cand_val).strip().lstrip('@').lower()
-                if cand_str and cand_str not in candidates:
-                    candidates.append(cand_str)
+                cand_raw = str(cand_val).strip().lstrip('@')
+                if cand_raw and cand_raw not in candidates:
+                    candidates.append(cand_raw)
 
         # Extract handle from channel_url if available
         if result.channel_url:
-            import re
-            url_match = re.search(r'/(?:@)?([a-zA-Z0-9_.-]{1,30})/?$', str(result.channel_url))
+            url_match = re.search(r'/(?:@)?([a-zA-Z0-9_.\s-]{1,50})/?$', str(result.channel_url))
             if url_match:
-                url_handle = url_match.group(1).lower()
+                url_handle = url_match.group(1).strip()
                 if url_handle not in candidates:
                     candidates.append(url_handle)
 
@@ -108,7 +113,9 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
             # Only evaluate mismatch if we have text usernames (avoid false positives on raw numeric IDs)
             if text_candidates:
                 matched = any(
-                    norm_handle == c or norm_handle in c or c in norm_handle
+                    norm_handle == clean_handle(c) or
+                    (len(norm_handle) >= 3 and norm_handle in clean_handle(c)) or
+                    (len(clean_handle(c)) >= 3 and clean_handle(c) in norm_handle)
                     for c in text_candidates
                 )
 
@@ -193,11 +200,12 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     updates.update({
         "pending_payout_amount": incremental_payout,
         "auto_approve_at": auto_approve_at,
-        "status": "pending" if sub.get("status") != "verified_pass" else "verified_pass",
+        "status": "verified_pass",
+        "verified_at": now_utc.isoformat(),
     })
 
     db.update_submission(sub_id, updates)
-    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Pending Payout: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: {updates['status']}")
+    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Accruing Payout Today: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: verified_pass")
 
     return {
         "id": sub_id[:8],

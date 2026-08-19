@@ -25,7 +25,7 @@ export interface ValidationResult {
  */
 export function normalizeHandle(handle?: string | null): string {
   if (!handle) return '';
-  return handle.trim().replace(/^@+/, '').toLowerCase();
+  return handle.trim().replace(/^@+/, '').replace(/[\s\-_.]+/g, '').toLowerCase();
 }
 
 /**
@@ -316,7 +316,8 @@ export function validatePostUrlOwnership(
 
   // 2. Author Handle Ownership Enforcement
   if (normConnectedHandle && parsed.extractedHandle) {
-    if (parsed.extractedHandle !== normConnectedHandle) {
+    const normExtracted = normalizeHandle(parsed.extractedHandle);
+    if (normExtracted !== normConnectedHandle && !normConnectedHandle.includes(normExtracted) && !normExtracted.includes(normConnectedHandle)) {
       const platformDisplay = parsed.platform === 'x' ? 'X (Twitter)' : parsed.platform.toUpperCase();
       return {
         isValid: false,

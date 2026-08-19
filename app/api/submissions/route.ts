@@ -223,7 +223,7 @@ export async function POST(req: Request) {
     if (action === 'delete_link') {
       const { data: subToReset, error: findErr } = await supabase
         .from('submissions')
-        .select('id, status, post_url')
+        .select('id, status, post_url, payout_amount, pending_payout_amount')
         .eq('campaign_id', campaignId)
         .eq('creator_id', userProfile.profile.id)
         .maybeSingle();
@@ -232,17 +232,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Submission not found for this campaign.' }, { status: 404 });
       }
 
-      if (subToReset.status === 'paid') {
-        return NextResponse.json({ 
-          error: 'Cannot delete link for a campaign that has already completed payout.' 
-        }, { status: 400 });
-      }
+      const clearedPayout = Number(subToReset.payout_amount || 0);
 
-      // 1. Delete associated verification checks for this submission
-      await supabase
-        .from('verification_checks')
-        .delete()
-        .eq('submission_id', subToReset.id);
+      // 1. Delete associated verification checks, audits, and transactions
+      await Promise.all([
+        supabase
+          .from('verification_checks')
+          .delete()
+          .eq('submission_id', subToReset.id),
+        supabase
+          .from('submission_audits')
+          .delete()
+          .eq('submission_id', subToReset.id),
+        supabase
+          .from('wallet_transactions')
+          .delete()
+          .eq('submission_id', subToReset.id),
+      ]);
 
       // 2. Reset submission back to 'joined' state with 0 stats
       const { data: updatedSub, error: updateErr } = await supabase
@@ -252,12 +258,14 @@ export async function POST(req: Request) {
           screenshot_url: null,
           status: 'joined',
           final_view_count: 0,
+          last_paid_view_count: 0,
+          max_verified_views: 0,
           likes_count: 0,
           comments_count: 0,
           shares_count: 0,
           watch_time_seconds: 0,
           pending_payout_amount: 0,
-          payout_amount: null,
+          payout_amount: 0,
           last_scraped_at: null,
           verified_at: null,
           submitted_at: new Date().toISOString(),
@@ -272,6 +280,87 @@ export async function POST(req: Request) {
         console.error('[Submissions API] Error resetting post link:', updateErr);
         return NextResponse.json({ error: 'Failed to delete post link. Please try again.' }, { status: 500 });
       }
+
+      // 3. Clawback & Reversal: If funds had cleared to creator balance, reverse and refund campaign
+      if (clearedPayout > 0) {
+        const { data: creatorWallet } = await supabase
+          .from('wallets')
+          .select('id, balance')
+          .eq('profile_id', userProfile.profile.id)
+          .eq('wallet_type', 'creator_earnings')
+          .maybeSingle();
+
+        if (creatorWallet) {
+          const newBalance = Number(creatorWallet.balance || 0) - clearedPayout;
+          await supabase
+            .from('wallets')
+            .update({ balance: newBalance })
+            .eq('id', creatorWallet.id);
+
+          await supabase.from('wallet_transactions').insert({
+            wallet_id: creatorWallet.id,
+            type: 'withdrawal',
+            amount: -clearedPayout,
+            campaign_id: campaignId,
+            submission_id: subToReset.id,
+            status: 'completed',
+            paystack_reference: `KP-CLAWBACK-${subToReset.id.slice(0, 8)}-${Date.now()}`,
+          });
+        }
+
+        const { data: camp } = await supabase
+          .from('campaigns')
+          .select('id, spent_budget')
+          .eq('id', campaignId)
+          .maybeSingle();
+
+        if (camp) {
+          const newSpent = Math.max(0, Number(camp.spent_budget || 0) - clearedPayout);
+          await supabase
+            .from('campaigns')
+            .update({ spent_budget: newSpent })
+            .eq('id', campaignId);
+        }
+      }
+
+      // 4. Reconcile Creator Wallet & Total Earned from remaining valid audits
+      const [auditsRes, withdrawalsRes, creatorWalletRes] = await Promise.all([
+        supabase
+          .from('submission_audits')
+          .select('payout_amount, status')
+          .eq('creator_id', userProfile.profile.id),
+        supabase
+          .from('payout_requests')
+          .select('amount, status')
+          .eq('profile_id', userProfile.profile.id),
+        supabase
+          .from('wallets')
+          .select('id, balance')
+          .eq('profile_id', userProfile.profile.id)
+          .eq('wallet_type', 'creator_earnings')
+          .maybeSingle(),
+      ]);
+
+      const validAudits = (auditsRes.data || []).filter(
+        (a: any) => a.status === 'approved' || a.status === 'auto_approved' || a.status === 'completed'
+      );
+      const totalCleared = validAudits.reduce((sum: number, a: any) => sum + Number(a.payout_amount || 0), 0);
+      const totalWithdrawn = (withdrawalsRes.data || [])
+        .filter((w: any) => w.status === 'success' || w.status === 'completed')
+        .reduce((sum: number, w: any) => sum + Number(w.amount || 0), 0);
+      const reconciledBalance = totalCleared - totalWithdrawn;
+
+      if (creatorWalletRes.data) {
+        await supabase
+          .from('wallets')
+          .update({ balance: reconciledBalance })
+          .eq('id', creatorWalletRes.data.id);
+      }
+
+      await supabase
+        .from('creator_profiles')
+        .update({ total_earned: Math.max(0, totalCleared) })
+        .eq('profile_id', userProfile.profile.id);
 
       return NextResponse.json({ success: true, action: 'delete_link', submission: updatedSub });
     }

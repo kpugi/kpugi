@@ -149,13 +149,24 @@ export async function submitCampaignVideoAction(formData: FormData) {
     };
   }
 
-  // Find creator's connected social account
-  const { data: socialAcc } = await supabase
+  // Find creator's connected social account for this platform
+  let { data: socialAcc } = await supabase
     .from('social_accounts')
     .select('id, platform, handle')
     .eq('creator_id', userProfile.profile.id)
     .eq('platform', platform)
     .maybeSingle();
+
+  if (!socialAcc && (platform === 'x' || platform === 'twitter')) {
+    const altPlatform = platform === 'x' ? 'twitter' : 'x';
+    const { data: altAcc } = await supabase
+      .from('social_accounts')
+      .select('id, platform, handle')
+      .eq('creator_id', userProfile.profile.id)
+      .eq('platform', altPlatform)
+      .maybeSingle();
+    socialAcc = altAcc;
+  }
 
   const connectedHandle = socialAcc?.handle || userProfile.creatorProfile?.display_name || userProfile.profile.full_name;
   
@@ -680,7 +691,7 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
   // 1. Find the submission for this campaign
   const { data: submission, error: findErr } = await supabase
     .from('submissions')
-    .select('id, status, post_url')
+    .select('id, status, post_url, payout_amount, pending_payout_amount')
     .eq('campaign_id', campaignId)
     .eq('creator_id', profileId)
     .maybeSingle();
@@ -689,17 +700,25 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
     return { success: false, error: 'Submission not found for this campaign.' };
   }
 
-  if (submission.status === 'paid') {
-    return { success: false, error: 'Cannot delete link for a campaign that has already completed payout.' };
-  }
+  const clearedPayout = Number(submission.payout_amount || 0);
 
-  // 2. Delete verification checks for this submission
-  await supabase
-    .from('verification_checks')
-    .delete()
-    .eq('submission_id', submission.id);
+  // 2. Delete verification checks, submission audits, and previous wallet transactions for this submission
+  await Promise.all([
+    supabase
+      .from('verification_checks')
+      .delete()
+      .eq('submission_id', submission.id),
+    supabase
+      .from('submission_audits')
+      .delete()
+      .eq('submission_id', submission.id),
+    supabase
+      .from('wallet_transactions')
+      .delete()
+      .eq('submission_id', submission.id),
+  ]);
 
-  // 3. Reset submission back to 'joined' state with 0 stats
+  // 3. Reset submission record back to 'joined' state with 0 stats and 0 earnings
   const { error: updateErr } = await supabase
     .from('submissions')
     .update({
@@ -707,12 +726,14 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
       screenshot_url: null,
       status: 'joined',
       final_view_count: 0,
+      last_paid_view_count: 0,
+      max_verified_views: 0,
       likes_count: 0,
       comments_count: 0,
       shares_count: 0,
       watch_time_seconds: 0,
       pending_payout_amount: 0,
-      payout_amount: null,
+      payout_amount: 0,
       last_scraped_at: null,
       verified_at: null,
       submitted_at: new Date().toISOString(),
@@ -725,11 +746,99 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
     return { success: false, error: updateErr.message || 'Failed to remove post link.' };
   }
 
+  // 4. Clawback & Reversal: If funds had cleared to creator balance, reverse and refund campaign
+  if (clearedPayout > 0) {
+    // A. Deduct cleared amount from creator's wallet
+    const { data: creatorWallet } = await supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle();
+
+    if (creatorWallet) {
+      const newBalance = Number(creatorWallet.balance || 0) - clearedPayout;
+      await supabase
+        .from('wallets')
+        .update({ balance: newBalance })
+        .eq('id', creatorWallet.id);
+
+      // Record clawback transaction in wallet_transactions
+      await supabase.from('wallet_transactions').insert({
+        wallet_id: creatorWallet.id,
+        type: 'withdrawal',
+        amount: -clearedPayout,
+        campaign_id: campaignId,
+        submission_id: submission.id,
+        status: 'completed',
+        paystack_reference: `KP-CLAWBACK-${submission.id.slice(0, 8)}-${Date.now()}`,
+      });
+    }
+
+    // B. Refund campaign spent_budget
+    const { data: camp } = await supabase
+      .from('campaigns')
+      .select('id, spent_budget')
+      .eq('id', campaignId)
+      .maybeSingle();
+
+    if (camp) {
+      const newSpent = Math.max(0, Number(camp.spent_budget || 0) - clearedPayout);
+      await supabase
+        .from('campaigns')
+        .update({ spent_budget: newSpent })
+        .eq('id', campaignId);
+    }
+  }
+
+  // 5. Reconcile Creator Wallet & Total Earned from remaining valid audits
+  const [auditsRes, withdrawalsRes, creatorWalletRes] = await Promise.all([
+    supabase
+      .from('submission_audits')
+      .select('payout_amount, status')
+      .eq('creator_id', profileId),
+    supabase
+      .from('payout_requests')
+      .select('amount, status')
+      .eq('profile_id', profileId),
+    supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle(),
+  ]);
+
+  const validAudits = (auditsRes.data || []).filter(
+    (a) => a.status === 'approved' || a.status === 'auto_approved' || a.status === 'completed'
+  );
+  const totalCleared = validAudits.reduce((sum, a) => sum + Number(a.payout_amount || 0), 0);
+  const totalWithdrawn = (withdrawalsRes.data || [])
+    .filter((w) => w.status === 'success' || w.status === 'completed')
+    .reduce((sum, w) => sum + Number(w.amount || 0), 0);
+  const reconciledBalance = totalCleared - totalWithdrawn;
+
+  if (creatorWalletRes.data) {
+    await supabase
+      .from('wallets')
+      .update({ balance: reconciledBalance })
+      .eq('id', creatorWalletRes.data.id);
+  }
+
+  await supabase
+    .from('creator_profiles')
+    .update({ total_earned: Math.max(0, totalCleared) })
+    .eq('profile_id', profileId);
+
+  revalidatePath('/c/wallet');
+  revalidatePath('/c/dashboard');
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath(`/c/campaigns/${campaignId}`);
   revalidatePath(`/browse/${campaignId}`);
   revalidatePath('/c/campaigns');
   revalidatePath('/c/submissions');
+  revalidatePath(`/b/campaigns/${campaignId}`);
+  revalidatePath('/b/dashboard');
   return { success: true };
 }
 
