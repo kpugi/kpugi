@@ -45,7 +45,8 @@ def detect_platform(url: str) -> str:
 
 def extract_post_metrics(url: str) -> ScrapeResult:
     """
-    Extracts metrics from any supported social URL using yt-dlp with multi-layer fallback.
+    Extracts metrics from any supported social URL using dedicated high-fidelity extractors
+    with multi-layer fallbacks.
     """
     if not url or not url.startswith(('http://', 'https://')):
         return ScrapeResult(
@@ -59,29 +60,26 @@ def extract_post_metrics(url: str) -> ScrapeResult:
     if platform in ('threads', 'linkedin', 'generic'):
         return extract_opengraph_fallback(url, platform)
     
-    # 2. Primary Extraction: Universal yt-dlp Engine for YouTube, TikTok, X, Instagram, Facebook
+    # 2. YouTube High-Fidelity Dedicated Extractor (Innertube Player API + Web HTML Parser)
+    if platform == 'youtube':
+        yt_res = extract_youtube_fallback(url)
+        if yt_res and yt_res.reachable and yt_res.view_count is not None:
+            return yt_res
+
+    # 3. X / Twitter High-Fidelity Dedicated Extractor (FixTweet API + Syndication)
+    if platform == 'x':
+        x_res = extract_twitter_syndication(url)
+        if x_res and x_res.reachable:
+            return x_res
+
+    # 4. Universal yt-dlp Engine for TikTok, Instagram, Facebook
     result = extract_with_ytdlp(url, platform)
 
-    # If yt-dlp succeeded with view count, return immediately
     if result.reachable and result.view_count is not None:
         return result
 
-    # 3. Secondary Platform-Specific Fallbacks
-    if platform == 'x':
-        fb_result = extract_twitter_syndication(url)
-        if fb_result and fb_result.reachable:
-            if fb_result.view_count is not None or not result.reachable:
-                return fb_result
-            if result.reachable:
-                result.view_count = fb_result.view_count or result.view_count
-                result.like_count = fb_result.like_count or result.like_count
-                result.comment_count = fb_result.comment_count or result.comment_count
-                result.share_count = fb_result.share_count or result.share_count
-                result.extractor = f"{result.extractor}+{fb_result.extractor}"
-                return result
-            return fb_result
-
-    elif platform == 'tiktok':
+    # 5. Secondary Platform Fallbacks
+    if platform == 'tiktok':
         fb_result = extract_tiktok_fallback(url)
         if fb_result and fb_result.reachable:
             if result.reachable:
@@ -90,15 +88,7 @@ def extract_post_metrics(url: str) -> ScrapeResult:
                 return result
             return fb_result
 
-    elif platform == 'youtube':
-        fb_result = extract_youtube_fallback(url)
-        if fb_result and fb_result.reachable:
-            if result.reachable:
-                result.view_count = fb_result.view_count or result.view_count
-                return result
-            return fb_result
-
-    # 4. Tertiary Generic OpenGraph / Meta Tag Scraper
+    # 6. Tertiary Generic OpenGraph / Meta Tag Scraper
     if not result.reachable:
         og_result = extract_opengraph_fallback(url, platform)
         if og_result.reachable:

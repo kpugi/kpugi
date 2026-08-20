@@ -31,6 +31,9 @@ export interface CreatorSubmission {
 export interface CreatorOverviewData {
   totalEarned: number;
   walletBalance: number;
+  todayAccrual: number;
+  todayViews: number;
+  pendingEscrow?: number;
   activeSubmissions: number;
   pendingAudits: number;
   completedCampaigns: number;
@@ -75,6 +78,7 @@ export interface CreatorEarningsData {
   availableBalance: number;
   pendingEscrow: number;
   todayAccrual: number;
+  todayViews?: number;
   totalEarned: number;
   totalWithdrawn: number;
   lastWithdrawalDate: string | null;
@@ -201,15 +205,28 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     };
   });
 
+  // 2. Compute Today's In-Cycle Accrual & Views
+  let todayAccrual = 0;
+  let todayViews = 0;
+
+  submissions.forEach((s) => {
+    const pendingPayout = Number(s.pending_payout_amount || 0);
+    if (pendingPayout > 0) {
+      todayAccrual += pendingPayout;
+      const finalViews = Number(s.final_view_count || 0);
+      todayViews += finalViews;
+    }
+  });
+
   const activeSubmissions = submissions.filter(
-    (s) => s.status === 'pending' || s.status === 'under_review' || s.status === 'approved' || s.status === 'reserved' || s.status === 'joined'
+    (s) => s.status === 'pending' || s.status === 'under_review' || s.status === 'approved' || s.status === 'reserved' || s.status === 'joined' || s.status === 'verified_pass' || s.status === 'auditing'
   ).length;
 
-  const pendingAudits = submissions.filter((s) => s.status === 'under_review' || s.status === 'pending').length;
+  const pendingAudits = submissions.filter((s) => s.status === 'under_review' || s.status === 'pending' || s.status === 'auditing').length;
   const completedCampaigns = submissions.filter((s) => s.status === 'paid' || s.status === 'completed' || s.status === 'verified_pass').length;
   const totalVerifiedViews = submissions.reduce((sum, s) => sum + (s.final_view_count || 0), 0);
 
-  const featured = submissions.find((s) => s.status === 'under_review' || s.status === 'pending' || s.status === 'reserved' || s.status === 'joined') || submissions[0];
+  const featured = submissions.find((s) => s.status === 'under_review' || s.status === 'pending' || s.status === 'reserved' || s.status === 'joined' || s.status === 'verified_pass') || submissions[0];
 
   // 3. Recommended open opportunities (campaigns the creator has not joined yet)
   const joinedCampaignIds = submissions.map((s) => s.campaign?.id).filter(Boolean);
@@ -264,6 +281,8 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   return {
     totalEarned: creatorProfile?.total_earned || 0,
     walletBalance: wallet?.balance || 0,
+    todayAccrual,
+    todayViews: todayViews > 0 ? todayViews : totalVerifiedViews,
     activeSubmissions,
     pendingAudits,
     completedCampaigns,
@@ -406,184 +425,7 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
 
 
 
-/**
- * Checks for any submissions where auto_approve_at <= now() and pending_payout_amount > 0,
- * and automatically releases the funds into the creator's wallet balance.
- */
-export async function autoReleaseMaturedSubmissions(supabaseClient?: any, creatorProfileId?: string): Promise<number> {
-  const supabase = supabaseClient || createAdminClient();
-  const now = new Date().toISOString();
 
-  let query = supabase
-    .from('submissions')
-    .select(`
-      id,
-      creator_id,
-      campaign_id,
-      pending_payout_amount,
-      payout_amount,
-      final_view_count,
-      reserved_amount,
-      max_verified_views,
-      last_paid_view_count,
-      auto_approve_at,
-      campaign:campaigns (
-        id,
-        title,
-        total_budget,
-        advertiser_id,
-        cpm_rate,
-        spent_budget,
-        reserved_budget
-      )
-    `)
-    .gt('pending_payout_amount', 0)
-    .lte('auto_approve_at', now);
-
-  if (creatorProfileId) {
-    query = query.eq('creator_id', creatorProfileId);
-  }
-
-  const { data: expiredSubs, error: fetchErr } = await query;
-  if (fetchErr || !expiredSubs || expiredSubs.length === 0) return 0;
-
-  let releasedCount = 0;
-
-  for (const sub of expiredSubs) {
-    const campaign = (sub as any).campaign;
-    const rawPendingPayout = Number(sub.pending_payout_amount || 0);
-    if (rawPendingPayout <= 0) continue;
-
-    const totalBudget = Number(campaign?.total_budget || 0);
-    const maxCreatorCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
-    const currentPaid = Number(sub.payout_amount || 0);
-    const maxAllowable = Math.max(0, maxCreatorCap - currentPaid);
-    const pendingPayout = Math.min(rawPendingPayout, maxAllowable);
-
-    if (pendingPayout <= 0) {
-      await supabase
-        .from('submissions')
-        .update({
-          pending_payout_amount: 0,
-          auto_approve_at: null,
-          status: 'completed',
-        })
-        .eq('id', sub.id);
-      continue;
-    }
-
-    const newTotalPayout = currentPaid + pendingPayout;
-    const viewCount = Number(sub.final_view_count || 0);
-    const reservedAmt = Number(sub.reserved_amount || 0);
-    const newReservedBudget = Math.max(0, Number(campaign?.reserved_budget || 0) - reservedAmt);
-
-    // 1. Credit or initialize creator wallet balance
-    const { data: creatorWallet } = await supabase
-      .from('wallets')
-      .select('id, balance')
-      .eq('profile_id', sub.creator_id)
-      .eq('wallet_type', 'creator_earnings')
-      .maybeSingle();
-
-    if (creatorWallet) {
-      await supabase
-        .from('wallets')
-        .update({ balance: Number(creatorWallet.balance || 0) + pendingPayout })
-        .eq('id', creatorWallet.id);
-
-      await supabase.from('wallet_transactions').insert({
-        wallet_id: creatorWallet.id,
-        type: 'payout',
-        amount: pendingPayout,
-        campaign_id: sub.campaign_id,
-        submission_id: sub.id,
-        paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
-        status: 'completed',
-        created_at: now,
-      });
-    } else {
-      const { data: newWallet } = await supabase
-        .from('wallets')
-        .insert({
-          profile_id: sub.creator_id,
-          wallet_type: 'creator_earnings',
-          balance: pendingPayout,
-        })
-        .select('id')
-        .single();
-
-      if (newWallet) {
-        await supabase.from('wallet_transactions').insert({
-          wallet_id: newWallet.id,
-          type: 'payout',
-          amount: pendingPayout,
-          campaign_id: sub.campaign_id,
-          submission_id: sub.id,
-          paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
-          status: 'completed',
-          created_at: now,
-        });
-      }
-    }
-
-    // 2. Update creator total_earned
-    const { data: creatorProf } = await supabase
-      .from('creator_profiles')
-      .select('total_earned')
-      .eq('profile_id', sub.creator_id)
-      .maybeSingle();
-
-    if (creatorProf) {
-      await supabase
-        .from('creator_profiles')
-        .update({ total_earned: Number(creatorProf.total_earned || 0) + pendingPayout })
-        .eq('profile_id', sub.creator_id);
-    }
-
-    // 3. Update campaign spent_budget and reserved_budget
-    if (campaign) {
-      await supabase
-        .from('campaigns')
-        .update({
-          spent_budget: Number(campaign.spent_budget || 0) + pendingPayout,
-          reserved_budget: newReservedBudget,
-          updated_at: now,
-        })
-        .eq('id', campaign.id);
-    }
-
-    // 4. Update submission record state to settled
-    await supabase
-      .from('submissions')
-      .update({
-        status: newTotalPayout >= maxCreatorCap ? 'completed' : 'verified_pass',
-        payout_amount: newTotalPayout,
-        last_paid_view_count: viewCount,
-        max_verified_views: Math.max(viewCount, Number(sub.max_verified_views || 0)),
-        pending_payout_amount: 0,
-        auto_approve_at: null,
-        paid_at: now,
-        verified_at: now,
-      })
-      .eq('id', sub.id);
-
-    // 5. Log immutable Audit History Record
-    await supabase.from('submission_audits').insert({
-      submission_id: sub.id,
-      campaign_id: sub.campaign_id,
-      creator_id: sub.creator_id,
-      views_scraped: viewCount,
-      views_delta: Math.max(0, viewCount - Number(sub.last_paid_view_count || 0)),
-      payout_amount: pendingPayout,
-      status: 'auto_approved',
-      settled_at: now,
-    });
-
-    releasedCount++;
-  }
-
-  return releasedCount;
-}
 
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
@@ -680,11 +522,20 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   const lastWithdrawalDate = payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
 
-  // 2. Compute Today's In-Cycle Accrual (Views gathered today 00:01 - 23:59 before midnight batch)
-  const todayAccrual = rawSubmissions.reduce(
-    (sum: number, s: any) => sum + Number(s.pending_payout_amount || 0),
-    0
-  );
+  // 2. Compute Today's In-Cycle Accrual & Views (Views gathered today 00:01 - 23:59 before midnight batch)
+  let todayAccrual = 0;
+  let todayViews = 0;
+
+  rawSubmissions.forEach((s: any) => {
+    const pendingPayout = Number(s.pending_payout_amount || 0);
+    if (pendingPayout > 0) {
+      todayAccrual += pendingPayout;
+      const finalViews = Number(s.final_view_count || 0);
+      const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
+      const deltaViews = Math.max(0, finalViews - lastPaid);
+      todayViews += deltaViews > 0 ? deltaViews : finalViews;
+    }
+  });
 
   // 3. Compute Pending Clearance from active 24h escrow batch transactions
   const nowTime = Date.now();
@@ -788,6 +639,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     availableBalance: Number(availableBalance || 0),
     pendingEscrow: Number(pendingEscrow || 0),
     todayAccrual: Number(todayAccrual || 0),
+    todayViews: Number(todayViews || 0),
     totalEarned: Number(totalEarned || 0),
     totalWithdrawn: Number(totalWithdrawn || 0),
     lastWithdrawalDate,

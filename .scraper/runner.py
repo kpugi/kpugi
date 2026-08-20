@@ -162,6 +162,8 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
         updates["comments_count"] = result.comment_count
     if result.share_count is not None:
         updates["shares_count"] = result.share_count
+    if result.duration is not None:
+        updates["watch_time_seconds"] = int(result.duration)
 
     # Check minimum threshold
     if final_views < min_view_threshold:

@@ -72,10 +72,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
       <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-xl border border-slate-800">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-slate-200 border border-white/15 text-[11px] font-bold font-mono uppercase tracking-wider backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Creator Command Center
-            </div>
+          
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
               Good day, {displayName}! 👋
             </h1>
@@ -104,15 +101,11 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
       {data.kycStatus !== 'verified' && (
         <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50 border border-amber-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-md">
-              🛡️
-            </div>
+            
             <div>
               <h3 className="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
                 <span>ID Verification Required</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 uppercase">
-                  {data.kycStatus === 'pending' ? 'Verification Pending' : 'Action Needed'}
-                </span>
+               
               </h3>
               <p className="font-sans text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
                 To protect campaign payouts and comply with platform regulations, creators must verify their official government ID (NIN, Voter Card, or Passport) before requesting withdrawals.
@@ -176,14 +169,10 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           <div>
             <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-ink flex items-baseline gap-2">
               <span>{data.activeSubmissions}</span>
-              {data.activeSubmissions > 0 && (
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md uppercase font-sans">
-                  Auditing
-                </span>
-              )}
+             
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-kpugi-border/60">
-              <span className="font-sans text-[11px] text-kpugi-slate">Posts in hourly sync</span>
+              <span className="font-sans text-[11px] text-kpugi-slate">Posts in daily cycle</span>
               <Link
                 href="/c/submissions"
                 className="text-[11px] font-bold text-kpugi-slate hover:text-kpugi-ink hover:underline flex items-center gap-0.5"
@@ -195,46 +184,54 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </div>
         </div>
 
-        {/* Card 3: Verified Views Audited */}
+        {/* Card 3: Today's Audited Views */}
         <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-400/40 transition-all">
           <div className="flex items-center justify-between">
-            <span className="font-sans text-xs font-bold text-kpugi-slate uppercase tracking-wider">Audited Views</span>
+            <span className="font-sans text-xs font-bold text-kpugi-slate uppercase tracking-wider">
+              {Number(data.todayAccrual || 0) > 0 ? "Today's Views" : "Views"}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <Eye className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-ink">
-              {(data.totalVerifiedViews || 0).toLocaleString()}
+              {(Number(data.todayViews || 0) > 0 ? Number(data.todayViews) : Number(data.totalVerifiedViews || 0)).toLocaleString()}
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-kpugi-border/60">
-              <span className="font-sans text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Verified public reach
+              <span className="font-sans text-[11px] text-emerald-600 font-bold flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                {Number(data.todayAccrual || 0) > 0 ? "Live in today's cycle" : "Verified public reach"}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Card 4: Total Cleared Earnings */}
+        {/* Card 4: Today's Earnings / Total Earnings */}
         <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-400/40 transition-all">
           <div className="flex items-center justify-between">
-            <span className="font-sans text-xs font-bold text-kpugi-slate uppercase tracking-wider">Total Earnings</span>
+            <span className="font-sans text-xs font-bold text-kpugi-slate uppercase tracking-wider">
+              {Number(data.todayAccrual || 0) > 0 ? "Today's Earnings" : "Total Earnings"}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-ink">
-              {formatCompactCurrency(data.totalEarned || 0)}
+              {Number(data.todayAccrual || 0) > 0
+                ? `+₦${Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 0 })}`
+                : formatCompactCurrency(data.totalEarned || 0)}
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-kpugi-border/60">
-              <span className="font-sans text-[11px] text-kpugi-slate">Accumulated lifetime</span>
+              <span className="font-sans text-[11px] text-kpugi-slate truncate max-w-[150px]">
+                {Number(data.todayAccrual || 0) > 0 ? "24h escrow at midnight" : "Accumulated lifetime"}
+              </span>
               <Link
                 href="/c/wallet"
-                className="text-[11px] font-bold text-kpugi-slate hover:text-kpugi-ink hover:underline flex items-center gap-0.5"
+                className="text-[11px] font-bold text-kpugi-blue hover:underline flex items-center gap-0.5 shrink-0"
               >
-                <span>Ledger</span>
+                <span>Wallet</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -302,7 +299,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                         })()}
                       </div>
                       <span className="font-sans text-[10px] font-bold text-kpugi-slate uppercase tracking-wider block">
-                        {featuredSub.status === 'paid' || featuredSub.status === 'completed' ? 'Cleared Payout' : 'Earned Escrow'}
+                        {featuredSub.status === 'paid' || featuredSub.status === 'completed' ? 'Cleared Payout' : 'Earned'}
                       </span>
                     </div>
                   </div>
@@ -321,27 +318,13 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                         
                         {/* Live Sync Status & Countdown Ticker */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80">
-                          <div className="flex items-center gap-2">
-                            <span className="relative flex h-2.5 w-2.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                            </span>
-                            <span className="font-sans text-xs font-bold text-kpugi-ink">
-                              Automated View Auditor Active
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-kpugi-slate bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                            <Clock className="w-3.5 h-3.5 text-kpugi-blue" />
-                            <span>Next Sync in {formatTimer(secondsToNextAudit)}</span>
-                          </div>
                         </div>
 
                         {/* View Progress Metric */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between font-sans text-xs font-bold">
                             <span className="text-kpugi-ink flex items-center gap-1.5">
-                              <span>Milestone View Threshold</span>
+                              <span>View Threshold</span>
                               {isGoalReached && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -381,7 +364,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                               rel="noopener noreferrer"
                               className="font-bold text-kpugi-blue hover:underline inline-flex items-center gap-1 ml-auto"
                             >
-                              <span>View Public Post</span>
+                              <span>View Post</span>
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           )}
@@ -421,7 +404,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                       className="font-sans flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-kpugi-blue/20 transition-all transform hover:-translate-y-0.5 active:scale-95"
                     >
                       <Zap className="w-4 h-4 fill-current" />
-                      <span>{featuredSub.post_url ? 'Open Campaign Workspace' : 'Submit Post Link'}</span>
+                      <span>{featuredSub.post_url ? 'Open Workspace' : 'Submit Post Link'}</span>
                     </Link>
 
                     <Link
@@ -556,14 +539,14 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display font-extrabold text-xl text-kpugi-ink">
-              Recommended High-CPM Opportunities
+              Recommended High-CPM Campaigns
             </h3>
             <p className="font-sans text-xs text-kpugi-slate mt-0.5">
-              Curated active briefs with guaranteed escrow funding ready for placement.
+              Curated active campaigns with guaranteed escrow funding ready for placement.
             </p>
           </div>
           <Link href="/browse" className="text-xs font-bold text-kpugi-blue hover:underline flex items-center gap-1">
-            <span>Explore All Briefs</span>
+            <span>Explore</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -650,10 +633,10 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display font-extrabold text-xl text-kpugi-ink">
-              Recent Financial Settlements
+              Recent Runs
             </h3>
             <p className="font-sans text-xs text-kpugi-slate mt-0.5">
-              Direct escrow clearances and automated view audit payouts.
+              Direct payout clearances and automated view audits
             </p>
           </div>
 
@@ -661,7 +644,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
             href="/c/wallet"
             className="text-xs font-bold text-kpugi-blue hover:underline flex items-center gap-1"
           >
-            <span>View Full Ledger</span>
+            <span>View Runs</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

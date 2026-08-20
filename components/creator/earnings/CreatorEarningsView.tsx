@@ -92,6 +92,44 @@ function ClearanceCountdown({ targetDate }: { targetDate: string }) {
   );
 }
 
+function DailyCycleCountdown() {
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  useEffect(() => {
+    function updateCountdown() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+
+      const diff = Math.max(0, midnight.getTime() - now.getTime());
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      setTimeLeft({ hours, minutes, seconds });
+    }
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 text-slate-700 border border-blue-200/80 shadow-2xs font-mono text-xs font-semibold whitespace-nowrap shrink-0 tabular-nums">
+      <Clock className="w-3.5 h-3.5 text-kpugi-blue animate-pulse shrink-0" />
+      <span className="text-[11px] font-sans font-medium text-slate-500">Closes in:</span>
+      <span className="text-kpugi-blue font-bold tracking-tight">
+        {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
+      </span>
+    </div>
+  );
+}
+
 export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) {
   const [mounted, setMounted] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
@@ -400,22 +438,35 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
       {/* Today's In-Cycle Accrual (00:01 - 23:59) */}
       {Number(data.todayAccrual || 0) > 0 && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-blue-50/90 border border-blue-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-3">
-            
-            <div>
-              <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <span>Today's Live Accrual</span>
-               
-              </div>
-              <p className="text-slate-600 text-xs mt-0.5">
-                Verified views gathered today will close at midnight into a single 24-hour pending escrow batch.
-              </p>
+        <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-blue-50/90 via-indigo-50/40 to-blue-50/80 border border-blue-200/80 shadow-xs flex flex-col items-center text-center space-y-3">
+          {/* Subtle Cycle Indicator */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-100/70 border border-blue-200/50 text-[11px] font-medium text-slate-600">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Today&apos;s Earnings</span>
+          </div>
+
+          {/* Centered Huge Earning Amount */}
+          <div className="space-y-1">
+            <div className="font-mono font-black text-3xl sm:text-4xl lg:text-5xl text-kpugi-blue tracking-tight">
+              +₦{Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </div>
+
+            {/* Corresponding Views Collation */}
+            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
+              <Eye className="w-3.5 h-3.5 text-slate-400" />
+              <span><strong className="text-slate-800 font-bold font-mono">{Number(data.todayViews || 0).toLocaleString()}</strong> views</span>
             </div>
           </div>
-          <div className="text-right font-mono font-black text-kpugi-blue text-lg sm:text-xl shrink-0 bg-white/80 px-4 py-2 rounded-2xl border border-blue-100">
-            +₦{Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+
+          {/* Timer Centered Below (Smaller than Amount) */}
+          <div className="pt-1">
+            <DailyCycleCountdown />
           </div>
+
+          {/* Subtle Explanation Subtext */}
+          <p className="text-[11px] text-slate-400 max-w-md pt-0.5 leading-relaxed">
+            Views close at midnight into a single 24-hour pending daily earnings before moving to available balance.
+          </p>
         </div>
       )}
 
