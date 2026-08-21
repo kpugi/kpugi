@@ -370,13 +370,13 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
   };
 
   return (
-    <div className="space-y-6 pb-12 font-sans">
+    <div className="space-y-6 pb-12 font-sans text-kpugi-ink dark:text-white">
       {/* Page Header */}
       <div className="space-y-1">
-        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Brand ROI Analytics
         </h1>
-        <p className="text-xs sm:text-sm font-medium text-slate-500">
+        <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
           Aggregate cross-campaign view throughput, Cost Per View (CPV), and platform distribution performance.
         </p>
       </div>
@@ -384,15 +384,15 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
       {/* Top 4 KPI Summary Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: TOTAL VIEWS DELIVERED */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 block">
             Total Views Delivered
           </span>
-          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             {formatViews(totalViews)}
           </p>
           <div className="flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-500/30">
               <TrendingUp className="w-3 h-3" />
               Live Performance
             </span>
@@ -400,64 +400,64 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
         </div>
 
         {/* Card 2: EFFECTIVE CPV */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 block">
             Effective CPV
           </span>
-          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             ₦{cpv.toFixed(2)}
           </p>
           <div className="flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-              <TrendingDown className="w-3 h-3 text-emerald-600" />
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-500/30">
+              <TrendingDown className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               Cost Per View
             </span>
           </div>
         </div>
 
         {/* Card 3: AVERAGE BLENDED CPM */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 block">
             Average Blended CPM
           </span>
-          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             ₦{Math.round(avgCpm).toLocaleString()}
           </p>
-          <span className="text-[11px] font-medium text-slate-400 block">
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 block">
             per 1,000 Views
           </span>
         </div>
 
         {/* Card 4: TOTAL CAPITAL SPENT */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-2 hover:shadow-xs transition-shadow">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 block">
             Total Capital Spent
           </span>
-          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             {formatCurrency(totalSpent)}
           </p>
-          <span className="text-[11px] font-medium text-slate-400 block">
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 block">
             Verified Creator Payouts
           </span>
         </div>
       </div>
 
-      {/* CLEAN AI INSIGHTS CARD (Identical to Institutional Reports Card: White background, subtle border, rounded-2xl) */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      {/* CLEAN AI INSIGHTS CARD */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-              <Zap className="w-4 h-4 text-[#4338ca]" />
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-500/30 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
             </div>
             <div>
-              <h2 className="font-display text-base font-bold text-slate-900">
+              <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
                 Kpugi AI Intelligence Insights
               </h2>
-              <p className="text-[11px] text-slate-400 font-medium">Real-time performance evaluation engine</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">Real-time performance evaluation engine</p>
             </div>
           </div>
           {isAiLoading && (
-            <span className="text-xs font-bold text-[#4338ca] flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-bold text-[#4338ca] dark:text-indigo-400 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-full">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span>Analyzing live campaigns...</span>
             </span>
@@ -465,12 +465,12 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
         </div>
 
         {totalViews === 0 || campaigns.length === 0 ? (
-          /* TRUTHFUL EMPTY STATE (When no view delivery data exists yet) */
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3 text-xs">
+          /* TRUTHFUL EMPTY STATE */
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-start gap-3 text-xs">
             <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <span className="font-bold text-slate-800 block">No View Delivery Registered Yet</span>
-              <p className="text-slate-500 font-normal leading-relaxed">
+              <span className="font-bold text-slate-800 dark:text-slate-200 block">No View Delivery Registered Yet</span>
+              <p className="text-slate-500 dark:text-slate-400 font-normal leading-relaxed">
                 Your account has no active view delivery data yet. Once your live campaigns begin receiving verified creator submissions and logging views, Kpugi AI will dynamically calculate your CPV optimization recommendations and benchmark comparisons.
               </p>
             </div>
@@ -478,22 +478,22 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
         ) : (
           /* REAL AI INSIGHTS DATA BLOCK */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-900">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
                 <span>Optimization Recommendation</span>
-                <span className="text-[10px] text-[#4338ca] bg-indigo-50 px-2 py-0.5 rounded font-mono font-bold">LIVE AI</span>
+                <span className="text-[10px] text-[#4338ca] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded font-mono font-bold">LIVE AI</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-normal">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                 {aiInsights?.optimizationTip || `Based on ${campaigns.length} live campaign placement(s), your current effective Cost-Per-View is ₦${cpv.toFixed(2)}. Allocating budget toward higher-throughput channel formats will maximize overall view delivery.`}
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-900">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
                 <span>Platform Benchmark Comparison</span>
-                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono font-bold">BENCHMARK</span>
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded font-mono font-bold">BENCHMARK</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-normal">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                 {aiInsights?.benchmarkComparison || `Your brand's blended CPM of ₦${Math.round(avgCpm).toLocaleString()} is being evaluated against standard Nigeria ad-network benchmarks (₦1,500 - ₦2,000 / 1k views).`}
               </p>
             </div>
@@ -509,13 +509,13 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
           {/* ─────────────────────────────────────────────────────────────
               SHADCN/UI INTERACTIVE BAR CHART (Multi-Tab Metric Selector)
           ───────────────────────────────────────────────────────────── */}
-          <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs overflow-hidden">
             {/* Shadcn Interactive Header with Metric Tabs */}
-            <div className="flex flex-col sm:flex-row items-stretch border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row items-stretch border-b border-slate-100 dark:border-white/10">
               <div className="flex flex-1 flex-col justify-center gap-1 p-5 sm:p-6">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-kpugi-blue animate-pulse" />
-                  <h2 className="font-display text-base font-bold text-slate-900">
+                  <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
                     Performance Analytics
                   </h2>
                 </div>
@@ -525,28 +525,28 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
               </div>
 
               {/* Metric Selectors */}
-              <div className="flex border-t sm:border-t-0 sm:border-l border-slate-100 divide-x divide-slate-100">
+              <div className="flex border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-white/10 divide-x divide-slate-100 dark:divide-white/10">
                 {[
                   {
                     key: 'views',
                     label: 'Views Delivered',
                     value: totalViews >= 1000 ? `${(totalViews / 1000).toFixed(1)}k` : totalViews.toLocaleString(),
                     unit: 'views',
-                    color: 'text-indigo-600',
+                    color: 'text-indigo-600 dark:text-indigo-400',
                   },
                   {
                     key: 'spent',
                     label: 'Budget Spent',
                     value: totalSpent >= 1000 ? `₦${(totalSpent / 1000).toFixed(1)}k` : `₦${totalSpent.toLocaleString()}`,
                     unit: 'spent',
-                    color: 'text-blue-600',
+                    color: 'text-blue-600 dark:text-blue-400',
                   },
                   {
                     key: 'cpv',
                     label: 'Effective CPV',
                     value: `₦${cpv.toFixed(2)}`,
                     unit: 'per view',
-                    color: 'text-emerald-600',
+                    color: 'text-emerald-600 dark:text-emerald-400',
                   },
                 ].map((tab) => {
                   const isActive = activeChartTab === tab.key;
@@ -557,11 +557,11 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                       onClick={() => setActiveChartTab(tab.key as 'views' | 'cpv' | 'spent')}
                       className={`relative z-10 flex flex-1 flex-col justify-center gap-1 px-4 py-3 sm:px-6 sm:py-4 text-left transition-all ${
                         isActive
-                          ? 'bg-slate-50/90 shadow-inner'
-                          : 'bg-white hover:bg-slate-50/50'
+                          ? 'bg-slate-50/90 dark:bg-white/10 shadow-inner'
+                          : 'bg-white dark:bg-white/5 hover:bg-slate-50/50 dark:hover:bg-white/[0.07]'
                       }`}
                     >
-                      <span className="text-[11px] text-slate-500 font-medium">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {tab.label}
                       </span>
                       <span className={`text-base sm:text-xl font-display font-extrabold tracking-tight ${tab.color}`}>
@@ -576,9 +576,9 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
             {/* Chart Content Area */}
             <div className="p-4 sm:p-6">
               {chartData.length === 0 || totalViews === 0 ? (
-                <div className="h-56 w-full flex flex-col items-center justify-center p-6 bg-slate-50/60 rounded-xl border border-dashed border-slate-200 text-center space-y-2">
-                  <BarChart2 className="w-8 h-8 text-slate-300" />
-                  <span className="font-bold text-xs text-slate-700 block">No Historical Trajectory Data Available</span>
+                <div className="h-56 w-full flex flex-col items-center justify-center p-6 bg-slate-50/60 dark:bg-white/5 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center space-y-2">
+                  <BarChart2 className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                  <span className="font-bold text-xs text-slate-700 dark:text-slate-300 block">No Historical Trajectory Data Available</span>
                   <p className="text-[11px] text-slate-400 max-w-sm font-normal">
                     Views and spent budget will be charted automatically in real-time as creators deliver verified views.
                   </p>
@@ -640,8 +640,8 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                             if (activeChartTab === 'views') {
                               return (
                                 <div className="flex items-center justify-between w-full gap-4">
-                                  <span className="text-slate-500 font-medium">Views Delivered</span>
-                                  <span className="font-mono font-bold text-indigo-600">
+                                  <span className="text-slate-500 dark:text-slate-400 font-medium">Views Delivered</span>
+                                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
                                     {Number(value).toLocaleString()} views
                                   </span>
                                 </div>
@@ -650,8 +650,8 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                             if (activeChartTab === 'spent') {
                               return (
                                 <div className="flex items-center justify-between w-full gap-4">
-                                  <span className="text-slate-500 font-medium">Budget Spent</span>
-                                  <span className="font-mono font-bold text-blue-600">
+                                  <span className="text-slate-500 dark:text-slate-400 font-medium">Budget Spent</span>
+                                  <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                                     ₦{Number(value).toLocaleString()}
                                   </span>
                                 </div>
@@ -659,8 +659,8 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                             }
                             return (
                               <div className="flex items-center justify-between w-full gap-4">
-                                <span className="text-slate-500 font-medium">Effective CPV</span>
-                                <span className="font-mono font-bold text-emerald-600">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">Effective CPV</span>
+                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                   ₦{Number(value).toFixed(2)} / view
                                 </span>
                               </div>
@@ -688,19 +688,19 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
           </div>
 
           {/* Campaign Performance Breakdown Table */}
-          <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs overflow-hidden">
             {/* Clean Table Header without redundant Filter/Export buttons */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold text-slate-900">
+            <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold text-slate-900 dark:text-white">
                 Campaign Performance
               </h2>
-              <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-300 bg-slate-100 dark:bg-white/10 px-2.5 py-1 rounded-full">
                 {campaigns.length} Active / Live
               </span>
             </div>
 
             {/* Filter & Search Toolbar */}
-            <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="px-5 py-3 bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="relative w-full sm:w-64">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -711,7 +711,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                     setCurrentPage(1);
                   }}
                   placeholder="Search live campaigns..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
                 />
               </div>
 
@@ -722,7 +722,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                     setSelectedChannel(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:outline-none w-full sm:w-auto"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-[#161820] focus:outline-none w-full sm:w-auto"
                 >
                   <option value="All">All Social Networks</option>
                   {allSupportedPlatforms.map((plat) => (
@@ -738,7 +738,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-50/70">
+                  <tr className="border-b border-slate-100 dark:border-white/10 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 bg-slate-50/70 dark:bg-[#161820]">
                     <th className="py-3 px-5">Campaign & Platform</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Views</th>
@@ -746,7 +746,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                     <th className="py-3 px-5 text-right">Effective CPV</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
                   {paginatedCampaigns.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-slate-400">
@@ -757,12 +757,12 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                     paginatedCampaigns.map((camp) => {
                       const campCpv = camp.views_delivered > 0 ? camp.spent_budget / camp.views_delivered : 0;
                       return (
-                        <tr key={camp.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={camp.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors">
                           <td className="py-4 px-5">
                             <div className="flex items-center gap-3">
                               {renderCampaignThumbnail(camp)}
                               <div>
-                                <span className="font-bold text-slate-900 text-xs block">
+                                <span className="font-bold text-slate-900 dark:text-white text-xs block">
                                   {camp.title}
                                 </span>
                                 <span className="text-[11px] text-slate-400 font-normal">
@@ -772,13 +772,13 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                             </div>
                           </td>
                           <td className="py-4 px-4">{getStatusBadge(camp.status)}</td>
-                          <td className="py-4 px-4 text-right font-mono font-bold text-slate-700">
+                          <td className="py-4 px-4 text-right font-mono font-bold text-slate-700 dark:text-slate-300">
                             {formatViews(camp.views_delivered)}
                           </td>
-                          <td className="py-4 px-4 text-right font-mono font-extrabold text-emerald-600">
+                          <td className="py-4 px-4 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
                             {formatCurrency(camp.spent_budget)}
                           </td>
-                          <td className="py-4 px-5 text-right font-mono font-black text-[#4338ca]">
+                          <td className="py-4 px-5 text-right font-mono font-black text-[#4338ca] dark:text-indigo-400">
                             ₦{campCpv.toFixed(2)}
                           </td>
                         </tr>
@@ -790,7 +790,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
             </div>
 
             {/* Mobile Card List View */}
-            <div className="block md:hidden divide-y divide-slate-100">
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-white/5">
               {paginatedCampaigns.length === 0 ? (
                 <div className="p-6 text-center text-xs text-slate-400">
                   No live or completed campaigns found.
@@ -804,7 +804,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                         <div className="flex items-center gap-2.5">
                           {renderCampaignThumbnail(camp)}
                           <div>
-                            <span className="font-bold text-xs text-slate-900 block line-clamp-1">
+                            <span className="font-bold text-xs text-slate-900 dark:text-white block line-clamp-1">
                               {camp.title}
                             </span>
                             <span className="text-[10px] text-slate-400">
@@ -815,18 +815,18 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                         {getStatusBadge(camp.status)}
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center">
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl border border-slate-100 dark:border-white/10 text-center">
                         <div>
                           <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Views</span>
-                          <span className="font-mono text-xs font-bold text-slate-800">{formatViews(camp.views_delivered)}</span>
+                          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{formatViews(camp.views_delivered)}</span>
                         </div>
                         <div>
                           <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Spent</span>
-                          <span className="font-mono text-xs font-extrabold text-emerald-600">{formatCurrency(camp.spent_budget)}</span>
+                          <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(camp.spent_budget)}</span>
                         </div>
                         <div>
                           <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Effective CPV</span>
-                          <span className="font-mono text-xs font-black text-[#4338ca]">₦{campCpv.toFixed(2)}</span>
+                          <span className="font-mono text-xs font-black text-[#4338ca] dark:text-indigo-400">₦{campCpv.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -836,7 +836,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
             </div>
 
             {/* Pagination Controls */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="p-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>
                 Showing {filteredCampaigns.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
                 {Math.min(currentPage * itemsPerPage, filteredCampaigns.length)} of {filteredCampaigns.length} campaigns
@@ -846,7 +846,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                  className="w-7 h-7 rounded-lg border border-slate-200 dark:border-white/10 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -854,7 +854,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                   type="button"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                  className="w-7 h-7 rounded-lg border border-slate-200 dark:border-white/10 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -866,27 +866,27 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
         {/* Right Column: Institutional Reports & Global Performance Cards */}
         <div className="lg:col-span-4 space-y-6">
           {/* Institutional Reports Card */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-            <h3 className="font-display text-base font-bold text-slate-900">
+          <div className="p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-4">
+            <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
               Institutional Reports
             </h3>
 
             <div className="space-y-3">
               {/* Item 1: Q3 Performance Summary */}
-              <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3 hover:bg-slate-100/60 transition-colors">
+              <div className="p-3 rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 flex items-center justify-between gap-3 hover:bg-slate-100/60 dark:hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4 text-[#4338ca]" />
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-500/30 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
                   </div>
                   <div>
-                    <span className="font-bold text-xs text-slate-900 block">Q3 Performance Summary</span>
+                    <span className="font-bold text-xs text-slate-900 dark:text-white block">Q3 Performance Summary</span>
                     <span className="text-[10px] text-slate-400 font-medium block">Generated Oct 1, 2023</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleExportStyledCSV('Q3 Performance Summary')}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-white transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-colors"
                   title="Download Report"
                 >
                   <Download className="w-4 h-4" />
@@ -894,20 +894,20 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
               </div>
 
               {/* Item 2: Raw Data Export (CSV) */}
-              <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3 hover:bg-slate-100/60 transition-colors">
+              <div className="p-3 rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 flex items-center justify-between gap-3 hover:bg-slate-100/60 dark:hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                    <TableIcon className="w-4 h-4 text-emerald-600" />
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-500/30 flex items-center justify-center shrink-0">
+                    <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <span className="font-bold text-xs text-slate-900 block">Raw Data Export (CSV)</span>
+                    <span className="font-bold text-xs text-slate-900 dark:text-white block">Raw Data Export (CSV)</span>
                     <span className="text-[10px] text-slate-400 font-medium block">All time</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleExportStyledCSV('Raw Data Export (CSV)')}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-white transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-white dark:hover:bg-white/10 transition-colors"
                   title="Export CSV"
                 >
                   <Download className="w-4 h-4" />
@@ -921,15 +921,15 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                 setReportTitle('Executive Cross-Campaign ROI Report');
                 setIsReportModalOpen(true);
               }}
-              className="w-full py-2.5 px-4 rounded-xl border border-[#4338ca] text-xs font-bold text-[#4338ca] bg-white hover:bg-indigo-50/50 transition-colors shadow-2xs"
+              className="w-full py-2.5 px-4 rounded-xl border border-[#4338ca] dark:border-indigo-500/40 text-xs font-bold text-[#4338ca] dark:text-indigo-400 bg-white dark:bg-white/5 hover:bg-indigo-50/50 dark:hover:bg-white/10 transition-colors shadow-2xs"
             >
               Generate Custom Report
             </button>
           </div>
 
           {/* Global Performance / Multi-Platform Distribution Card */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-            <h3 className="font-display text-base font-bold text-slate-900">
+          <div className="p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-4">
+            <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
               Global Performance
             </h3>
 
@@ -939,10 +939,10 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                 return (
                   <div key={item.name} className="space-y-1">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-slate-700">{item.name}</span>
-                      <span className="text-slate-900 font-mono text-[11px]">{pct}%</span>
+                      <span className="text-slate-700 dark:text-slate-300">{item.name}</span>
+                      <span className="text-slate-900 dark:text-white font-mono text-[11px]">{pct}%</span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${item.color}`}
                         style={{ width: `${pct}%` }}
@@ -959,68 +959,68 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
       {/* Styled Institutional Report Modal */}
       {isReportModalOpen && mounted && createPortal(
         <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto">
-          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 my-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div className="w-full max-w-2xl bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 my-auto text-kpugi-ink dark:text-white">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-[#4338ca]" />
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-500/30 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
                 </div>
                 <div>
-                  <h3 className="font-display font-extrabold text-lg text-slate-900">Custom Institutional Report</h3>
+                  <h3 className="font-display font-extrabold text-lg text-slate-900 dark:text-white">Custom Institutional Report</h3>
                   <p className="text-[11px] text-slate-400 font-medium">Executive analytics preview & export generator</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsReportModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl border border-slate-200"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 rounded-xl border border-slate-200 dark:border-white/10"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Printable & Styled Report Sheet */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-5 font-sans">
-              <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+            <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-5 font-sans">
+              <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-white/10 pb-3">
                 <div>
-                  <span className="font-display font-black text-lg text-slate-900 tracking-tight block">KPUGI</span>
+                  <span className="font-display font-black text-lg text-slate-900 dark:text-white tracking-tight block">KPUGI</span>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Executive Advertising Report</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-slate-900 block">{companyName || 'Brand Partner'}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block">{companyName || 'Brand Partner'}</span>
                   <span className="text-[10px] text-slate-400 font-mono block">{new Date().toLocaleDateString()}</span>
                 </div>
               </div>
 
               {/* KPI Summary Block */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3.5 rounded-xl border border-slate-200/60 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-[#12141A] p-3.5 rounded-xl border border-slate-200/60 dark:border-white/10 text-center">
                 <div>
                   <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Total Views</span>
-                  <span className="font-mono text-sm font-black text-slate-900">{formatViews(totalViews)}</span>
+                  <span className="font-mono text-sm font-black text-slate-900 dark:text-white">{formatViews(totalViews)}</span>
                 </div>
                 <div>
                   <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Effective CPV</span>
-                  <span className="font-mono text-sm font-black text-slate-900">₦{cpv.toFixed(2)}</span>
+                  <span className="font-mono text-sm font-black text-slate-900 dark:text-white">₦{cpv.toFixed(2)}</span>
                 </div>
                 <div>
                   <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Blended CPM</span>
-                  <span className="font-mono text-sm font-black text-slate-900">₦{Math.round(avgCpm).toLocaleString()}</span>
+                  <span className="font-mono text-sm font-black text-slate-900 dark:text-white">₦{Math.round(avgCpm).toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-[9px] font-extrabold uppercase text-slate-400 block">Total Spent</span>
-                  <span className="font-mono text-sm font-black text-emerald-600">{formatCurrency(totalSpent)}</span>
+                  <span className="font-mono text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSpent)}</span>
                 </div>
               </div>
 
               {/* Mini Table Summary */}
               <div className="space-y-2">
                 <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Live & Completed Campaigns</span>
-                <div className="divide-y divide-slate-200/60 border-t border-b border-slate-200/60 text-xs">
+                <div className="divide-y divide-slate-200/60 dark:divide-white/10 border-t border-b border-slate-200/60 dark:border-white/10 text-xs">
                   {campaigns.slice(0, 4).map((c) => (
                     <div key={c.id} className="py-2 flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-xs truncate max-w-[200px]">{c.title}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[200px]">{c.title}</span>
                       <div className="flex items-center gap-4 text-[11px] font-mono">
-                        <span className="text-slate-500">{formatViews(c.views_delivered)} views</span>
-                        <span className="font-bold text-emerald-600">{formatCurrency(c.spent_budget)}</span>
+                        <span className="text-slate-500 dark:text-slate-400">{formatViews(c.views_delivered)} views</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(c.spent_budget)}</span>
                       </div>
                     </div>
                   ))}
@@ -1032,9 +1032,9 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
               <button
                 type="button"
                 onClick={handlePrintReport}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
               >
-                <Printer className="w-4 h-4 text-slate-500" />
+                <Printer className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <span>Print / PDF</span>
               </button>
               <button
@@ -1043,7 +1043,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
                   handleExportStyledCSV(reportTitle);
                   setIsReportModalOpen(false);
                 }}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#4338ca] text-white text-xs font-bold shadow-2xs hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#4338ca] dark:bg-indigo-600 text-white text-xs font-bold shadow-2xs hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Executive CSV</span>

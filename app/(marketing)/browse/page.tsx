@@ -291,7 +291,7 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
   const bgClass = gradients[index % gradients.length];
 
   return (
-    <article className="group relative flex flex-col bg-[#12141A] rounded-2xl overflow-hidden hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-white/5 hover:border-white/10 cursor-pointer">
+    <article className="group relative flex flex-col bg-white dark:bg-[#12141A] rounded-2xl overflow-hidden hover:bg-slate-50 dark:hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-kpugi-border dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 cursor-pointer shadow-xs">
       {/* Thumbnail Area */}
       <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
         {/* AI Match Score Badge Overlay (Only for creators & guests, hidden for advertisers) */}
@@ -335,22 +335,22 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
               <img 
                 src={c.brandLogo} 
                 alt={c.brand} 
-                className="w-5 h-5 rounded-full object-cover border border-white/10 shadow-sm shrink-0"
+                className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-white/10 shadow-sm shrink-0"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+              <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold text-kpugi-ink dark:text-white shrink-0">
                 {c.brand.charAt(0)}
               </div>
             )}
-            <span className="text-[13px] font-semibold text-white/90 truncate max-w-[90px]">{c.brand}</span>
+            <span className="text-[13px] font-semibold text-kpugi-ink dark:text-white/90 truncate max-w-[90px]">{c.brand}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#E4A12C] shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            <span className="text-[13px] text-white/40 shrink-0">·</span>
-            <span className="text-[13px] text-white/40 shrink-0">{c.timePosted}</span>
+            <span className="text-[13px] text-kpugi-slate dark:text-white/40 shrink-0">·</span>
+            <span className="text-[13px] text-kpugi-slate dark:text-white/40 shrink-0">{c.timePosted}</span>
           </div>
           
           <div className="flex items-center gap-1.5 shrink-0">
             {c.platform.map(p => (
-              <div key={p} className="w-5 h-5 rounded-full bg-black flex items-center justify-center border border-white/10">
+              <div key={p} className="w-5 h-5 rounded-full bg-slate-100 dark:bg-black flex items-center justify-center border border-slate-200 dark:border-white/10 text-kpugi-ink dark:text-white">
                 <PlatformIcon platform={p} className="w-[11px] h-[11px]" />
               </div>
             ))}
@@ -358,12 +358,12 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
         </div>
 
         {/* Title */}
-        <h3 className="font-display font-semibold text-white text-[15px] leading-snug mb-2 line-clamp-2">
+        <h3 className="font-display font-semibold text-kpugi-ink dark:text-white text-[15px] leading-snug mb-2 line-clamp-2">
           {c.brief}
         </h3>
         
         {/* Tone/Audience */}
-        <p className="text-[12px] text-white/40 mb-6 italic line-clamp-2">
+        <p className="text-[12px] text-kpugi-slate dark:text-white/40 mb-6 italic line-clamp-2">
           {c.tone}
         </p>
 
@@ -371,14 +371,14 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="text-[12px] font-semibold flex items-center gap-0.5">
-              <span className="text-white">{formatCompactCurrency(c.budgetSpent)}</span>
-              <span className="text-white/40">/{formatCompactCurrency(c.budgetTotal)}</span>
+              <span className="text-kpugi-ink dark:text-white">{formatCompactCurrency(c.budgetSpent)}</span>
+              <span className="text-kpugi-slate dark:text-white/40">/{formatCompactCurrency(c.budgetTotal)}</span>
             </div>
             
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-md" title="Creators Joined">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                <span className="text-[11px] font-bold text-white/90">{c.slotsFilled}</span>
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/10 px-2 py-1 rounded-md" title="Creators Joined">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-kpugi-slate dark:text-white/60"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span className="text-[11px] font-bold text-kpugi-ink dark:text-white/90">{c.slotsFilled}</span>
               </div>
               <div className="bg-[#2F49E8] px-2 py-1 rounded-md text-[11px] font-bold text-white shadow-sm">
                 {formatCompactCurrency(c.cpm)}/1K
@@ -389,8 +389,8 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
       </div>
       
       {/* Progress Bar at bottom edge */}
-      <div className="w-full h-[2px] bg-white/5">
-        <div className="h-full bg-white transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
+      <div className="w-full h-[2px] bg-slate-100 dark:bg-white/5">
+        <div className="h-full bg-kpugi-ink dark:bg-white transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
       </div>
     </article>
   );
@@ -818,7 +818,7 @@ export default function BrowsePage() {
   const [showGseSearch, setShowGseSearch] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#090A0F] font-sans pb-16">
+    <div className="min-h-screen bg-kpugi-paper dark:bg-[#090A0F] text-kpugi-ink dark:text-white font-sans pb-16">
       {/* Load Google Programmable Search Engine Script */}
       <Script 
         src="https://cse.google.com/cse.js?cx=b1dd03166a4a6402e" 
@@ -900,24 +900,24 @@ export default function BrowsePage() {
             {/* Top / Left Group: Search Bar + Filter Toggle Button */}
             <div className="flex items-center gap-2.5 w-full md:w-auto flex-1 min-w-0">
               <div className="relative flex-1 md:max-w-[320px]">
-                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input 
                   ref={searchInputRef}
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search campaigns, brands..." 
-                  className="w-full bg-[#13151A] border border-white/10 rounded-full pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white placeholder-white/40 focus:outline-none focus:border-kpugi-blue focus:ring-1 focus:ring-kpugi-blue transition-all" 
+                  className="w-full bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-9 pr-10 py-2.5 text-xs sm:text-sm text-kpugi-ink dark:text-white placeholder-kpugi-slate dark:placeholder-white/40 focus:outline-none focus:border-kpugi-blue focus:ring-1 focus:ring-kpugi-blue transition-all shadow-xs" 
                 />
                 {searchQuery ? (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-xs font-bold bg-white/10 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 hover:text-kpugi-ink dark:hover:text-white text-xs font-bold bg-slate-100 dark:bg-white/10 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
                   >
                     ✕
                   </button>
                 ) : (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-white/30 font-mono border border-white/10 rounded px-1.5 py-0.5">⌘K</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-kpugi-slate dark:text-white/30 font-mono border border-slate-200 dark:border-white/10 rounded px-1.5 py-0.5">⌘K</span>
                 )}
               </div>
 
@@ -928,7 +928,7 @@ export default function BrowsePage() {
                 className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full border flex items-center justify-center transition-all relative ${
                   showAdvancedFilters || activeFiltersCount > 0 
                     ? 'bg-kpugi-blue border-kpugi-blue text-white shadow-md shadow-blue-500/20' 
-                    : 'bg-[#13151A] border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    : 'bg-white dark:bg-[#13151A] border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-kpugi-ink dark:hover:text-white'
                 }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -950,14 +950,14 @@ export default function BrowsePage() {
               </button>
             </div>
 
-            {/* Platform Filter Pills & Dropdowns (Clean, non-overlapping horizontal scroll on mobile, inline on desktop) */}
+            {/* Platform Filter Pills & Dropdowns */}
             <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1 pt-0.5 w-full md:w-auto shrink-0">
               {/* Platform Pills */}
               <div className="flex items-center gap-1.5 shrink-0">
                 <button 
                   onClick={() => setActivePlatform(null)}
                   className={`h-9 px-3.5 shrink-0 rounded-full flex items-center justify-center transition-colors text-xs font-semibold
-                    ${!activePlatform ? 'bg-white text-black font-bold' : 'bg-[#13151A] border border-white/10 text-white/70 hover:text-white hover:bg-white/10'}
+                    ${!activePlatform ? 'bg-kpugi-ink text-white dark:bg-white dark:text-black font-bold' : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'}
                   `}
                 >
                   All
@@ -967,7 +967,7 @@ export default function BrowsePage() {
                     key={p} 
                     onClick={() => setActivePlatform(activePlatform === p ? null : p)}
                     className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors
-                      ${activePlatform === p ? 'bg-white text-black' : 'bg-[#13151A] border border-white/10 text-white/70 hover:text-white hover:bg-white/10'}
+                      ${activePlatform === p ? 'bg-kpugi-ink text-white dark:bg-white dark:text-black' : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'}
                     `}
                   >
                     <PlatformIcon platform={p} className="w-4 h-4" />
@@ -976,7 +976,7 @@ export default function BrowsePage() {
               </div>
 
               {/* Separator on desktop */}
-              <div className="w-[1px] h-6 bg-white/10 shrink-0 mx-1 hidden md:block" />
+              <div className="w-[1px] h-6 bg-kpugi-border dark:bg-white/10 shrink-0 mx-1 hidden md:block" />
 
               {/* Dropdowns (Status, Category, Content) */}
               <div className="flex items-center gap-2 shrink-0">
@@ -985,14 +985,14 @@ export default function BrowsePage() {
                   <select 
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="bg-[#13151A] border border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-white appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue"
+                    className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
                   >
-                    <option value="All" className="bg-[#13151A] text-white">Status: All</option>
-                    <option value="Open" className="bg-[#13151A] text-white">🟢 Open & Active</option>
-                    <option value="Filling Fast" className="bg-[#13151A] text-white">🔥 Filling Fast</option>
-                    <option value="High CPM" className="bg-[#13151A] text-white">💰 High CPM (₦3.5k+)</option>
+                    <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Status: All</option>
+                    <option value="Open" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🟢 Open & Active</option>
+                    <option value="Filling Fast" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🔥 Filling Fast</option>
+                    <option value="High CPM" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💰 High CPM (₦3.5k+)</option>
                   </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
 
                 {/* Category Filter */}
@@ -1000,18 +1000,18 @@ export default function BrowsePage() {
                   <select 
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-[#13151A] border border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-white appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue"
+                    className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
                   >
-                    <option value="All" className="bg-[#13151A] text-white">Category: All</option>
-                    <option value="Tech" className="bg-[#13151A] text-white">💻 Tech & SaaS</option>
-                    <option value="Finance" className="bg-[#13151A] text-white">💳 Finance & Fintech</option>
-                    <option value="Food & Drink" className="bg-[#13151A] text-white">🍔 Food & Drink</option>
-                    <option value="Fashion" className="bg-[#13151A] text-white">👗 Fashion & Apparel</option>
-                    <option value="Beauty" className="bg-[#13151A] text-white">💄 Beauty & Wellness</option>
-                    <option value="Lifestyle" className="bg-[#13151A] text-white">✨ Lifestyle</option>
-                    <option value="Gaming" className="bg-[#13151A] text-white">🎮 Gaming</option>
+                    <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Category: All</option>
+                    <option value="Tech" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💻 Tech & SaaS</option>
+                    <option value="Finance" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💳 Finance & Fintech</option>
+                    <option value="Food & Drink" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🍔 Food & Drink</option>
+                    <option value="Fashion" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">👗 Fashion & Apparel</option>
+                    <option value="Beauty" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💄 Beauty & Wellness</option>
+                    <option value="Lifestyle" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">✨ Lifestyle</option>
+                    <option value="Gaming" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🎮 Gaming</option>
                   </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
 
                 {/* Content Format Filter */}
@@ -1019,15 +1019,15 @@ export default function BrowsePage() {
                   <select 
                     value={selectedContent}
                     onChange={(e) => setSelectedContent(e.target.value)}
-                    className="bg-[#13151A] border border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-white appearance-none hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue"
+                    className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
                   >
-                    <option value="All" className="bg-[#13151A] text-white">Content: All</option>
-                    <option value="video" className="bg-[#13151A] text-white">🎬 Short-form Video</option>
-                    <option value="image" className="bg-[#13151A] text-white">📸 Static Post</option>
-                    <option value="story" className="bg-[#13151A] text-white">📱 Story / Carousel</option>
-                    <option value="text" className="bg-[#13151A] text-white">✍️ Text / Tweet</option>
+                    <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Content: All</option>
+                    <option value="video" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🎬 Short-form Video</option>
+                    <option value="image" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">📸 Static Post</option>
+                    <option value="story" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">📱 Story / Carousel</option>
+                    <option value="text" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">✍️ Text / Tweet</option>
                   </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
               </div>
             </div>
@@ -1036,33 +1036,33 @@ export default function BrowsePage() {
 
           {/* Expandable Advanced Filter Drawer */}
           {showAdvancedFilters && (
-            <div className="p-5 rounded-2xl bg-[#13151A] border border-white/10 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="p-5 rounded-2xl bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
               
               {/* Sort By Option */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-white/60 block mb-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-white/60 block mb-2">
                   Sort Campaigns By
                 </label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-kpugi-blue"
+                  className="w-full bg-slate-50 dark:bg-[#1A1D24] border border-kpugi-border dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-kpugi-ink dark:text-white focus:outline-none focus:border-kpugi-blue"
                 >
-                  <option value="featured">✨ Featured & AI Recommended</option>
-                  <option value="cpm_high">💰 Highest Rate (CPM)</option>
-                  <option value="cpm_low">📉 Lowest Rate (CPM)</option>
-                  <option value="newest">🕒 Recently Published</option>
-                  <option value="match">🎯 Highest Audience Match</option>
+                  <option value="featured" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">✨ Featured & AI Recommended</option>
+                  <option value="cpm_high" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">💰 Highest Rate (CPM)</option>
+                  <option value="cpm_low" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">📉 Lowest Rate (CPM)</option>
+                  <option value="newest" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🕒 Recently Published</option>
+                  <option value="match" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🎯 Highest Audience Match</option>
                 </select>
               </div>
 
               {/* Min CPM Filter */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-white/60">
+                  <label className="text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-white/60">
                     Minimum CPM Rate
                   </label>
-                  <span className="font-mono text-xs font-bold text-kpugi-blue">
+                  <span className="font-mono text-xs font-bold text-kpugi-blue dark:text-blue-400">
                     {minCpm === 0 ? 'Any' : `₦${minCpm.toLocaleString()}+`}
                   </span>
                 </div>
@@ -1074,7 +1074,7 @@ export default function BrowsePage() {
                       className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                         minCpm === rate
                           ? 'bg-kpugi-blue text-white'
-                          : 'bg-white/5 hover:bg-white/10 text-white/70'
+                          : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-kpugi-ink dark:text-white/70'
                       }`}
                     >
                       {rate === 0 ? 'All' : `₦${rate / 1000}k+`}
@@ -1087,7 +1087,7 @@ export default function BrowsePage() {
               <div className="flex flex-col justify-end">
                 <button
                   onClick={resetAllFilters}
-                  className="w-full py-2.5 rounded-xl border border-white/10 hover:border-red-500/40 text-white/70 hover:text-red-400 hover:bg-red-500/10 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl border border-kpugi-border dark:border-white/10 hover:border-red-500/40 text-kpugi-slate dark:text-white/70 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-xs font-bold transition-all flex items-center justify-center gap-2"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   <span>Reset All Filters</span>
@@ -1100,41 +1100,41 @@ export default function BrowsePage() {
           {/* Active Filter Badges */}
           {activeFiltersCount > 0 && (
             <div className="flex items-center gap-2 flex-wrap pt-2">
-              <span className="text-xs text-white/40">Active Filters:</span>
+              <span className="text-xs text-kpugi-slate dark:text-white/40">Active Filters:</span>
               {searchQuery && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Search: &ldquo;{searchQuery}&rdquo;</span>
-                  <button onClick={() => setSearchQuery('')} className="hover:text-red-400 font-bold">✕</button>
+                  <button onClick={() => setSearchQuery('')} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
                 </span>
               )}
               {activePlatform && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Platform: {activePlatform}</span>
-                  <button onClick={() => setActivePlatform(null)} className="hover:text-red-400 font-bold">✕</button>
+                  <button onClick={() => setActivePlatform(null)} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
                 </span>
               )}
               {selectedStatus !== 'All' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Status: {selectedStatus}</span>
-                  <button onClick={() => setSelectedStatus('All')} className="hover:text-red-400 font-bold">✕</button>
+                  <button onClick={() => setSelectedStatus('All')} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
                 </span>
               )}
               {selectedCategory !== 'All' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Category: {selectedCategory}</span>
-                  <button onClick={() => setSelectedCategory('All')} className="hover:text-red-400 font-bold">✕</button>
+                  <button onClick={() => setSelectedCategory('All')} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
                 </span>
               )}
               {selectedContent !== 'All' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Content: {selectedContent}</span>
-                  <button onClick={() => setSelectedContent('All')} className="hover:text-red-400 font-bold">✕</button>
+                  <button onClick={() => setSelectedContent('All')} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
                 </span>
               )}
               {minCpm > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-white/10 text-white border border-white/10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Min CPM: ₦{minCpm.toLocaleString()}</span>
-                  <button onClick={() => setMinCpm(0)} className="hover:text-red-400 font-bold">✕</button>
+                  <button onClick={() => setMinCpm(0)} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
                 </span>
               )}
               <button
@@ -1150,21 +1150,21 @@ export default function BrowsePage() {
         {/* Featured Section Title & Result Count + Grid/List Switcher */}
         <div className="flex items-center justify-between mb-6 gap-3">
           <div className="flex items-baseline gap-2 min-w-0">
-            <h2 className="font-display font-bold text-white text-lg sm:text-xl tracking-tight truncate">
+            <h2 className="font-display font-bold text-kpugi-ink dark:text-white text-lg sm:text-xl tracking-tight truncate">
               {searchQuery || activeFiltersCount > 0 ? 'Filtered Campaigns' : 'Featured Campaigns'}
             </h2>
-            <span className="text-xs text-white/50 font-medium shrink-0">
+            <span className="text-xs text-kpugi-slate dark:text-white/50 font-medium shrink-0">
               ({filtered.length})
             </span>
           </div>
 
           {/* Grid / List View Toggle */}
-          <div className="flex items-center gap-1 bg-[#13151A] p-1 rounded-xl border border-white/10 shrink-0">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#13151A] p-1 rounded-xl border border-kpugi-border dark:border-white/10 shrink-0">
             <button
               onClick={() => handleViewModeChange('grid')}
               title="Grid View"
               className={`px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
-                viewMode === 'grid' ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white'
+                viewMode === 'grid' ? 'bg-white dark:bg-white/15 text-kpugi-ink dark:text-white shadow-sm' : 'text-kpugi-slate dark:text-white/40 hover:text-kpugi-ink dark:hover:text-white'
               }`}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -1174,7 +1174,7 @@ export default function BrowsePage() {
               onClick={() => handleViewModeChange('list')}
               title="List View"
               className={`px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
-                viewMode === 'list' ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white'
+                viewMode === 'list' ? 'bg-white dark:bg-white/15 text-kpugi-ink dark:text-white shadow-sm' : 'text-kpugi-slate dark:text-white/40 hover:text-kpugi-ink dark:hover:text-white'
               }`}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -1202,19 +1202,19 @@ export default function BrowsePage() {
             </div>
           ) : (
             /* LIST VIEW (TABLE) */
-            <div className="bg-[#12141A] rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+            <div className="bg-white dark:bg-[#12141A] rounded-2xl border border-kpugi-border dark:border-white/10 shadow-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left font-sans text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-white/10 bg-[#161820] text-white/50 uppercase text-[10px] tracking-wider font-bold">
+                    <tr className="border-b border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-[#161820] text-kpugi-slate dark:text-white/50 uppercase text-[10px] tracking-wider font-bold">
                       {/* Campaign & Brand */}
                       <th 
                         onClick={() => handleSort('title')}
-                        className="py-4 px-5 cursor-pointer hover:text-white transition-colors select-none group/th"
+                        className="py-4 px-5 cursor-pointer hover:text-kpugi-ink dark:hover:text-white transition-colors select-none group/th"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className={sortColumn === 'title' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Campaign & Brand</span>
-                          <span className={`text-[10px] ${sortColumn === 'title' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                          <span className={sortColumn === 'title' ? 'text-kpugi-ink dark:text-white font-extrabold' : 'group-hover/th:text-kpugi-ink dark:group-hover/th:text-white'}>Campaign & Brand</span>
+                          <span className={`text-[10px] ${sortColumn === 'title' ? 'text-kpugi-blue font-black' : 'text-slate-300 dark:text-white/20 group-hover/th:text-slate-600 dark:group-hover/th:text-white/60'}`}>
                             {sortColumn === 'title' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
                           </span>
                         </div>
@@ -1226,11 +1226,11 @@ export default function BrowsePage() {
                       {/* Category */}
                       <th 
                         onClick={() => handleSort('category')}
-                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                        className="py-4 px-4 cursor-pointer hover:text-kpugi-ink dark:hover:text-white transition-colors select-none group/th"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className={sortColumn === 'category' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Category</span>
-                          <span className={`text-[10px] ${sortColumn === 'category' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                          <span className={sortColumn === 'category' ? 'text-kpugi-ink dark:text-white font-extrabold' : 'group-hover/th:text-kpugi-ink dark:group-hover/th:text-white'}>Category</span>
+                          <span className={`text-[10px] ${sortColumn === 'category' ? 'text-kpugi-blue font-black' : 'text-slate-300 dark:text-white/20 group-hover/th:text-slate-600 dark:group-hover/th:text-white/60'}`}>
                             {sortColumn === 'category' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
                           </span>
                         </div>
@@ -1239,11 +1239,11 @@ export default function BrowsePage() {
                       {/* CPM Rate */}
                       <th 
                         onClick={() => handleSort('cpm')}
-                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                        className="py-4 px-4 cursor-pointer hover:text-kpugi-ink dark:hover:text-white transition-colors select-none group/th"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className={sortColumn === 'cpm' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>CPM Rate</span>
-                          <span className={`text-[10px] ${sortColumn === 'cpm' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                          <span className={sortColumn === 'cpm' ? 'text-kpugi-ink dark:text-white font-extrabold' : 'group-hover/th:text-kpugi-ink dark:group-hover/th:text-white'}>CPM Rate</span>
+                          <span className={`text-[10px] ${sortColumn === 'cpm' ? 'text-kpugi-blue font-black' : 'text-slate-300 dark:text-white/20 group-hover/th:text-slate-600 dark:group-hover/th:text-white/60'}`}>
                             {sortColumn === 'cpm' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
                           </span>
                         </div>
@@ -1252,11 +1252,11 @@ export default function BrowsePage() {
                       {/* Min Views */}
                       <th 
                         onClick={() => handleSort('minViews')}
-                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                        className="py-4 px-4 cursor-pointer hover:text-kpugi-ink dark:hover:text-white transition-colors select-none group/th"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className={sortColumn === 'minViews' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Min Views</span>
-                          <span className={`text-[10px] ${sortColumn === 'minViews' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                          <span className={sortColumn === 'minViews' ? 'text-kpugi-ink dark:text-white font-extrabold' : 'group-hover/th:text-kpugi-ink dark:group-hover/th:text-white'}>Min Views</span>
+                          <span className={`text-[10px] ${sortColumn === 'minViews' ? 'text-kpugi-blue font-black' : 'text-slate-300 dark:text-white/20 group-hover/th:text-slate-600 dark:group-hover/th:text-white/60'}`}>
                             {sortColumn === 'minViews' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
                           </span>
                         </div>
@@ -1265,11 +1265,11 @@ export default function BrowsePage() {
                       {/* Spent / Budget */}
                       <th 
                         onClick={() => handleSort('budget')}
-                        className="py-4 px-4 cursor-pointer hover:text-white transition-colors select-none group/th"
+                        className="py-4 px-4 cursor-pointer hover:text-kpugi-ink dark:hover:text-white transition-colors select-none group/th"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className={sortColumn === 'budget' ? 'text-white font-extrabold' : 'group-hover/th:text-white'}>Spent / Budget</span>
-                          <span className={`text-[10px] ${sortColumn === 'budget' ? 'text-kpugi-blue font-black' : 'text-white/20 group-hover/th:text-white/60'}`}>
+                          <span className={sortColumn === 'budget' ? 'text-kpugi-ink dark:text-white font-extrabold' : 'group-hover/th:text-kpugi-ink dark:group-hover/th:text-white'}>Spent / Budget</span>
+                          <span className={`text-[10px] ${sortColumn === 'budget' ? 'text-kpugi-blue font-black' : 'text-slate-300 dark:text-white/20 group-hover/th:text-slate-600 dark:group-hover/th:text-white/60'}`}>
                             {sortColumn === 'budget' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
                           </span>
                         </div>
@@ -1279,26 +1279,26 @@ export default function BrowsePage() {
                       <th className="py-4 px-5 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-kpugi-border/60 dark:divide-white/5">
                     {filtered.map((c, i) => (
                       <React.Fragment key={c.id}>
                         {i === 2 && <SponsoredAdRow />}
-                        <tr className="hover:bg-white/[0.03] transition-colors group">
+                        <tr className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors group">
                           {/* Campaign & Brand */}
                           <td className="py-4 px-5">
                             <Link href={`/browse/${c.id}`} className="flex items-center gap-3 min-w-[220px]">
                               {c.thumbnailUrl ? (
-                                <img src={c.thumbnailUrl} alt={c.brief} className="w-10 h-10 rounded-xl object-cover border border-white/10 shrink-0" />
+                                <img src={c.thumbnailUrl} alt={c.brief} className="w-10 h-10 rounded-xl object-cover border border-kpugi-border dark:border-white/10 shrink-0" />
                               ) : (
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-kpugi-ink dark:text-white font-bold text-sm shrink-0">
                                   {c.brand.charAt(0)}
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <span className="font-bold text-sm text-white group-hover:text-kpugi-blue transition-colors truncate block">
+                                <span className="font-bold text-sm text-kpugi-ink dark:text-white group-hover:text-kpugi-blue transition-colors truncate block">
                                   {c.brief}
                                 </span>
-                                <div className="flex items-center gap-1 text-[11px] text-white/40">
+                                <div className="flex items-center gap-1 text-[11px] text-kpugi-slate dark:text-white/40">
                                   <span className="truncate">{c.brand}</span>
                                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-[#E4A12C] shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                   <span>·</span>
@@ -1312,7 +1312,7 @@ export default function BrowsePage() {
                           <td className="py-4 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               {c.platform.map((p) => (
-                                <div key={p} className="w-5 h-5 rounded-full bg-black flex items-center justify-center border border-white/10">
+                                <div key={p} className="w-5 h-5 rounded-full bg-slate-100 dark:bg-black flex items-center justify-center border border-slate-200 dark:border-white/10 text-kpugi-ink dark:text-white">
                                   <PlatformIcon platform={p} className="w-3 h-3" />
                                 </div>
                               ))}
@@ -1321,28 +1321,28 @@ export default function BrowsePage() {
 
                           {/* Category */}
                           <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/5 text-white/80 border border-white/10">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-kpugi-ink dark:text-white/80 border border-slate-200 dark:border-white/10">
                               {c.category}
                             </span>
                           </td>
 
                           {/* CPM Rate */}
-                          <td className="py-4 px-4 whitespace-nowrap font-mono text-white font-bold text-xs">
+                          <td className="py-4 px-4 whitespace-nowrap font-mono text-kpugi-ink dark:text-white font-bold text-xs">
                             {formatCompactCurrency(c.cpm)}
-                            <span className="text-[10px] text-white/40 block font-sans">/ 1k views</span>
+                            <span className="text-[10px] text-kpugi-slate dark:text-white/40 block font-sans">/ 1k views</span>
                           </td>
 
                           {/* Min Threshold */}
-                          <td className="py-4 px-4 whitespace-nowrap font-mono text-white/80 text-xs">
+                          <td className="py-4 px-4 whitespace-nowrap font-mono text-kpugi-slate dark:text-white/80 text-xs">
                             {formatCompactNumber(c.minViews)} views
                           </td>
 
                           {/* Budget / Slots */}
                           <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-mono text-xs font-semibold text-white block">
+                            <span className="font-mono text-xs font-semibold text-kpugi-ink dark:text-white block">
                               {formatCompactCurrency(c.budgetSpent)} / {formatCompactCurrency(c.budgetTotal)}
                             </span>
-                            <span className="text-[10px] text-white/40 block">
+                            <span className="text-[10px] text-kpugi-slate dark:text-white/40 block">
                               {c.slotsFilled} creators joined
                             </span>
                           </td>
@@ -1351,7 +1351,7 @@ export default function BrowsePage() {
                           <td className="py-4 px-5 text-right whitespace-nowrap">
                             <Link
                               href={`/browse/${c.id}`}
-                              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-kpugi-blue text-white font-bold text-xs transition-all shadow-sm group-hover:bg-kpugi-blue"
+                              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-kpugi-blue text-kpugi-ink dark:text-white hover:text-white font-bold text-xs transition-all shadow-sm group-hover:bg-kpugi-blue group-hover:text-white"
                             >
                               <span>View Program</span>
                               <span>➔</span>
@@ -1367,13 +1367,13 @@ export default function BrowsePage() {
             </div>
           )
         ) : (
-          <div className="p-12 text-center bg-[#12141A] rounded-3xl border border-white/5 text-slate-400 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-xl">
+          <div className="p-12 text-center bg-white dark:bg-[#12141A] rounded-3xl border border-kpugi-border dark:border-white/5 text-kpugi-slate dark:text-slate-400 space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto text-xl">
               🔍
             </div>
             <div>
-              <p className="text-white font-bold text-base">No matching campaigns found</p>
-              <p className="text-xs text-white/40 mt-1">Try adjusting your filters or search keywords.</p>
+              <p className="text-kpugi-ink dark:text-white font-bold text-base">No matching campaigns found</p>
+              <p className="text-xs text-kpugi-slate dark:text-white/40 mt-1">Try adjusting your filters or search keywords.</p>
             </div>
             <button
               onClick={resetAllFilters}

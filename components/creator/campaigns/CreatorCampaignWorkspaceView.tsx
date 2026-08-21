@@ -378,41 +378,41 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Verified Views */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">VERIFIED VIEWS</span>
+            <span className="text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">VERIFIED VIEWS</span>
             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
           </div>
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-ink">
+              <span className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-ink dark:text-white">
                 {totalViews.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md">
                 +{viewsPct}%
               </span>
             </div>
             {/* Progress Bar */}
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-3">
+            <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden mt-3">
               <div
                 className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                 style={{ width: `${viewsPct}%` }}
               />
             </div>
           </div>
-          <div className="flex items-center justify-between text-[11px] text-kpugi-slate font-medium pt-1">
+          <div className="flex items-center justify-between text-[11px] text-kpugi-slate dark:text-slate-400 font-medium pt-1">
             <span>Goal: {targetThreshold.toLocaleString()} views</span>
             {isCapReached ? (
-              <span className="inline-flex items-center gap-1 font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200/60">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <span className="inline-flex items-center gap-1 font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200/60 dark:border-emerald-500/20">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 <span>Audits Complete</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 font-mono font-bold text-kpugi-blue bg-blue-50/80 px-2 py-0.5 rounded-md text-[10px] border border-blue-100">
+              <span className="inline-flex items-center gap-1 font-mono font-bold text-kpugi-blue dark:text-blue-400 bg-blue-50/80 dark:bg-blue-900/30 px-2 py-0.5 rounded-md text-[10px] border border-blue-100 dark:border-blue-800/40">
                 {hasSubmittedLink ? (
                   secondsToNextAudit > 0 ? (
                     <>
-                      <Clock className="w-3 h-3 text-kpugi-blue animate-spin" />
+                      <Clock className="w-3 h-3 text-kpugi-blue dark:text-blue-400 animate-spin" />
                       <span>Next Audit: {formatTimer(secondsToNextAudit)}</span>
                     </>
                   ) : (
@@ -433,27 +433,27 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
 
         {/* Card 2: Earned So Far */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">EARNED SO FAR</span>
-            <span className="font-mono font-black text-sm text-kpugi-blue leading-none">₦</span>
+            <span className="text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">EARNED SO FAR</span>
+            <span className="font-mono font-black text-sm text-kpugi-blue dark:text-blue-400 leading-none">₦</span>
           </div>
           <div>
-            <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue flex items-baseline gap-2 flex-wrap">
+            <div className="font-mono font-bold text-3xl sm:text-4xl text-kpugi-blue dark:text-blue-400 flex items-baseline gap-2 flex-wrap">
               <span>{formatCompactCurrency(earnedAmount)}</span>
               {isCapReached && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-sans font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50 shrink-0">
+                <span className="inline-flex items-center gap-1 text-[10px] font-sans font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-500/30 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                   <span>Pool Cap</span>
                 </span>
               )}
               {!isReserveMet && !isCapReached && (
-                <span className="text-[11px] font-mono font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                <span className="text-[11px] font-mono font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-500/30 px-2 py-0.5 rounded-lg shrink-0">
                   (₦{baseReserve.toLocaleString()} reserved)
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-kpugi-slate block mt-1">
+            <span className="text-[11px] text-kpugi-slate dark:text-slate-400 block mt-1">
               {isCapReached 
                 ? 'Maximum creator pool limit achieved.' 
                 : isReserveMet 
@@ -462,10 +462,10 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
               }
             </span>
           </div>
-          <div className="flex items-center justify-between text-[11px] text-kpugi-slate font-medium pt-1">
+          <div className="flex items-center justify-between text-[11px] text-kpugi-slate dark:text-slate-400 font-medium pt-1">
             <span>CPM: ₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
             {maxCreatorPoolCap > 0 && (
-              <span className="font-mono text-[10px] text-kpugi-slate bg-slate-100 px-2 py-0.5 rounded-md">
+              <span className="font-mono text-[10px] text-kpugi-slate dark:text-slate-400 bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-md">
                 Cap: {formatCompactCurrency(maxCreatorPoolCap)} (25% pool)
               </span>
             )}
@@ -473,25 +473,25 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
 
         {/* Card 3: Escrow Status */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-4">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-kpugi-slate uppercase tracking-wider">ESCROW STATUS</span>
-            <Lock className="w-5 h-5 text-slate-700" />
+            <span className="text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">ESCROW STATUS</span>
+            <Lock className="w-5 h-5 text-slate-700 dark:text-slate-300" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-display font-bold text-2xl sm:text-3xl text-kpugi-ink">
+              <span className="font-display font-bold text-2xl sm:text-3xl text-kpugi-ink dark:text-white">
                 Secured
               </span>
-              <span className="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[10px] font-bold uppercase">
+              <span className="px-2 py-0.5 rounded bg-slate-900 dark:bg-white/10 text-white font-mono text-[10px] font-bold uppercase">
                 LOCKED
               </span>
             </div>
-            <span className="text-[11px] text-kpugi-slate block mt-1">
+            <span className="text-[11px] text-kpugi-slate dark:text-slate-400 block mt-1">
               Verified by Kpugi Smart Contract
             </span>
           </div>
-          <span className="text-[11px] text-kpugi-slate font-medium">
+          <span className="text-[11px] text-kpugi-slate dark:text-slate-400 font-medium">
             Budget Reserved: {formatCompactCurrency(campaign.total_budget || 0)}
           </span>
         </div>
@@ -502,13 +502,13 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT 7 COLS: SUBMISSION TRACKER */}
-        <div className="lg:col-span-7 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6 flex flex-col justify-between">
+        <div className="lg:col-span-7 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-kpugi-border pb-4 mb-6">
-              <h3 className="font-display font-bold text-xl text-kpugi-ink">Submission Tracker</h3>
+            <div className="flex items-center justify-between border-b border-kpugi-border dark:border-white/10 pb-4 mb-6">
+              <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Submission Tracker</h3>
               {hasSubmittedLink ? (
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span>Link Active</span>
                 </span>
               ) : (
@@ -524,7 +524,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
 
             {submissionState && submissionState.post_url ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl border border-kpugi-border bg-slate-50/60 flex items-center justify-between gap-4">
+                <div className="p-4 rounded-2xl border border-kpugi-border dark:border-white/10 bg-slate-50/60 dark:bg-white/5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 overflow-hidden">
                     {(() => {
                       const detectedPlat =
@@ -541,11 +541,11 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                         href={submissionState.post_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-mono text-xs font-bold text-kpugi-ink hover:text-kpugi-blue hover:underline truncate block"
+                        className="font-mono text-xs font-bold text-kpugi-ink dark:text-white hover:text-kpugi-blue dark:hover:text-blue-400 hover:underline truncate block"
                       >
                         {submissionState.post_url}
                       </a>
-                      <span className="text-[11px] text-kpugi-slate font-sans block mt-0.5">
+                      <span className="text-[11px] text-kpugi-slate dark:text-slate-400 font-sans block mt-0.5">
                         Submitted {new Date(submissionState.submitted_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
@@ -553,14 +553,14 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
 
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <span className="font-mono font-bold text-xs text-kpugi-ink block">
+                      <span className="font-mono font-bold text-xs text-kpugi-ink dark:text-white block">
                         {formatCompactNumber(submissionState.final_view_count || 0)} VIEWS
                       </span>
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase mt-1 ${
                           submissionState.status === 'verified_pass' || submissionState.status === 'paid'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
+                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300'
                         }`}
                       >
                         {submissionState.status === 'verified_pass' ? 'Verified' : submissionState.status}
@@ -571,7 +571,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                       onClick={() => setShowDeleteLinkConfirm(true)}
                       disabled={isDeletingLink}
                       title="Remove Post Link & Start Afresh"
-                      className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-200 disabled:opacity-50"
+                      className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-700 transition-colors border border-transparent hover:border-rose-200 dark:hover:border-rose-500/30 disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -579,10 +579,10 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center border-2 border-dashed border-kpugi-border rounded-3xl space-y-3">
-                <FileText className="w-8 h-8 text-kpugi-slate mx-auto" />
-                <h4 className="font-display font-bold text-base text-kpugi-ink">No post link submitted yet</h4>
-                <p className="text-xs text-kpugi-slate max-w-xs mx-auto">
+              <div className="p-8 text-center border-2 border-dashed border-kpugi-border dark:border-white/10 rounded-3xl space-y-3">
+                <FileText className="w-8 h-8 text-kpugi-slate dark:text-slate-400 mx-auto" />
+                <h4 className="font-display font-bold text-base text-kpugi-ink dark:text-white">No post link submitted yet</h4>
+                <p className="text-xs text-kpugi-slate dark:text-slate-400 max-w-xs mx-auto">
                   Paste your live post link (TikTok, Instagram, YouTube, X, Facebook, LinkedIn) to start real-time view auditing.
                 </p>
                 <button
@@ -598,15 +598,15 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
 
         {/* RIGHT 5 COLS: CONTENT BRIEF */}
-        <div id="content-brief-section" className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
-          <div className="flex items-center gap-2 border-b border-kpugi-border pb-4">
-            <FileText className="w-5 h-5 text-kpugi-blue" />
-            <h3 className="font-display font-bold text-xl text-kpugi-ink">Content Brief</h3>
+        <div id="content-brief-section" className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6">
+          <div className="flex items-center gap-2 border-b border-kpugi-border dark:border-white/10 pb-4">
+            <FileText className="w-5 h-5 text-kpugi-blue dark:text-blue-400" />
+            <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Content Brief</h3>
           </div>
 
           {/* Mandatory Assets */}
           <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400 block">
               MANDATORY HASHTAGS & MENTIONS
             </span>
             <div className="flex flex-wrap gap-2">
@@ -614,23 +614,23 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                 <button
                   key={tag}
                   onClick={() => copyToClipboard(tag)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-kpugi-ink font-mono text-xs font-bold transition-colors border border-slate-200"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-ink dark:text-white font-mono text-xs font-bold transition-colors border border-slate-200 dark:border-white/10"
                   title="Click to copy"
                 >
                   <span>{tag}</span>
-                  {copiedHashtag === tag ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                  {copiedHashtag === tag ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Hard-Cliff Rules Box */}
-          <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-2 text-xs">
-            <div className="flex items-center gap-2 text-rose-800 font-bold">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+          <div className="p-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-rose-800 dark:text-rose-300 font-bold">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>Hard-Cliff Rules</span>
             </div>
-            <ul className="space-y-1.5 text-rose-900/80 text-[11px] list-disc list-inside font-medium leading-relaxed">
+            <ul className="space-y-1.5 text-rose-900/80 dark:text-rose-200/80 text-[11px] list-disc list-inside font-medium leading-relaxed">
               <li>Payout starts only after reaching minimum verified views threshold ({targetThreshold.toLocaleString()}).</li>
               <li>Post must remain public for at least 30 days without deletion.</li>
               <li>Bots or artificial engagement leads to immediate disqualification.</li>
@@ -638,8 +638,8 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           </div>
 
           {/* Quick Links */}
-          <div className="space-y-2 pt-2 border-t border-kpugi-border">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate block">
+          <div className="space-y-2 pt-2 border-t border-kpugi-border dark:border-white/10">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400 block">
               QUICK ASSET LINKS
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -648,16 +648,16 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                   href={docUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 rounded-xl border border-kpugi-border bg-slate-50 hover:bg-slate-100 text-xs font-bold text-kpugi-ink flex items-center justify-between transition-colors group"
+                  className="p-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-kpugi-ink dark:text-white flex items-center justify-between transition-colors group"
                 >
                   <div className="flex items-center gap-2 truncate">
                     <span className="text-base">📄</span>
-                    <span className="truncate group-hover:text-kpugi-blue">Brand Guide (Google Doc)</span>
+                    <span className="truncate group-hover:text-kpugi-blue dark:group-hover:text-blue-400">Brand Guide (Google Doc)</span>
                   </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate shrink-0 ml-2" />
+                  <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate dark:text-slate-400 shrink-0 ml-2" />
                 </a>
               ) : (
-                <div className="p-3 rounded-xl border border-kpugi-border/60 bg-slate-50/50 text-xs text-kpugi-slate flex items-center justify-between opacity-70">
+                <div className="p-3 rounded-xl border border-kpugi-border/60 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 text-xs text-kpugi-slate dark:text-slate-400 flex items-center justify-between opacity-70">
                   <div className="flex items-center gap-2">
                     <span className="text-base">📄</span>
                     <span>Brand Guide (Google Doc)</span>
@@ -671,16 +671,16 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                   href={driveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 rounded-xl border border-kpugi-border bg-slate-50 hover:bg-slate-100 text-xs font-bold text-kpugi-ink flex items-center justify-between transition-colors group"
+                  className="p-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-kpugi-ink dark:text-white flex items-center justify-between transition-colors group"
                 >
                   <div className="flex items-center gap-2 truncate">
                     <span className="text-base">📁</span>
-                    <span className="truncate group-hover:text-kpugi-blue">Asset Pack (Google Drive)</span>
+                    <span className="truncate group-hover:text-kpugi-blue dark:group-hover:text-blue-400">Asset Pack (Google Drive)</span>
                   </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate shrink-0 ml-2" />
+                  <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate dark:text-slate-400 shrink-0 ml-2" />
                 </a>
               ) : (
-                <div className="p-3 rounded-xl border border-kpugi-border/60 bg-slate-50/50 text-xs text-kpugi-slate flex items-center justify-between opacity-70">
+                <div className="p-3 rounded-xl border border-kpugi-border/60 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 text-xs text-kpugi-slate dark:text-slate-400 flex items-center justify-between opacity-70">
                   <div className="flex items-center gap-2">
                     <span className="text-base">📁</span>
                     <span>Asset Pack (Google Drive)</span>
@@ -696,19 +696,19 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       {/* ─────────────────────────────────────────────────────
          BOTTOM ROW: LIVE AUDIT LOG
       ───────────────────────────────────────────────────── */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full ${isCapReached ? 'bg-emerald-500' : 'bg-kpugi-blue animate-pulse'}`} />
-            <h3 className="font-display font-bold text-xl text-kpugi-ink">Live Audit Log</h3>
-            <span className="text-xs text-kpugi-slate ml-2 font-medium hidden sm:inline">
+            <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Live Audit Log</h3>
+            <span className="text-xs text-kpugi-slate dark:text-slate-400 ml-2 font-medium hidden sm:inline">
               {isCapReached ? 'Audits Concluded • Maximum Cap Settled' : 'Live Metric Sync Active'}
             </span>
           </div>
 
           <button
             onClick={() => window.location.reload()}
-            className="text-xs font-bold text-kpugi-blue hover:underline flex items-center gap-1.5"
+            className="text-xs font-bold text-kpugi-blue dark:text-blue-400 hover:underline flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh Log</span>
@@ -716,50 +716,53 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
 
         <div className="overflow-x-auto">
-          <table className="table table-zebra w-full text-xs font-sans">
+          <table className="w-full text-xs font-sans border-collapse">
             <thead>
-              <tr className="border-b border-kpugi-border text-kpugi-slate uppercase text-[10px] tracking-wider font-bold">
-                <th>TIMESTAMP</th>
-                <th>AUDIT CYCLE</th>
-                <th>NET NEW VIEWS</th>
-                <th>EARNED PAYOUT</th>
-                <th className="text-right">SETTLEMENT STATUS</th>
+              <tr className="border-b border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-400 uppercase text-[10px] tracking-wider font-bold">
+                <th className="py-3 px-4 text-left">TIMESTAMP</th>
+                <th className="py-3 px-4 text-left">AUDIT CYCLE</th>
+                <th className="py-3 px-4 text-left">NET NEW VIEWS</th>
+                <th className="py-3 px-4 text-left">EARNED PAYOUT</th>
+                <th className="py-3 px-4 text-right">SETTLEMENT STATUS</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {data.audits && data.audits.length > 0 ? (
                 data.audits
                   .slice((auditPage - 1) * auditPageSize, auditPage * auditPageSize)
                   .map((audit: any, idx: number) => {
                     const cycleIndex = data.audits!.length - ((auditPage - 1) * auditPageSize + idx);
                     return (
-                      <tr key={audit.id || idx} className="border-b border-slate-100">
-                        <td className="font-mono text-kpugi-slate whitespace-nowrap py-3">
-                          <span className="font-bold text-kpugi-ink text-xs block">
+                      <tr
+                        key={audit.id || idx}
+                        className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
+                      >
+                        <td className="font-mono text-kpugi-slate dark:text-slate-400 whitespace-nowrap py-3.5 px-4">
+                          <span className="font-bold text-kpugi-ink dark:text-white text-xs block">
                             {new Date(audit.settled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium block mt-0.5">
                             {new Date(audit.settled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </td>
-                        <td className="font-bold text-kpugi-ink">
+                        <td className="font-bold text-kpugi-ink dark:text-white py-3.5 px-4">
                           Cycle #{cycleIndex}
                         </td>
-                        <td className="font-mono font-bold text-emerald-600">
+                        <td className="font-mono font-bold text-emerald-600 dark:text-emerald-400 py-3.5 px-4">
                           +{formatCompactNumber(audit.views_delta)}
                         </td>
-                        <td className="font-mono font-bold text-kpugi-blue">
+                        <td className="font-mono font-bold text-kpugi-blue dark:text-blue-400 py-3.5 px-4">
                           {formatCompactCurrency(audit.payout_amount)}
                         </td>
-                        <td className="text-right">
-                          <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold uppercase text-[10px] ${
+                        <td className="text-right py-3.5 px-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-md font-mono font-bold uppercase text-[10px] ${
                             audit.status === 'auto_approved'
-                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
                               : audit.status === 'approved'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                               : audit.status === 'pending' || audit.status === 'accumulating'
-                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                              : 'bg-red-100 text-red-800 border border-red-200'
+                              ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30'
+                              : 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-500/30'
                           }`}>
                             {audit.status === 'auto_approved'
                               ? '⚡ Auto-Credited'
@@ -779,11 +782,11 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                 <tr>
                   <td colSpan={5} className="text-center py-10">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-kpugi-slate mb-1">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-kpugi-slate dark:text-slate-400 mb-1">
                         <Clock className="w-5 h-5" />
                       </div>
-                      <p className="font-bold text-sm text-kpugi-ink">No Settled Audit Runs Yet</p>
-                      <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                      <p className="font-bold text-sm text-kpugi-ink dark:text-white">No Settled Audit Runs Yet</p>
+                      <p className="text-xs text-kpugi-slate dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
                         Automated view audits verify engagement and settle payouts into your available balance automatically as milestones are reached.
                       </p>
                     </div>

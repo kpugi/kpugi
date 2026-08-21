@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-kpugi-border bg-white pt-16 pb-12">
+    <footer className="border-t border-kpugi-border dark:border-white/10 bg-white dark:bg-[#090A0F] pt-16 pb-12 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Brand Column */}
@@ -18,10 +18,10 @@ export default function Footer() {
                 className="rounded-lg"
               />
             </Link>
-            <p className="text-xs text-kpugi-slate leading-relaxed mb-4">
+            <p className="text-xs text-kpugi-slate dark:text-slate-400 leading-relaxed mb-4">
               The Nigeria-first automated marketplace connecting advertisers and creators for verified ad placements.
             </p>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-kpugi-naira text-[11px] font-semibold border border-emerald-200">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-kpugi-naira dark:text-emerald-400 text-[11px] font-semibold border border-emerald-200 dark:border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-kpugi-naira"></span>
               Paystack Naira Payouts
             </span>
@@ -29,37 +29,37 @@ export default function Footer() {
 
           {/* Product Links */}
           <div>
-            <h4 className="font-display font-semibold text-sm text-kpugi-ink mb-4">Product</h4>
-            <ul className="space-y-2.5 text-xs text-kpugi-slate">
-              <li><Link href="/browse" className="hover:text-kpugi-primary transition-colors">Browse</Link></li>
-              <li><Link href="/how-it-works" className="hover:text-kpugi-primary transition-colors">How it Works</Link></li>
-              <li><Link href="/pricing" className="hover:text-kpugi-primary transition-colors">CPM Pricing</Link></li>
-              <li><Link href="/sign-up" className="hover:text-kpugi-primary transition-colors">Brand Dashboard</Link></li>
+            <h4 className="font-display font-semibold text-sm text-kpugi-ink dark:text-white mb-4">Product</h4>
+            <ul className="space-y-2.5 text-xs text-kpugi-slate dark:text-slate-400">
+              <li><Link href="/browse" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">Browse</Link></li>
+              <li><Link href="/how-it-works" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">How it Works</Link></li>
+              <li><Link href="/pricing" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">CPM Pricing</Link></li>
+              <li><Link href="/sign-up" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">Brand Dashboard</Link></li>
             </ul>
           </div>
 
           {/* For Creators */}
           <div>
-            <h4 className="font-display font-semibold text-sm text-kpugi-ink mb-4">Creators</h4>
-            <ul className="space-y-2.5 text-xs text-kpugi-slate">
-              <li><Link href="/sign-up" className="hover:text-kpugi-primary transition-colors">Connect Social Account</Link></li>
-              <li><Link href="/how-it-works#verification" className="hover:text-kpugi-primary transition-colors">1k View Verification</Link></li>
-              <li><Link href="/sign-up" className="hover:text-kpugi-primary transition-colors">Instant Payouts</Link></li>
+            <h4 className="font-display font-semibold text-sm text-kpugi-ink dark:text-white mb-4">Creators</h4>
+            <ul className="space-y-2.5 text-xs text-kpugi-slate dark:text-slate-400">
+              <li><Link href="/sign-up" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">Connect Social Account</Link></li>
+              <li><Link href="/how-it-works#verification" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">1k View Verification</Link></li>
+              <li><Link href="/sign-up" className="hover:text-kpugi-blue dark:hover:text-white transition-colors">Instant Payouts</Link></li>
             </ul>
           </div>
 
           {/* Platform Rules */}
           <div>
-            <h4 className="font-display font-semibold text-sm text-kpugi-ink mb-4">Platform</h4>
-            <ul className="space-y-2.5 text-xs text-kpugi-slate">
-              <li><span className="text-kpugi-ink font-medium">No Manual Gatekeepers</span></li>
-              <li><span className="text-kpugi-ink font-medium">Automated View Audit</span></li>
-              <li><span className="text-kpugi-ink font-medium">10% Platform Commission</span></li>
+            <h4 className="font-display font-semibold text-sm text-kpugi-ink dark:text-white mb-4">Platform</h4>
+            <ul className="space-y-2.5 text-xs text-kpugi-slate dark:text-slate-400">
+              <li><span className="text-kpugi-ink dark:text-slate-200 font-medium">No Manual Gatekeepers</span></li>
+              <li><span className="text-kpugi-ink dark:text-slate-200 font-medium">Automated View Audit</span></li>
+              <li><span className="text-kpugi-ink dark:text-slate-200 font-medium">10% Platform Commission</span></li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-kpugi-border pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-kpugi-slate gap-4">
+        <div className="border-t border-kpugi-border dark:border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-kpugi-slate dark:text-slate-400 gap-4">
           <p>© {new Date().getFullYear()} Kpugi Technologies. Built for Nigerian Creators & Brands.</p>
           <div className="flex items-center gap-6">
             <span>Privacy Policy</span>

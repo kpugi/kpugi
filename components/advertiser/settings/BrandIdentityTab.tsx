@@ -154,41 +154,41 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 text-kpugi-ink dark:text-white">
       {/* Toast Feedback */}
       {message && (
         <div
           className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 transition-all ${
             message.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+              : 'bg-red-50 dark:bg-rose-950/40 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-500/30'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-rose-400 shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Brand Visual Identity & Logo */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs space-y-6">
         <div>
-          <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-kpugi-blue dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
             <Camera className="w-4 h-4" />
             <span>Visual Identity & Brand Logo</span>
           </div>
-          <h2 className="font-display text-xl font-bold text-kpugi-ink mt-1">Official Brand Logo</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="font-display text-xl font-bold text-kpugi-ink dark:text-white mt-1">Official Brand Logo</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             This logo represents your brand on campaign briefs, creator catalogues, and official payment receipts.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
           <div className="relative group shrink-0">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-kpugi-blue/20 bg-white flex items-center justify-center relative shadow-sm">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-kpugi-blue/20 bg-white dark:bg-white/5 flex items-center justify-center relative shadow-sm">
               {logoPreview ? (
                 <Image
                   src={logoPreview}
@@ -204,7 +204,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute -bottom-1.5 -right-1.5 p-2 bg-kpugi-blue hover:bg-kpugi-blue/90 text-white rounded-xl shadow-md border-2 border-white transition-transform hover:scale-105"
+              className="absolute -bottom-1.5 -right-1.5 p-2 bg-kpugi-blue hover:bg-kpugi-blue/90 text-white rounded-xl shadow-md border-2 border-white dark:border-[#12141A] transition-transform hover:scale-105"
               title="Upload New Logo"
             >
               <UploadCloud className="w-3.5 h-3.5" />
@@ -223,7 +223,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-white hover:bg-slate-100 text-kpugi-ink text-xs font-bold rounded-xl border border-kpugi-border shadow-2xs transition-all"
+                className="px-4 py-2 bg-white dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/20 text-kpugi-ink dark:text-white text-xs font-bold rounded-xl border border-kpugi-border dark:border-white/10 shadow-2xs transition-all"
               >
                 Upload New Image
               </button>
@@ -235,13 +235,13 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
                     setLogoBase64(null);
                     setUploadedFile(null);
                   }}
-                  className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                  className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-400 transition-colors flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Remove
                 </button>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               Recommended: Square PNG, WebP, or SVG (minimum 400×400px, max 5MB). Automatically updates across your profile and campaigns.
             </p>
           </div>
@@ -249,14 +249,14 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
       </div>
 
       {/* Company & Business Profile Details */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs space-y-6">
         <div>
-          <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-kpugi-blue dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
             <Building2 className="w-4 h-4" />
             <span>Company Profile</span>
           </div>
-          <h2 className="font-display text-xl font-bold text-kpugi-ink mt-1">Business Details</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="font-display text-xl font-bold text-kpugi-ink dark:text-white mt-1">Business Details</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Essential company details shown to creators on campaign briefs and brand discovery.
           </p>
         </div>
@@ -264,7 +264,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Company Name */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Company / Brand Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -273,19 +273,19 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="e.g., Paystack, Konga, PiggyVest"
-              className="w-full p-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             />
           </div>
 
           {/* Industry Category */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Industry Category
             </label>
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              className="w-full p-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-[#161820] text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             >
               {INDUSTRY_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -297,7 +297,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
 
           {/* Tagline / Elevator Pitch */}
           <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Brand Tagline / Description
             </label>
             <div className="relative">
@@ -306,7 +306,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
                 placeholder="e.g., Modern digital banking and automated savings for Africa's builders."
-                className="w-full p-3.5 pr-10 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+                className="w-full p-3.5 pr-10 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
               />
               <Sparkles className="absolute right-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
@@ -317,7 +317,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
 
           {/* Website URL */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Official Website URL
             </label>
             <div className="relative">
@@ -327,14 +327,14 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://yourcompany.com"
-                className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+                className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
               />
             </div>
           </div>
 
           {/* Headquarters Location */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Headquarters Location
             </label>
             <div className="relative">
@@ -344,7 +344,7 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g., Lagos, Nigeria"
-                className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+                className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
               />
             </div>
           </div>
@@ -352,60 +352,60 @@ export default function BrandIdentityTab({ data, onUpdateSuccess }: BrandIdentit
       </div>
 
       {/* Official Social Media Channels */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs space-y-6">
         <div>
-          <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-kpugi-blue dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
             <Share2 className="w-4 h-4" />
             <span>Social Presence</span>
           </div>
-          <h2 className="font-display text-xl font-bold text-kpugi-ink mt-1">Official Brand Channels</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="font-display text-xl font-bold text-kpugi-ink dark:text-white mt-1">Official Brand Channels</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Links to your official social profiles used for verifying campaign hashtags and creator tags.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Instagram Handle or URL</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Instagram Handle or URL</label>
             <input
               type="text"
               value={socialLinks.instagram}
               onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })}
               placeholder="@yourbrand or https://instagram.com/..."
-              className="w-full p-3 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">TikTok Handle or URL</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">TikTok Handle or URL</label>
             <input
               type="text"
               value={socialLinks.tiktok}
               onChange={(e) => setSocialLinks({ ...socialLinks, tiktok: e.target.value })}
               placeholder="@yourbrand or https://tiktok.com/@..."
-              className="w-full p-3 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">X (Twitter) Handle or URL</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">X (Twitter) Handle or URL</label>
             <input
               type="text"
               value={socialLinks.twitter}
               onChange={(e) => setSocialLinks({ ...socialLinks, twitter: e.target.value })}
               placeholder="@yourbrand or https://x.com/..."
-              className="w-full p-3 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">LinkedIn Company Page</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">LinkedIn Company Page</label>
             <input
               type="text"
               value={socialLinks.linkedin}
               onChange={(e) => setSocialLinks({ ...socialLinks, linkedin: e.target.value })}
               placeholder="https://linkedin.com/company/..."
-              className="w-full p-3 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             />
           </div>
         </div>

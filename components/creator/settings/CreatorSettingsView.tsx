@@ -234,15 +234,15 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12 font-sans text-kpugi-ink">
+    <div className="max-w-5xl mx-auto space-y-8 pb-12 font-sans text-kpugi-ink dark:text-white">
       {/* Top Hero Banner & Profile Overview */}
-      <div className="relative rounded-3xl bg-slate-900 text-white p-6 sm:p-8 overflow-hidden shadow-xl border border-slate-800">
+      <div className="relative rounded-3xl bg-slate-900 dark:bg-[#12141A] text-white p-6 sm:p-8 overflow-hidden shadow-xl border border-slate-800 dark:border-white/10">
         <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-kpugi-blue/20 blur-3xl pointer-events-none" />
         <div className="absolute right-1/3 -bottom-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg bg-slate-800 shrink-0">
+            <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg bg-slate-800 dark:bg-white/5 shrink-0">
               <Image
                 src={avatarUrl}
                 alt={displayName || 'Creator'}
@@ -258,7 +258,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                   {displayName || 'Creator Control Panel'}
                 </h1>
 
-                {/* User Creator Rank Badge (Replaced generic "Pro Creator Hub") */}
+                {/* User Creator Rank Badge */}
                 <div className={`px-3 py-1 rounded-full text-xs font-mono font-extrabold border flex items-center gap-1.5 shadow-sm ${levelData.levelInfo.badgeBg} ${levelData.levelInfo.badgeText} ${levelData.levelInfo.badgeBorder}`}>
                   <span>{levelData.levelInfo.icon}</span>
                   <span>Rank Lvl {levelData.levelInfo.level}: {levelData.levelInfo.title}</span>
@@ -279,7 +279,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
         </div>
 
         {/* Profile Completeness Meter & Small Card Checklist Icons Grid */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-4">
+        <div className="mt-6 pt-6 border-t border-slate-800/80 dark:border-white/10 space-y-4">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-semibold uppercase tracking-wider text-[11px] flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-kpugi-blue" />
@@ -288,7 +288,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             <span className="font-bold text-kpugi-blue font-mono text-sm">{completeness.score}% Complete</span>
           </div>
 
-          <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700">
+          <div className="w-full bg-slate-800 dark:bg-white/10 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700 dark:border-white/10">
             <div
               className="bg-gradient-to-r from-kpugi-blue via-indigo-400 to-emerald-400 h-full rounded-full transition-all duration-500"
               style={{ width: `${completeness.score}%` }}
@@ -316,18 +316,18 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                   key={step.id}
                   className={`p-3 rounded-2xl border transition-all flex flex-col justify-between space-y-2 ${
                     step.isComplete
-                      ? 'bg-slate-900/90 border-emerald-500/30 text-white shadow-xs'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400'
+                      ? 'bg-slate-900/90 dark:bg-white/10 border-emerald-500/30 text-white shadow-xs'
+                      : 'bg-slate-900/60 dark:bg-white/5 border-slate-800 dark:border-white/10 text-slate-400'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
-                      step.isComplete ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      step.isComplete ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 dark:bg-white/10 text-slate-400 border border-slate-700 dark:border-white/10'
                     }`}>
                       <IconComponent className="w-4 h-4" />
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
-                      step.isComplete ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                      step.isComplete ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 dark:bg-white/10 text-slate-400'
                     }`}>
                       {step.isComplete ? '✓ Done' : '○ Pending'}
                     </span>
@@ -338,7 +338,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                       {cleanLabel}
                     </div>
                     {!step.isComplete && step.shortcutUrl && (
-                      <Link href={step.shortcutUrl} className="text-[10px] font-bold text-kpugi-blue hover:text-white transition-colors inline-block mt-1">
+                      <Link href={step.shortcutUrl} className="text-[10px] font-bold text-kpugi-blue dark:text-blue-400 hover:text-white transition-colors inline-block mt-1">
                         Fix →
                       </Link>
                     )}
@@ -356,32 +356,32 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
       {/* Quick Control Shortcuts Hub (Social Accounts, Payout Bank, Clean Identity Card) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Social Accounts Status Card */}
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-kpugi-blue dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
                 <Link2 className="w-4 h-4" />
                 <span>Social Accounts</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
                 {connectedAccountsList.length} Connected
               </span>
             </div>
 
-            <p className="text-slate-600 text-xs mt-2 leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-400 text-xs mt-2 leading-relaxed">
               OAuth connected handles used for automated view verification and clock-in submissions.
             </p>
 
             <div className="mt-3 space-y-1.5">
               {connectedAccountsList.length > 0 ? (
                 connectedAccountsList.slice(0, 3).map((acc) => (
-                  <div key={acc.platform} className="flex items-center justify-between text-xs bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
-                    <span className="font-semibold capitalize text-slate-800">@{acc.handle}</span>
-                    <span className="text-[10px] text-slate-500 capitalize">{acc.platform}</span>
+                  <div key={acc.platform} className="flex items-center justify-between text-xs bg-slate-50 dark:bg-white/5 px-2.5 py-1.5 rounded-xl border border-slate-100 dark:border-white/10">
+                    <span className="font-semibold capitalize text-slate-800 dark:text-slate-200">@{acc.handle}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{acc.platform}</span>
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-100 dark:border-amber-500/30">
                   No social accounts linked yet.
                 </div>
               )}
@@ -390,40 +390,39 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
           <Link
             href="/accounts"
-            className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs text-center transition-colors block"
+            className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 font-bold text-xs text-center transition-colors block"
           >
             Manage Connected Accounts →
           </Link>
         </div>
 
-        {/* Bank Payouts Status Card (Cleaned of Paystack branding) */}
         {/* Bank Account Details Card */}
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
                 <CreditCard className="w-4 h-4" />
                 <span>Payout Bank Account</span>
               </div>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${primaryBank ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${primaryBank ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400'}`}>
                 {primaryBank ? 'Ready' : 'Unset'}
               </span>
             </div>
 
-            <p className="text-slate-600 text-xs mt-2 leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-400 text-xs mt-2 leading-relaxed">
               Verified bank account where campaign view earnings are transferred directly.
             </p>
 
             <div className="mt-3">
               {primaryBank ? (
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
-                  <div className="font-bold text-slate-900 text-xs">{(primaryBank as any).accountName || (primaryBank as any).account_name}</div>
-                  <div className="text-[11px] text-slate-500">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-1">
+                  <div className="font-bold text-slate-900 dark:text-white text-xs">{(primaryBank as any).accountName || (primaryBank as any).account_name}</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     {(primaryBank as any).bankName || (primaryBank as any).bank_name} • {((primaryBank as any).accountNumber || (primaryBank as any).account_number || '').slice(-4)}
                   </div>
                 </div>
               ) : (
-                <div className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-100 dark:border-amber-500/30">
                   Enter bank details on Wallet page to enable payouts.
                 </div>
               )}
@@ -432,54 +431,54 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
           <Link
             href="/c/wallet"
-            className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs text-center transition-colors block"
+            className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 font-bold text-xs text-center transition-colors block"
           >
             Update Bank & Payouts →
           </Link>
         </div>
 
-        {/* Clean White-labeled Identity Verification Card */}
-        <div className="p-5 rounded-3xl bg-white border border-kpugi-border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+        {/* Clean Identity Verification Card */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Identity Verification</span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                 kycStatus === 'verified'
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                   : kycStatus === 'pending'
-                  ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse'
-                  : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                  ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 animate-pulse'
+                  : 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
               }`}>
                 {kycStatus === 'verified' ? '✓ Verified' : kycStatus === 'pending' ? '⏳ Under Review' : 'Required'}
               </span>
             </div>
 
-            <p className="text-slate-600 text-xs mt-2 leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-400 text-xs mt-2 leading-relaxed">
               Verify your official government ID (NIN, Voter Card, or Passport) to enable instant earnings withdrawals.
             </p>
 
             <div className="mt-4">
               {kycStatus === 'verified' ? (
-                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span>Official Government ID Verified</span>
                 </div>
               ) : kycStatus === 'pending' ? (
-                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-100 text-amber-900 text-xs space-y-1">
+                <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-500/30 text-amber-900 dark:text-amber-300 text-xs space-y-1">
                   <div className="font-bold flex items-center gap-1.5">
                     <span>⏳ Verification Under Review</span>
                   </div>
-                  <p className="text-[11px] text-amber-800">
+                  <p className="text-[11px] text-amber-800 dark:text-amber-300">
                     Your verification submission is being checked. This card will update automatically.
                   </p>
                 </div>
               ) : (
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-xs space-y-1">
-                  <div className="font-bold text-slate-900">Withdrawal Requirement</div>
-                  <p className="text-[11px] text-slate-500">
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs space-y-1">
+                  <div className="font-bold text-slate-900 dark:text-white">Withdrawal Requirement</div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Unverified accounts cannot request earnings payouts. Complete 1-minute verification below.
                   </p>
                 </div>
@@ -520,23 +519,23 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Creator Profile Form */}
         <div className="lg:col-span-7 space-y-6">
-          <form onSubmit={handleProfileSubmit} className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
+          <form onSubmit={handleProfileSubmit} className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6">
             <div>
-              <h2 className="font-display text-lg font-bold text-slate-900">Creator Profile & Brand</h2>
-              <p className="text-slate-500 text-xs mt-0.5">Customize your public identity shown to advertisers in campaign audits.</p>
+              <h2 className="font-display text-lg font-bold text-slate-900 dark:text-white">Creator Profile & Brand</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Customize your public identity shown to advertisers in campaign audits.</p>
             </div>
 
             {profileMsg && (
-              <div className={`p-3.5 rounded-xl text-xs font-bold ${profileMsg.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+              <div className={`p-3.5 rounded-xl text-xs font-bold ${profileMsg.type === 'error' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'}`}>
                 {profileMsg.text}
               </div>
             )}
 
             {/* Avatar Picker */}
             <div className="space-y-3">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Profile Avatar</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Profile Avatar</label>
               <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-kpugi-blue shadow-md bg-slate-100 shrink-0">
+                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-kpugi-blue shadow-md bg-slate-100 dark:bg-white/5 shrink-0">
                   <Image src={avatarUrl} alt="Selected Avatar" fill className="object-cover" unoptimized />
                 </div>
                 <div className="space-y-2 flex-1">
@@ -560,16 +559,16 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                       if (e.target.value.trim()) setAvatarUrl(e.target.value.trim());
                     }}
                     placeholder="Or paste custom image URL..."
-                    className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-kpugi-blue"
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-kpugi-blue"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Display Name & Handle (Immutable Username enforcement) */}
+            {/* Display Name & Handle */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                   Display Name
                 </label>
                 <input
@@ -578,15 +577,15 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
                   placeholder="e.g. Tobi Creator"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Creator Handle</span>
                   {creator.creator_handle && (
-                    <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <Lock className="w-3 h-3 text-slate-400" /> Locked
                     </span>
                   )}
@@ -599,16 +598,16 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                     disabled={!!creator.creator_handle}
                     onChange={(e) => setCreatorHandle(e.target.value.replace(/^@/, ''))}
                     placeholder="tobi_creates"
-                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900 dark:text-white disabled:bg-slate-100 dark:disabled:bg-white/5 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                   />
                 </div>
                 {creator.creator_handle ? (
-                  <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 font-medium">
-                    <Lock className="w-3 h-3 text-amber-600 shrink-0" />
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1 font-medium">
+                    <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
                     Usernames are permanent and cannot be changed once created.
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
                     Choose your permanent creator username. This cannot be changed later.
                   </p>
                 )}
@@ -617,7 +616,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
             {/* Bio */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 Bio / Creator Statement
               </label>
               <textarea
@@ -625,13 +624,13 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                 onChange={(e) => setBio(e.target.value)}
                 rows={3}
                 placeholder="Tell brands about your content style, audience demographics, and viral formats..."
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900 leading-relaxed"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-medium focus:outline-none focus:border-kpugi-blue text-slate-900 dark:text-white leading-relaxed"
               />
             </div>
 
             {/* Niches */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 Content Niches & Categories
               </label>
               <div className="flex flex-wrap gap-2">
@@ -644,8 +643,8 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                       onClick={() => handleNicheToggle(niche)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
                         isSelected
-                          ? 'bg-kpugi-blue text-white border-kpugi-blue shadow-2xs'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
+                          ? 'bg-kpugi-blue dark:bg-blue-600 text-white border-kpugi-blue dark:border-blue-600 shadow-2xs'
+                          : 'bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-slate-300'
                       }`}
                     >
                       {niche} {isSelected && '✓'}
@@ -655,7 +654,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex justify-end">
               <button
                 type="submit"
                 disabled={savingProfile}
@@ -676,34 +675,34 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
         {/* Right Column: Live Notification Toggles & Account Info */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Notification Preferences Card (Connected Live to Supabase DB) */}
-          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-5">
+          {/* Notification Preferences Card */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-5">
             <div>
               <div className="flex items-center justify-between">
-                <h2 className="font-display text-lg font-bold text-slate-900">Notification Preferences</h2>
+                <h2 className="font-display text-lg font-bold text-slate-900 dark:text-white">Notification Preferences</h2>
                 {savingNotifs && <span className="text-[10px] font-bold text-kpugi-blue animate-pulse">Saving...</span>}
               </div>
-              <p className="text-slate-500 text-xs mt-0.5">Control live email and payout alert triggers stored in your database record.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Control live email and payout alert triggers stored in your database record.</p>
             </div>
 
             {notifMsg && (
-              <div className={`p-2.5 rounded-xl text-xs font-bold ${notifMsg.type === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'}`}>
+              <div className={`p-2.5 rounded-xl text-xs font-bold ${notifMsg.type === 'error' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'}`}>
                 {notifMsg.text}
               </div>
             )}
 
-            <div className="space-y-4 divide-y divide-slate-100">
+            <div className="space-y-4 divide-y divide-slate-100 dark:divide-white/5">
               {/* Email Notifications Toggle */}
               <div className="pt-3 flex items-center justify-between gap-4">
                 <div>
-                  <div className="font-bold text-xs text-slate-900">Email Notifications</div>
-                  <div className="text-[11px] text-slate-500">Receive campaign updates, audit approvals, and platform alerts.</div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">Email Notifications</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Receive campaign updates, audit approvals, and platform alerts.</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggleNotif('notify_email')}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    notifs.notify_email ? 'bg-kpugi-blue' : 'bg-slate-200'
+                    notifs.notify_email ? 'bg-kpugi-blue' : 'bg-slate-200 dark:bg-white/10'
                   }`}
                 >
                   <span
@@ -717,14 +716,14 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               {/* Instant Payout & Escrow Alerts */}
               <div className="pt-3 flex items-center justify-between gap-4">
                 <div>
-                  <div className="font-bold text-xs text-slate-900">Payout & 1k View Floor Alerts</div>
-                  <div className="text-[11px] text-slate-500">Get notified immediately when posts reach 1,000 views or bank payouts complete.</div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">Payout & 1k View Floor Alerts</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Get notified immediately when posts reach 1,000 views or bank payouts complete.</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggleNotif('notify_payouts')}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    notifs.notify_payouts ? 'bg-kpugi-blue' : 'bg-slate-200'
+                    notifs.notify_payouts ? 'bg-kpugi-blue' : 'bg-slate-200 dark:bg-white/10'
                   }`}
                 >
                   <span
@@ -738,14 +737,14 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               {/* Campaign Match Alerts */}
               <div className="pt-3 flex items-center justify-between gap-4">
                 <div>
-                  <div className="font-bold text-xs text-slate-900">Campaign Match Alerts</div>
-                  <div className="text-[11px] text-slate-500">Receive instant alerts when new high-CPM briefs match your selected content niches.</div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">Campaign Match Alerts</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Receive instant alerts when new high-CPM briefs match your selected content niches.</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggleNotif('notify_campaigns')}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    notifs.notify_campaigns ? 'bg-kpugi-blue' : 'bg-slate-200'
+                    notifs.notify_campaigns ? 'bg-kpugi-blue' : 'bg-slate-200 dark:bg-white/10'
                   }`}
                 >
                   <span
@@ -759,20 +758,20 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
           </div>
 
           {/* Account Security & Identity Info */}
-          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-            <h2 className="font-display text-lg font-bold text-slate-900">Account & Security</h2>
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
+            <h2 className="font-display text-lg font-bold text-slate-900 dark:text-white">Account & Security</h2>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500">Account Email</span>
-                <span className="font-bold text-slate-800">{profile.email}</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-white/10">
+                <span className="text-slate-500 dark:text-slate-400">Account Email</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{profile.email}</span>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500">Authentication Method</span>
-                <span className="font-bold text-slate-800">Clerk SSO / Managed</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-white/10">
+                <span className="text-slate-500 dark:text-slate-400">Authentication Method</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">Clerk SSO / Managed</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Platform ID</span>
-                <span className="font-mono text-[11px] text-slate-600">{profile.id.slice(0, 13)}...</span>
+                <span className="text-slate-500 dark:text-slate-400">Platform ID</span>
+                <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">{profile.id.slice(0, 13)}...</span>
               </div>
             </div>
           </div>

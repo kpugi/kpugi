@@ -390,14 +390,14 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
   };
 
   return (
-    <div className="space-y-6 pb-12 font-sans">
+    <div className="space-y-6 pb-12 font-sans text-slate-900 dark:text-white">
       {/* Top Section Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Financial Overview
           </h1>
-          <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">
             Manage your institutional capital and active campaign escrows.
           </p>
         </div>
@@ -406,9 +406,9 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
           <button
             type="button"
             onClick={handleExportStatementCSV}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-2xs"
+            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors flex items-center gap-2 shadow-2xs"
           >
-            <Download className="w-4 h-4 text-slate-500" />
+            <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             <span>Export Statement</span>
           </button>
           <button
@@ -426,19 +426,19 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
         <div
           className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between ${
             msg.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border border-rose-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
           }`}
         >
           <div className="flex items-center gap-2">
             {msg.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             )}
             <span>{msg.text}</span>
           </div>
-          <button onClick={() => setMsg(null)} className="text-slate-400 hover:text-slate-600">
+          <button onClick={() => setMsg(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -447,61 +447,61 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       {/* 3 Top Financial Summary Cards Grid (100% Real DB Data) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Total Wallet Balance */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
+        <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
               Total Wallet Balance
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#4338ca] flex items-center justify-center border border-blue-100/60">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#4338ca] dark:text-indigo-400 flex items-center justify-center border border-blue-100/60 dark:border-blue-800/40">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {formatCompactCurrency(liveWalletBalance)}
             </p>
-            <span className="text-[11px] font-medium text-slate-400 mt-1 block">
+            <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 mt-1 block">
               Unallocated funds available
             </span>
           </div>
         </div>
 
         {/* Card 2: Active Escrow */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
+        <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
               Active Escrow
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/60">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100/60 dark:border-amber-800/40">
               <Lock className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {formatCompactCurrency(liveEscrowLocked)}
             </p>
-            <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1.5 mt-1">
-              <span className="w-2 h-2 rounded-full bg-[#4338ca] animate-pulse" />
+            <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 mt-1">
+              <span className="w-2 h-2 rounded-full bg-[#4338ca] dark:bg-indigo-400 animate-pulse" />
               Locked across {escrowItems.length} campaign{escrowItems.length !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
 
         {/* Card 3: Total Payouts */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
+        <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-3 hover:shadow-xs transition-shadow">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
               Total Payouts
             </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/60">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100/60 dark:border-emerald-800/40">
               <Banknote className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <p className="font-display text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {formatCompactCurrency(liveTotalPayouts)}
             </p>
-            <span className="text-[11px] font-medium text-slate-400 mt-1 block">
+            <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 mt-1 block">
               All-time released to creators
             </span>
           </div>
@@ -510,53 +510,53 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
 
       {/* Main Layout Grid: Full-Width Transaction History */}
       <div className="w-full space-y-6">
-          <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs overflow-hidden">
             {/* Card Header (No 'View All' link) */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="font-display text-base sm:text-lg font-bold text-slate-900">
+            <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+              <h2 className="font-display text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                 Transaction History
               </h2>
-              <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-300 bg-slate-100 dark:bg-white/10 px-2.5 py-1 rounded-full">
                 {transactions.length} Record{transactions.length !== 1 ? 's' : ''}
               </span>
             </div>
 
             {/* Ledger Filters Bar */}
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center gap-3">
+            <div className="p-4 bg-slate-50 dark:bg-[#161820] border-b border-slate-100 dark:border-white/10 flex flex-wrap items-center gap-3">
               {/* Type Select */}
               <div className="flex flex-col gap-1 min-w-[130px] flex-1 sm:flex-initial">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Type</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">Type</span>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700"
+                  className="px-3 py-2 text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700 dark:text-slate-200"
                 >
-                  <option value="all">All Types</option>
-                  <option value="deposit">Deposits</option>
-                  <option value="campaign_funding">Campaign Funding</option>
-                  <option value="unspent_refund">Refunds</option>
+                  <option value="all" className="bg-white dark:bg-[#12141A] text-slate-700 dark:text-white">All Types</option>
+                  <option value="deposit" className="bg-white dark:bg-[#12141A] text-slate-700 dark:text-white">Deposits</option>
+                  <option value="campaign_funding" className="bg-white dark:bg-[#12141A] text-slate-700 dark:text-white">Campaign Funding</option>
+                  <option value="unspent_refund" className="bg-white dark:bg-[#12141A] text-slate-700 dark:text-white">Refunds</option>
                 </select>
               </div>
 
               {/* Start Date */}
               <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Start Date</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">Start Date</span>
                 <input
                   type="date"
                   value={filterStartDate}
                   onChange={(e) => setFilterStartDate(e.target.value)}
-                  className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700"
+                  className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700 dark:text-slate-200"
                 />
               </div>
 
               {/* End Date */}
               <div className="flex flex-col gap-1 min-w-[120px] flex-1 sm:flex-initial">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">End Date</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">End Date</span>
                 <input
                   type="date"
                   value={filterEndDate}
                   onChange={(e) => setFilterEndDate(e.target.value)}
-                  className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700"
+                  className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl focus:border-indigo-500 focus:outline-hidden text-slate-700 dark:text-slate-200"
                 />
               </div>
 
@@ -566,7 +566,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                   type="button"
                   onClick={handleApplyFilters}
                   disabled={isFiltering}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors self-end h-[36px]"
+                  className="px-4 py-2 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-50 text-white dark:text-slate-900 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors self-end h-[36px]"
                 >
                   {isFiltering ? (
                     <>
@@ -581,7 +581,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                   type="button"
                   onClick={handleResetFilters}
                   disabled={isFiltering}
-                  className="px-3 py-2 border border-slate-200 hover:bg-slate-50 disabled:opacity-50 text-slate-600 font-bold text-xs rounded-xl transition-colors h-[36px]"
+                  className="px-3 py-2 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-50 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition-colors h-[36px]"
                 >
                   Reset
                 </button>
@@ -592,7 +592,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-50/70">
+                  <tr className="border-b border-slate-100 dark:border-white/10 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 bg-slate-50/70 dark:bg-[#161820]">
                     <th className="py-3 px-5">Date & Time</th>
                     <th className="py-3 px-4">Type</th>
                     <th className="py-3 px-4">Description</th>
@@ -600,10 +600,10 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                     <th className="py-3 px-5 text-right">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
                   {paginatedTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                      <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-400">
                         No transaction history recorded yet. Make a deposit to fund your brand wallet.
                       </td>
                     </tr>
@@ -611,30 +611,30 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                     paginatedTransactions.map((tx) => {
                       const isCredit = tx.amount > 0;
                       return (
-                        <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={tx.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors">
                           <td className="py-4 px-5">
-                            <span className="font-mono font-bold text-slate-800 text-xs block">{tx.date}</span>
+                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs block">{tx.date}</span>
                             <span className="font-mono text-[10px] text-slate-400 font-medium block">{tx.time}</span>
                           </td>
-                          <td className="py-4 px-4 font-bold text-slate-800">
+                          <td className="py-4 px-4 font-bold text-slate-800 dark:text-slate-200">
                             <span
                               className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
                                 tx.type === 'Deposit'
-                                  ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40'
                                   : tx.type === 'Unspent Refund'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                    : 'bg-slate-100 text-slate-800 border border-slate-200'
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/40'
+                                    : 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10'
                               }`}
                             >
                               {tx.type}
                             </span>
                           </td>
-                          <td className="py-4 px-4 font-medium text-slate-600">
+                          <td className="py-4 px-4 font-medium text-slate-600 dark:text-slate-300">
                             <div className="flex items-center gap-2 flex-wrap">
                               {tx.campaignId ? (
                                 <Link
                                   href={`/b/campaigns/${tx.campaignId}`}
-                                  className="text-slate-900 font-bold hover:text-blue-600 hover:underline flex items-center gap-1 transition-colors group"
+                                  className="text-slate-900 dark:text-white font-bold hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors group"
                                 >
                                   <span>{tx.description}</span>
                                   <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-blue-600 transition-colors" />
@@ -643,7 +643,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                                 <span>{tx.description}</span>
                               )}
                               {tx.campaignCode && (
-                                <span className="font-mono text-[10px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">
+                                <span className="font-mono text-[10px] bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-bold">
                                   {tx.campaignCode}
                                 </span>
                               )}
@@ -651,7 +651,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                           </td>
                           <td className="py-4 px-4 text-right">
                             {tx.type === 'Unspent Refund' ? (
-                              <div className="inline-flex items-center gap-1 font-mono font-extrabold text-emerald-600">
+                              <div className="inline-flex items-center gap-1 font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
                                 <span>+₦{format2Decimals(tx.amount)}</span>
                               </div>
                             ) : (
@@ -660,7 +660,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                                 onClick={() => handleOpenReceipt(tx)}
                                 title="Click to view official receipt 📄"
                                 className={`group inline-flex items-center gap-1 font-mono font-extrabold hover:underline transition-all ${
-                                  isCredit ? 'text-blue-600 hover:text-blue-700' : 'text-slate-900 hover:text-blue-600'
+                                  isCredit ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700' : 'text-slate-900 dark:text-white hover:text-blue-600'
                                 }`}
                               >
                                 <span>{isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}</span>
@@ -670,7 +670,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                           </td>
                           <td className="py-4 px-5 text-right">
                             {tx.type === 'Unspent Refund' ? (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30">
                                 {tx.status}
                               </span>
                             ) : (
@@ -680,12 +680,12 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                                 title="Click to view official receipt 📄"
                                 className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-opacity hover:opacity-80 ${
                                   tx.status === 'COMPLETED'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
                                     : tx.status === 'CANCELLED'
-                                      ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
+                                      ? 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10'
                                       : tx.status === 'FAILED'
-                                        ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                                        : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/30'
+                                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
                                 }`}
                               >
                                 {tx.status}
@@ -701,7 +701,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
             </div>
 
             {/* Mobile Responsive Card List View */}
-            <div className="block sm:hidden divide-y divide-slate-100">
+            <div className="block sm:hidden divide-y divide-slate-100 dark:divide-white/5">
               {paginatedTransactions.length === 0 ? (
                 <div className="p-6 text-center text-xs text-slate-400">
                   No transaction history recorded yet. Make a deposit to fund your brand wallet.
@@ -717,23 +717,23 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                           <span
                             className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
                               tx.type === 'Deposit'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40'
                                 : tx.type === 'Unspent Refund'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                  : 'bg-slate-100 text-slate-800 border border-slate-200'
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/40'
+                                  : 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10'
                             }`}
                           >
                             {tx.type}
                           </span>
                           {tx.campaignCode && (
-                            <span className="font-mono text-[9px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold shrink-0">
+                            <span className="font-mono text-[9px] bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-bold shrink-0">
                               {tx.campaignCode}
                             </span>
                           )}
                         </div>
                         {tx.type === 'Unspent Refund' ? (
                           <div
-                            className="font-mono text-sm font-extrabold text-emerald-600 shrink-0"
+                            className="font-mono text-sm font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0"
                           >
                             <span>+₦{format2Decimals(tx.amount)}</span>
                           </div>
@@ -743,7 +743,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                             onClick={() => handleOpenReceipt(tx)}
                             title="Click to view official receipt 📄"
                             className={`font-mono text-sm font-extrabold shrink-0 flex items-center gap-1 hover:underline ${
-                              isCredit ? 'text-blue-600' : 'text-slate-900'
+                              isCredit ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'
                             }`}
                           >
                             <span>{isCredit ? '+' : ''}₦{format2Decimals(tx.amount)}</span>
@@ -753,11 +753,11 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                       </div>
 
                       {/* Middle Row: Description */}
-                      <div className="text-xs font-semibold text-slate-700 leading-snug">
+                      <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-snug">
                         {tx.campaignId ? (
                           <Link
                             href={`/b/campaigns/${tx.campaignId}`}
-                            className="text-slate-900 font-bold hover:text-blue-600 hover:underline flex items-center gap-1"
+                            className="text-slate-900 dark:text-white font-bold hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1"
                           >
                             <span>{tx.description}</span>
                             <ExternalLink className="w-3 h-3 text-slate-400" />
@@ -772,7 +772,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                         <span>{tx.date} • {tx.time}</span>
                         {tx.type === 'Unspent Refund' ? (
                           <span
-                            className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                            className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30"
                           >
                             {tx.status}
                           </span>
@@ -782,12 +782,12 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                             onClick={() => handleOpenReceipt(tx)}
                             className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${
                               tx.status === 'COMPLETED'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
                                 : tx.status === 'CANCELLED'
-                                  ? 'bg-slate-100 text-slate-700 border border-slate-200/60'
+                                  ? 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10'
                                   : tx.status === 'FAILED'
-                                    ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                                    : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/30'
+                                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
                             }`}
                           >
                             {tx.status}
@@ -801,7 +801,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
             </div>
 
             {/* Pagination Controls */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="p-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>
                 Showing {transactions.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
                 {Math.min(currentPage * itemsPerPage, transactions.length)} of {transactions.length} transactions
@@ -811,7 +811,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                  className="w-7 h-7 rounded-lg border border-slate-200 dark:border-white/10 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -819,7 +819,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                   type="button"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                  className="w-7 h-7 rounded-lg border border-slate-200 dark:border-white/10 flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -831,14 +831,14 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       {/* Settings & Activity Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
         {/* Low Balance Alerts Card (1/3 width) */}
-        <div className="md:col-span-1 p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
-            <BellRing className="w-4 h-4 text-indigo-600 animate-bounce" />
-            <h3 className="font-display text-sm font-bold text-slate-900">Low Balance Alerts</h3>
+        <div className="md:col-span-1 p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/10">
+            <BellRing className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-bounce" />
+            <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">Low Balance Alerts</h3>
           </div>
           <form onSubmit={handleSaveAlertSettings} className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-600">Enable Email Alert</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Enable Email Alert</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -846,14 +846,14 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                   onChange={(e) => setAlertEnabled(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                <div className="w-9 h-5 bg-slate-200 dark:bg-white/20 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
               </label>
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
                 Alert Threshold (₦)
               </label>
-              <div className="relative rounded-xl border border-slate-200 focus-within:border-indigo-500 transition-colors">
+              <div className="relative rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 focus-within:border-indigo-500 transition-colors">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₦</span>
                 <input
                   type="text"
@@ -863,14 +863,14 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                     setAlertThreshold(cleanVal);
                   }}
                   disabled={!alertEnabled}
-                  className="w-full pl-7 pr-4 py-2.5 bg-transparent text-xs font-mono font-bold text-slate-800 focus:outline-hidden disabled:opacity-40"
+                  className="w-full pl-7 pr-4 py-2.5 bg-transparent text-xs font-mono font-bold text-slate-800 dark:text-white focus:outline-hidden disabled:opacity-40"
                 />
               </div>
             </div>
             <button
               type="submit"
               disabled={isSavingAlert}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
             >
               {isSavingAlert ? 'Saving...' : 'Save Preferences'}
             </button>
@@ -878,24 +878,24 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
         </div>
 
         {/* Live Payout Activity Stream Card (2/3 width) */}
-        <div className="md:col-span-2 p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
-            <Coins className="w-4 h-4 text-emerald-600 animate-pulse" />
-            <h3 className="font-display text-sm font-bold text-slate-900">Recent Payout Activity</h3>
+        <div className="md:col-span-2 p-5 rounded-2xl bg-white dark:bg-[#12141A] border border-slate-200/80 dark:border-white/10 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/10">
+            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+            <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">Recent Payout Activity</h3>
           </div>
           <div className="space-y-3">
             {recentPayouts.length === 0 ? (
               <p className="text-xs text-slate-400 py-6 text-center">No recent payouts released from your campaigns.</p>
             ) : (
               recentPayouts.map((payout) => (
-                <div key={payout.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between gap-3 hover:bg-slate-100/50 transition-colors">
+                <div key={payout.id} className="p-3.5 rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.03] flex items-center justify-between gap-3 hover:bg-slate-100/50 dark:hover:bg-white/[0.06] transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-700">
-                        Released <span className="font-mono font-extrabold text-slate-900">₦{payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span> to <span className="font-bold text-indigo-600">@{payout.creatorName}</span>
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Released <span className="font-mono font-extrabold text-slate-900 dark:text-white">₦{payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span> to <span className="font-bold text-indigo-600 dark:text-indigo-400">@{payout.creatorName}</span>
                       </p>
                       <span className="text-[10px] text-slate-400 block mt-0.5">Campaign: {payout.campaignTitle}</span>
                     </div>
@@ -913,17 +913,17 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       {/* Paystack Checkout Deposit Modal (+ Add Funds) */}
       {showDepositModal && mounted && createPortal(
         <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto">
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-5 animate-in fade-in zoom-in-95 my-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="w-full max-w-md bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 p-6 space-y-5 animate-in fade-in zoom-in-95 my-auto text-slate-900 dark:text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#4338ca] flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#4338ca] dark:text-indigo-400 flex items-center justify-center font-bold">
                   <CreditCard className="w-4 h-4" />
                 </div>
-                <h3 className="font-display font-extrabold text-base text-slate-900">Add Funds</h3>
+                <h3 className="font-display font-extrabold text-base text-slate-900 dark:text-white">Add Funds</h3>
               </div>
               <button
                 onClick={() => setShowDepositModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -932,7 +932,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
             <form onSubmit={handleDepositSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 text-xs uppercase tracking-wider">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wider">
                     Deposit Amount (₦ NGN)
                   </label>
                   <span className="text-[11px] font-bold text-slate-400">Min: ₦5,000</span>
@@ -943,15 +943,15 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                   step={1000}
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl border font-mono font-black text-lg text-slate-900 focus:outline-none transition-colors ${
+                  className={`w-full px-4 py-3 rounded-2xl border font-mono font-black text-lg text-slate-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none transition-colors ${
                     (parseFloat(String(depositAmount || '').replace(/[^0-9.]/g, '')) || 0) < 5000
-                      ? 'border-rose-300 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/30'
-                      : 'border-slate-200 focus:ring-2 focus:ring-[#4338ca]/20'
+                      ? 'border-rose-300 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/30 dark:bg-rose-950/20'
+                      : 'border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-[#4338ca]/20'
                   }`}
                   required
                 />
                 {(parseFloat(String(depositAmount || '').replace(/[^0-9.]/g, '')) || 0) < 5000 && (
-                  <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1">
+                  <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     Hold on now... Minimum top-up is ₦5,000! Let's get them numbers up.
                   </p>
@@ -970,7 +970,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                       className={`py-2 rounded-xl text-xs font-mono font-bold border transition-colors ${
                         depositAmount === amt
                           ? 'bg-[#4338ca] text-white border-[#4338ca]'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
                       }`}
                     >
                       {formatCompactCurrency(Number(amt))}
@@ -979,11 +979,11 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
                   <Zap className="w-3.5 h-3.5 text-amber-500" /> Payment Gateway
                 </span>
-                <span className="font-bold text-slate-900 font-mono">Paystack Popup</span>
+                <span className="font-bold text-slate-900 dark:text-white font-mono">Paystack Popup</span>
               </div>
 
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
@@ -994,7 +994,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
                 <button
                   type="button"
                   onClick={() => setShowDepositModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   Cancel
                 </button>

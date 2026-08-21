@@ -5,19 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isDarkPage = pathname?.startsWith('/browse') || pathname?.startsWith('/c/') || pathname?.startsWith('/dashboard');
 
   return (
-    <header 
-      className={`sticky top-0 z-50 transition-colors duration-500 backdrop-blur-xl ${
-        isDarkPage 
-          ? 'bg-[#090A0F]/60 border-b border-white/5 text-white' 
-          : 'bg-white/90 border-b border-kpugi-border text-kpugi-ink'
-      }`}
-    >
+    <header className="sticky top-0 z-50 transition-colors duration-300 backdrop-blur-xl bg-white/90 dark:bg-[#090A0F]/80 border-b border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center group">
           <Image
@@ -30,18 +24,16 @@ export default function Navbar() {
           />
         </Link>
 
-        <nav className={`hidden md:flex items-center gap-8 text-sm font-medium ${
-          isDarkPage ? 'text-white/70' : 'text-kpugi-slate'
-        }`}>
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-kpugi-slate dark:text-slate-300">
           <Link 
             href="/how-it-works" 
-            className={`transition-colors ${isDarkPage ? 'hover:text-white' : 'hover:text-kpugi-blue'}`}
+            className="transition-colors hover:text-kpugi-blue dark:hover:text-white"
           >
             How it Works
           </Link>
           <Link 
             href="/pricing" 
-            className={`transition-colors ${isDarkPage ? 'hover:text-white' : 'hover:text-kpugi-blue'}`}
+            className="transition-colors hover:text-kpugi-blue dark:hover:text-white"
           >
             Pricing
           </Link>
@@ -49,12 +41,8 @@ export default function Navbar() {
             href="/browse" 
             className={`transition-colors ${
               pathname === '/browse'
-                ? isDarkPage 
-                  ? 'text-white font-bold' 
-                  : 'text-kpugi-blue font-bold'
-                : isDarkPage 
-                  ? 'hover:text-white' 
-                  : 'hover:text-kpugi-blue'
+                ? 'text-kpugi-blue dark:text-white font-bold'
+                : 'hover:text-kpugi-blue dark:hover:text-white'
             }`}
           >
             Browse
@@ -62,14 +50,12 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
+
           <SignedOut>
             <Link 
               href="/sign-in" 
-              className={`px-4 py-2 text-xs font-bold transition-colors ${
-                isDarkPage 
-                  ? 'text-white/80 hover:text-white' 
-                  : 'text-kpugi-ink hover:text-kpugi-blue'
-              }`}
+              className="px-3.5 py-2 text-xs font-bold text-kpugi-ink dark:text-white/80 hover:text-kpugi-blue dark:hover:text-white transition-colors"
             >
               Sign In
             </Link>
@@ -84,11 +70,7 @@ export default function Navbar() {
           <SignedIn>
             <Link 
               href="/dashboard" 
-              className={`px-4 py-2.5 text-xs font-bold rounded-xl shadow-sm transition-all ${
-                isDarkPage 
-                  ? 'bg-white text-black hover:bg-white/90 shadow-white/10' 
-                  : 'bg-kpugi-ink text-white hover:bg-black'
-              }`}
+              className="px-4 py-2 text-xs font-bold rounded-xl shadow-sm transition-all bg-kpugi-ink text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
               Dashboard →
             </Link>
@@ -99,4 +81,3 @@ export default function Navbar() {
     </header>
   );
 }
-

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import KnockProviderWrapper from '@/components/providers/KnockProviderWrapper';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import './globals.css';
 
@@ -31,7 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" data-theme="kpugi">
+      <html lang="en" suppressHydrationWarning>
         <head>
           <link
             rel="stylesheet"
@@ -42,14 +43,20 @@ export default function RootLayout({
             href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           />
         </head>
-        <body className="min-h-screen bg-[#090A0F] text-white antialiased overflow-x-hidden">
-          <NetworkStatusBanner />
-          <KnockProviderWrapper>
-            {children}
-          </KnockProviderWrapper>
+        <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden transition-colors duration-200">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            <NetworkStatusBanner />
+            <KnockProviderWrapper>
+              {children}
+            </KnockProviderWrapper>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
   );
 }
-

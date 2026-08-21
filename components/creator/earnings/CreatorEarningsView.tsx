@@ -334,23 +334,23 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
   });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink pb-12 font-sans">
+    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink dark:text-white pb-12 font-sans">
       {/* ─────────────────────────────────────────────────────
          TOP ROW: BALANCE CARDS
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Hero Balance Card (70% width) */}
-        <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 text-center sm:text-left">
             <div className="space-y-2 flex flex-col items-center sm:items-start">
-              <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider block">
+              <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider block">
                 Available Wallet Balance
               </span>
-              <div className="font-mono font-extrabold text-3xl sm:text-4xl text-kpugi-ink tracking-tight">
+              <div className="font-mono font-extrabold text-3xl sm:text-4xl text-kpugi-ink dark:text-white tracking-tight">
                 ₦{availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
               <div className="flex justify-center sm:justify-start">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-xs font-bold font-sans">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-xs font-bold font-sans">
                   <ArrowUpRight className="w-3.5 h-3.5" />
                   Ready for instant withdrawal
                 </span>
@@ -367,61 +367,61 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             </button>
           </div>
 
-          <div className="border-t border-kpugi-border pt-6 grid grid-cols-2 gap-4 text-center sm:text-left text-xs">
+          <div className="border-t border-kpugi-border dark:border-white/10 pt-6 grid grid-cols-2 gap-4 text-center sm:text-left text-xs">
             <div>
-              <span className="text-kpugi-slate font-medium text-[11px] block uppercase tracking-wider">Total Withdrawn</span>
-              <span className="font-mono font-bold text-kpugi-ink text-sm sm:text-base mt-0.5 block">
+              <span className="text-kpugi-slate dark:text-slate-400 font-medium text-[11px] block uppercase tracking-wider">Total Withdrawn</span>
+              <span className="font-mono font-bold text-kpugi-ink dark:text-white text-sm sm:text-base mt-0.5 block">
                 ₦{totalWithdrawn.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
             </div>
             <div>
-              <span className="text-kpugi-slate font-medium text-[11px] block uppercase tracking-wider">Last Withdrawal</span>
-              <span className="font-sans font-bold text-kpugi-ink text-sm sm:text-base mt-0.5 block">{lastWithdrawal}</span>
+              <span className="text-kpugi-slate dark:text-slate-400 font-medium text-[11px] block uppercase tracking-wider">Last Withdrawal</span>
+              <span className="font-sans font-bold text-kpugi-ink dark:text-white text-sm sm:text-base mt-0.5 block">{lastWithdrawal}</span>
             </div>
           </div>
         </div>
 
         {/* Right Pending Clearance Card (30% width) */}
-        <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-slate-50 border border-kpugi-border shadow-sm flex flex-col justify-between space-y-5 text-center sm:text-left">
+        <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-slate-50 dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-5 text-center sm:text-left">
           <div className="flex items-center justify-between">
-            <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center gap-1.5">
+            <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               Pending Clearance
             </span>
           </div>
 
           <div>
-            <div className="font-mono font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+            <div className="font-mono font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight">
               ₦{pendingEscrow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
           </div>
 
           {data.nextClearanceDate && pendingEscrow > 0 ? (
-            <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 space-y-2 text-left">
+            <div className="p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-500/30 space-y-2 text-left">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                <span className="text-[11px] font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
                   Next Release
                 </span>
-                <span className="font-mono font-bold text-xs text-amber-900">
+                <span className="font-mono font-bold text-xs text-amber-900 dark:text-amber-200">
                   ₦{(data.nextClearanceAmount || pendingEscrow).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs text-amber-800">
+              <div className="flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
                 <span className="font-medium">{formatClearanceDate(data.nextClearanceDate)}</span>
-                <span className="font-mono font-bold text-[11px] bg-white/80 px-2 py-0.5 rounded border border-amber-200">
+                <span className="font-mono font-bold text-[11px] bg-white/80 dark:bg-white/10 px-2 py-0.5 rounded border border-amber-200 dark:border-white/10 text-amber-900 dark:text-amber-200">
                   {formatHoursRemaining(data.nextClearanceDate)}
                 </span>
               </div>
-              <p className="text-[10px] text-amber-700/90 leading-tight pt-1 border-t border-amber-200/60">
+              <p className="text-[10px] text-amber-700/90 dark:text-amber-400/90 leading-tight pt-1 border-t border-amber-200/60 dark:border-amber-500/20">
                 Automatic wallet settlement unlocks upon 24-hour verification maturity.
               </p>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-white border border-kpugi-border space-y-1.5 text-left">
-              <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center gap-1.5 font-sans">
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#0D111D] border border-kpugi-border dark:border-white/10 space-y-1.5 text-left">
+              <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 font-sans">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> All Cleared
               </span>
-              <p className="text-[11px] text-kpugi-slate leading-relaxed">
+              <p className="text-[11px] text-kpugi-slate dark:text-slate-400 leading-relaxed">
                 Funds are automatically cleared into your wallet 24 hours after daily verification maturity.
               </p>
             </div>
@@ -468,15 +468,15 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Transaction History Ledger (65% width) */}
-        <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-6">
+        <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="font-display font-bold text-xl text-kpugi-ink">Transaction History</h3>
+            <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Transaction History</h3>
             <div className="flex items-center gap-2.5">
-              <button className="px-3.5 py-1.5 rounded-xl border border-kpugi-border text-kpugi-slate hover:text-kpugi-ink font-sans text-xs font-bold flex items-center gap-1.5 transition-colors bg-white">
+              <button className="px-3.5 py-1.5 rounded-xl border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white font-sans text-xs font-bold flex items-center gap-1.5 transition-colors bg-white dark:bg-white/5">
                 <Filter className="w-3.5 h-3.5" />
                 <span>Filter</span>
               </button>
-              <button className="px-3.5 py-1.5 rounded-xl border border-kpugi-border text-kpugi-slate hover:text-kpugi-ink font-sans text-xs font-bold flex items-center gap-1.5 transition-colors bg-white">
+              <button className="px-3.5 py-1.5 rounded-xl border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white font-sans text-xs font-bold flex items-center gap-1.5 transition-colors bg-white dark:bg-white/5">
                 <Download className="w-3.5 h-3.5" />
                 <span>Export</span>
               </button>
@@ -486,7 +486,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
           <div className="overflow-x-auto">
             <table className="w-full text-left font-sans text-xs border-collapse">
               <thead>
-                <tr className="border-b border-kpugi-border text-kpugi-slate uppercase text-[10px] tracking-wider font-bold">
+                <tr className="border-b border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-400 uppercase text-[10px] tracking-wider font-bold">
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Campaign / Type</th>
                   <th className="py-3 px-4">Amount (NGN)</th>
@@ -494,7 +494,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   <th className="py-3 px-2 w-8 text-center"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                 {displayTransactions.length > 0 ? (
                   displayTransactions.map((tx) => {
                     const isExpanded = expandedTxId === tx.id;
@@ -502,40 +502,40 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                       <React.Fragment key={tx.id}>
                         <tr
                           onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                          className={`hover:bg-slate-50/90 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50/70' : ''
+                          className={`hover:bg-slate-50/90 dark:hover:bg-white/5 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50/70 dark:bg-white/5' : ''
                             }`}
                         >
-                          <td className="py-4 px-4 font-medium text-slate-500 whitespace-nowrap">
+                          <td className="py-4 px-4 font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
                             <div>{tx.date}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{tx.time}</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{tx.time}</div>
                           </td>
                           <td className="py-4 px-4 whitespace-nowrap">
-                            <div className="font-bold text-kpugi-ink">{tx.title}</div>
-                            <div className="text-[11px] text-kpugi-slate flex items-center gap-1.5">
+                            <div className="font-bold text-kpugi-ink dark:text-white">{tx.title}</div>
+                            <div className="text-[11px] text-kpugi-slate dark:text-slate-400 flex items-center gap-1.5">
 
                               <span>{tx.sub}</span>
 
-                              <span className="font-mono text-[10px] text-slate-400">{tx.reference}</span>
+                              <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{tx.reference}</span>
                             </div>
                           </td>
                           <td className="py-4 px-4 font-mono font-bold whitespace-nowrap text-sm">
-                            <span className={tx.isCredit ? 'text-emerald-600' : 'text-slate-900'}>
+                            <span className={tx.isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}>
                               {tx.isCredit ? '+' : '-'}₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </span>
                           </td>
                           <td className="py-4 px-4 whitespace-nowrap">
                             {tx.isClearing ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
-                                <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+                                <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 animate-pulse" />
                                 Clearing ({formatHoursRemaining(tx.clearanceAt)})
                               </span>
                             ) : tx.status === 'Completed' || tx.status === 'Success' ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 Cleared
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10">
                                 {tx.status}
                               </span>
                             )}
@@ -550,30 +550,30 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
                         {/* Accordion Details Drawer */}
                         {isExpanded && (
-                          <tr className="bg-slate-50/50">
+                          <tr className="bg-slate-50/50 dark:bg-black/20">
                             <td colSpan={5} className="p-3 sm:p-5 pt-0">
-                              <div className="rounded-2xl bg-white border border-slate-200/80 p-5 space-y-4 shadow-xs">
+                              <div className="rounded-2xl bg-white dark:bg-[#0D111D] border border-slate-200/80 dark:border-white/10 p-5 space-y-4 shadow-xs">
                                 {/* Header / Countdown Ticker Bar */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                       <span
                                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.isClearing
-                                            ? 'bg-amber-100 text-amber-800'
-                                            : 'bg-emerald-100 text-emerald-800'
+                                            ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                                            : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400'
                                           }`}
                                       >
                                         {tx.isClearing ? (
                                           <></>
                                         ) : (
                                           <>
-                                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                             Settled & Cleared to Wallet
                                           </>
                                         )}
                                       </span>
                                     </div>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
                                       {tx.isClearing
                                         ? 'Views have been validated by anti-fraud audit. Payout is undergoing 24-hour verification maturity before release.'
                                         : 'Payout has successfully cleared and is available in your balance for instant withdrawal.'}
@@ -590,42 +590,42 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                 {/* Audit Metric Cards */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                                   {/* Box 1: Verified Traffic */}
-                                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                       <Eye className="w-3 h-3 text-slate-400" /> Verified Traffic
                                     </span>
-                                    <div className="font-mono font-bold text-base text-slate-900">
+                                    <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
                                       {(tx.viewsScraped || tx.viewsCount || 0).toLocaleString()}{' '}
-                                      <span className="text-xs font-normal text-slate-500">views</span>
+                                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400">views</span>
                                     </div>
-                                    <div className="text-[10px] text-slate-500">
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
                                       Audited batch: {(tx.viewsDelta || tx.viewsScraped || tx.viewsCount || 0).toLocaleString()} views
                                     </div>
                                   </div>
 
                                   {/* Box 2: Campaign CPM Rate */}
-                                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                       <TrendingUp className="w-3 h-3 text-slate-400" /> Campaign CPM
                                     </span>
-                                    <div className="font-mono font-bold text-base text-slate-900">
+                                    <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
                                       ₦{(tx.cpmRate || 0).toLocaleString()}{' '}
-                                      <span className="text-xs font-normal text-slate-500">/ 1k views</span>
+                                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/ 1k views</span>
                                     </div>
-                                    <div className="text-[10px] text-slate-500">
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
                                       Payout: (Views ÷ 1,000) × CPM
                                     </div>
                                   </div>
 
                                   {/* Box 3: Verification Audit Trail */}
-                                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                       <Hash className="w-3 h-3 text-slate-400" /> Audit Trail & Clearance
                                     </span>
-                                    <div className="font-mono font-bold text-xs text-slate-800 truncate">
+                                    <div className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
                                       {tx.reference}
                                     </div>
-                                    <div className="text-[10px] text-slate-500">
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
                                       {tx.isClearing && tx.clearanceAt
                                         ? `Unlocks: ${formatClearanceDate(tx.clearanceAt)}`
                                         : `Settled via: ${tx.settlementMethod}`}
@@ -643,11 +643,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   <tr>
                     <td colSpan={5} className="text-center py-12">
                       <div className="flex flex-col items-center justify-center space-y-2">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-400 mb-1">
                           <CreditCard className="w-5 h-5" />
                         </div>
-                        <p className="font-bold text-sm text-kpugi-ink">No Transactions Yet</p>
-                        <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                        <p className="font-bold text-sm text-kpugi-ink dark:text-white">No Transactions Yet</p>
+                        <p className="text-xs text-kpugi-slate dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
                           Completed campaign payouts and NUBAN bank withdrawals will automatically generate ledger records here.
                         </p>
                       </div>
@@ -662,15 +662,15 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
         {/* Right Column: Payout Methods & Audited Badge (35% width) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Card 1: Payout Methods */}
-          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-lg text-kpugi-ink">Payout Methods</h3>
+              <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Payout Methods</h3>
               <button
                 onClick={() => setShowBankModal(true)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 border border-kpugi-border flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 border border-kpugi-border dark:border-white/10 flex items-center justify-center transition-colors"
                 title="Add Bank Account"
               >
-                <Plus className="w-4 h-4 text-kpugi-slate" />
+                <Plus className="w-4 h-4 text-kpugi-slate dark:text-slate-300" />
               </button>
             </div>
 
@@ -679,22 +679,22 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 data.bankAccounts.map((acc, idx) => (
                   <div
                     key={acc.id || idx}
-                    className={`p-4 rounded-2xl border-2 flex items-start justify-between gap-3 transition-all ${acc.isPrimary ? 'bg-blue-50/50 border-kpugi-blue shadow-2xs' : 'bg-white border-kpugi-border hover:border-slate-300'
+                    className={`p-4 rounded-2xl border-2 flex items-start justify-between gap-3 transition-all ${acc.isPrimary ? 'bg-blue-50/50 dark:bg-blue-950/30 border-kpugi-blue dark:border-blue-500/50 shadow-2xs' : 'bg-white dark:bg-[#0D111D] border-kpugi-border dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
                       }`}
                   >
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                       <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="md" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-kpugi-ink truncate">{acc.bankName}</span>
+                          <span className="font-bold text-xs text-kpugi-ink dark:text-white truncate">{acc.bankName}</span>
                           {acc.isPrimary && <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0 fill-kpugi-blue/10" />}
                         </div>
-                        <div className="text-[11px] text-kpugi-slate font-mono mt-0.5">
+                        <div className="text-[11px] text-kpugi-slate dark:text-slate-400 font-mono mt-0.5">
                           {acc.accountName} (**** {acc.accountNumber?.slice(-4) || '****'})
                         </div>
                         <div className="flex items-center gap-2 mt-2">
                           {acc.isPrimary ? (
-                            <span className="inline-block text-[9px] font-bold text-kpugi-blue bg-blue-100/60 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            <span className="inline-block text-[9px] font-bold text-kpugi-blue bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full uppercase tracking-wider">
                               PRIMARY DESTINATION
                             </span>
                           ) : (
@@ -702,7 +702,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                               type="button"
                               onClick={() => handleSetDefaultAccount(acc.id)}
                               disabled={actionLoadingId === acc.id}
-                              className="text-[10px] font-bold text-slate-600 hover:text-kpugi-blue hover:underline transition-colors disabled:opacity-50"
+                              className="text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-kpugi-blue dark:hover:text-blue-400 hover:underline transition-colors disabled:opacity-50"
                             >
                               {actionLoadingId === acc.id ? 'Setting...' : 'Set as Primary'}
                             </button>
@@ -717,17 +717,17 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                       onClick={() => handleDeleteAccount(acc.id)}
                       disabled={actionLoadingId === acc.id}
                       title="Delete payout account"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 disabled:opacity-40"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors shrink-0 disabled:opacity-40"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))
               ) : (
-                <div className="p-6 text-center border-2 border-dashed border-kpugi-border rounded-2xl space-y-3 bg-slate-50/50">
-                  <Building2 className="w-8 h-8 text-kpugi-slate mx-auto opacity-60" />
-                  <h4 className="font-display font-bold text-sm text-kpugi-ink">No Bank Account Linked Yet</h4>
-                  <p className="text-xs text-kpugi-slate max-w-xs mx-auto">
+                <div className="p-6 text-center border-2 border-dashed border-kpugi-border dark:border-white/10 rounded-2xl space-y-3 bg-slate-50/50 dark:bg-white/5">
+                  <Building2 className="w-8 h-8 text-kpugi-slate dark:text-slate-400 mx-auto opacity-60" />
+                  <h4 className="font-display font-bold text-sm text-kpugi-ink dark:text-white">No Bank Account Linked Yet</h4>
+                  <p className="text-xs text-kpugi-slate dark:text-slate-400 max-w-xs mx-auto">
                     Link your bank account to receive automatic withdrawals via Paystack.
                   </p>
                   <button
@@ -822,20 +822,20 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       ───────────────────────────────────────────────────── */}
       {showPayoutModal && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div>
-              <h3 className="font-display font-bold text-xl text-kpugi-ink">Request Withdrawal</h3>
-              <p className="font-sans text-xs text-kpugi-slate mt-1">
+              <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Request Withdrawal</h3>
+              <p className="font-sans text-xs text-kpugi-slate dark:text-slate-400 mt-1">
                 Enter the amount you wish to transfer to your linked bank account. Minimum withdrawal is ₦10,000.
               </p>
             </div>
 
             {data.kycStatus !== 'verified' && (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2">
                 <div className="font-bold flex items-center gap-2 text-xs">
                   <span>🛡️ ID Verification Required</span>
                 </div>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
                   To comply with platform regulations and release earnings withdrawals, you must verify your official government ID (NIN, Voter Card, or Passport).
                 </p>
                 <a
@@ -847,11 +847,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               </div>
             )}
 
-            {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{errorMsg}</p>}
+            {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-500/30">{errorMsg}</p>}
 
             <form onSubmit={handlePayoutSubmit} className="space-y-4 font-sans text-xs">
               <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1 uppercase tracking-wider">
                   Amount (₦)
                 </label>
                 <div className="relative flex items-center">
@@ -862,18 +862,18 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                     max={availableBalance}
                     defaultValue={10000}
                     required
-                    className="w-full pl-4 pr-16 py-3.5 rounded-xl border border-kpugi-border font-mono text-base font-extrabold text-kpugi-ink focus:outline-none focus:border-kpugi-blue bg-slate-50 placeholder:text-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-full pl-4 pr-16 py-3.5 rounded-xl border border-kpugi-border dark:border-white/10 font-mono text-base font-extrabold text-kpugi-ink dark:text-white focus:outline-none focus:border-kpugi-blue bg-slate-50 dark:bg-white/5 focus:bg-white dark:focus:bg-black/30 placeholder:text-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <span className="absolute right-4 text-xs font-extrabold text-kpugi-slate pointer-events-none">NGN</span>
+                  <span className="absolute right-4 text-xs font-extrabold text-kpugi-slate dark:text-slate-400 pointer-events-none">NGN</span>
                 </div>
-                <span className="text-[11px] text-kpugi-slate mt-1.5 block font-medium">
-                  Available for withdrawal: <strong className="text-kpugi-ink">₦{availableBalance.toLocaleString()}</strong>
+                <span className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-1.5 block font-medium">
+                  Available for withdrawal: <strong className="text-kpugi-ink dark:text-white">₦{availableBalance.toLocaleString()}</strong>
                 </span>
               </div>
 
               {/* Destination Account Selection */}
               <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                   Payout Destination Account
                 </label>
                 {data.bankAccounts && data.bankAccounts.length > 1 ? (
@@ -886,17 +886,17 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           type="button"
                           onClick={() => setSelectedWithdrawBankId(acc.id)}
                           className={`w-full p-3 rounded-xl border-2 text-left flex items-center justify-between gap-3 transition-all ${isSelected
-                              ? 'border-kpugi-blue bg-blue-50/60 shadow-2xs'
-                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                              ? 'border-kpugi-blue bg-blue-50/60 dark:bg-blue-950/40 shadow-2xs'
+                              : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-white dark:bg-[#0D111D]'
                             }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="sm" />
                             <div className="min-w-0">
-                              <div className="font-bold text-xs text-kpugi-ink truncate">
+                              <div className="font-bold text-xs text-kpugi-ink dark:text-white truncate">
                                 {acc.bankName} • ****{acc.accountNumber?.slice(-4)}
                               </div>
-                              <div className="text-[10px] text-slate-500 truncate">{acc.accountName}</div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{acc.accountName}</div>
                             </div>
                           </div>
                           {isSelected && <CheckCircle2 className="w-4 h-4 text-kpugi-blue shrink-0" />}
@@ -905,10 +905,10 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                     })}
                   </div>
                 ) : (
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-kpugi-border text-xs text-slate-700 flex items-center gap-3">
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-kpugi-border dark:border-white/10 text-xs text-slate-700 dark:text-slate-300 flex items-center gap-3">
                     <BankLogo bankName={data.bankDetails?.bankName || 'Zenith Bank PLC'} bankCode={data.bankDetails?.bankCode || '057'} size="sm" />
                     <span className="font-medium">
-                      <strong className="text-kpugi-ink">{data.bankDetails?.bankName || 'Zenith Bank PLC'}</strong> (****{' '}
+                      <strong className="text-kpugi-ink dark:text-white">{data.bankDetails?.bankName || 'Zenith Bank PLC'}</strong> (****{' '}
                       {data.bankDetails?.accountNumber?.slice(-4) || '4492'})
                     </span>
                   </div>
@@ -919,7 +919,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <button
                   type="button"
                   onClick={() => setShowPayoutModal(false)}
-                  className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
+                  className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
                 >
                   Cancel
                 </button>
@@ -942,19 +942,19 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       ───────────────────────────────────────────────────── */}
       {showBankModal && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div>
-              <h3 className="font-display font-bold text-xl text-kpugi-ink">Link Bank Account</h3>
-              <p className="font-sans text-xs text-kpugi-slate mt-1">
+              <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Link Bank Account</h3>
+              <p className="font-sans text-xs text-kpugi-slate dark:text-slate-400 mt-1">
                 Enter your Bank Account number. We will verify your account name instantly.
               </p>
             </div>
 
-            {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{errorMsg}</p>}
+            {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-500/30">{errorMsg}</p>}
 
             <form onSubmit={handleBankSubmit} className="space-y-4 font-sans text-xs">
               <div className="relative">
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1 uppercase tracking-wider">
                   Select Bank
                 </label>
 
@@ -962,11 +962,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <button
                   type="button"
                   onClick={() => setIsBankDropdownOpen(!isBankDropdownOpen)}
-                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border font-sans text-xs flex items-center justify-between bg-white text-left focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                  className="w-full px-4 py-3 rounded-xl border border-kpugi-border dark:border-white/10 font-sans text-xs flex items-center justify-between bg-white dark:bg-white/5 text-left focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <BankLogo bankName={bankList.find((b) => b.code === selectedBankCode)?.name} bankCode={selectedBankCode} size="sm" />
-                    <span className="font-bold text-kpugi-ink truncate">
+                    <span className="font-bold text-kpugi-ink dark:text-white truncate">
                       {bankList.find((b) => b.code === selectedBankCode)?.name || 'Select a bank...'}
                     </span>
                   </div>
@@ -975,17 +975,17 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
                 {/* Dropdown Menu with Live Search Filter */}
                 {isBankDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white rounded-2xl border border-kpugi-border shadow-xl p-2 space-y-2 max-h-56 flex flex-col">
+                  <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white dark:bg-[#0D111D] rounded-2xl border border-kpugi-border dark:border-white/10 shadow-xl p-2 space-y-2 max-h-56 flex flex-col">
                     <input
                       type="text"
                       placeholder="Search bank (e.g. GTBank, OPay, Zenith)..."
                       value={bankSearchQuery}
                       onChange={(e) => setBankSearchQuery(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-kpugi-border rounded-xl focus:outline-none focus:border-kpugi-blue bg-slate-50 font-sans"
+                      className="w-full px-3 py-2 text-xs border border-kpugi-border dark:border-white/10 rounded-xl focus:outline-none focus:border-kpugi-blue bg-slate-50 dark:bg-white/5 text-kpugi-ink dark:text-white font-sans"
                       autoFocus
                     />
 
-                    <div className="overflow-y-auto flex-1 divide-y divide-slate-100 max-h-40">
+                    <div className="overflow-y-auto flex-1 divide-y divide-slate-100 dark:divide-white/5 max-h-40">
                       {bankList
                         .filter((b) => b.name.toLowerCase().includes(bankSearchQuery.toLowerCase()))
                         .map((b) => (
@@ -998,8 +998,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                               setBankSearchQuery('');
                             }}
                             className={`w-full px-3 py-2.5 text-left text-xs font-sans transition-colors flex items-center justify-between rounded-lg ${selectedBankCode === b.code
-                                ? 'bg-blue-50 text-kpugi-blue font-bold'
-                                : 'hover:bg-slate-50 text-kpugi-ink'
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-kpugi-blue font-bold'
+                                : 'hover:bg-slate-50 dark:hover:bg-white/5 text-kpugi-ink dark:text-white'
                               }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -1010,7 +1010,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           </button>
                         ))}
                       {bankList.filter((b) => b.name.toLowerCase().includes(bankSearchQuery.toLowerCase())).length === 0 && (
-                        <div className="py-4 text-center text-xs text-kpugi-slate font-medium">No bank found matching query</div>
+                        <div className="py-4 text-center text-xs text-kpugi-slate dark:text-slate-400 font-medium">No bank found matching query</div>
                       )}
                     </div>
                   </div>
@@ -1019,7 +1019,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
               <input type="hidden" name="bankCode" value={selectedBankCode} />
               <div>
-                <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1 uppercase tracking-wider">
                   NUBAN Account Number (10 Digits)
                 </label>
                 <input
@@ -1030,7 +1030,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   value={accountNumber}
                   onChange={(e) => handleNubanChange(e.target.value)}
                   required
-                  className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-sm text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
+                  className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-sm text-slate-900 dark:text-white font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
                 />
               </div>
 
@@ -1043,9 +1043,9 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               )}
 
               {resolvedAccountName && !isResolving && (
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-xs font-bold flex items-center justify-between">
                   <span>Account Holder Name:</span>
-                  <span className="font-mono text-emerald-900">{resolvedAccountName} ✓</span>
+                  <span className="font-mono text-emerald-900 dark:text-emerald-300">{resolvedAccountName} ✓</span>
                 </div>
               )}
 
@@ -1053,7 +1053,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <button
                   type="button"
                   onClick={() => setShowBankModal(false)}
-                  className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
+                  className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
                 >
                   Cancel
                 </button>

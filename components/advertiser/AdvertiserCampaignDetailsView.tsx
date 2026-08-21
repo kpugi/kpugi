@@ -65,10 +65,10 @@ export default function AdvertiserCampaignDetailsView({
 
   if (!campaign) {
     return (
-      <div className="p-8 text-center bg-white rounded-3xl border border-kpugi-border">
+      <div className="p-8 text-center bg-white dark:bg-[#12141A] rounded-3xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
         <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
         <h2 className="font-display text-lg font-bold">Campaign Not Found</h2>
-        <p className="text-xs text-kpugi-slate mt-1">This campaign may have been removed or you do not have permission to access it.</p>
+        <p className="text-xs text-kpugi-slate dark:text-slate-400 mt-1">This campaign may have been removed or you do not have permission to access it.</p>
         <Link href="/b/campaigns" className="mt-4 inline-block px-4 py-2 rounded-xl bg-kpugi-blue text-white font-bold text-xs">
           Back to Campaigns
         </Link>
@@ -128,31 +128,31 @@ export default function AdvertiserCampaignDetailsView({
   const isCompleted = campaign.status === 'completed';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-kpugi-ink dark:text-white">
 
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Link href="/b/campaigns" className="text-kpugi-slate hover:text-kpugi-ink transition-colors">
+            <Link href="/b/campaigns" className="text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
               {campaign.campaign_code || 'KPG-CMP'}
             </span>
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-              campaign.status === 'live' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-              campaign.status === 'paused' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-              campaign.status === 'completed' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-              campaign.status === 'archived' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-              'bg-slate-100 text-slate-800 border border-slate-200'
+              campaign.status === 'live' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30' :
+              campaign.status === 'paused' ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30' :
+              campaign.status === 'completed' ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30' :
+              campaign.status === 'archived' ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30' :
+              'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-white/10'
             }`}>
               {campaign.status}
             </span>
           </div>
 
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink">{campaign.title}</h1>
-          <p className="text-xs sm:text-sm text-kpugi-slate line-clamp-2">{campaign.description}</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink dark:text-white">{campaign.title}</h1>
+          <p className="text-xs sm:text-sm text-kpugi-slate dark:text-slate-400 line-clamp-2">{campaign.description}</p>
         </div>
 
         {/* Action Controls */}
@@ -162,7 +162,7 @@ export default function AdvertiserCampaignDetailsView({
               {/* Play/Pause Disabled */}
               <button
                 disabled
-                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
+                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
                 title="Archived campaigns cannot be resumed or paused"
               >
                 <Play className="w-4 h-4 shrink-0 text-slate-400" />
@@ -174,7 +174,7 @@ export default function AdvertiserCampaignDetailsView({
               {/* Complete & Refund Disabled */}
               <button
                 disabled
-                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
+                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
                 title="Archived campaigns cannot be completed"
               >
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-slate-400" />
@@ -186,7 +186,7 @@ export default function AdvertiserCampaignDetailsView({
               {/* Edit Disabled */}
               <button
                 disabled
-                className="group relative h-9 px-2.5 rounded-xl border border-slate-200 text-slate-400 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50"
+                className="group relative h-9 px-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-400 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50"
                 title="Archived campaigns cannot be edited"
               >
                 <Pencil className="w-4 h-4 shrink-0 text-slate-400" />
@@ -199,7 +199,7 @@ export default function AdvertiserCampaignDetailsView({
               <button
                 type="button"
                 onClick={() => setIsDeleting(true)}
-                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white border border-rose-200 text-rose-600 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
+                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 hover:text-white border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
                 title="Delete Campaign from Dashboard"
               >
                 <Trash2 className="w-4 h-4 shrink-0" />
@@ -213,7 +213,7 @@ export default function AdvertiserCampaignDetailsView({
               {/* Resume Disabled */}
               <button
                 disabled
-                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
+                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
                 title="Completed campaigns cannot be resumed"
               >
                 <Play className="w-4 h-4 shrink-0 text-slate-400" />
@@ -225,7 +225,7 @@ export default function AdvertiserCampaignDetailsView({
               {/* Complete & Refund Disabled */}
               <button
                 disabled
-                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
+                className="group relative h-9 px-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 border border-slate-200 dark:border-white/10 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50 shadow-2xs"
                 title="Campaign has already been completed"
               >
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-slate-400" />
@@ -237,7 +237,7 @@ export default function AdvertiserCampaignDetailsView({
               {/* Edit Disabled */}
               <button
                 disabled
-                className="group relative h-9 px-2.5 rounded-xl border border-slate-200 text-slate-400 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50"
+                className="group relative h-9 px-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-400 font-bold text-xs flex items-center gap-2 cursor-not-allowed opacity-50"
                 title="Completed campaigns cannot be edited"
               >
                 <Pencil className="w-4 h-4 shrink-0 text-slate-400" />
@@ -250,7 +250,7 @@ export default function AdvertiserCampaignDetailsView({
               <button
                 type="button"
                 onClick={() => setIsDeleting(true)}
-                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-amber-700 hover:border-amber-300 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
+                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-amber-700 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
                 title="Archive Completed Campaign"
               >
                 <Archive className="w-4 h-4 shrink-0" />
@@ -265,10 +265,10 @@ export default function AdvertiserCampaignDetailsView({
                 <button
                   onClick={() => handleStatusToggle('paused')}
                   disabled={isSubmitting}
-                  className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
+                  className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
                   title="Pause Campaign"
                 >
-                  <Pause className="w-4 h-4 shrink-0 text-amber-700" />
+                  <Pause className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
                   <span className="max-w-0 opacity-0 group-hover:max-w-[140px] group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden">
                     Pause Campaign
                   </span>
@@ -290,10 +290,10 @@ export default function AdvertiserCampaignDetailsView({
               <button
                 onClick={() => handleStatusToggle('completed')}
                 disabled={isSubmitting}
-                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-sm"
+                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-slate-900 dark:bg-white hover:bg-black dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-sm"
                 title="Complete & Refund Remaining Escrow"
               >
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 dark:text-emerald-600" />
                 <span className="max-w-0 opacity-0 group-hover:max-w-[160px] group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden">
                   Complete & Refund
                 </span>
@@ -302,7 +302,7 @@ export default function AdvertiserCampaignDetailsView({
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-kpugi-blue hover:border-slate-300 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden"
+                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-kpugi-blue dark:hover:text-blue-400 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden"
                 title="Edit Campaign Details"
               >
                 <Pencil className="w-4 h-4 shrink-0" />
@@ -314,7 +314,7 @@ export default function AdvertiserCampaignDetailsView({
               <button
                 type="button"
                 onClick={() => setIsDeleting(true)}
-                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-amber-700 hover:border-amber-300 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden"
+                className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-amber-700 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden"
                 title="Archive Campaign"
               >
                 <Archive className="w-4 h-4 shrink-0" />
@@ -328,7 +328,7 @@ export default function AdvertiserCampaignDetailsView({
       </div>
 
       {msg && (
-        <div className={`p-4 rounded-2xl text-xs font-bold ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+        <div className={`p-4 rounded-2xl text-xs font-bold ${msg.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30' : 'bg-red-50 dark:bg-rose-950/40 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-500/30'}`}>
           {msg.text}
         </div>
       )}
@@ -337,85 +337,85 @@ export default function AdvertiserCampaignDetailsView({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 
         {/* 1. Total Views */}
-        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-kpugi-blue">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Total Views</span>
-            <Eye className="w-3.5 h-3.5 text-kpugi-blue" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-kpugi-blue dark:text-blue-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Total Views</span>
+            <Eye className="w-3.5 h-3.5 text-kpugi-blue dark:text-blue-400" />
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
             {metrics.totalViews.toLocaleString()}
           </p>
-          <span className="text-[9px] text-emerald-600 font-medium block">Real-time aggregate</span>
+          <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium block">Real-time aggregate</span>
         </div>
 
         {/* 2. Total Payouts */}
-        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Total Payouts</span>
-            <span className="font-mono font-black text-xs text-emerald-600 leading-none">₦</span>
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Total Payouts</span>
+            <span className="font-mono font-black text-xs text-emerald-600 dark:text-emerald-400 leading-none">₦</span>
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
             ₦{metrics.totalPayouts.toLocaleString()}
           </p>
-          <span className="text-[9px] text-slate-500 font-medium block">Released from Escrow</span>
+          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium block">Released from Escrow</span>
         </div>
 
         {/* 3. Creators Joined */}
-        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-indigo-600">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Creators Joined</span>
-            <Users className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Creators Joined</span>
+            <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
             {submissions.length}
           </p>
-          <span className="text-[9px] text-indigo-600 font-medium block">Active slots locked</span>
+          <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-medium block">Active slots locked</span>
         </div>
 
         {/* 4. Submissions */}
-        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-amber-600">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Submissions</span>
-            <Send className="w-3.5 h-3.5 text-amber-600" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Submissions</span>
+            <Send className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
             {submissions.filter((s) => Boolean(s.post_url && s.post_url.trim().length > 0 && s.status !== 'joined')).length}
           </p>
-          <span className="text-[9px] text-amber-600 font-medium block">Verified & Pending</span>
+          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium block">Verified & Pending</span>
         </div>
 
         {/* 5. Engagement */}
-        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-rose-600">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Engagement</span>
-            <Activity className="w-3.5 h-3.5 text-rose-600" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Engagement</span>
+            <Activity className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
             {metrics.engagementRate}%
           </p>
-          <span className="text-[9px] text-slate-500 font-medium block">Like & Comment ratio</span>
+          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium block">Like & Comment ratio</span>
         </div>
 
         {/* 6. Avg Watch Time */}
-        <div className="p-4 rounded-2xl bg-white border border-kpugi-border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-cyan-600">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate">Avg Watch Time</span>
-            <Zap className="w-3.5 h-3.5 text-cyan-600" />
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-cyan-600 dark:text-cyan-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Avg Watch Time</span>
+            <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink">
+          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
             {metrics.totalViews > 0 && metrics.avgWatchTime > 0 ? `${metrics.avgWatchTime}s` : '0s'}
           </p>
-          <span className="text-[9px] text-cyan-600 font-medium block">Retention benchmark</span>
+          <span className="text-[9px] text-cyan-600 dark:text-cyan-400 font-medium block">Retention benchmark</span>
         </div>
 
       </div>
 
       {/* Tabs Bar */}
-      <div className="flex items-center gap-2 border-b border-kpugi-border pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-kpugi-border dark:border-white/10 pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2 rounded-xl font-sans text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'overview' ? 'bg-kpugi-ink text-white shadow-sm' : 'text-kpugi-slate hover:bg-slate-100'
+            activeTab === 'overview' ? 'bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-kpugi-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
           }`}
         >
           Performance Overview
@@ -423,18 +423,18 @@ export default function AdvertiserCampaignDetailsView({
         <button
           onClick={() => setActiveTab('submissions')}
           className={`px-4 py-2 rounded-xl font-sans text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            activeTab === 'submissions' ? 'bg-kpugi-ink text-white shadow-sm' : 'text-kpugi-slate hover:bg-slate-100'
+            activeTab === 'submissions' ? 'bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-kpugi-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
           }`}
         >
           <span>Creator Submissions</span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-800">
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-slate-200">
             {submissions.filter((s) => s.post_url != null && s.status !== 'joined').length}
           </span>
         </button>
         <button
           onClick={() => setActiveTab('creatives')}
           className={`px-4 py-2 rounded-xl font-sans text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'creatives' ? 'bg-kpugi-ink text-white shadow-sm' : 'text-kpugi-slate hover:bg-slate-100'
+            activeTab === 'creatives' ? 'bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-kpugi-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
           }`}
         >
           Creative Assets & Guidelines
@@ -442,7 +442,7 @@ export default function AdvertiserCampaignDetailsView({
         <button
           onClick={() => setActiveTab('leaderboard')}
           className={`px-4 py-2 rounded-xl font-sans text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'leaderboard' ? 'bg-kpugi-ink text-white shadow-sm' : 'text-kpugi-slate hover:bg-slate-100'
+            activeTab === 'leaderboard' ? 'bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 shadow-sm' : 'text-kpugi-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
           }`}
         >
           Creator Leaderboard
@@ -456,40 +456,40 @@ export default function AdvertiserCampaignDetailsView({
             
             {/* Budget & Escrow Allocation */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-bold text-lg text-kpugi-ink">Budget Allocation</h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Budget Allocation</h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
                     🛡️ SECURED
                   </span>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold text-kpugi-slate">
+                  <div className="flex justify-between text-xs font-bold text-kpugi-slate dark:text-slate-400">
                     <span>Spent: ₦{campaign.spent_budget.toLocaleString()}</span>
                     <span>Total Budget: ₦{campaign.total_budget.toLocaleString()}</span>
                   </div>
-                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-3 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Rate CPM</span>
-                    <span className="font-bold text-slate-900 text-xs">₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-bold uppercase">Rate CPM</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-xs">₦{campaign.cpm_rate.toLocaleString()} / 1k</span>
                   </div>
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Min Threshold</span>
-                    <span className="font-bold text-slate-900 text-xs">{campaign.min_view_threshold.toLocaleString()} views</span>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-bold uppercase">Min Threshold</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-xs">{campaign.min_view_threshold.toLocaleString()} views</span>
                   </div>
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Reserved Balance</span>
-                    <span className="font-bold text-amber-700 text-xs">₦{(campaign.reserved_budget || totalReservedAmount).toLocaleString()}</span>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-bold uppercase">Reserved Balance</span>
+                    <span className="font-bold text-amber-700 dark:text-amber-400 text-xs">₦{(campaign.reserved_budget || totalReservedAmount).toLocaleString()}</span>
                   </div>
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="text-slate-500 block text-[10px] font-bold uppercase">Audit Duration</span>
-                    <span className="font-bold text-slate-900 text-xs">{metrics.auditDurationHours}h</span>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-bold uppercase">Audit Duration</span>
+                    <span className="font-bold text-slate-900 dark:text-white text-xs">{metrics.auditDurationHours}h</span>
                   </div>
                 </div>
               </div>
@@ -497,23 +497,23 @@ export default function AdvertiserCampaignDetailsView({
 
             {/* Right Column: Target Channels & Specs */}
             <div className="space-y-6">
-              <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-                <h3 className="font-display font-bold text-base text-kpugi-ink">Target Channels</h3>
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
+                <h3 className="font-display font-bold text-base text-kpugi-ink dark:text-white">Target Channels</h3>
                 <div className="flex flex-wrap gap-2">
                   {campaign.channels.map((ch) => (
-                    <span key={ch} className="px-3 py-1.5 rounded-xl bg-kpugi-blue/10 text-kpugi-blue text-xs font-bold uppercase flex items-center gap-1.5">
+                    <span key={ch} className="px-3 py-1.5 rounded-xl bg-kpugi-blue/10 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400 text-xs font-bold uppercase flex items-center gap-1.5">
                       <span>{ch}</span>
                     </span>
                   ))}
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
-                  <div className="flex justify-between text-slate-600">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-1 text-xs">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Required Live Retention:</span>
-                    <span className="font-bold text-slate-900">{campaign.required_live_duration_hours}h</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{campaign.required_live_duration_hours}h</span>
                   </div>
-                  <div className="flex justify-between text-slate-600">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Verification Grace Window:</span>
-                    <span className="font-bold text-slate-900">{campaign.verification_grace_hours}h</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{campaign.verification_grace_hours}h</span>
                   </div>
                 </div>
               </div>
@@ -522,36 +522,36 @@ export default function AdvertiserCampaignDetailsView({
           </div>
 
           {/* Dedicated Section: Joined Creators & Reserved Escrow Breakdown */}
-          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="font-display font-bold text-lg text-kpugi-ink flex items-center gap-2">
-                  <Users className="w-5 h-5 text-kpugi-blue" />
+                <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-kpugi-blue dark:text-blue-400" />
                   <span>Joined Creators</span>
                 </h3>
-                <p className="text-xs text-kpugi-slate mt-0.5">
+                <p className="text-xs text-kpugi-slate dark:text-slate-400 mt-0.5">
                   Central ledger of joined creators, tracking cumulative verified views delivered and total payout released.
                 </p>
               </div>
             </div>
 
             {submissions.length === 0 ? (
-              <div className="py-8 text-center text-kpugi-slate space-y-2">
-                <Users className="w-8 h-8 mx-auto text-slate-300" />
+              <div className="py-8 text-center text-kpugi-slate dark:text-slate-400 space-y-2">
+                <Users className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
                 <p className="text-xs font-bold">No creators have joined this campaign slot yet.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                    <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 dark:text-slate-400 font-bold uppercase text-[10px]">
                       <th className="py-3 px-3">Creator</th>
                       <th className="py-3 px-3">Platform</th>
                       <th className="py-3 px-3">Verified Views</th>
                       <th className="py-3 px-3 text-right">Total Earned</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                     {submissions.map((sub) => {
                       const verifiedViews = Number(sub.views_count || sub.final_view_count || 0);
                       const totalPaid = Number(sub.payout_amount || 0);
@@ -563,12 +563,12 @@ export default function AdvertiserCampaignDetailsView({
                       const rank = creatorRankMap.get(sub.creator_handle);
 
                       return (
-                        <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                        <tr key={sub.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             {sub.creator_avatar_url ? (
                               <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover shrink-0" />
                             ) : (
-                              <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center shrink-0">
+                              <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400 text-[10px] font-bold flex items-center justify-center shrink-0">
                                 {sub.creator_handle[1]?.toUpperCase() || 'C'}
                               </div>
                             )}
@@ -577,12 +577,12 @@ export default function AdvertiserCampaignDetailsView({
                               <span
                                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 inline-flex items-center gap-0.5 ${
                                   rank === 1
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30'
                                     : rank === 2
-                                    ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                                    ? 'bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/10'
                                     : rank === 3
-                                    ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                    ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-500/30'
+                                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10'
                                 }`}
                                 title={`Rank #${rank} in campaign performance`}
                               >
@@ -590,21 +590,21 @@ export default function AdvertiserCampaignDetailsView({
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
+                          <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600 dark:text-slate-400">
                             {sub.social_account_platform}
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-slate-800">
+                          <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
                             {verifiedViews.toLocaleString()} views
                           </td>
                           <td className="py-3 px-3 text-right font-mono font-bold">
                             {totalPaid > 0 ? (
-                              <span className="text-emerald-600 font-extrabold">
+                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
                                 ₦{totalPaid.toLocaleString()}
                               </span>
                             ) : (
-                              <span className="text-slate-500 font-medium">
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">
                                 ₦0{' '}
-                                <span className="text-[10px] text-amber-700 font-mono ml-1">
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono ml-1">
                                   (₦{slotReserve.toLocaleString()} reserved)
                                 </span>
                               </span>
@@ -801,27 +801,27 @@ export default function AdvertiserCampaignDetailsView({
         );
 
         return (
-          <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-lg text-kpugi-ink">Submissions Stream</h3>
-              <span className="text-xs text-kpugi-slate font-medium">
+              <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Submissions Stream</h3>
+              <span className="text-xs text-kpugi-slate dark:text-slate-400 font-medium">
                 {activeSubmissions.length} active submission{activeSubmissions.length === 1 ? '' : 's'}
               </span>
             </div>
 
             {activeSubmissions.length === 0 ? (
-              <div className="py-12 text-center text-kpugi-slate space-y-2 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <Video className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold text-slate-700">No post links submitted by creators yet.</p>
-                <p className="text-[11px] text-slate-500">
-                  Joined creators who reserved slots are listed under <strong className="text-slate-700">Joined Creators</strong> in the Performance Overview tab.
+              <div className="py-12 text-center text-kpugi-slate dark:text-slate-400 space-y-2 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10">
+                <Video className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No post links submitted by creators yet.</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Joined creators who reserved slots are listed under <strong className="text-slate-700 dark:text-slate-300">Joined Creators</strong> in the Performance Overview tab.
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                    <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 dark:text-slate-400 font-bold uppercase text-[10px]">
                       <th className="py-3 px-3">Creator</th>
                       <th className="py-3 px-3">Platform</th>
                       <th className="py-3 px-3">Post Link</th>
@@ -831,7 +831,7 @@ export default function AdvertiserCampaignDetailsView({
                       <th className="py-3 px-3 text-right">Shares</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                     {activeSubmissions.map((sub) => {
                       const subViews = Number(sub.views_count || sub.final_view_count || 0);
                       const likes = Number(sub.likes_count || 0);
@@ -849,12 +849,12 @@ export default function AdvertiserCampaignDetailsView({
                       const sharesDelta = Math.round(shares * viewsRatio);
 
                       return (
-                        <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                        <tr key={sub.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             {sub.creator_avatar_url ? (
                               <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover shrink-0" />
                             ) : (
-                              <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[10px] font-bold flex items-center justify-center shrink-0">
+                              <div className="w-6 h-6 rounded-full bg-kpugi-blue/10 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400 text-[10px] font-bold flex items-center justify-center shrink-0">
                                 {sub.creator_handle[1]?.toUpperCase() || 'C'}
                               </div>
                             )}
@@ -863,12 +863,12 @@ export default function AdvertiserCampaignDetailsView({
                               <span
                                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 inline-flex items-center gap-0.5 ${
                                   rank === 1
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30'
                                     : rank === 2
-                                    ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                                    ? 'bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/10'
                                     : rank === 3
-                                    ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                    ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-500/30'
+                                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10'
                                 }`}
                                 title={`Rank #${rank} in campaign performance`}
                               >
@@ -876,7 +876,7 @@ export default function AdvertiserCampaignDetailsView({
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600">
+                          <td className="py-3 px-3 uppercase text-[11px] font-bold text-slate-600 dark:text-slate-400">
                             {sub.social_account_platform}
                           </td>
                           <td className="py-3 px-3">
@@ -885,59 +885,59 @@ export default function AdvertiserCampaignDetailsView({
                                 href={sub.post_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-kpugi-blue hover:underline font-medium flex items-center gap-1 max-w-[180px] truncate"
+                                className="text-kpugi-blue dark:text-blue-400 hover:underline font-medium flex items-center gap-1 max-w-[180px] truncate"
                               >
                                 <span>View Video</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             ) : (
-                              <span className="text-slate-400 italic">Slot Locked (No Link Yet)</span>
+                              <span className="text-slate-400 dark:text-slate-500 italic">Slot Locked (No Link Yet)</span>
                             )}
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-slate-800 text-right">
+                          <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-200 text-right">
                             <div className="flex flex-col items-end">
                               <span>{subViews.toLocaleString()}</span>
                               {viewsDelta > 0 && (
-                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 rounded mt-0.5" title="New verified views from latest run">
+                                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-500/30 px-1 rounded mt-0.5" title="New verified views from latest run">
                                   +{viewsDelta > 1000 ? formatCompactNumber(viewsDelta) : viewsDelta.toLocaleString()}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-rose-600 text-right">
+                          <td className="py-3 px-3 font-mono font-bold text-rose-600 dark:text-rose-400 text-right">
                             <div className="flex flex-col items-end">
                               <span className="inline-flex items-center justify-end gap-1">
                                 <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20" />
                                 <span>{likes.toLocaleString()}</span>
                               </span>
                               {likesDelta > 0 && (
-                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 rounded mt-0.5" title="New likes from latest run">
+                                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-500/30 px-1 rounded mt-0.5" title="New likes from latest run">
                                   +{likesDelta > 1000 ? formatCompactNumber(likesDelta) : likesDelta.toLocaleString()}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-indigo-600 text-right">
+                          <td className="py-3 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400 text-right">
                             <div className="flex flex-col items-end">
                               <span className="inline-flex items-center justify-end gap-1">
                                 <MessageCircle className="w-3 h-3 text-indigo-500" />
                                 <span>{comments.toLocaleString()}</span>
                               </span>
                               {commentsDelta > 0 && (
-                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 rounded mt-0.5" title="New comments from latest run">
+                                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-500/30 px-1 rounded mt-0.5" title="New comments from latest run">
                                   +{commentsDelta.toLocaleString()}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-emerald-600 text-right">
+                          <td className="py-3 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400 text-right">
                             <div className="flex flex-col items-end">
                               <span className="inline-flex items-center justify-end gap-1">
                                 <Share2 className="w-3 h-3 text-emerald-500" />
                                 <span>{shares.toLocaleString()}</span>
                               </span>
                               {sharesDelta > 0 && (
-                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 rounded mt-0.5" title="New shares from latest run">
+                                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-500/30 px-1 rounded mt-0.5" title="New shares from latest run">
                                   +{sharesDelta.toLocaleString()}
                                 </span>
                               )}
@@ -952,26 +952,26 @@ export default function AdvertiserCampaignDetailsView({
             )}
 
             {/* Settled Audit Cycles History */}
-            <div className="pt-6 border-t border-slate-100 space-y-3">
+            <div className="pt-6 border-t border-slate-100 dark:border-white/10 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-display font-bold text-sm text-kpugi-ink flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <h4 className="font-display font-bold text-sm text-kpugi-ink dark:text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Audit History</span>
                 </h4>
-                <span className="text-[11px] font-mono font-bold text-slate-500">
+                <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
                   {data.audits?.length || 0} Settled Runs
                 </span>
               </div>
 
               {(!data.audits || data.audits.length === 0) ? (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center text-xs text-kpugi-slate">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-center text-xs text-kpugi-slate dark:text-slate-400">
                   No settled audit runs yet for this campaign. As view audit cycles verify engagement, settled runs will populate here.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                      <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 dark:text-slate-400 font-bold uppercase text-[10px]">
                         <th className="py-2.5 px-3">Creator</th>
                         <th className="py-2.5 px-3">Verified Views</th>
                         <th className="py-2.5 px-3">Net New Views</th>
@@ -980,7 +980,7 @@ export default function AdvertiserCampaignDetailsView({
                         <th className="py-2.5 px-3 text-right">Latest Sync</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-sans">
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-sans">
                       {data.audits
                         .slice((auditPage - 1) * auditPageSize, auditPage * auditPageSize)
                         .map((audit) => {
@@ -989,44 +989,44 @@ export default function AdvertiserCampaignDetailsView({
                           const rank = creatorRankMap.get(audit.creator_handle);
 
                           return (
-                            <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-2.5 px-3 font-bold text-slate-900 flex items-center gap-2">
+                            <tr key={audit.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors">
+                              <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 {audit.creator_avatar_url ? (
                                   <Image src={audit.creator_avatar_url} alt="" width={20} height={20} className="rounded-full object-cover shrink-0" />
                                 ) : (
-                                  <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 text-kpugi-blue text-[9px] font-bold flex items-center justify-center shrink-0">
+                                  <div className="w-5 h-5 rounded-full bg-kpugi-blue/10 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400 text-[9px] font-bold flex items-center justify-center shrink-0">
                                     {audit.creator_handle[1]?.toUpperCase() || 'C'}
                                   </div>
                                 )}
                                 <span>{audit.creator_handle}</span>
                                 {rank !== undefined && (
-                                  <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                  <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/10 px-1.5 py-0.2 rounded border border-slate-200 dark:border-white/10">
                                     #{rank}
                                   </span>
                                 )}
                               </td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
                                 {audit.views_scraped.toLocaleString()}
                               </td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
+                              <td className="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                 +{audit.views_delta.toLocaleString()}
                               </td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white">
                                 ₦{audit.payout_amount.toLocaleString()}
                               </td>
                               <td className="py-2.5 px-3">
                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
                                   audit.status === 'auto_approved' || audit.status === 'system_verified'
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                                     : audit.status === 'approved'
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                    : 'bg-red-100 text-red-800 border border-red-200'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                    : 'bg-red-100 dark:bg-rose-950/50 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-500/30'
                                 }`}>
                                   {audit.status === 'auto_approved' || audit.status === 'system_verified' ? '⚡ System Verified' : audit.status}
                                 </span>
                               </td>
                               <td className="py-2.5 px-3 text-right">
-                                <span className="font-mono font-bold text-[11px] text-slate-800 block">
+                                <span className="font-mono font-bold text-[11px] text-slate-800 dark:text-slate-200 block">
                                   {auditDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-medium">
@@ -1046,8 +1046,8 @@ export default function AdvertiserCampaignDetailsView({
                 const totalAudits = data.audits.length;
                 const totalAuditPages = Math.ceil(totalAudits / auditPageSize);
                 return (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs font-sans">
-                    <span className="text-slate-500 text-[11px]">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-white/10 text-xs font-sans">
+                    <span className="text-slate-500 dark:text-slate-400 text-[11px]">
                       Showing <strong>{(auditPage - 1) * auditPageSize + 1}</strong> to{' '}
                       <strong>{Math.min(auditPage * auditPageSize, totalAudits)}</strong> of{' '}
                       <strong>{totalAudits}</strong> audit runs
@@ -1057,7 +1057,7 @@ export default function AdvertiserCampaignDetailsView({
                         type="button"
                         onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
                         disabled={auditPage === 1}
-                        className="px-2.5 py-1.5 rounded-xl border border-kpugi-border bg-white hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs text-xs"
+                        className="px-2.5 py-1.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs text-xs"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
                         <span>Prev</span>
@@ -1071,7 +1071,7 @@ export default function AdvertiserCampaignDetailsView({
                             className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${
                               auditPage === i + 1
                                 ? 'bg-kpugi-blue text-white shadow-2xs'
-                                : 'text-slate-600 hover:bg-slate-100'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
                             }`}
                           >
                             {i + 1}
@@ -1082,7 +1082,7 @@ export default function AdvertiserCampaignDetailsView({
                         type="button"
                         onClick={() => setAuditPage((p) => Math.min(totalAuditPages, p + 1))}
                         disabled={auditPage === totalAuditPages}
-                        className="px-2.5 py-1.5 rounded-xl border border-kpugi-border bg-white hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs text-xs"
+                        className="px-2.5 py-1.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-2xs text-xs"
                       >
                         <span>Next</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -1098,16 +1098,16 @@ export default function AdvertiserCampaignDetailsView({
 
       {/* Tab 3: Creatives */}
       {activeTab === 'creatives' && (
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-          <h3 className="font-display font-bold text-lg text-kpugi-ink">Campaign Creative Guidelines</h3>
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
+          <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Campaign Creative Guidelines</h3>
           {creatives.length === 0 ? (
-            <p className="text-xs text-kpugi-slate">No specific file assets attached. Creators follow post guidelines.</p>
+            <p className="text-xs text-kpugi-slate dark:text-slate-400">No specific file assets attached. Creators follow post guidelines.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {creatives.map((cr) => (
-                <div key={cr.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-                  {cr.copy_text && <p className="text-xs text-slate-800 font-medium">{cr.copy_text}</p>}
-                  {cr.caption_suggestion && <p className="text-[11px] font-mono text-slate-500">Caption: {cr.caption_suggestion}</p>}
+                <div key={cr.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-2">
+                  {cr.copy_text && <p className="text-xs text-slate-800 dark:text-slate-200 font-medium">{cr.copy_text}</p>}
+                  {cr.caption_suggestion && <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Caption: {cr.caption_suggestion}</p>}
                 </div>
               ))}
             </div>
@@ -1117,19 +1117,19 @@ export default function AdvertiserCampaignDetailsView({
 
       {/* Tab 4: Leaderboard */}
       {activeTab === 'leaderboard' && (
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-sm space-y-4">
-          <h3 className="font-display font-bold text-lg text-kpugi-ink">Top Creator Performers</h3>
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
+          <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Top Creator Performers</h3>
           <div className="space-y-3">
             {submissions
               .sort((a, b) => b.views_count - a.views_count)
               .slice(0, 5)
               .map((sub, idx) => (
-                <div key={sub.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+                <div key={sub.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-display font-bold text-sm text-kpugi-blue shrink-0">#{idx + 1}</span>
-                    <span className="font-bold text-xs text-slate-900 truncate">{sub.creator_handle}</span>
+                    <span className="font-display font-bold text-sm text-kpugi-blue dark:text-blue-400 shrink-0">#{idx + 1}</span>
+                    <span className="font-bold text-xs text-slate-900 dark:text-white truncate">{sub.creator_handle}</span>
                   </div>
-                  <div className="flex items-center gap-1 font-mono font-bold text-xs text-emerald-600 shrink-0">
+                  <div className="flex items-center gap-1 font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
                     <Eye className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span>{sub.views_count.toLocaleString()}</span>
                   </div>

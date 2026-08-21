@@ -124,16 +124,16 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
   }, [currentLogoUrl, data]);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-16 font-sans text-kpugi-ink">
+    <div className="max-w-5xl mx-auto space-y-8 pb-16 font-sans text-kpugi-ink dark:text-white">
       {/* Top Hero Command Banner */}
-      <div className="relative rounded-3xl bg-slate-900 text-white p-6 sm:p-8 overflow-hidden shadow-xl border border-slate-800">
+      <div className="relative rounded-3xl bg-slate-900 dark:bg-[#12141A] text-white p-6 sm:p-8 overflow-hidden shadow-xl border border-slate-800 dark:border-white/10">
         <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-kpugi-blue/20 blur-3xl pointer-events-none" />
         <div className="absolute right-1/3 -bottom-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             {/* Brand Logo Avatar */}
-            <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg bg-slate-800 shrink-0 flex items-center justify-center">
+            <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg bg-slate-800 dark:bg-white/5 shrink-0 flex items-center justify-center">
               {currentLogoUrl ? (
                 <Image
                   src={currentLogoUrl}
@@ -167,20 +167,20 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
           </div>
 
           {/* Live Financial Summary */}
-          <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6 shrink-0">
+          <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-800 dark:border-white/10 pt-4 md:pt-0 md:pl-6 shrink-0">
             <div>
               <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Available Wallet</p>
               <p className="font-mono text-xl font-extrabold text-kpugi-naira">₦{data.wallet.balance.toLocaleString()}</p>
             </div>
-            <div className="border-l border-slate-800 pl-4">
+            <div className="border-l border-slate-800 dark:border-white/10 pl-4">
               <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Escrow Locked</p>
-              <p className="font-mono text-base font-bold text-slate-300">₦{data.wallet.escrowLocked.toLocaleString()}</p>
+              <p className="font-mono text-base font-bold text-slate-300 dark:text-slate-300">₦{data.wallet.escrowLocked.toLocaleString()}</p>
             </div>
           </div>
         </div>
 
         {/* Brand Control Panel Completeness Meter & Quick Checklist Grid */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-4">
+        <div className="mt-6 pt-6 border-t border-slate-800/80 dark:border-white/10 space-y-4">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400 font-semibold uppercase tracking-wider text-[11px] flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-kpugi-blue" />
@@ -189,7 +189,7 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
             <span className="font-bold text-kpugi-blue font-mono text-sm">{completeness.score}% Complete</span>
           </div>
 
-          <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700">
+          <div className="w-full bg-slate-800 dark:bg-white/10 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700 dark:border-white/10">
             <div
               className="bg-gradient-to-r from-kpugi-blue via-indigo-400 to-emerald-400 h-full rounded-full transition-all duration-500"
               style={{ width: `${completeness.score}%` }}
@@ -207,8 +207,8 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
                   onClick={() => setActiveTab(step.tab)}
                   className={`p-3 rounded-2xl border transition-all text-left flex flex-col justify-between space-y-2 cursor-pointer hover:scale-[1.02] ${
                     step.isComplete
-                      ? 'bg-slate-900/90 border-emerald-500/30 text-white shadow-xs'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? 'bg-slate-900/90 dark:bg-white/10 border-emerald-500/30 text-white shadow-xs'
+                      : 'bg-slate-900/60 dark:bg-white/5 border-slate-800 dark:border-white/10 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -216,14 +216,14 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
                       className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold ${
                         step.isComplete
                           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700'
+                          : 'bg-slate-800 dark:bg-white/10 text-slate-400 border border-slate-700 dark:border-white/10'
                       }`}
                     >
                       <IconComponent className="w-3.5 h-3.5" />
                     </div>
                     <span
                       className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full font-mono ${
-                        step.isComplete ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                        step.isComplete ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 dark:bg-white/10 text-slate-400'
                       }`}
                     >
                       {step.isComplete ? '✓ Done' : '○ Edit'}
@@ -241,7 +241,7 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
       </div>
 
       {/* Segmented Pill Tab Switcher */}
-      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-kpugi-border shadow-2xs overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs overflow-x-auto scrollbar-none">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -252,7 +252,7 @@ export default function AdvertiserSettingsView({ initialData }: AdvertiserSettin
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
                 isActive
                   ? 'bg-kpugi-blue text-white shadow-sm'
-                  : 'text-slate-600 hover:text-kpugi-ink hover:bg-slate-50'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
               }`}
             >
               <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />

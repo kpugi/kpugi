@@ -124,7 +124,7 @@ export default function DashboardLayoutShell({
 
   return (
     <SidebarProvider open={open} setOpen={setOpen} animate={true}>
-      <div className="min-h-screen bg-kpugi-paper text-kpugi-ink flex flex-col md:flex-row w-full">
+      <div className="min-h-screen bg-kpugi-paper dark:bg-transparent text-kpugi-ink dark:text-white flex flex-col md:flex-row w-full transition-colors duration-300 relative">
         {/* ─────────────────────────────────────────────────────
            ACETERNITY ANIMATED SIDEBAR (Desktop Sticky)
         ───────────────────────────────────────────────────── */}
@@ -168,7 +168,7 @@ export default function DashboardLayoutShell({
             </div>
 
             {/* Bottom Section: KpugiBot AI Support Card / Trigger */}
-            <div className="pt-3 border-t border-kpugi-border/70 shrink-0">
+            <div className="pt-3 border-t border-kpugi-border/70 dark:border-white/10 shrink-0">
               {open ? (
                 <button
                   type="button"
@@ -242,12 +242,12 @@ export default function DashboardLayoutShell({
             onClick={() => setIsMobileOpen(false)}
           >
             <div
-              className="w-[280px] h-full bg-white p-5 flex flex-col justify-between shadow-2xl border-r border-kpugi-border overflow-y-auto"
+              className="w-[280px] h-full bg-white dark:bg-[#0D111D] p-5 flex flex-col justify-between shadow-2xl border-r border-kpugi-border dark:border-white/10 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="space-y-5">
                 {/* Mobile Header */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-kpugi-border">
+                <div className="flex items-center justify-between pb-3.5 border-b border-kpugi-border dark:border-white/10">
                   <Link href="/" className="flex items-center">
                     <Image
                       src="/kpugi_logo.png"
@@ -261,7 +261,7 @@ export default function DashboardLayoutShell({
                   <button
                     type="button"
                     onClick={() => setIsMobileOpen(false)}
-                    className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900"
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                   >
                     ✕
                   </button>
@@ -274,14 +274,14 @@ export default function DashboardLayoutShell({
                       return (
                         <div
                           key={idx}
-                          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate"
+                          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate dark:text-slate-500"
                         >
                           <div className="flex items-center gap-3">
                             <span className="shrink-0">{item.icon}</span>
                             <span className="truncate">{item.label}</span>
                           </div>
                           {item.badge && (
-                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
                               {item.badge}
                             </span>
                           )}
@@ -296,17 +296,17 @@ export default function DashboardLayoutShell({
                         className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold transition-colors ${
                           item.active
                             ? 'bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25 font-bold'
-                            : 'text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-100/80'
+                            : 'text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className={`shrink-0 ${item.active ? 'text-white' : 'text-kpugi-slate'}`}>
+                          <span className={`shrink-0 ${item.active ? 'text-white' : 'text-kpugi-slate dark:text-slate-400'}`}>
                             {item.icon}
                           </span>
                           <span className="truncate">{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
                             {item.badge}
                           </span>
                         )}
@@ -335,7 +335,7 @@ export default function DashboardLayoutShell({
               </div>
 
               {/* Mobile KpugiBot Trigger */}
-              <div className="pt-4 mt-4 border-t border-kpugi-border">
+              <div className="pt-4 mt-4 border-t border-kpugi-border dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => {

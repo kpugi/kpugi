@@ -92,7 +92,7 @@ export const DesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        "h-full px-3 py-4 hidden md:flex md:flex-col bg-white border-r border-kpugi-border w-[260px] shrink-0 z-30",
+        "h-full px-3 py-4 hidden md:flex md:flex-col bg-white dark:bg-[#0D111D] border-r border-kpugi-border dark:border-white/10 w-[260px] shrink-0 z-30 transition-colors duration-300",
         className
       )}
       animate={{
@@ -120,14 +120,14 @@ export const MobileSidebar = ({
   return (
     <div
       className={cn(
-        "h-14 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-white border-b border-kpugi-border w-full"
+        "h-14 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-white dark:bg-[#0D111D] border-b border-kpugi-border dark:border-white/10 w-full transition-colors duration-300"
       )}
       {...props}
     >
       <div className="flex justify-end z-20 w-full">
         <button
           onClick={() => setOpen(!open)}
-          className="p-2 rounded-xl bg-kpugi-paper text-kpugi-slate hover:text-kpugi-ink transition-colors"
+          className="p-2 rounded-xl bg-kpugi-paper dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white transition-colors"
           aria-label="Toggle menu"
         >
           <IconMenu2 className="w-5 h-5" />
@@ -144,12 +144,12 @@ export const MobileSidebar = ({
               ease: "easeInOut",
             }}
             className={cn(
-              "fixed h-full w-full inset-0 bg-white p-6 z-[100] flex flex-col justify-between overflow-y-auto",
+              "fixed h-full w-full inset-0 bg-white dark:bg-[#0D111D] p-6 z-[100] flex flex-col justify-between overflow-y-auto",
               className
             )}
           >
             <div
-              className="absolute right-6 top-6 z-50 p-2 rounded-xl bg-kpugi-paper text-kpugi-slate hover:text-kpugi-ink cursor-pointer"
+              className="absolute right-6 top-6 z-50 p-2 rounded-xl bg-kpugi-paper dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white cursor-pointer"
               onClick={() => setOpen(!open)}
             >
               <IconX className="w-5 h-5" />
@@ -176,7 +176,7 @@ export const SidebarLink = ({
     return (
       <div
         className={cn(
-          "flex items-center justify-start gap-3.5 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate",
+          "flex items-center justify-start gap-3.5 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate dark:text-slate-500",
           className
         )}
       >
@@ -191,7 +191,7 @@ export const SidebarLink = ({
         >
           <span className="truncate">{link.label}</span>
           {link.badge && (
-            <span className="ml-auto text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
+            <span className="ml-auto text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 shrink-0">
               {link.badge}
             </span>
           )}
@@ -211,12 +211,12 @@ export const SidebarLink = ({
         "flex items-center justify-start gap-3.5 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold group/sidebar transition-colors duration-150",
         link.active
           ? "bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25 font-bold"
-          : "text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-100/80",
+          : "text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5",
         className
       )}
       {...props}
     >
-      <span className={cn("shrink-0", link.active ? "text-white" : "text-kpugi-slate group-hover/sidebar:text-kpugi-ink")}>
+      <span className={cn("shrink-0", link.active ? "text-white" : "text-kpugi-slate dark:text-slate-400 group-hover/sidebar:text-kpugi-ink dark:group-hover/sidebar:text-white")}>
         {link.icon}
       </span>
 
@@ -228,7 +228,7 @@ export const SidebarLink = ({
         transition={{ duration: 0.15 }}
         className={cn(
           "text-xs group-hover/sidebar:translate-x-0.5 transition-transform duration-150 whitespace-pre inline-block !p-0 !m-0 truncate",
-          link.active ? "text-white font-bold" : "text-kpugi-slate group-hover/sidebar:text-kpugi-ink"
+          link.active ? "text-white font-bold" : "text-kpugi-slate dark:text-slate-300 group-hover/sidebar:text-kpugi-ink dark:group-hover/sidebar:text-white"
         )}
       >
         {link.label}
@@ -241,7 +241,7 @@ export const SidebarLink = ({
             opacity: animate ? (open ? 1 : 0) : 1,
           }}
           transition={{ duration: 0.15 }}
-          className="ml-auto text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0"
+          className="ml-auto text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 shrink-0"
         >
           {link.badge}
         </motion.span>

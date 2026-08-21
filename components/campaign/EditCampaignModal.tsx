@@ -165,9 +165,9 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
 
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden flex flex-col max-h-[90vh] text-kpugi-ink dark:text-white">
         {/* Modal Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white shrink-0">
+        <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-slate-900 dark:bg-[#161820] text-white shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-display text-base font-extrabold">Edit Live Campaign Parameters</h3>
@@ -182,7 +182,7 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full bg-slate-800 dark:bg-white/10 hover:bg-slate-700 dark:hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -191,18 +191,18 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
         {/* Modal Body Form */}
         <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto flex-1 text-xs font-sans">
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-500/30 text-red-700 dark:text-rose-300 font-medium flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {isLive && (
-            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-sans flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/30 text-amber-900 dark:text-amber-300 font-sans flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <p className="font-bold text-xs">Financial & Title Parameters Locked</p>
-                <p className="text-[11px] text-amber-800">
+                <p className="text-[11px] text-amber-800 dark:text-amber-400">
                   Campaign Title, CPM Rate, Total Budget, and Minimum View Goal cannot be changed while a campaign is Live to protect joined creators. Cover image, brief description, target channels, and creative guidelines remain fully editable.
                 </p>
               </div>
@@ -210,17 +210,17 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           )}
 
           {/* Cover Image Re-upload Section */}
-          <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-kpugi-blue" />
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-kpugi-blue dark:text-blue-400" />
                 <span>Campaign Cover Image</span>
               </label>
               {coverImageUrl && (
                 <button
                   type="button"
                   onClick={removeCoverImage}
-                  className="text-[10px] text-red-600 font-bold hover:underline flex items-center gap-1"
+                  className="text-[10px] text-red-600 dark:text-rose-400 font-bold hover:underline flex items-center gap-1"
                 >
                   <Trash2 className="w-3 h-3" />
                   <span>Remove Image</span>
@@ -229,11 +229,11 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
             </div>
 
             {imageError && (
-              <p className="text-[11px] font-bold text-red-600">{imageError}</p>
+              <p className="text-[11px] font-bold text-red-600 dark:text-rose-400">{imageError}</p>
             )}
 
             {coverImageUrl ? (
-              <div className="relative h-28 w-full rounded-xl overflow-hidden border border-slate-200 group bg-slate-900">
+              <div className="relative h-28 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 group bg-slate-900">
                 <img src={coverImageUrl} alt="Cover Preview" className="w-full h-full object-cover" />
                 <button
                   type="button"
@@ -247,10 +247,10 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="h-24 border-2 border-dashed border-slate-300 hover:border-kpugi-blue/50 rounded-xl flex flex-col items-center justify-center p-3 cursor-pointer bg-white transition-colors text-center"
+                className="h-24 border-2 border-dashed border-slate-300 dark:border-white/20 hover:border-kpugi-blue/50 rounded-xl flex flex-col items-center justify-center p-3 cursor-pointer bg-white dark:bg-white/5 transition-colors text-center"
               >
                 <Upload className="w-5 h-5 text-slate-400 mb-1" />
-                <span className="text-xs font-bold text-slate-700">Click to upload cover image</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Click to upload cover image</span>
                 <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP (Auto-optimized in browser)</span>
               </div>
             )}
@@ -266,12 +266,12 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           {/* Section 1: Campaign Title & Ad Format */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2 space-y-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px] flex items-center justify-between">
                 <span>Campaign Title *</span>
-                {isLive && <span className="text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded text-[9px]">🔒 Locked</span>}
+                {isLive && <span className="text-amber-700 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-950/50 px-1.5 py-0.5 rounded text-[9px]">🔒 Locked</span>}
               </label>
               {isLive ? (
-                <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 font-bold text-slate-700 flex items-center justify-between select-none">
+                <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between select-none">
                   <span className="truncate">{title}</span>
                   <span className="text-[10px] text-slate-400 font-mono shrink-0 ml-2">READ ONLY</span>
                 </div>
@@ -280,18 +280,18 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
                   placeholder="Campaign Title"
                   required
                 />
               )}
             </div>
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Ad Format</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Ad Format</label>
               <select
                 value={adFormat}
                 onChange={(e) => setAdFormat(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 font-bold text-slate-900 dark:text-white bg-white dark:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
               >
                 <option value="Video Asset">Video Asset</option>
                 <option value="Image Asset">Image Asset</option>
@@ -303,12 +303,12 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           {/* Section 2: Brief Description with AI Polish */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Brief Description *</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Brief Description *</label>
               <button
                 type="button"
                 onClick={handleAiExpandBrief}
                 disabled={isAiLoading}
-                className="text-[10px] font-bold text-kpugi-blue hover:text-indigo-700 flex items-center gap-1 bg-kpugi-paper px-2 py-0.5 rounded-md border border-kpugi-border"
+                className="text-[10px] font-bold text-kpugi-blue dark:text-blue-400 hover:text-indigo-700 flex items-center gap-1 bg-kpugi-paper dark:bg-white/5 px-2 py-0.5 rounded-md border border-kpugi-border dark:border-white/10"
               >
                 <Sparkles className="w-3 h-3 text-amber-500" />
                 <span>{isAiLoading ? 'AI Polishing...' : 'Polish with AI'}</span>
@@ -318,30 +318,30 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
               placeholder="Brief description for creators..."
               required
             />
           </div>
 
           {/* Section 3: Pricing & Campaign Budget Breakdown */}
-          <div className={`p-4 rounded-2xl border space-y-3 ${isLive ? 'bg-slate-100/70 border-slate-200' : 'bg-[#f8f7ff] border-[#e2e0fb]'}`}>
-            <div className="text-[11px] font-extrabold text-[#4338ca] uppercase tracking-wide flex items-center justify-between">
+          <div className={`p-4 rounded-2xl border space-y-3 ${isLive ? 'bg-slate-100/70 dark:bg-white/5 border-slate-200 dark:border-white/10' : 'bg-[#f8f7ff] dark:bg-indigo-950/20 border-[#e2e0fb] dark:border-indigo-500/20'}`}>
+            <div className="text-[11px] font-extrabold text-[#4338ca] dark:text-indigo-400 uppercase tracking-wide flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Coins className="w-4 h-4" />
                 <span>CPM Rate & Budget Allocation</span>
               </div>
               {isLive && (
-                <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/50 px-2 py-0.5 rounded-full font-bold">
                   🔒 Locked Live Parameters
                 </span>
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 text-[10px] uppercase">CPM Rate (₦ / 1k)</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 text-[10px] uppercase">CPM Rate (₦ / 1k)</label>
                 {isLive ? (
-                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-200/70 font-mono font-bold text-slate-700 select-none">
+                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200/70 dark:bg-white/10 font-mono font-bold text-slate-700 dark:text-slate-300 select-none">
                     ₦{cpmRate.toLocaleString()}
                   </div>
                 ) : (
@@ -351,15 +351,15 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                     step={250}
                     value={cpmRate}
                     onChange={(e) => setCpmRate(Math.max(2000, Number(e.target.value)))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono font-bold text-slate-900 dark:text-white"
                   />
                 )}
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 text-[10px] uppercase">Total Budget (₦)</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 text-[10px] uppercase">Total Budget (₦)</label>
                 {isLive ? (
-                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-200/70 font-mono font-bold text-slate-700 select-none">
+                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200/70 dark:bg-white/10 font-mono font-bold text-slate-700 dark:text-slate-300 select-none">
                     ₦{totalBudget.toLocaleString()}
                   </div>
                 ) : (
@@ -369,15 +369,15 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                     step={5000}
                     value={totalBudget}
                     onChange={(e) => setTotalBudget(Math.max(10000, Number(e.target.value)))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono font-bold text-slate-900 dark:text-white"
                   />
                 )}
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 text-[10px] uppercase">Min View Goal</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 text-[10px] uppercase">Min View Goal</label>
                 {isLive ? (
-                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-200/70 font-mono font-bold text-slate-700 select-none">
+                  <div className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200/70 dark:bg-white/10 font-mono font-bold text-slate-700 dark:text-slate-300 select-none">
                     {minViewThreshold.toLocaleString()} views
                   </div>
                 ) : (
@@ -387,7 +387,7 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                     step={500}
                     value={minViewThreshold}
                     onChange={(e) => setMinViewThreshold(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono font-bold text-slate-900"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono font-bold text-slate-900 dark:text-white"
                   />
                 )}
               </div>
@@ -396,8 +396,8 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
 
           {/* Section 4: Target Social Networks */}
           <div className="space-y-2">
-            <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-[#4338ca]" />
+            <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400" />
               <span>Target Social Networks *</span>
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -410,8 +410,8 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                     onClick={() => toggleChannel(plat)}
                     className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
                       isSelected
-                        ? 'bg-[#4338ca] text-white border-[#4338ca] shadow-2xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        ? 'bg-[#4338ca] dark:bg-indigo-600 text-white border-[#4338ca] dark:border-indigo-600 shadow-2xs'
+                        : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
                     }`}
                   >
                     <span>{plat}</span>
@@ -422,36 +422,36 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           </div>
 
           {/* Section 5: Creative Copy & External Assets */}
-          <div className="space-y-3 pt-1 border-t border-slate-100">
+          <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-white/10">
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Approved Caption / Text Copy</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Approved Caption / Text Copy</label>
               <textarea
                 rows={2}
                 value={creativeCopy}
                 onChange={(e) => setCreativeCopy(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
                 placeholder="Ready-to-post caption for creators..."
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Google Drive Folder URL</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Google Drive Folder URL</label>
                 <input
                   type="url"
                   value={driveUrl}
                   onChange={(e) => setDriveUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-slate-800 text-[11px]"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-slate-800 dark:text-slate-200 text-[11px]"
                   placeholder="https://drive.google.com/..."
                 />
               </div>
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Google Doc Brief URL</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Google Doc Brief URL</label>
                 <input
                   type="url"
                   value={docUrl}
                   onChange={(e) => setDocUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-slate-800 text-[11px]"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-slate-800 dark:text-slate-200 text-[11px]"
                   placeholder="https://docs.google.com/..."
                 />
               </div>
@@ -461,32 +461,32 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           {/* Section 6: Tags & Min Followers */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1 sm:col-span-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Min Follower Goal</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Min Follower Goal</label>
               <input
                 type="number"
                 min={0}
                 value={minFollowers}
                 onChange={(e) => setMinFollowers(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-slate-800"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-slate-800 dark:text-slate-200"
               />
             </div>
             <div className="space-y-1 sm:col-span-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Mandatory Hashtags</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Mandatory Hashtags</label>
               <input
                 type="text"
                 value={hashtagsStr}
                 onChange={(e) => setHashtagsStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-slate-800"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-slate-800 dark:text-slate-200"
                 placeholder="#KpugiLaunch, #Ad"
               />
             </div>
             <div className="space-y-1 sm:col-span-1">
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Mandatory Mentions</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Mandatory Mentions</label>
               <input
                 type="text"
                 value={mentionsStr}
                 onChange={(e) => setMentionsStr(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-slate-800"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-slate-800 dark:text-slate-200"
                 placeholder="@KpugiApp"
               />
             </div>
@@ -497,15 +497,15 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
             onClick={() => setIsFeatured(!isFeatured)}
             className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
               isFeatured
-                ? 'bg-amber-50 border-amber-300 text-amber-900'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-500/30 text-amber-900 dark:text-amber-300'
+                : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'
             }`}
           >
             <div className="flex items-center gap-2.5">
               <Sparkles className={`w-4 h-4 ${isFeatured ? 'text-amber-600' : 'text-slate-400'}`} />
               <div>
                 <div className="font-bold text-xs">Featured Campaign Status</div>
-                <div className="text-[10px] text-slate-500">Sticky top placement on creator dashboard</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">Sticky top placement on creator dashboard</div>
               </div>
             </div>
             <input
@@ -517,9 +517,9 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           </div>
 
           {/* Footer Action Bar & Error Message */}
-          <div className="pt-4 border-t border-slate-100 space-y-3 shrink-0">
+          <div className="pt-4 border-t border-slate-100 dark:border-white/10 space-y-3 shrink-0">
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-500/30 text-red-700 dark:text-rose-300 font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
                 <span>{errorMsg}</span>
               </div>
@@ -529,7 +529,7 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>

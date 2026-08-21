@@ -350,16 +350,16 @@ export default function CreatorAccountsView({
   }, 0);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink font-sans pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink dark:text-white font-sans pb-12">
       {/* ─────────────────────────────────────────────────────
          HEADER & TOP STATS BAR
       ───────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-kpugi-border pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-kpugi-border dark:border-white/10 pb-6">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink tracking-tight">
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink dark:text-white tracking-tight">
             Accounts Center
           </h1>
-          <p className="font-sans text-xs sm:text-sm text-kpugi-slate mt-1">
+          <p className="font-sans text-xs sm:text-sm text-kpugi-slate dark:text-slate-400 mt-1">
             Connect & verify your social handles to enable campaign tracking & automated payout metrics.
           </p>
         </div>
@@ -375,7 +375,7 @@ export default function CreatorAccountsView({
 
       {/* Global Alerts */}
       {errorMsg && !showConnectModal && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs font-bold text-red-600 flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-500/30 text-xs font-bold text-red-600 dark:text-red-300 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
             <span>{errorMsg}</span>
@@ -387,7 +387,7 @@ export default function CreatorAccountsView({
       )}
 
       {successMsg && !showConnectModal && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{successMsg}</span>
@@ -400,40 +400,40 @@ export default function CreatorAccountsView({
 
       {/* Overview Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex items-center justify-between">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider block">Connected Handles</span>
-            <span className="font-mono font-extrabold text-3xl text-kpugi-ink mt-1 block">
-              {totalConnectedCount} <span className="text-slate-400 text-lg">active</span>
+            <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider block">Connected Handles</span>
+            <span className="font-mono font-extrabold text-3xl text-kpugi-ink dark:text-white mt-1 block">
+              {totalConnectedCount} <span className="text-slate-400 dark:text-slate-500 text-lg">active</span>
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center shrink-0">
             <UserCheck className="w-6 h-6 text-kpugi-blue" />
           </div>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex items-center justify-between">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider block">Profile Verification</span>
-            <span className="font-mono font-bold text-sm text-emerald-600 mt-2 block flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider block">Profile Verification</span>
+            <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400 mt-2 block flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 fill-emerald-600 text-white" />
               Kpugi System Active
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-            <Zap className="w-6 h-6 text-emerald-600" />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center shrink-0">
+            <Zap className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex items-center justify-between">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-kpugi-slate uppercase tracking-wider block">Multiple Accounts Support</span>
-            <span className="font-mono font-bold text-xs text-kpugi-ink mt-2 block">
+            <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider block">Multiple Accounts Support</span>
+            <span className="font-mono font-bold text-xs text-kpugi-ink dark:text-white mt-2 block">
               Multi-handle Enabled
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
-            <Lock className="w-6 h-6 text-purple-600" />
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800/40 flex items-center justify-center shrink-0">
+            <Lock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
           </div>
         </div>
       </div>
@@ -449,26 +449,26 @@ export default function CreatorAccountsView({
           return (
             <div
               key={platform.key}
-              className="p-6 rounded-3xl bg-white border border-kpugi-border hover:border-slate-300 transition-all shadow-xs flex flex-col justify-between space-y-5"
+              className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-xs flex flex-col justify-between space-y-5"
             >
               {/* Card Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-kpugi-border flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-white/5 border border-kpugi-border dark:border-white/10 flex items-center justify-center shrink-0 shadow-xs">
                     {renderIcon(platform.key, 'w-6 h-6')}
                   </div>
                   <div className="flex flex-col justify-center">
-                    <h3 className="font-display font-bold text-base text-kpugi-ink leading-tight">{platform.name}</h3>
+                    <h3 className="font-display font-bold text-base text-kpugi-ink dark:text-white leading-tight">{platform.name}</h3>
                   </div>
                 </div>
 
                 <span
                   className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono shrink-0 ${
                     accountsList.some((a) => a.verificationStatus === 'verified')
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20'
                       : accountsList.length > 0
-                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                      ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/20'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10'
                   }`}
                 >
                   {accountsList.some((a) => a.verificationStatus === 'verified')
@@ -492,8 +492,8 @@ export default function CreatorAccountsView({
                         key={account.id || idx}
                         className={`p-4 rounded-2xl border transition-all ${
                           isVerified
-                            ? 'bg-emerald-50/50 border-emerald-200/80'
-                            : 'bg-amber-50/40 border-amber-200/80'
+                            ? 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200/80 dark:border-emerald-500/20'
+                            : 'bg-amber-50/40 dark:bg-amber-500/10 border-amber-200/80 dark:border-amber-500/20'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -512,22 +512,22 @@ export default function CreatorAccountsView({
                                       if (fallback) (fallback as HTMLElement).style.display = 'flex';
                                     }
                                   }}
-                                  className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                                  className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10"
                                 />
-                                <div className="avatar-fallback w-8 h-8 rounded-full bg-slate-200 text-slate-700 hidden items-center justify-center font-bold text-xs absolute inset-0">
+                                <div className="avatar-fallback w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hidden items-center justify-center font-bold text-xs absolute inset-0">
                                   {account.handle.charAt(0).toUpperCase()}
                                 </div>
                               </div>
                             ) : (
-                              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700">
+                              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700 dark:text-slate-300">
                                 {account.handle.charAt(0).toUpperCase()}
                               </div>
                             )}
                             <div className="min-w-0">
-                              <span className="font-mono font-bold text-xs text-kpugi-blue block truncate">
+                              <span className="font-mono font-bold text-xs text-kpugi-blue dark:text-blue-400 block truncate">
                                 @{account.handle}
                               </span>
-                              <span className="text-[10px] text-kpugi-slate block font-medium">
+                              <span className="text-[10px] text-kpugi-slate dark:text-slate-400 block font-medium">
                                 {isVerified ? '✓ Verified Account' : '⌛ Verification Pending'}
                               </span>
                             </div>
@@ -536,10 +536,10 @@ export default function CreatorAccountsView({
                           {/* Follower / Subscriber Count Display */}
                           {isVerified && account.followerCount !== undefined && account.followerCount !== null && (
                             <div className="text-right shrink-0">
-                              <span className="text-[9px] font-bold text-kpugi-slate uppercase font-mono block">
+                              <span className="text-[9px] font-bold text-kpugi-slate dark:text-slate-400 uppercase font-mono block">
                                 {followerLabel}
                               </span>
-                              <span className="font-mono font-extrabold text-xs text-kpugi-ink block">
+                              <span className="font-mono font-extrabold text-xs text-kpugi-ink dark:text-white block">
                                 {formatCompactNumber(account.followerCount)}
                               </span>
                             </div>
@@ -548,7 +548,7 @@ export default function CreatorAccountsView({
 
                         {/* Bio Verification Code Badge for Pending Accounts */}
                         {isPending && account.verificationCode && (
-                          <div className="my-2.5 p-2.5 rounded-xl bg-slate-900 text-white text-[11px] font-mono flex items-center justify-between gap-2">
+                          <div className="my-2.5 p-2.5 rounded-xl bg-slate-900 dark:bg-black/60 text-white text-[11px] font-mono flex items-center justify-between gap-2 border border-slate-800 dark:border-white/10">
                             <div className="truncate">
                               <span className="text-[9px] uppercase text-slate-400 font-bold block">Bio Code:</span>
                               <span className="text-emerald-400 font-bold tracking-wider select-all">{account.verificationCode}</span>
@@ -558,14 +558,14 @@ export default function CreatorAccountsView({
                               onClick={() => copyToClipboard(account.verificationCode!)}
                               className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 flex items-center gap-1 border border-slate-700 shrink-0"
                             >
-                              <Copy className="w-3 h-3 text-slate-300" />
-                              <span>Copy Code</span>
+                              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-300" />}
+                              <span>{copied ? 'Copied!' : 'Copy Code'}</span>
                             </button>
                           </div>
                         )}
 
                         {/* Action Buttons: Verify / Re-sync + Trash Remove Button */}
-                        <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2">
+                        <div className="pt-2 border-t border-slate-200/60 dark:border-white/10 flex items-center gap-2">
                           {isPending ? (
                             <button
                               onClick={() => runVerificationCheck(platform.key, account.handle)}
@@ -588,9 +588,9 @@ export default function CreatorAccountsView({
                             <button
                               onClick={() => runVerificationCheck(platform.key, account.handle)}
                               disabled={checkLoading === account.handle}
-                              className="flex-1 py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 text-kpugi-ink border border-slate-200 font-sans text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-kpugi-ink dark:text-white border border-slate-200 dark:border-white/10 font-sans text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
                             >
-                              <RefreshCw className={`w-3 h-3 text-kpugi-slate ${checkLoading === account.handle ? 'animate-spin' : ''}`} />
+                              <RefreshCw className={`w-3 h-3 text-kpugi-slate dark:text-slate-400 ${checkLoading === account.handle ? 'animate-spin' : ''}`} />
                               <span>Re-sync Stats</span>
                             </button>
                           )}
@@ -606,7 +606,7 @@ export default function CreatorAccountsView({
                               })
                             }
                             disabled={checkLoading === account.handle}
-                            className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors shrink-0"
+                            className="p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-400 hover:text-red-600 transition-colors shrink-0"
                             title={`Disconnect @${account.handle}`}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -618,12 +618,12 @@ export default function CreatorAccountsView({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-xs text-kpugi-slate leading-relaxed">{platform.description}</p>
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-                    <span className="text-[10px] font-bold text-kpugi-slate block uppercase tracking-wider">
+                  <p className="text-xs text-kpugi-slate dark:text-slate-400 leading-relaxed">{platform.description}</p>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
+                    <span className="text-[10px] font-bold text-kpugi-slate dark:text-slate-400 block uppercase tracking-wider">
                       Linked Handle
                     </span>
-                    <span className="font-mono font-bold text-xs text-kpugi-ink mt-0.5 block truncate">
+                    <span className="font-mono font-bold text-xs text-kpugi-ink dark:text-white mt-0.5 block truncate">
                       No handle connected yet
                     </span>
                   </div>
@@ -642,7 +642,7 @@ export default function CreatorAccountsView({
 
                 <button
                   onClick={() => setInfoGuidePlatform(platform)}
-                  className="p-2.5 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-blue hover:bg-blue-50 transition-colors shrink-0"
+                  className="p-2.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-blue dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors shrink-0"
                   title={`Verification Instructions for ${platform.name}`}
                 >
                   <Info className="w-4 h-4" />
@@ -658,40 +658,40 @@ export default function CreatorAccountsView({
       ───────────────────────────────────────────────────── */}
       {showConnectModal && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-kpugi-border pb-4">
+            <div className="flex items-center justify-between border-b border-kpugi-border dark:border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                   {renderIcon(selectedPlatform.key, 'w-5 h-5')}
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-xl text-kpugi-ink">
+                  <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">
                     Connect {selectedPlatform.name}
                   </h3>
-                  <span className="text-xs text-kpugi-slate font-mono">
+                  <span className="text-xs text-kpugi-slate dark:text-slate-400 font-mono">
                     Step {modalStep} of 2 — {modalStep === 1 ? 'Enter Handle' : 'Copy Verification Code'}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setShowConnectModal(false)}
-                className="p-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-100 transition-colors"
+                className="p-2 rounded-xl text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {errorMsg && (
-              <p className="text-xs text-red-500 font-bold bg-red-50 p-3 rounded-xl border border-red-200 flex items-center gap-2">
+              <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/40 p-3 rounded-xl border border-red-200 dark:border-red-500/30 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
                 <span>{errorMsg}</span>
               </p>
             )}
 
             {successMsg && (
-              <p className="text-xs text-emerald-600 font-bold bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex items-center gap-2">
+              <p className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-500/10 p-3 rounded-xl border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                 <span>{successMsg}</span>
               </p>
@@ -701,13 +701,13 @@ export default function CreatorAccountsView({
             {modalStep === 1 && (
               <form onSubmit={handleStartVerification} className="space-y-4 font-sans text-xs">
                 <div>
-                  <label className="block text-xs font-bold text-kpugi-slate mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                     Enter Public {selectedPlatform.name} Handle
                   </label>
 
                   {/* Clean text input with prefilled URL prefix */}
-                  <div className="flex items-center rounded-xl border border-slate-300 bg-white overflow-hidden focus-within:border-kpugi-blue focus-within:ring-2 focus-within:ring-kpugi-blue/20">
-                    <span className="px-3 py-3 text-slate-500 font-mono text-xs font-bold bg-slate-100 border-r border-slate-200 shrink-0 select-none">
+                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden focus-within:border-kpugi-blue focus-within:ring-2 focus-within:ring-kpugi-blue/20">
+                    <span className="px-3 py-3 text-slate-500 dark:text-slate-400 font-mono text-xs font-bold bg-slate-100 dark:bg-white/10 border-r border-slate-200 dark:border-white/10 shrink-0 select-none">
                       {selectedPlatform.baseUrl}
                     </span>
                     <input
@@ -717,10 +717,10 @@ export default function CreatorAccountsView({
                       onChange={(e) => setHandleInput(e.target.value)}
                       required
                       autoFocus
-                      className="w-full px-3 py-3 font-mono text-xs text-slate-900 focus:outline-none bg-white font-bold"
+                      className="w-full px-3 py-3 font-mono text-xs text-slate-900 dark:text-white focus:outline-none bg-white dark:bg-transparent font-bold"
                     />
                   </div>
-                  <span className="text-[11px] text-kpugi-slate mt-2 block">
+                  <span className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-2 block">
                     Enter your public {selectedPlatform.name} handle. You can add multiple accounts.
                   </span>
                 </div>
@@ -729,7 +729,7 @@ export default function CreatorAccountsView({
                   <button
                     type="button"
                     onClick={() => setShowConnectModal(false)}
-                    className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
+                    className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
                   >
                     Cancel
                   </button>
@@ -757,7 +757,7 @@ export default function CreatorAccountsView({
             {/* ──────── STEP 2: DISPLAY CODE & INSTRUCTIONS ──────── */}
             {modalStep === 2 && (
               <div className="space-y-4 font-sans text-xs">
-                <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2">
+                <div className="p-4 rounded-2xl bg-slate-900 dark:bg-black/60 text-white space-y-2 border border-slate-800 dark:border-white/10">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
                     Your Unique Verification Code
                   </span>
@@ -776,12 +776,12 @@ export default function CreatorAccountsView({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                  <span className="font-bold text-kpugi-ink block text-xs flex items-center gap-1.5">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                  <span className="font-bold text-kpugi-ink dark:text-white block text-xs flex items-center gap-1.5">
                     <Info className="w-4 h-4 text-kpugi-blue" />
                     Instructions for @{handleInput.trim().replace(/^@/, '')}:
                   </span>
-                  <p className="text-xs text-kpugi-slate leading-relaxed">
+                  <p className="text-xs text-kpugi-slate dark:text-slate-300 leading-relaxed">
                     {codeInstructions}
                   </p>
                 </div>
@@ -809,7 +809,7 @@ export default function CreatorAccountsView({
                   <button
                     type="button"
                     onClick={() => setShowConnectModal(false)}
-                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-kpugi-slate font-sans text-xs font-bold transition-all"
+                    className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-slate dark:text-slate-300 font-sans text-xs font-bold transition-all"
                   >
                     Close (Verify Later on Card)
                   </button>
@@ -826,49 +826,49 @@ export default function CreatorAccountsView({
       ───────────────────────────────────────────────────── */}
       {infoGuidePlatform && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl border border-kpugi-border max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-kpugi-border pb-4">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 max-h-[90vh] overflow-y-auto text-kpugi-ink dark:text-white">
+            <div className="flex items-center justify-between border-b border-kpugi-border dark:border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
                   {renderIcon(infoGuidePlatform.key, 'w-5 h-5')}
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg text-kpugi-ink">
+                  <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">
                     {infoGuidePlatform.name} Verification Instructions
                   </h3>
-                  <span className="text-xs text-kpugi-slate font-mono">Kpugi System Verification Guide</span>
+                  <span className="text-xs text-kpugi-slate dark:text-slate-400 font-mono">Kpugi System Verification Guide</span>
                 </div>
               </div>
               <button
                 onClick={() => setInfoGuidePlatform(null)}
-                className="p-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-100 transition-colors"
+                className="p-2 rounded-xl text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4 text-xs font-sans">
-              <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-kpugi-ink space-y-1">
-                <span className="font-bold block text-xs flex items-center gap-1.5 text-kpugi-blue">
+              <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/40 text-kpugi-ink dark:text-white space-y-1">
+                <span className="font-bold block text-xs flex items-center gap-1.5 text-kpugi-blue dark:text-blue-400">
                   <ShieldCheck className="w-4 h-4" />
                   How Verification Works:
                 </span>
-                <p className="text-xs text-kpugi-slate leading-relaxed">
+                <p className="text-xs text-kpugi-slate dark:text-slate-300 leading-relaxed">
                   No password or private access required. Generate a code, paste it into your public {infoGuidePlatform.name} bio, and click Verify. The Kpugi system verifies your profile bio and confirms ownership.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <span className="font-bold text-kpugi-ink block text-xs">Steps to Verify:</span>
-                <ol className="list-decimal list-inside space-y-2 text-kpugi-slate leading-relaxed">
-                  <li>Click <strong>Connect Account</strong> and enter your public handle (<code className="bg-slate-100 text-kpugi-ink px-1.5 py-0.5 rounded font-mono text-[11px]">{infoGuidePlatform.baseUrl}your_handle</code>).</li>
-                  <li>Copy the generated code (e.g. <code className="bg-slate-900 text-emerald-400 px-1.5 py-0.5 rounded font-mono text-[11px]">kpugi-xxxxxx</code>).</li>
+                <span className="font-bold text-kpugi-ink dark:text-white block text-xs">Steps to Verify:</span>
+                <ol className="list-decimal list-inside space-y-2 text-kpugi-slate dark:text-slate-300 leading-relaxed">
+                  <li>Click <strong>Connect Account</strong> and enter your public handle (<code className="bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white px-1.5 py-0.5 rounded font-mono text-[11px]">{infoGuidePlatform.baseUrl}your_handle</code>).</li>
+                  <li>Copy the generated code (e.g. <code className="bg-slate-900 dark:bg-black text-emerald-400 px-1.5 py-0.5 rounded font-mono text-[11px]">kpugi-xxxxxx</code>).</li>
                   <li>Paste the code anywhere in your public {infoGuidePlatform.name} bio and save your profile changes.</li>
                   <li>Click <strong>Verify Account</strong>. Once verified, you can safely remove the code from your bio!</li>
                 </ol>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] space-y-1">
+              <div className="p-3 rounded-xl bg-slate-900 dark:bg-black/60 text-slate-100 font-mono text-[11px] space-y-1 border border-slate-800 dark:border-white/10">
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Public Profile Format:</span>
                 <div className="text-emerald-400">{infoGuidePlatform.baseUrl}username</div>
               </div>
@@ -878,7 +878,7 @@ export default function CreatorAccountsView({
               <button
                 type="button"
                 onClick={() => setInfoGuidePlatform(null)}
-                className="w-full py-3 rounded-xl bg-kpugi-ink text-white font-sans text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
+                className="w-full py-3 rounded-xl bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 font-sans text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition-all shadow-sm"
               >
                 Got It
               </button>
@@ -893,15 +893,15 @@ export default function CreatorAccountsView({
       ───────────────────────────────────────────────────── */}
       {deleteConfirmAccount && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full space-y-5 shadow-2xl border border-kpugi-border text-center">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mx-auto text-red-600">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-sm w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-center text-kpugi-ink dark:text-white">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-500/30 flex items-center justify-center mx-auto text-red-600 dark:text-red-400">
               <Trash2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-lg text-kpugi-ink">
+              <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">
                 Disconnect @{deleteConfirmAccount.handle}?
               </h3>
-              <p className="text-xs text-kpugi-slate mt-1 leading-relaxed">
+              <p className="text-xs text-kpugi-slate dark:text-slate-400 mt-1 leading-relaxed">
                 Are you sure you want to disconnect this account? It will be removed from your verified social matrix.
               </p>
             </div>
@@ -910,7 +910,7 @@ export default function CreatorAccountsView({
               <button
                 type="button"
                 onClick={() => setDeleteConfirmAccount(null)}
-                className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
+                className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
               >
                 Cancel
               </button>

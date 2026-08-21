@@ -208,16 +208,16 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
   });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink pb-12 font-sans">
+    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink dark:text-white pb-12 font-sans">
       {/* ─────────────────────────────────────────────────────
          HEADER & ACTION ROW
       ───────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display font-bold text-2xl sm:text-3xl text-kpugi-ink tracking-tight">
+          <h1 className="font-display font-bold text-2xl sm:text-3xl text-kpugi-ink dark:text-white tracking-tight">
             Submissions & Audits
           </h1>
-          <p className="font-sans text-xs sm:text-sm text-kpugi-slate mt-1">
+          <p className="font-sans text-xs sm:text-sm text-kpugi-slate dark:text-slate-400 mt-1">
             Real-time metric verification and performance clearing across all connected platforms
           </p>
         </div>
@@ -236,62 +236,62 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: TOTAL SUBMITTED */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col justify-between space-y-4">
-          <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex flex-col justify-between space-y-4">
+          <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
             Total Submitted
           </span>
           <div className="flex items-center justify-between">
-            <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
+            <span className="font-mono font-extrabold text-3xl text-kpugi-ink dark:text-white">
               {data.totalSubmitted}
             </span>
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
           </div>
         </div>
 
         {/* Card 2: CLEARED & APPROVED */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col justify-between space-y-4">
-          <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex flex-col justify-between space-y-4">
+          <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
             Cleared & Approved
           </span>
           <div className="flex items-baseline justify-between">
-            <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
+            <span className="font-mono font-extrabold text-3xl text-kpugi-ink dark:text-white">
               {data.approvedCount}
             </span>
-            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-500/20">
               {data.approvedRate}% Rate
             </span>
           </div>
         </div>
 
         {/* Card 3: AUDITING / VERIFICATION */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col justify-between space-y-4">
-          <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex flex-col justify-between space-y-4">
+          <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
             Auditing / Verification
           </span>
           <div className="flex items-center justify-between">
-            <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
+            <span className="font-mono font-extrabold text-3xl text-kpugi-ink dark:text-white">
               {data.auditingCount}
             </span>
-            <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
-              <Radio className="w-4 h-4 text-kpugi-blue animate-pulse" />
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center shrink-0">
+              <Radio className="w-4 h-4 text-kpugi-blue dark:text-blue-400 animate-pulse" />
             </div>
           </div>
         </div>
 
         {/* Card 4: TOTAL VERIFIED VIEWS */}
-        <div className="p-6 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col justify-between space-y-4">
-          <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex flex-col justify-between space-y-4">
+          <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
             Total Verified Views
           </span>
           <div className="flex items-baseline justify-between">
-            <span className="font-mono font-extrabold text-3xl text-kpugi-ink">
+            <span className="font-mono font-extrabold text-3xl text-kpugi-ink dark:text-white">
               {data.totalVerifiedViews >= 1000000
                 ? `${(data.totalVerifiedViews / 1000000).toFixed(1)}M`
                 : data.totalVerifiedViews.toLocaleString()}
             </span>
-            <span className="text-[11px] font-bold text-kpugi-slate">
+            <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400">
               Verified Viewport
             </span>
           </div>
@@ -301,15 +301,15 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       {/* ─────────────────────────────────────────────────────
          FILTER & TOOLBAR CONTROL BOX
       ───────────────────────────────────────────────────── */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-kpugi-border shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Left: Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200 shrink-0 self-start lg:self-auto overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 shrink-0 self-start lg:self-auto overflow-x-auto max-w-full">
           <button
             onClick={() => setSelectedStatusTab('all')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               selectedStatusTab === 'all'
                 ? 'bg-kpugi-blue text-white shadow-sm'
-                : 'text-kpugi-slate hover:text-kpugi-ink'
+                : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
             }`}
           >
             All
@@ -319,7 +319,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               selectedStatusTab === 'approved'
                 ? 'bg-kpugi-blue text-white shadow-sm'
-                : 'text-kpugi-slate hover:text-kpugi-ink'
+                : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
             }`}
           >
             Approved
@@ -329,7 +329,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               selectedStatusTab === 'auditing'
                 ? 'bg-kpugi-blue text-white shadow-sm'
-                : 'text-kpugi-slate hover:text-kpugi-ink'
+                : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
             }`}
           >
             Auditing
@@ -339,7 +339,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               selectedStatusTab === 'rejected'
                 ? 'bg-kpugi-blue text-white shadow-sm'
-                : 'text-kpugi-slate hover:text-kpugi-ink'
+                : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
             }`}
           >
             Rejected
@@ -355,21 +355,21 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
               placeholder="Search by campaign code or name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs font-sans focus:outline-none focus:border-kpugi-blue focus:bg-white transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-sans text-kpugi-ink dark:text-white placeholder-kpugi-slate dark:placeholder-slate-400 focus:outline-none focus:border-kpugi-blue focus:bg-white dark:focus:bg-[#13151A] transition-all"
             />
           </div>
 
           <select
             value={selectedPlatformFilter}
             onChange={(e) => setSelectedPlatformFilter(e.target.value)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-kpugi-border bg-white text-xs font-sans font-bold text-kpugi-ink focus:outline-none focus:border-kpugi-blue"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-[#13151A] text-xs font-sans font-bold text-kpugi-ink dark:text-white focus:outline-none focus:border-kpugi-blue"
           >
-            <option value="all">All Platforms</option>
-            <option value="tiktok">TikTok</option>
-            <option value="instagram">Instagram</option>
-            <option value="youtube">YouTube</option>
-            <option value="twitter">Twitter / X</option>
-            <option value="facebook">Facebook</option>
+            <option value="all" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">All Platforms</option>
+            <option value="tiktok" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">TikTok</option>
+            <option value="instagram" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Instagram</option>
+            <option value="youtube" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">YouTube</option>
+            <option value="twitter" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Twitter / X</option>
+            <option value="facebook" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Facebook</option>
           </select>
         </div>
       </div>
@@ -377,41 +377,41 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       {/* ─────────────────────────────────────────────────────
          SUBMISSIONS LEDGER TABLE (MATCHING MOCKUP)
       ───────────────────────────────────────────────────── */}
-      <div className="rounded-3xl bg-white border border-kpugi-border shadow-xs overflow-hidden">
+      <div className="rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-kpugi-border bg-slate-50/70 text-[10px] font-bold text-kpugi-slate uppercase tracking-wider font-sans">
+              <tr className="border-b border-kpugi-border dark:border-white/10 bg-slate-50/70 dark:bg-[#161820] text-[10px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider font-sans">
                 <th className="py-4 px-6">Campaign & Code</th>
                 <th className="py-4 px-6">Platform & URL</th>
                 <th className="py-4 px-6">Status</th>
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-kpugi-border text-xs font-sans">
+            <tbody className="divide-y divide-kpugi-border dark:divide-white/5 text-xs font-sans">
               {filteredSubmissions.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.03] transition-colors">
                   {/* Campaign & Code */}
                   <td className="py-4 px-6">
-                    <div className="font-bold text-kpugi-ink text-sm">{item.campaignTitle}</div>
-                    <div className="font-mono text-[11px] text-kpugi-slate mt-0.5">{item.campaignCode}</div>
+                    <div className="font-bold text-kpugi-ink dark:text-white text-sm">{item.campaignTitle}</div>
+                    <div className="font-mono text-[11px] text-kpugi-slate dark:text-slate-400 mt-0.5">{item.campaignCode}</div>
                   </td>
 
                   {/* Platform & URL */}
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-slate-100 border border-kpugi-border flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/5 border border-kpugi-border dark:border-white/10 flex items-center justify-center shrink-0">
                         {renderPlatformIcon(item.platform, 'w-4 h-4')}
                       </div>
                       <div className="min-w-0">
-                        <span className="font-bold text-kpugi-ink capitalize block text-xs">
+                        <span className="font-bold text-kpugi-ink dark:text-white capitalize block text-xs">
                           {item.platform}
                         </span>
                         <a
                           href={item.postUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-kpugi-blue font-mono hover:underline inline-flex items-center gap-1 truncate max-w-[180px] sm:max-w-[220px]"
+                          className="text-[11px] text-kpugi-blue dark:text-blue-400 font-mono hover:underline inline-flex items-center gap-1 truncate max-w-[180px] sm:max-w-[220px]"
                         >
                           <span className="truncate">{item.postUrl.replace(/^https?:\/\//, '')}</span>
                           <ExternalLink className="w-3 h-3 shrink-0" />
@@ -423,19 +423,19 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                   {/* Status Pill */}
                   <td className="py-4 px-6">
                     {item.status === 'approved' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold uppercase tracking-wider font-mono">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20 text-[11px] font-bold uppercase tracking-wider font-mono">
                         <Check className="w-3.5 h-3.5" />
                         APPROVED
                       </span>
                     ) : item.status === 'auditing' || item.status === 'pending' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-kpugi-blue border border-blue-200 text-[11px] font-bold uppercase tracking-wider font-mono">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 text-[11px] font-bold uppercase tracking-wider font-mono">
                         <Radio className="w-3.5 h-3.5 animate-pulse" />
                         AUDITING
                       </span>
                     ) : (
                       <button
                         onClick={() => setRejectionModalItem(item)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-[11px] font-bold uppercase tracking-wider font-mono hover:bg-red-100 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30 text-[11px] font-bold uppercase tracking-wider font-mono hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                       >
                         <Info className="w-3.5 h-3.5" />
                         REJECTED
@@ -449,11 +449,11 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                       {/* Copy Link */}
                       <button
                         onClick={() => handleCopy(item.postUrl, item.id)}
-                        className="p-2 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 transition-colors"
+                        className="p-2 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                         title="Copy Link"
                       >
                         {copiedId === item.id ? (
-                          <Check className="w-4 h-4 text-emerald-600" />
+                          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
@@ -464,7 +464,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         <button
                           onClick={() => handleResync(item.id)}
                           disabled={resyncingId === item.id}
-                          className="p-2 rounded-xl border border-kpugi-border bg-white text-kpugi-blue hover:bg-blue-50 transition-colors disabled:opacity-50"
+                          className="p-2 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-blue dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
                           title="Re-sync View Audit"
                         >
                           <RefreshCw className={`w-4 h-4 ${resyncingId === item.id ? 'animate-spin' : ''}`} />
@@ -485,7 +485,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         <button
                           onClick={() => setDeleteTarget({ campaignId: item.campaignId, submissionId: item.id })}
                           disabled={deletingId === item.id}
-                          className="p-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50"
+                          className="p-2 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors disabled:opacity-50"
                           title="Remove Post Link & Reset Stats"
                         >
                           <Trash2 className={`w-4 h-4 ${deletingId === item.id ? 'animate-spin' : ''}`} />
@@ -496,7 +496,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                       {item.status === 'rejected' && (
                         <button
                           onClick={() => setRejectionModalItem(item)}
-                          className="p-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          className="p-2 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                           title="View Rejection Reason"
                         >
                           <Info className="w-4 h-4" />
@@ -511,11 +511,11 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                 <tr>
                   <td colSpan={4} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-400 mb-1">
                         <Rocket className="w-5 h-5" />
                       </div>
-                      <p className="font-bold text-sm text-kpugi-ink">No Video Submissions Found</p>
-                      <p className="text-xs text-kpugi-slate max-w-sm mx-auto leading-relaxed">
+                      <p className="font-bold text-sm text-kpugi-ink dark:text-white">No Video Submissions Found</p>
+                      <p className="text-xs text-kpugi-slate dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
                         Submit your live video link (TikTok, Instagram Reels, YouTube Shorts) to start real-time view auditing and anti-fraud verification.
                       </p>
                       <button
@@ -534,19 +534,19 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
         </div>
 
         {/* Ledger Footer / Pagination */}
-        <div className="p-4 border-t border-kpugi-border bg-slate-50/50 flex items-center justify-between text-xs font-sans">
-          <span className="text-kpugi-slate font-medium">
-            Showing <strong className="text-kpugi-ink">{filteredSubmissions.length}</strong> of{' '}
-            <strong className="text-kpugi-ink">{data.totalSubmitted}</strong> submissions
+        <div className="p-4 border-t border-kpugi-border dark:border-white/10 bg-slate-50/50 dark:bg-[#161820]/40 flex items-center justify-between text-xs font-sans">
+          <span className="text-kpugi-slate dark:text-slate-400 font-medium">
+            Showing <strong className="text-kpugi-ink dark:text-white">{filteredSubmissions.length}</strong> of{' '}
+            <strong className="text-kpugi-ink dark:text-white">{data.totalSubmitted}</strong> submissions
           </span>
 
           <div className="flex items-center gap-2">
-            <button className="p-1.5 rounded-lg border border-kpugi-border bg-white text-kpugi-slate hover:bg-slate-50 disabled:opacity-40">
+            <button className="p-1.5 rounded-lg border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40">
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button className="w-7 h-7 rounded-lg bg-kpugi-blue text-white font-bold text-xs">1</button>
-            <button className="w-7 h-7 rounded-lg border border-kpugi-border bg-white text-kpugi-slate hover:bg-slate-50 font-bold text-xs">2</button>
-            <button className="p-1.5 rounded-lg border border-kpugi-border bg-white text-kpugi-slate hover:bg-slate-50">
+            <button className="w-7 h-7 rounded-lg border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 font-bold text-xs">2</button>
+            <button className="p-1.5 rounded-lg border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/10">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -558,16 +558,16 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       ───────────────────────────────────────────────────── */}
       {showSubmitModal && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div>
-              <h3 className="font-display font-bold text-xl text-kpugi-ink">Submit Campaign Post</h3>
-              <p className="font-sans text-xs text-kpugi-slate mt-1">
+              <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Submit Campaign Post</h3>
+              <p className="font-sans text-xs text-kpugi-slate dark:text-slate-400 mt-1">
                 Paste your post URL (TikTok, Instagram, YouTube, X/Twitter, Facebook, Threads, LinkedIn). View audit will begin shortly.
               </p>
             </div>
 
-            {submitError && <p className="text-xs text-red-500 font-bold bg-red-50 p-2.5 rounded-xl border border-red-200">{submitError}</p>}
-            {submitSuccess && <p className="text-xs text-emerald-600 font-bold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">{submitSuccess}</p>}
+            {submitError && <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-500/30">{submitError}</p>}
+            {submitSuccess && <p className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-500/20">{submitSuccess}</p>}
 
             {(() => {
               const availableCampaigns = data.activeCampaigns.filter(
@@ -576,16 +576,16 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
 
               if (availableCampaigns.length === 0) {
                 return (
-                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-3">
-                    <ShieldCheck className="w-8 h-8 text-emerald-600 mx-auto" />
-                    <h4 className="font-display font-bold text-sm text-kpugi-ink">All Campaign Posts Active</h4>
-                    <p className="text-xs text-kpugi-slate leading-relaxed">
+                  <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-center space-y-3">
+                    <ShieldCheck className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                    <h4 className="font-display font-bold text-sm text-kpugi-ink dark:text-white">All Campaign Posts Active</h4>
+                    <p className="text-xs text-kpugi-slate dark:text-slate-400 leading-relaxed">
                       You have already submitted post links for all joined campaigns. Automated hourly view audits are currently running.
                     </p>
                     <button
                       type="button"
                       onClick={() => setShowSubmitModal(false)}
-                      className="w-full py-2.5 rounded-xl bg-kpugi-ink text-white font-bold text-xs hover:bg-slate-800 transition-all"
+                      className="w-full py-2.5 rounded-xl bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 font-bold text-xs hover:bg-slate-800 dark:hover:bg-slate-100 transition-all"
                     >
                       Close
                     </button>
@@ -596,17 +596,17 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
               return (
                 <form onSubmit={handleFormSubmit} className="space-y-4 font-sans text-xs">
                   <div>
-                    <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1 uppercase tracking-wider">
                       Select Campaign
                     </label>
                     <select
                       value={selectedCampaignId || availableCampaigns[0]?.id}
                       onChange={(e) => setSelectedCampaignId(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white font-bold text-slate-900"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-white/10 font-sans text-xs focus:outline-none focus:border-kpugi-blue bg-white dark:bg-white/5 font-bold text-slate-900 dark:text-white"
                       required
                     >
                       {availableCampaigns.map((camp) => (
-                        <option key={camp.id} value={camp.id}>
+                        <option key={camp.id} value={camp.id} className="bg-white dark:bg-[#12141A] text-slate-900 dark:text-white">
                           {camp.title} ({camp.campaignCode})
                         </option>
                       ))}
@@ -614,7 +614,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1 uppercase tracking-wider">
                       Post URL Link
                     </label>
                     <div className="relative flex items-center">
@@ -624,7 +624,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         value={postUrlInput}
                         onChange={(e) => setPostUrlInput(e.target.value)}
                         required
-                        className="w-full pl-4 pr-10 py-3.5 rounded-xl border-2 border-slate-200 bg-white font-mono text-xs text-slate-900 font-bold placeholder:text-slate-400 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
+                        className="w-full pl-4 pr-10 py-3.5 rounded-xl border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-xs text-slate-900 dark:text-white font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-kpugi-blue focus:ring-4 focus:ring-kpugi-blue/10 transition-all shadow-sm"
                       />
                       {postUrlInput && (
                         <div className="absolute right-3">
@@ -632,8 +632,8 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         </div>
                       )}
                     </div>
-                    <span className="text-[11px] text-kpugi-slate mt-1 block">
-                      Detected Platform: <strong className="text-kpugi-ink uppercase">{detectPlatform(postUrlInput)}</strong>
+                    <span className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-1 block">
+                      Detected Platform: <strong className="text-kpugi-ink dark:text-white uppercase">{detectPlatform(postUrlInput)}</strong>
                     </span>
                   </div>
 
@@ -641,7 +641,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                     <button
                       type="button"
                       onClick={() => setShowSubmitModal(false)}
-                      className="w-1/2 py-3 rounded-xl border border-kpugi-border bg-white text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-50 font-sans text-xs font-bold transition-all"
+                      className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
                     >
                       Cancel
                     </button>
@@ -666,20 +666,20 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
       ───────────────────────────────────────────────────── */}
       {rejectionModalItem && mounted && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="w-10 h-10 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+              <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-500/30 flex items-center justify-center shrink-0">
                 <Info className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-lg text-kpugi-ink">Submission Audit Issue</h3>
-                <span className="font-mono text-xs text-kpugi-slate">{rejectionModalItem.campaignCode}</span>
+                <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Submission Audit Issue</h3>
+                <span className="font-mono text-xs text-kpugi-slate dark:text-slate-400">{rejectionModalItem.campaignCode}</span>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-red-50/70 border border-red-200 space-y-2">
-              <span className="text-xs font-bold text-red-900 block uppercase tracking-wider">Verification Audit Report:</span>
-              <p className="text-xs text-red-800 leading-relaxed font-sans">
+            <div className="p-4 rounded-2xl bg-red-50/70 dark:bg-red-950/40 border border-red-200 dark:border-red-500/30 space-y-2">
+              <span className="text-xs font-bold text-red-900 dark:text-red-300 block uppercase tracking-wider">Verification Audit Report:</span>
+              <p className="text-xs text-red-800 dark:text-red-200 leading-relaxed font-sans">
                 {rejectionModalItem.rejectionReason || 'Video settings set to private or post URL unreachable by verification auditors. Switch post visibility to public and resubmit.'}
               </p>
             </div>
@@ -688,7 +688,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
               <button
                 type="button"
                 onClick={() => setRejectionModalItem(null)}
-                className="w-full py-3 rounded-xl bg-kpugi-ink text-white font-sans text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
+                className="w-full py-3 rounded-xl bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 font-sans text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition-all shadow-sm"
               >
                 Close Window
               </button>

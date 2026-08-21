@@ -61,31 +61,30 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 text-kpugi-ink dark:text-white">
       {/* Toast Feedback */}
       {message && (
         <div
           className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 transition-all ${
             message.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+              : 'bg-red-50 dark:bg-rose-950/40 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-500/30'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-rose-400 shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Verification & Submission Windows */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs space-y-6">
         <div>
-         
-          <h2 className="font-display text-xl font-bold text-kpugi-ink mt-1">Verification Windows & Timing</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="font-display text-xl font-bold text-kpugi-ink dark:text-white mt-1">Verification Windows & Timing</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Pre-configure default audit and post life parameters for new campaign creation flows.
           </p>
         </div>
@@ -93,13 +92,13 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Default Grace Period */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Default Verification Grace Period
             </label>
             <select
               value={defaultGraceHours}
               onChange={(e) => setDefaultGraceHours(Number(e.target.value))}
-              className="w-full p-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-[#161820] text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             >
               <option value={24}>24 Hours (Fast Settlement)</option>
               <option value={48}>48 Hours (Standard Settlement)</option>
@@ -112,13 +111,13 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
 
           {/* Default Required Live Duration */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Default Minimum Live Post Duration
             </label>
             <select
               value={defaultLiveHours}
               onChange={(e) => setDefaultLiveHours(Number(e.target.value))}
-              className="w-full p-3.5 rounded-xl border border-kpugi-border bg-slate-50 text-xs sm:text-sm text-kpugi-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
+              className="w-full p-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-slate-50 dark:bg-[#161820] text-xs sm:text-sm text-kpugi-ink dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20 focus:border-kpugi-blue transition-all"
             >
               <option value={24}>24 Hours Minimum</option>
               <option value={48}>48 Hours Minimum</option>
@@ -132,31 +131,31 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
       </div>
 
       {/* Quality & Budget Protection Rules */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs space-y-6">
         <div>
-          <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-kpugi-blue dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
             <ShieldCheck className="w-4 h-4" />
             <span>Brand Protection</span>
           </div>
-          <h2 className="font-display text-xl font-bold text-kpugi-ink mt-1">Quality & Budget Overrun Rules</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="font-display text-xl font-bold text-kpugi-ink dark:text-white mt-1">Quality & Budget Overrun Rules</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Automated safety rules to optimize creator quality and safeguard campaign budgets.
           </p>
         </div>
 
         <div className="space-y-4">
           {/* Prioritize KYC Creators */}
-          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-slate-200 dark:hover:border-white/20 transition-all">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold text-kpugi-ink">
+                <span className="text-xs sm:text-sm font-bold text-kpugi-ink dark:text-white">
                   Prioritize KYC-Verified Creators
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-kpugi-blue/10 text-kpugi-blue border border-kpugi-blue/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-kpugi-blue/10 dark:bg-blue-500/20 text-kpugi-blue dark:text-blue-400 border border-kpugi-blue/20 dark:border-blue-500/30">
                   Recommended
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Prioritize campaign applications from creators with verified government identity (NIN/BVN) and verified bank accounts.
               </p>
             </div>
@@ -168,20 +167,20 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
                 onChange={(e) => setPreferKycCreators(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
+              <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
             </label>
           </div>
 
           {/* Auto-Pause Threshold */}
-          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-slate-200 dark:hover:border-white/20 transition-all">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold text-kpugi-ink">
+                <span className="text-xs sm:text-sm font-bold text-kpugi-ink dark:text-white">
                   Auto-Pause Campaigns at 95% Budget Spent
                 </span>
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Automatically stops new creator joins once 95% of the campaign escrow budget has been reserved to prevent budget overflows.
               </p>
             </div>
@@ -193,7 +192,7 @@ export default function BrandCampaignDefaultsTab({ data }: BrandCampaignDefaults
                 onChange={(e) => setAutoPauseThresholdPct(e.target.checked ? 95 : 100)}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
+              <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
             </label>
           </div>
         </div>

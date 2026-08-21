@@ -61,48 +61,48 @@ export default function BrandNotificationsTab({ data }: BrandNotificationsTabPro
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 text-kpugi-ink dark:text-white">
       {/* Toast Feedback */}
       {message && (
         <div
           className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 transition-all ${
             message.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+              : 'bg-red-50 dark:bg-rose-950/40 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-500/30'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-rose-400 shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Notification Preferences Section */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-kpugi-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-xs space-y-6">
         <div>
-          <div className="flex items-center gap-2 text-kpugi-blue font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-kpugi-blue dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
             <Bell className="w-4 h-4" />
             <span>Alert Preferences</span>
           </div>
-          <h2 className="font-display text-xl font-bold text-kpugi-ink mt-1">Email Alert Channels</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Notifications are sent to <strong className="text-slate-700">{data.advertiser.billingEmail || data.profile.email}</strong>.
+          <h2 className="font-display text-xl font-bold text-kpugi-ink dark:text-white mt-1">Email Alert Channels</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Notifications are sent to <strong className="text-slate-700 dark:text-slate-300">{data.advertiser.billingEmail || data.profile.email}</strong>.
           </p>
         </div>
 
         <div className="space-y-3.5">
           {/* Campaign Milestones */}
-          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-slate-200 dark:hover:border-white/20 transition-all">
             <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-kpugi-blue/10 text-kpugi-blue flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-kpugi-blue/10 dark:bg-blue-500/20 text-kpugi-blue dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Layers className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs sm:text-sm font-bold text-kpugi-ink">Campaign Milestones & Budget Usage</p>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-kpugi-ink dark:text-white">Campaign Milestones & Budget Usage</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Real-time alerts when a campaign launches, hits 50% budget allocated, or delivers 100% target views.
                 </p>
               </div>
@@ -115,19 +115,19 @@ export default function BrandNotificationsTab({ data }: BrandNotificationsTabPro
                 onChange={(e) => setEmailMilestones(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
+              <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
             </label>
           </div>
 
           {/* Creator Submissions & AI View Audits */}
-          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-slate-200 dark:hover:border-white/20 transition-all">
             <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs sm:text-sm font-bold text-kpugi-ink">Creator Submissions & View Audits</p>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-kpugi-ink dark:text-white">Creator Submissions & View Audits</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Receive notifications when creators clock in video proof links and when automated view audits verify views and release escrow.
                 </p>
               </div>
@@ -140,19 +140,19 @@ export default function BrandNotificationsTab({ data }: BrandNotificationsTabPro
                 onChange={(e) => setEmailSubmissions(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
+              <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
             </label>
           </div>
 
           {/* Financial & Deposit Confirmations */}
-          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-slate-200 dark:hover:border-white/20 transition-all">
             <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Wallet className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs sm:text-sm font-bold text-kpugi-ink">Financial & Wallet Confirmations</p>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-kpugi-ink dark:text-white">Financial & Wallet Confirmations</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Instant receipts when funding your wallet or locking budget for new campaign escrows.
                 </p>
               </div>
@@ -165,19 +165,19 @@ export default function BrandNotificationsTab({ data }: BrandNotificationsTabPro
                 onChange={(e) => setEmailWallet(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
+              <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
             </label>
           </div>
 
           {/* Weekly Performance Digest */}
-          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-slate-200 dark:hover:border-white/20 transition-all">
             <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs sm:text-sm font-bold text-kpugi-ink">Weekly Performance & ROI Digest</p>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-kpugi-ink dark:text-white">Weekly Performance & ROI Digest</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Every Monday morning executive summary with CPM efficiency, top-performing creators, and total views delivered.
                 </p>
               </div>
@@ -190,7 +190,7 @@ export default function BrandNotificationsTab({ data }: BrandNotificationsTabPro
                 onChange={(e) => setWeeklyDigest(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
+              <div className="w-12 h-6 bg-slate-200 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-kpugi-blue"></div>
             </label>
           </div>
         </div>

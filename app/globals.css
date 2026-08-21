@@ -6,21 +6,40 @@
 @layer base {
   :root {
     --color-primary: #2F49E8;
-    --color-ink: #FFFFFF;
-    --color-paper: #090A0F;
-    --color-surface: #0B1026;
+    --color-ink: #0B1026;
+    --color-paper: #F6F7FB;
+    --color-surface: #FFFFFF;
     --color-naira: #17A75B;
     --color-cliff: #E4483C;
     --color-amber: #F5A623;
     --color-slate: #64748B;
+    --color-border: #E4E7F0;
+  }
+
+  .dark {
+    --color-primary: #2F49E8;
+    --color-ink: #FFFFFF;
+    --color-paper: #08090D;
+    --color-surface: #0E121E;
+    --color-naira: #17A75B;
+    --color-cliff: #E4483C;
+    --color-amber: #F5A623;
+    --color-slate: #94A3B8;
     --color-border: rgba(255, 255, 255, 0.08);
   }
 
   html, body {
-    background-color: #090A0F !important;
-    color: #FFFFFF;
     font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  .dark body {
+    background-color: #08090D;
+    background-image: 
+      radial-gradient(ellipse 90% 45% at 50% -8%, rgba(47, 73, 232, 0.16), transparent 70%),
+      radial-gradient(ellipse 55% 35% at 92% 12%, rgba(99, 102, 241, 0.09), transparent 60%),
+      radial-gradient(ellipse 50% 30% at 8% 70%, rgba(16, 185, 129, 0.04), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
@@ -38,9 +57,9 @@
   animation: fadeIn 0.35s ease-out both;
 }
 
-/* ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────
    KNOCK NOTIFICATION POPOVER CUSTOM STYLING OVERRIDES
-   ───────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────── */
 .rnf-popover-wrapper,
 [class*="rnf-popover"] {
   z-index: 99999 !important;
@@ -54,10 +73,24 @@
   width: 380px !important;
 }
 
+.dark .rnf-popover-wrapper,
+.dark [class*="rnf-popover"] {
+  background-color: #12141a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
 .rnf-notification-feed,
 .rnf-feed-provider {
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+.dark .rnf-notification-feed,
+.dark .rnf-feed-provider {
+  background-color: #12141a !important;
+  color: #ffffff !important;
 }
 
 .rnf-header {
@@ -66,10 +99,19 @@
   background-color: #ffffff !important;
 }
 
+.dark .rnf-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: #12141a !important;
+}
+
 .rnf-header__title {
   font-weight: 700 !important;
   color: #0f172a !important;
   font-size: 15px !important;
+}
+
+.dark .rnf-header__title {
+  color: #ffffff !important;
 }
 
 .rnf-notification-cell {
@@ -78,12 +120,24 @@
   transition: background-color 0.15s ease !important;
 }
 
+.dark .rnf-notification-cell {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
 .rnf-notification-cell:hover {
   background-color: #f8fafc !important;
 }
 
+.dark .rnf-notification-cell:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
 .rnf-notification-cell--unread {
   background-color: #eff6ff !important;
+}
+
+.dark .rnf-notification-cell--unread {
+  background-color: rgba(47, 73, 232, 0.15) !important;
 }
 
 .rnf-notification-cell__title {
@@ -92,16 +146,28 @@
   font-size: 14px !important;
 }
 
+.dark .rnf-notification-cell__title {
+  color: #ffffff !important;
+}
+
 .rnf-notification-cell__content {
   color: #334155 !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
 }
 
+.dark .rnf-notification-cell__content {
+  color: #cbd5e1 !important;
+}
+
 .rnf-notification-cell__timestamp {
   color: #64748b !important;
   font-size: 11px !important;
   margin-top: 4px !important;
+}
+
+.dark .rnf-notification-cell__timestamp {
+  color: #94a3b8 !important;
 }
 
 /* Knock Bell Icon Button */
@@ -118,6 +184,11 @@
 .rnf-notification-icon-button:hover {
   background-color: #f1f5f9 !important;
   color: #0f172a !important;
+}
+
+.dark .rnf-notification-icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
 .rnf-notification-icon-button__badge {
