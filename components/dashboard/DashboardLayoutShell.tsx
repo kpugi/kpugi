@@ -4,6 +4,22 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import {
+  SidebarProvider,
+  SidebarBody,
+  SidebarLink,
+  SidebarLinkItem,
+} from '@/components/ui/sidebar';
+import {
+  IconLayoutDashboard,
+  IconSpeakerphone,
+  IconWallet,
+  IconFileCheck,
+  IconLink,
+  IconSettings,
+  IconChartBar,
+  IconUsers,
+} from '@tabler/icons-react';
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import KpugiBotChat from '../support/KpugiBotChat';
@@ -14,421 +30,345 @@ interface DashboardLayoutShellProps {
   title?: string;
 }
 
-export default function DashboardLayoutShell({ children, role, title }: DashboardLayoutShellProps) {
+export default function DashboardLayoutShell({
+  children,
+  role,
+  title,
+}: DashboardLayoutShellProps) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [open, setOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-
-  const creatorNavItems = [
+  const creatorNavItems: SidebarLinkItem[] = [
     {
       label: 'Overview',
       href: '/c/dashboard',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
+      icon: <IconLayoutDashboard className="w-5 h-5 shrink-0" />,
+      active: pathname === '/c/dashboard',
     },
     {
       label: 'Campaigns',
       href: '/c/campaigns',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-        </svg>
-      ),
+      icon: <IconSpeakerphone className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/c/campaigns'),
     },
     {
-      label: 'Wallet',
+      label: 'Wallet & Earnings',
       href: '/c/wallet',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <IconWallet className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/c/wallet'),
     },
     {
-      label: 'Audits',
+      label: 'Audits & Submissions',
       href: '/c/submissions',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-      ),
+      icon: <IconFileCheck className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/c/submissions'),
     },
     {
-      label: 'Accounts',
+      label: 'Connected Accounts',
       href: '/c/accounts',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-      ),
+      icon: <IconLink className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/c/accounts'),
     },
     {
       label: 'Settings',
       href: '/c/settings',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <IconSettings className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/c/settings'),
     },
   ];
 
-  const advertiserNavItems = [
+  const advertiserNavItems: SidebarLinkItem[] = [
     {
       label: 'Overview',
       href: '/b/dashboard',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
+      icon: <IconLayoutDashboard className="w-5 h-5 shrink-0" />,
+      active: pathname === '/b/dashboard',
     },
     {
       label: 'Campaigns',
       href: '/b/campaigns',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-        </svg>
-      ),
+      icon: <IconSpeakerphone className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/b/campaigns'),
     },
     {
       label: 'Creators Directory',
       href: '/b/creators',
+      icon: <IconUsers className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/b/creators'),
       disabled: true,
       badge: 'Soon',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ),
     },
     {
       label: 'ROI Analytics',
       href: '/b/analytics',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
+      icon: <IconChartBar className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/b/analytics'),
     },
     {
       label: 'Wallet & Escrow',
       href: '/b/wallet',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-        </svg>
-      ),
+      icon: <IconWallet className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/b/wallet'),
     },
     {
       label: 'Settings',
       href: '/b/settings',
-      icon: (
-        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <IconSettings className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/b/settings'),
     },
   ];
 
   const navItems = role === 'creator' ? creatorNavItems : advertiserNavItems;
 
-  const sidebarContent = (
-    <aside
-      className={`fixed top-0 left-0 h-screen bg-white border-r border-kpugi-border flex flex-col justify-between z-40 transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-[72px]' : 'w-[248px]'
-      }`}
-    >
-      <div className="flex flex-col h-full">
-        {/* Brand Header — Logo / Favicon toggle */}
-        <div className={`flex items-center border-b border-kpugi-border h-[60px] shrink-0 ${isCollapsed ? 'justify-center px-3' : 'justify-between px-5'}`}>
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            {isCollapsed ? (
-              <Image
-                src="/kpugi_favicon.png"
-                alt="Kpugi"
-                width={28}
-                height={28}
-                className="rounded-lg"
-              />
-            ) : (
-              <>
-                <Image
-                  src="/kpugi_logo.png"
-                  alt="Kpugi"
-                  width={90}
-                  height={28}
-                  className="object-contain"
-                />
-              </>
-            )}
-          </Link>
-
-          {/* Collapse toggle — only visible on desktop in expanded state */}
-          {!isCollapsed && (
-            <button
-              onClick={() => setIsCollapsed(true)}
-              className="hidden lg:flex w-7 h-7 rounded-lg bg-kpugi-paper hover:bg-kpugi-border items-center justify-center text-kpugi-slate hover:text-kpugi-ink transition-colors"
-              title="Collapse sidebar"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className={`flex-1 overflow-y-auto py-3 space-y-1 ${isCollapsed ? 'px-2' : 'px-3'}`}>
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            if ((item as any).disabled) {
-              return (
-                <div
-                  key={item.href}
-                  title={isCollapsed ? `${item.label} (${(item as any).badge || 'Coming Soon'})` : undefined}
-                  className={`flex items-center gap-3 rounded-xl font-sans text-[13px] font-semibold select-none opacity-50 cursor-not-allowed text-kpugi-slate ${
-                    isCollapsed ? 'justify-center w-12 h-11 mx-auto' : 'px-3.5 py-2.5'
-                  }`}
-                  aria-disabled="true"
-                >
-                  <span className="shrink-0">{item.icon}</span>
-                  {!isCollapsed && (
-                    <>
-                      <span className="truncate">{item.label}</span>
-                      <span className="ml-auto text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
-                        {(item as any).badge || 'Soon'}
-                      </span>
-                    </>
-                  )}
-                </div>
-              );
-            }
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={isCollapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-xl font-sans text-[13px] font-semibold transition-all duration-200 ${
-                  isCollapsed
-                    ? 'justify-center w-12 h-11 mx-auto'
-                    : 'px-3.5 py-2.5'
-                } ${
-                  isActive
-                    ? 'bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25'
-                    : 'text-kpugi-slate hover:text-kpugi-ink hover:bg-kpugi-paper'
-                }`}
-              >
-                <span className={`shrink-0 ${isActive ? 'text-white' : ''}`}>{item.icon}</span>
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Bottom Section */}
-        <div className={`border-t border-kpugi-border shrink-0 ${isCollapsed ? 'p-3 flex flex-col items-center gap-3' : 'p-4 space-y-3'}`}>
-          {/* Support Bot Trigger when Collapsed */}
-          {isCollapsed && (
-            <>
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-white shadow-md shadow-kpugi-blue/20 transition-all group overflow-hidden border border-slate-700/60 p-1"
-                title="Open KpugiBot AI Support"
-              >
-                <Image
-                  src="/kpugi_bot_avatar.png"
-                  alt="KpugiBot"
-                  width={32}
-                  height={32}
-                  className="rounded-lg object-contain group-hover:scale-110 transition-transform"
-                />
-              </button>
-              <button
-                onClick={() => setIsCollapsed(false)}
-                className="w-10 h-10 rounded-xl bg-kpugi-paper hover:bg-kpugi-border flex items-center justify-center text-kpugi-slate hover:text-kpugi-ink transition-colors"
-                title="Expand sidebar"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
-
-          {/* Sidebar Footer KpugiBot AI Support Card (Expanded) */}
-          {!isCollapsed && (
-            <button
-              onClick={() => setIsChatOpen(true)}
-              className="w-full text-left p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-900/20 transition-all border border-slate-700/60 group relative overflow-hidden"
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-sans font-bold text-xs text-white flex items-center gap-2">
-                  <Image
-                    src="/kpugi_bot_avatar.png"
-                    alt="KpugiBot"
-                    width={22}
-                    height={22}
-                    className="rounded-md object-contain"
-                  />
-                  <span>KpugiBot Support</span>
-                </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              </div>
-              <p className="font-sans text-slate-300 leading-snug text-[11px]">
-                {role === 'creator'
-                  ? 'Ask about 1k view floors, submissions, or payouts.'
-                  : 'Ask about 100% escrow, CPMs, or global rules.'}
-              </p>
-              <div className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-kpugi-blue group-hover:translate-x-1 transition-transform">
-                <span>Start chat</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </button>
-          )}
-        </div>
-      </div>
-    </aside>
-  );
-
   return (
-    <div className="min-h-screen bg-kpugi-paper text-kpugi-ink">
-      {/* Mobile Overlay */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-kpugi-ink/40 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
-      )}
+    <SidebarProvider open={open} setOpen={setOpen} animate={true}>
+      <div className="min-h-screen bg-kpugi-paper text-kpugi-ink flex flex-col md:flex-row w-full">
+        {/* ─────────────────────────────────────────────────────
+           ACETERNITY ANIMATED SIDEBAR (Desktop Sticky)
+        ───────────────────────────────────────────────────── */}
+        <div className="hidden md:block sticky top-0 h-screen shrink-0 z-30">
+          <SidebarBody className="justify-between gap-6 h-full py-5 px-3">
+            {/* Top Section: Brand Logo & Navigation Links */}
+            <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
+              {/* Brand Header: Logo on open, Icon/wordmark on close */}
+              <div className="flex items-center h-10 px-2 mb-6 shrink-0">
+                <Link href="/" className="flex items-center">
+                  {open ? (
+                    <Image
+                      src="/kpugi_logo.png"
+                      alt="Kpugi"
+                      width={96}
+                      height={28}
+                      style={{ width: 'auto', height: 'auto' }}
+                      className="object-contain"
+                      priority
+                    />
+                  ) : (
+                    <Image
+                      src="/kpugi_favicon.png"
+                      alt="Kpugi"
+                      width={28}
+                      height={28}
+                      style={{ width: 'auto', height: 'auto' }}
+                      className="rounded-lg"
+                      priority
+                    />
+                  )}
+                </Link>
+              </div>
 
-      {/* Sidebar — hidden on mobile unless isMobileOpen, always visible on desktop */}
-      <div className={`hidden lg:block`}>
-        {sidebarContent}
-      </div>
-
-      {/* Mobile Sidebar Slide-over */}
-      <div
-        className={`lg:hidden fixed top-0 left-0 h-screen z-50 transition-transform duration-300 ease-in-out ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Override fixed positioning for mobile — use relative inside the slide-over */}
-        <aside className="w-[248px] h-screen bg-white border-r border-kpugi-border flex flex-col justify-between">
-          <div className="flex flex-col h-full">
-            {/* Mobile Header */}
-            <div className="flex items-center justify-between px-5 h-[60px] shrink-0 border-b border-kpugi-border">
-              <Link href="/" className="flex items-center">
-                <Image src="/kpugi_logo.png" alt="Kpugi" width={90} height={28} className="object-contain" />
-              </Link>
-              <button
-                onClick={() => setIsMobileOpen(false)}
-                className="w-7 h-7 rounded-lg bg-kpugi-paper hover:bg-kpugi-border flex items-center justify-center text-kpugi-slate"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              {/* Navigation Items */}
+              <div className="flex flex-col gap-1.5">
+                {navItems.map((link, idx) => (
+                  <SidebarLink key={idx} link={link} />
+                ))}
+              </div>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-3 space-y-1 px-3">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                if ((item as any).disabled) {
-                  return (
-                    <div
-                      key={item.href}
-                      className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl font-sans text-[13px] font-semibold select-none opacity-50 cursor-not-allowed text-kpugi-slate"
-                      aria-disabled="true"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="shrink-0">{item.icon}</span>
-                        <span className="truncate">{item.label}</span>
-                      </div>
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
-                        {(item as any).badge || 'Soon'}
-                      </span>
-                    </div>
-                  );
-                }
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-sans text-[13px] font-semibold transition-all duration-200 ${
-                      isActive
-                        ? 'bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25'
-                        : 'text-kpugi-slate hover:text-kpugi-ink hover:bg-kpugi-paper'
-                    }`}
-                  >
-                    <span className={`shrink-0 ${isActive ? 'text-white' : ''}`}>{item.icon}</span>
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Bottom Banner & KpugiBot Trigger */}
-            <div className="border-t border-kpugi-border p-4 space-y-2">
-              <button
-                onClick={() => {
-                  setIsMobileOpen(false);
-                  setIsChatOpen(true);
-                }}
-                className="w-full text-left p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2 text-xs font-bold">
+            {/* Bottom Section: KpugiBot AI Support Card / Trigger */}
+            <div className="pt-3 border-t border-kpugi-border/70 shrink-0">
+              {open ? (
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="w-full text-left p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-900/20 transition-all border border-slate-700/60 group relative overflow-hidden"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-sans font-bold text-xs text-white flex items-center gap-2">
+                      <Image
+                        src="/kpugi_bot_avatar.png"
+                        alt="KpugiBot"
+                        width={22}
+                        height={22}
+                        style={{ width: 'auto', height: 'auto' }}
+                        className="rounded-md object-contain"
+                      />
+                      <span>KpugiBot AI</span>
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  </div>
+                  <p className="font-sans text-slate-300 leading-snug text-[11px]">
+                    {role === 'creator'
+                      ? 'Ask about 1k floors, cycles, or payouts.'
+                      : 'Ask about escrow, CPMs, or live metrics.'}
+                  </p>
+                  <div className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-kpugi-blue group-hover:translate-x-1 transition-transform">
+                    <span>Start chat</span>
+                    <span className="text-xs">→</span>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="w-11 h-11 mx-auto rounded-xl bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-white shadow-sm shadow-kpugi-blue/20 transition-all group overflow-hidden border border-slate-700/60 p-1"
+                  title="Open KpugiBot AI Support"
+                >
                   <Image
                     src="/kpugi_bot_avatar.png"
                     alt="KpugiBot"
-                    width={20}
-                    height={20}
-                    className="rounded-md object-contain"
+                    width={28}
+                    height={28}
+                    style={{ width: 'auto', height: 'auto' }}
+                    className="rounded-lg object-contain group-hover:scale-110 transition-transform"
                   />
-                  <span>KpugiBot Support</span>
+                </button>
+              )}
+            </div>
+          </SidebarBody>
+        </div>
+
+        {/* ─────────────────────────────────────────────────────
+           MAIN CONTENT AREA (Natural flex-1 fluid resize)
+        ───────────────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+          <DashboardHeader
+            title={title}
+            role={role}
+            onMobileMenuToggle={() => setIsMobileOpen(!isMobileOpen)}
+          />
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+          <DashboardFooter />
+        </div>
+
+        {/* ─────────────────────────────────────────────────────
+           MOBILE SIDEBAR SLIDE-OVER
+        ───────────────────────────────────────────────────── */}
+        {isMobileOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-kpugi-ink/40 backdrop-blur-sm md:hidden"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <div
+              className="w-[280px] h-full bg-white p-5 flex flex-col justify-between shadow-2xl border-r border-kpugi-border overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-5">
+                {/* Mobile Header */}
+                <div className="flex items-center justify-between pb-3.5 border-b border-kpugi-border">
+                  <Link href="/" className="flex items-center">
+                    <Image
+                      src="/kpugi_logo.png"
+                      alt="Kpugi"
+                      width={90}
+                      height={28}
+                      style={{ width: 'auto', height: 'auto' }}
+                      className="object-contain"
+                    />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <span className="text-[10px] text-kpugi-blue font-semibold">Chat now →</span>
-              </button>
+
+                {/* Mobile Nav Links (Explicit with full text labels) */}
+                <div className="flex flex-col gap-1">
+                  {navItems.map((item, idx) => {
+                    if (item.disabled) {
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="shrink-0">{item.icon}</span>
+                            <span className="truncate">{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={idx}
+                        href={item.href}
+                        onClick={() => setIsMobileOpen(false)}
+                        className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold transition-colors ${
+                          item.active
+                            ? 'bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25 font-bold'
+                            : 'text-kpugi-slate hover:text-kpugi-ink hover:bg-slate-100/80'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`shrink-0 ${item.active ? 'text-white' : 'text-kpugi-slate'}`}>
+                            {item.icon}
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Mobile Promo Banner Card (Mobile Only) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white relative overflow-hidden shadow-xs">
+                  <div className="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                  <div className="relative z-10 space-y-1.5">
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-[9px] font-bold uppercase tracking-wider">
+                      <span>{role === 'creator' ? '⚡ 1k View Floors' : '🔒 100% Escrow'}</span>
+                    </div>
+                    <h4 className="font-display font-bold text-xs leading-snug">
+                      {role === 'creator' ? 'Earn for Verified Traffic' : 'Scale Reach with Creators'}
+                    </h4>
+                    <p className="text-[10px] text-blue-100 leading-tight">
+                      {role === 'creator'
+                        ? 'Submit your post link, pass automated audits, and unlock daily payouts.'
+                        : 'Launch CPM campaigns and only pay for verified organic creator views.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile KpugiBot Trigger */}
+              <div className="pt-4 mt-4 border-t border-kpugi-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileOpen(false);
+                    setIsChatOpen(true);
+                  }}
+                  className="w-full p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between text-xs font-bold shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src="/kpugi_bot_avatar.png"
+                      alt="KpugiBot"
+                      width={20}
+                      height={20}
+                      style={{ width: 'auto', height: 'auto' }}
+                      className="rounded-md object-contain"
+                    />
+                    <span>KpugiBot AI Support</span>
+                  </div>
+                  <span className="text-[11px] text-kpugi-blue font-semibold">Chat →</span>
+                </button>
+              </div>
             </div>
           </div>
-        </aside>
-      </div>
+        )}
 
-      {/* Main Content — offset by sidebar width */}
-      <div
-        className={`transition-[margin-left] duration-300 ease-in-out min-h-screen flex flex-col ${
-          isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[248px]'
-        }`}
-      >
-        <DashboardHeader
-          title={title}
+        {/* KpugiBot AI Support Chat Drawer */}
+        <KpugiBotChat
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
           role={role}
-          onMobileMenuToggle={() => setIsMobileOpen(!isMobileOpen)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
-        <DashboardFooter />
       </div>
-
-      {/* KpugiBot AI Support Chat Drawer */}
-      <KpugiBotChat
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        role={role}
-      />
-    </div>
+    </SidebarProvider>
   );
 }
-

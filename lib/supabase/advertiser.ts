@@ -90,7 +90,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         cover_image_url,
         requirements,
         deleted,
-        submissions:submissions!left(id, status, final_view_count)
+        submissions:submissions!left(id, status, final_view_count, creator_id, payout_amount, pending_payout_amount)
       `)
       .eq('advertiser_id', profileId)
       .eq('deleted', false)
@@ -194,6 +194,12 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       if (s.creator_id) distinctCreatorIds.add(s.creator_id);
     });
 
+    const committedSpend = subs.reduce(
+      (sum: number, s: any) => sum + (Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0)),
+      0
+    );
+    const campaignSpent = Math.max(Number(c.spent_budget || 0), committedSpend);
+
     const campaignImg = c.cover_image_url || c.requirements?.creative_image_url || advertiserAvatarUrl || null;
 
     return {
@@ -205,7 +211,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       cpm_rate: Number(c.cpm_rate),
       total_budget: Number(c.total_budget),
       reserved_budget: Number(c.reserved_budget),
-      spent_budget: Number(c.spent_budget),
+      spent_budget: campaignSpent,
       status: c.status,
       channels: c.channels || [],
       created_at: c.created_at,
@@ -701,7 +707,7 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
       : Promise.resolve({ data: [], error: null }),
     supabase
       .from('campaigns')
-      .select('id, title, total_budget, spent_budget, status, submissions:submissions!left(id)')
+      .select('id, title, total_budget, spent_budget, status, submissions:submissions!left(id, payout_amount, pending_payout_amount)')
       .eq('advertiser_id', profileId)
       .or('status.eq.live,status.eq.budget_committed,status.eq.active'),
     supabase
@@ -745,15 +751,21 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
 
   let totalEscrowLocked = 0;
   const activeCampaignsEscrow = (campaigns || []).map((c: any) => {
-    const remaining = Math.max(0, Number(c.total_budget || 0) - Number(c.spent_budget || 0));
+    const subs = Array.isArray(c.submissions) ? c.submissions : [];
+    const committedSpend = subs.reduce(
+      (sum: number, s: any) => sum + (Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0)),
+      0
+    );
+    const spentBudget = Math.max(Number(c.spent_budget || 0), committedSpend);
+    const remaining = Math.max(0, Number(c.total_budget || 0) - spentBudget);
     totalEscrowLocked += remaining;
-    const creatorsCount = Array.isArray(c.submissions) ? c.submissions.length : 0;
+    const creatorsCount = subs.length;
 
     return {
       id: c.id,
       title: c.title,
       total_budget: Number(c.total_budget || 0),
-      spent_budget: Number(c.spent_budget || 0),
+      spent_budget: spentBudget,
       escrow_remaining: remaining,
       creators_assigned: creatorsCount,
       status: c.status || 'live',
