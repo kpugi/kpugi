@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Wallet,
   Lock,
@@ -42,6 +43,7 @@ interface AdvertiserWalletViewProps {
 }
 
 export default function AdvertiserWalletView({ data, verificationNotice }: AdvertiserWalletViewProps) {
+  const router = useRouter();
   const {
     walletId,
     walletBalance,
@@ -62,6 +64,10 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(verificationNotice || null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
@@ -125,19 +131,32 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
   };
 
 
-  // Dynamically load Paystack Inline JS V2 for popup checkout
+  // Helper to load Paystack InlineJS script dynamically with promise resolution
+  const loadPaystackScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).PaystackPop) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v2/inline.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => {
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://js.paystack.co/v1/inline.js';
+        fallbackScript.async = true;
+        fallbackScript.onload = () => resolve(true);
+        fallbackScript.onerror = () => resolve(false);
+        document.body.appendChild(fallbackScript);
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  // Pre-load Paystack Inline JS for instantaneous popup opening
   useEffect(() => {
-    if ((window as any).PaystackPop) return;
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v2/inline.js';
-    script.async = true;
-    script.onerror = () => {
-      const fallbackScript = document.createElement('script');
-      fallbackScript.src = 'https://js.paystack.co/v1/inline.js';
-      fallbackScript.async = true;
-      document.body.appendChild(fallbackScript);
-    };
-    document.body.appendChild(script);
+    loadPaystackScript();
   }, []);
 
   // Utility to format values compactly in M's and K's (e.g., ₦2.45M, ₦500K)
@@ -300,6 +319,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
           text: `Say less! 💰 ₦${amtNum.toLocaleString()} just landed clean in your brand wallet.`,
           type: 'success',
         });
+        router.refresh();
       } else {
         setMsg({ text: verifyRes.error || 'Paystack payment verification failed.', type: 'error' });
       }
@@ -313,6 +333,9 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
         type: 'error',
       });
     };
+
+    // Ensure Paystack popup script is fully loaded
+    await loadPaystackScript();
 
     // Trigger Paystack V2 Popup API
     try {
