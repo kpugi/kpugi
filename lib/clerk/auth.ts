@@ -98,6 +98,9 @@ export async function getOrCreateUserProfile() {
       onboardingComplete: hasSelectedRole,
     };
   } catch (err: any) {
+    if (err?.digest?.startsWith('DYNAMIC_SERVER_USAGE') || err?.message?.includes('Dynamic server usage') || err?.digest === 'NEXT_DYNAMIC_NO_SSR_SUPPORT') {
+      throw err;
+    }
     console.error('[getOrCreateUserProfile] Unexpected error:', err?.message || err);
     return null;
   }

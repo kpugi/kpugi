@@ -338,30 +338,30 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const googleDriveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.drive_url || 'https://drive.google.com';
 
   return (
-    <div className="min-h-screen bg-[#0B1026] text-white flex flex-col font-sans relative">
+    <div className="min-h-screen bg-kpugi-paper dark:bg-[#08090D] text-kpugi-ink dark:text-white flex flex-col font-sans relative">
       
       {/* ─────────────────────────────────────────────────────
-         1. FULL-BLEED STICKY TOP NAVBAR
+         BREADCRUMB & BACK NAVIGATION
       ───────────────────────────────────────────────────── */}
-      <header className="border-b border-white/5 bg-[#0B1026]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+      <div className="border-b border-kpugi-border dark:border-white/10 bg-white/70 dark:bg-[#0E121E]/70 backdrop-blur-md px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="/kpugi_logo.png"
-              alt="Kpugi"
-              className="h-8 object-contain"
-            />
-          </div>
-          <div>
-            <Link
-              href="/browse"
-              className="px-4 py-2 border border-white/10 hover:border-white/20 hover:bg-white/5 rounded-full text-xs font-bold text-slate-300 transition-all flex items-center gap-1.5"
-            >
-              ✕ Close Details
+          <div className="flex items-center gap-2 text-xs text-kpugi-slate dark:text-slate-400 font-medium">
+            <Link href="/browse" className="hover:text-kpugi-blue dark:hover:text-white transition-colors flex items-center gap-1 font-semibold">
+              <span>←</span>
+              <span>Back to Browse</span>
             </Link>
+            <span>/</span>
+            <span className="text-kpugi-ink dark:text-white font-bold truncate max-w-[200px] sm:max-w-md">
+              {campaign.title}
+            </span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="font-mono text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+              {campaign.campaign_code || 'KPG-CMP'}
+            </span>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* ─────────────────────────────────────────────────────
          2. FULL-BLEED HERO BACKGROUND (NO TOP/LEFT/RIGHT BORDERS)
@@ -498,35 +498,35 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       <div className="max-w-7xl mx-auto w-full px-6 py-8 space-y-8 flex-1">
         
         {/* TABS NAVIGATION */}
-        <div className="flex items-center gap-6 border-b border-white/5 pb-3 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-6 border-b border-kpugi-border dark:border-white/10 pb-3 overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`font-sans text-sm font-bold pb-2 transition-all relative shrink-0 ${
-              activeTab === 'overview' ? 'text-white border-b-2 border-white' : 'text-slate-400 hover:text-white'
+            className={`font-sans text-sm pb-2 transition-all relative shrink-0 ${
+              activeTab === 'overview' ? 'text-kpugi-blue dark:text-white border-b-2 border-kpugi-blue dark:border-white font-extrabold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold'
             }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab('instructions')}
-            className={`font-sans text-sm font-bold pb-2 transition-all relative shrink-0 ${
-              activeTab === 'instructions' ? 'text-white border-b-2 border-white' : 'text-slate-400 hover:text-white'
+            className={`font-sans text-sm pb-2 transition-all relative shrink-0 ${
+              activeTab === 'instructions' ? 'text-kpugi-blue dark:text-white border-b-2 border-kpugi-blue dark:border-white font-extrabold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold'
             }`}
           >
             Detailed Instructions
           </button>
           <button
             onClick={() => setActiveTab('top_performers')}
-            className={`font-sans text-sm font-bold pb-2 transition-all relative shrink-0 ${
-              activeTab === 'top_performers' ? 'text-white border-b-2 border-white' : 'text-slate-400 hover:text-white'
+            className={`font-sans text-sm pb-2 transition-all relative shrink-0 ${
+              activeTab === 'top_performers' ? 'text-kpugi-blue dark:text-white border-b-2 border-kpugi-blue dark:border-white font-extrabold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold'
             }`}
           >
             Top Performers
           </button>
           <button
             onClick={() => setActiveTab('live_reach')}
-            className={`font-sans text-sm font-bold pb-2 transition-all relative shrink-0 ${
-              activeTab === 'live_reach' ? 'text-white border-b-2 border-white' : 'text-slate-400 hover:text-white'
+            className={`font-sans text-sm pb-2 transition-all relative shrink-0 ${
+              activeTab === 'live_reach' ? 'text-kpugi-blue dark:text-white border-b-2 border-kpugi-blue dark:border-white font-extrabold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold'
             }`}
           >
             Live Reach
@@ -542,8 +542,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                <div className="prose prose-invert max-w-none pb-6 border-b border-white/5">
-                  <p className="font-sans text-slate-300 leading-relaxed text-sm">
+                <div className="prose max-w-none pb-6 border-b border-kpugi-border dark:border-white/10">
+                  <p className="font-sans text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
                     {campaign.description}
                   </p>
                 </div>
@@ -573,22 +573,21 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   const isVideoFile = !isYouTube && !!fileUrl?.match(/\.(mp4|mov|webm|avi|mkv)(\?|$)/i);
 
                   return (
-                    <div className="rounded-3xl overflow-hidden border border-white/10 bg-[#0B1021] shadow-2xl">
+                    <div className="rounded-3xl overflow-hidden border border-kpugi-border dark:border-white/10 bg-white dark:bg-[#12141A] shadow-sm">
                       {/* Header bar */}
-                      <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10 bg-white/[0.03]">
-                       
+                      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03]">
                         <div>
-                          <h3 className="font-display font-bold text-white text-base">Brand Asset</h3>
-                          <p className="text-xs text-slate-400 mt-0.5">Use this asset in your post — it's required for campaign participation</p>
+                          <h3 className="font-display font-bold text-slate-900 dark:text-white text-base">Brand Asset</h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Use this asset in your post — it&apos;s required for campaign participation</p>
                         </div>
-                        <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider">
                           Required
                         </span>
                       </div>
 
                       {/* Media preview */}
                       {fileUrl && (
-                        <div className="bg-black">
+                        <div className="bg-slate-950 flex items-center justify-center">
                           {isYouTube ? (
                             <div className="aspect-video w-full">
                               <iframe
@@ -620,23 +619,23 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                           {captionText && (
                             <div className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Caption</span>
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Suggested Caption</span>
                                 <button
                                   onClick={() => handleCopyCaption(captionText)}
-                                  className="text-xs text-kpugi-blue hover:text-blue-400 font-sans font-bold"
+                                  className="text-xs text-kpugi-blue dark:text-blue-400 hover:underline font-sans font-bold"
                                 >
                                   Copy Caption
                                 </button>
                               </div>
-                              <p className="font-sans text-xs text-slate-300 bg-white/[0.03] border border-white/5 rounded-xl p-4 leading-relaxed italic">
+                              <p className="font-sans text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-xl p-4 leading-relaxed italic">
                                 &ldquo;{captionText}&rdquo;
                               </p>
                             </div>
                           )}
                           {copyText && copyText !== fileUrl && (
                             <div className="space-y-2">
-                              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Caption</span>
-                              <p className="font-sans text-xs text-slate-300 leading-relaxed bg-white/[0.01] p-3 rounded-lg border border-white/5 whitespace-pre-wrap">
+                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Caption</span>
+                              <p className="font-sans text-xs text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/5 whitespace-pre-wrap">
                                 {copyText}
                               </p>
                             </div>
@@ -652,7 +651,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   const dbMatchScore = campaign.match_score ?? 85;
 
                   return (
-                    <div className="mt-8 bg-[#0B1021] border border-blue-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                    <div className="mt-8 bg-white dark:bg-[#12141A] border border-blue-500/20 dark:border-blue-500/30 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
                       
                       {/* Background Ambient Glow */}
                       <div className="absolute top-0 right-1/4 w-72 h-72 bg-blue-500/10 blur-[110px] rounded-full pointer-events-none" />
@@ -662,10 +661,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                         
                         {/* Left Column (Col 6) - Responsive Mobile Centering */}
                         <div className="md:col-span-6 space-y-4 text-center md:text-left flex flex-col items-center md:items-start">
-                          <h2 className="font-display font-extrabold text-white text-3xl sm:text-4xl tracking-tight leading-none">
+                          <h2 className="font-display font-extrabold text-slate-900 dark:text-white text-3xl sm:text-4xl tracking-tight leading-none">
                             AI-Powered Sync
                           </h2>
-                          <p className="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-sm">
+                          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed max-w-sm">
                             {isSignedIn
                               ? "Our vector engine has matched your creative profile with this brand's core demographic."
                               : "Sign in to analyze your creator audience niche, engagement metrics & vector compatibility with this campaign."}
@@ -674,7 +673,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                           {!isSignedIn && (
                             <Link
                               href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-sans text-xs font-bold transition-all shadow-md"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-xs font-bold transition-all shadow-md"
                             >
                               <span>🔒</span>
                               <span>Sign in to Unlock Match Score</span>
@@ -689,12 +688,12 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                                 <div key={p} className="flex flex-col items-center gap-1">
                                   <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center transition-all ${
                                     isSupported
-                                      ? 'bg-[#151C33] border-blue-500/30 shadow-md'
-                                      : 'bg-white/5 border-white/10 opacity-40'
+                                      ? 'bg-slate-50 dark:bg-[#151C33] border-slate-200 dark:border-blue-500/30 shadow-xs'
+                                      : 'bg-slate-100/60 dark:bg-white/5 border-slate-200/50 dark:border-white/10 opacity-40'
                                   }`}>
                                     {renderPlatformIcon(p, "w-4 h-4")}
                                   </div>
-                                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                                  <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     {p === 'X' ? 'X' : p === 'Instagram' ? 'IG' : p === 'LinkedIn' ? 'IN' : p === 'Facebook' ? 'FB' : p === 'YouTube' ? 'YT' : 'TIKTOK'}
                                   </span>
                                 </div>
@@ -712,7 +711,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                                 cx="50"
                                 cy="50"
                                 r="42"
-                                stroke="rgba(255, 255, 255, 0.06)"
+                                stroke="currentColor"
+                                className="text-slate-100 dark:text-white/5"
                                 strokeWidth="7"
                                 fill="none"
                               />
@@ -727,7 +727,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                                 strokeDashoffset={isSignedIn ? 263.89 * (1 - (dbMatchScore / 100)) : 263.89 * 0.7}
                                 strokeLinecap="round"
                                 fill="none"
-                                className="transition-all duration-1000 ease-out opacity-40"
+                                className="transition-all duration-1000 ease-out opacity-80"
                               />
                             </svg>
 
@@ -735,18 +735,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                             {isSignedIn ? (
                               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                                 <div className="flex items-baseline gap-0.5">
-                                  <span className="font-display font-extrabold text-white text-5xl sm:text-6xl tracking-tight">{dbMatchScore}</span>
-                                  <span className="font-sans font-bold text-white text-2xl">%</span>
+                                  <span className="font-display font-extrabold text-slate-900 dark:text-white text-5xl sm:text-6xl tracking-tight">{dbMatchScore}</span>
+                                  <span className="font-sans font-bold text-slate-900 dark:text-white text-2xl">%</span>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase mt-1">COMPATIBILITY</span>
                               </div>
                             ) : (
                               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none select-none">
                                 <span className="text-2xl mb-1.5 animate-bounce inline-block leading-none">🔒</span>
-                                <span className="font-display font-extrabold text-white text-[11px] sm:text-xs tracking-wider uppercase">
+                                <span className="font-display font-extrabold text-slate-900 dark:text-white text-[11px] sm:text-xs tracking-wider uppercase">
                                   AI Score Locked
                                 </span>
-                                <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-1">
+                                <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase mt-1">
                                   Sign in to view
                                 </span>
                               </div>
@@ -761,38 +761,38 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 })()}
 
                 <div>
-                  <h3 className="font-display font-bold text-lg text-white mb-4">Payouts</h3>
+                  <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white mb-4">Payouts</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     
-                    <div className="bg-white/[0.02] border border-white/5 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between">
+                    <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-2xl p-5 flex items-center justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           {renderPlatformIcon(acceptedPlatforms[0])}
-                          <span className="font-sans text-sm font-bold text-white uppercase">Payout Rate</span>
+                          <span className="font-sans text-sm font-bold text-slate-900 dark:text-white uppercase">Payout Rate</span>
                         </div>
-                        <p className="font-sans text-xs text-slate-400"></p>
+                        <p className="font-sans text-xs text-slate-500 dark:text-slate-400"></p>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-xl font-bold text-kpugi-blue">
+                        <div className="font-mono text-xl font-bold text-kpugi-blue dark:text-blue-400">
                           {formatCompactCurrency(campaign.cpm_rate)}
                         </div>
-                        <span className="font-sans text-[10px] text-slate-400 uppercase tracking-widest font-bold">PER 1K VIEWS</span>
+                        <span className="font-sans text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">PER 1K VIEWS</span>
                       </div>
                     </div>
 
-                    <div className="bg-white/[0.02] border border-white/5 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between">
+                    <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-2xl p-5 flex items-center justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-emerald-500">✓</span>
-                          <span className="font-sans text-sm font-bold text-white">Min views</span>
+                          <span className="font-sans text-sm font-bold text-slate-900 dark:text-white">Min views</span>
                         </div>
-                        <p className="font-sans text-xs text-slate-400">Required view conversion</p>
+                        <p className="font-sans text-xs text-slate-500 dark:text-slate-400">Required view conversion</p>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-xl font-bold text-white">
+                        <div className="font-mono text-xl font-bold text-slate-900 dark:text-white">
                           {formatCompactNumber(campaign.min_view_threshold)}
                         </div>
-                        <span className="font-sans text-[10px] text-slate-400 uppercase tracking-widest font-bold">VIEWS MIN</span>
+                        <span className="font-sans text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">VIEWS MIN</span>
                       </div>
                     </div>
 
@@ -800,32 +800,32 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
 
                 {/* Resources Attachment Section */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Campaign Assets</h4>
+                <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-2xl p-5 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Campaign Assets</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href={getSafeExternalUrl(googleDocUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                    <a href={getSafeExternalUrl(googleDocUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 rounded-xl transition-all group">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">📄</span>
                         <div className="text-left">
-                          <div className="text-xs font-bold text-white group-hover:text-kpugi-blue transition-colors">Campaign Brief Guidelines</div>
-                          <div className="text-[10px] text-slate-400">Google Docs</div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">Campaign Brief Guidelines</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Google Docs</div>
                         </div>
                       </div>
-                      <svg className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                       </svg>
                     </a>
-                    <a href={getSafeExternalUrl(googleDriveUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group">
+                    <a href={getSafeExternalUrl(googleDriveUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 rounded-xl transition-all group">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">📂</span>
                         <div className="text-left">
-                          <div className="text-xs font-bold text-white group-hover:text-kpugi-blue transition-colors">Video Creative Asset Folder</div>
-                          <div className="text-[10px] text-slate-400">Google Drive</div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">Video Creative Asset Folder</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Google Drive</div>
                         </div>
                       </div>
-                      <svg className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -841,14 +841,14 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
               <div className="space-y-6">
                 
                 {/* 1. Auditing & Safety Requirements Card */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
+                <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">
                   <div>
-                    <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
+                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white flex items-center gap-2">
                       Auditing Requirements
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">Key rules enforced by our automated view verification and escrow settlement system.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Key rules enforced by our automated view verification and escrow settlement system.</p>
                   </div>
-                  <ul className="space-y-4 font-sans text-sm text-slate-300 list-disc pl-5 leading-relaxed">
+                  <ul className="space-y-4 font-sans text-sm text-slate-700 dark:text-slate-300 list-disc pl-5 leading-relaxed">
                     <li>Your post must remain publicly visible and reachable for a minimum of <strong>{campaign.required_live_duration_hours} hours</strong> from the time of submission.</li>
                     <li>Our verification auditor checks view count progress automatically hourly.</li>
                     <li>A settlement window of <strong>{campaign.verification_grace_hours} hours</strong> is allocated for automated metric collation and final settling.</li>
@@ -857,12 +857,12 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
 
                 {/* 2. Comprehensive Posting Rules & Step-by-Step Checklist Card */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 sm:p-8 space-y-6">
+                <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">
                   <div>
-                    <h3 className="font-display font-bold text-xl text-white flex items-center gap-2">
+                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white flex items-center gap-2">
                      Guidelines & Rules
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                       Follow these step-by-step rules to guarantee your post passes automated audit and unlocks instant CPM payouts.
                     </p>
                   </div>
@@ -870,45 +870,45 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     {/* Item 1: Public Visibility */}
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
-                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
-                        <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">🔒</span>
+                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-slate-900 dark:text-white">
+                        <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">🔒</span>
                         <span>72-Hour Public Visibility Lock</span>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-1">
                         Do not archive, set to private, or delete your video post for at least {campaign.required_live_duration_hours} hours after submitting your link. The automated auditor audits view counts hourly.
                       </p>
                     </div>
 
                     {/* Item 2: Brand Creatives */}
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
-                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
-                        <span className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">🎥</span>
+                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-slate-900 dark:text-white">
+                        <span className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">🎥</span>
                         <span>Official Brand Creatives & Assets</span>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-1">
                         Publish the official video/image asset provided in the Campaign Assets folder without cropping out brand logos or modifying essential visual overlays.
                       </p>
                     </div>
 
                     {/* Item 3: Tags & Captions */}
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
-                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
-                        <span className="p-2 rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20">🏷️</span>
+                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-slate-900 dark:text-white">
+                        <span className="p-2 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20">🏷️</span>
                         <span>Mandatory Tags & Handles</span>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-1">
                         Tag the official brand handle and include the campaign hashtag or unique identifier in your post caption so our auditor can verify ownership.
                       </p>
                     </div>
 
                     {/* Item 4: Instant Escrow Payouts */}
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-2">
-                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-white">
-                        <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">⚡</span>
+                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-5 space-y-2">
+                      <div className="flex items-center gap-2.5 font-sans text-sm font-bold text-slate-900 dark:text-white">
+                        <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">⚡</span>
                         <span>Automated Payout Settlement</span>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed pl-1">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-1">
                         Once your post reaches the view threshold ({campaign.min_view_threshold.toLocaleString()} min views), earnings are calculated at ₦{campaign.cpm_rate.toLocaleString()} CPM and released directly to your wallet.
                       </p>
                     </div>
@@ -921,18 +921,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
             {/* TOP PERFORMERS TAB */}
             {activeTab === 'top_performers' && (
-              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+              <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 space-y-6">
                 
                 {/* Header row with title */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="font-display font-bold text-xl text-white">Audited Leaderboard</h3>
-                    <p className="text-xs text-slate-400 mt-1">Creators driving the highest verified view conversions for this campaign.</p>
+                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">Audited Leaderboard</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Creators driving the highest verified view conversions for this campaign.</p>
                   </div>
                 </div>
 
                 {/* Leaderboard Table Headers (Desktop) */}
-                <div className="hidden sm:flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-slate-500 pb-2 border-b border-white/5 px-4">
+                <div className="hidden sm:flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 pb-2 border-b border-slate-100 dark:border-white/5 px-4">
                   <span>Creator & Rank</span>
                   <div className="flex items-center gap-8">
                     <span className="w-24 text-right">Views</span>
@@ -949,8 +949,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
                     if (sortedSubs.length === 0) {
                       return (
-                        <div className="p-8 text-center bg-white/[0.01] border border-white/5 rounded-2xl">
-                          <p className="text-xs text-slate-400 font-sans">
+                        <div className="p-8 text-center bg-slate-50 dark:bg-white/[0.01] border border-slate-200 dark:border-white/5 rounded-2xl">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
                             No verified submissions or view counts recorded yet.
                           </p>
                         </div>
@@ -965,13 +965,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       const shares = Number(sub.shares_count || 0);
 
                       // Card accent border
-                      let rowStyle = "bg-transparent border-white/5";
+                      let rowStyle = "bg-slate-50/50 dark:bg-transparent border-slate-200/80 dark:border-white/5";
                       if (rankNum === 1) {
-                        rowStyle = "bg-white/[0.03] border-l-4 border-l-yellow-500 border-white/5";
+                        rowStyle = "bg-amber-50/40 dark:bg-white/[0.03] border-l-4 border-l-yellow-500 border-slate-200/80 dark:border-white/5";
                       } else if (rankNum === 2) {
-                        rowStyle = "bg-white/[0.01] border-l-4 border-l-slate-400 border-white/5";
+                        rowStyle = "bg-slate-50/80 dark:bg-white/[0.01] border-l-4 border-l-slate-400 border-slate-200/80 dark:border-white/5";
                       } else if (rankNum === 3) {
-                        rowStyle = "bg-white/[0.01] border-l-4 border-l-amber-700 border-white/5";
+                        rowStyle = "bg-orange-50/40 dark:bg-white/[0.01] border-l-4 border-l-amber-700 border-slate-200/80 dark:border-white/5";
                       }
 
                       // Calculate recent audit deltas
@@ -987,7 +987,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       return (
                         <div
                           key={sub.id}
-                          className={`p-3.5 sm:p-4 border rounded-2xl shadow-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rowStyle}`}
+                          className={`p-3.5 sm:p-4 border rounded-2xl shadow-2xs transition-all duration-300 hover:bg-slate-100/70 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rowStyle}`}
                         >
                           {/* Top row on Mobile / Left on Desktop: Creator & Platform */}
                           <div className="flex items-center justify-between sm:justify-start gap-3 min-w-0">
@@ -998,10 +998,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                                   <img
                                     src={sub.creator_avatar_url}
                                     alt={sub.creator_handle}
-                                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border border-white/10 shadow-sm"
+                                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border border-slate-200 dark:border-white/10 shadow-sm"
                                   />
                                 ) : (
-                                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-300 shadow-sm">
+                                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-200 dark:bg-white/5 border border-slate-300 dark:border-white/10 flex items-center justify-center font-bold text-xs uppercase text-slate-700 dark:text-slate-300 shadow-sm">
                                     {sub.creator_handle.slice(1, 3).toUpperCase()}
                                   </div>
                                 )}
@@ -1010,12 +1010,12 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                                 <span
                                   className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-xs shadow-md border leading-none ${
                                     rankNum === 1
-                                      ? 'bg-amber-400/90 border-amber-300 ring-2 ring-[#0B1021]'
+                                      ? 'bg-amber-400/90 border-amber-300 ring-2 ring-white dark:ring-[#0B1021]'
                                       : rankNum === 2
-                                      ? 'bg-slate-300/90 border-white ring-2 ring-[#0B1021]'
+                                      ? 'bg-slate-300/90 border-white ring-2 ring-white dark:ring-[#0B1021]'
                                       : rankNum === 3
-                                      ? 'bg-amber-700/90 border-amber-500 ring-2 ring-[#0B1021]'
-                                      : 'bg-slate-800/90 text-slate-300 text-[9px] font-mono font-bold border-slate-600 ring-1 ring-[#0B1021]'
+                                      ? 'bg-amber-700/90 border-amber-500 ring-2 ring-white dark:ring-[#0B1021]'
+                                      : 'bg-slate-800/90 text-white text-[9px] font-mono font-bold border-slate-600 ring-1 ring-white dark:ring-[#0B1021]'
                                   }`}
                                   title={`Rank #${rankNum} in campaign`}
                                 >
@@ -1026,7 +1026,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                               {/* Creator Handle, Level Name & Platform */}
                               <div className="space-y-0.5 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-sans text-xs sm:text-sm font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
+                                  <span className="font-sans text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[140px] sm:max-w-[200px]">
                                     {sub.creator_handle}
                                   </span>
                                   {sub.creator_level && (
@@ -1039,7 +1039,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                                     </span>
                                   )}
                                 </div>
-                                <div className="font-sans text-[10px] text-slate-400 uppercase font-medium">
+                                <div className="font-sans text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">
                                   {sub.social_account_platform || 'Video Placement'}
                                 </div>
                               </div>
@@ -1047,54 +1047,54 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
                             {/* Views (Visible on top-right for Mobile only) */}
                             <div className="sm:hidden text-right shrink-0">
-                              <div className="font-mono text-xs font-bold text-white">
-                                {formatCompactNumber(sub.final_view_count || 0)} <span className="text-[10px] text-slate-400 font-normal">views</span>
+                              <div className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                                {formatCompactNumber(sub.final_view_count || 0)} <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">views</span>
                               </div>
-                              <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
+                              <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-end gap-0.5">
                                 <span>📈</span> {viewsDelta > 0 ? `+${formatCompactNumber(viewsDelta)}` : '+8%'}
                               </div>
                             </div>
                           </div>
 
                           {/* Bottom on Mobile / Right on Desktop: Views (Desktop) & Engagement metrics */}
-                          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 border-t sm:border-t-0 border-white/5 pt-2.5 sm:pt-0 relative z-10">
+                          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 border-t sm:border-t-0 border-slate-100 dark:border-white/5 pt-2.5 sm:pt-0 relative z-10">
                             {/* Views (Desktop) */}
                             <div className="hidden sm:block text-right w-24">
-                              <div className="font-mono text-sm font-bold text-white">
+                              <div className="font-mono text-sm font-bold text-slate-900 dark:text-white">
                                 {formatCompactNumber(sub.final_view_count || 0)}
                               </div>
-                              <div className="text-[9px] text-emerald-400 font-bold flex items-center justify-end gap-0.5">
+                              <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-end gap-0.5">
                                 <span>📈</span> {viewsDelta > 0 ? `+${formatCompactNumber(viewsDelta)}` : '+8%'}
                               </div>
                             </div>
 
                             {/* Engagement metrics pill */}
-                            <div className="w-full sm:w-auto flex items-center justify-around sm:justify-end gap-3 sm:gap-3.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl font-mono text-[11px] font-bold">
-                              <span className="inline-flex items-center gap-1 text-rose-400" title="Likes">
+                            <div className="w-full sm:w-auto flex items-center justify-around sm:justify-end gap-3 sm:gap-3.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-xl font-mono text-[11px] font-bold shadow-2xs">
+                              <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400" title="Likes">
                                 <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20 shrink-0" />
                                 <span>{formatCompactNumber(likes)}</span>
                                 {likesDelta > 0 && (
-                                  <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/15 px-1 rounded">
+                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/15 px-1 rounded">
                                     +{formatCompactNumber(likesDelta)}
                                   </span>
                                 )}
                               </span>
-                              <span className="text-white/10 hidden sm:inline">•</span>
-                              <span className="inline-flex items-center gap-1 text-indigo-400" title="Comments">
-                                <MessageCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                              <span className="text-slate-200 dark:text-white/10 hidden sm:inline">•</span>
+                              <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400" title="Comments">
+                                <MessageCircle className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                                 <span>{formatCompactNumber(comments)}</span>
                                 {commentsDelta > 0 && (
-                                  <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/15 px-1 rounded">
+                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/15 px-1 rounded">
                                     +{formatCompactNumber(commentsDelta)}
                                   </span>
                                 )}
                               </span>
-                              <span className="text-white/10 hidden sm:inline">•</span>
-                              <span className="inline-flex items-center gap-1 text-emerald-400" title="Shares">
-                                <Share2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="text-slate-200 dark:text-white/10 hidden sm:inline">•</span>
+                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400" title="Shares">
+                                <Share2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
                                 <span>{formatCompactNumber(shares)}</span>
                                 {sharesDelta > 0 && (
-                                  <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/15 px-1 rounded">
+                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/15 px-1 rounded">
                                     +{formatCompactNumber(sharesDelta)}
                                   </span>
                                 )}
@@ -1115,10 +1115,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
               <div className="space-y-6">
                 
                 {/* Visual Stats Overview */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+                <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 space-y-6">
                   <div>
-                    <h3 className="font-display font-bold text-xl text-white">Live Campaign Reach</h3>
-                    <p className="text-xs text-slate-400 mt-1">Real-time aggregate performance and engagement across all active creator placements.</p>
+                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">Live Campaign Reach</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Real-time aggregate performance and engagement across all active creator placements.</p>
                   </div>
 
                   {/* 9 Grid Metrics */}
@@ -1130,93 +1130,93 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     return (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {/* 1. Views */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Views</div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Views</div>
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {formatCompactNumber(dbViews)}
                           </div>
-                          <div className="text-[9px] text-emerald-400">📊 Real-time verified</div>
+                          <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">📊 Real-time verified</div>
                         </div>
 
                         {/* 2. Payouts */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Payouts</div>
-                          <div className="font-mono text-2xl font-extrabold text-emerald-400">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Payouts</div>
+                          <div className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
                             {formatCompactCurrency(dbPayouts)}
                           </div>
-                          <div className="text-[9px] text-slate-400">Released from Escrow</div>
+                          <div className="text-[9px] text-slate-500 dark:text-slate-400">Released from Escrow</div>
                         </div>
 
                         {/* 3. Engagement Rate */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Engagement Rate</div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Engagement Rate</div>
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {(campaign as any)?.target_engagement_rate != null ? `${(campaign as any).target_engagement_rate}%` : '0%'}
                           </div>
-                          <div className="text-[9px] text-slate-400">Like & Comment ratio</div>
+                          <div className="text-[9px] text-slate-500 dark:text-slate-400">Like & Comment ratio</div>
                         </div>
 
                         {/* 4. Total Likes */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1">
                             <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20" />
                             <span>Total Likes</span>
                           </div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {formatCompactNumber(totalLikes)}
                           </div>
-                          <div className="text-[9px] text-rose-400">Audience reactions</div>
+                          <div className="text-[9px] text-rose-600 dark:text-rose-400">Audience reactions</div>
                         </div>
 
                         {/* 5. Total Comments */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3 text-indigo-400" />
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                            <MessageCircle className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
                             <span>Total Comments</span>
                           </div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {formatCompactNumber(totalComments)}
                           </div>
-                          <div className="text-[9px] text-indigo-400">User discussions</div>
+                          <div className="text-[9px] text-indigo-600 dark:text-indigo-400">User discussions</div>
                         </div>
 
                         {/* 6. Total Shares */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                            <Share2 className="w-3 h-3 text-emerald-400" />
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                            <Share2 className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
                             <span>Total Shares</span>
                           </div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {formatCompactNumber(totalShares)}
                           </div>
-                          <div className="text-[9px] text-emerald-400">Viral amplification</div>
+                          <div className="text-[9px] text-emerald-600 dark:text-emerald-400">Viral amplification</div>
                         </div>
 
                         {/* 7. Avg Watch Time */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Watch Time</div>
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {dbViews > 0 && (campaign as any)?.avg_watch_time_seconds ? `${(campaign as any).avg_watch_time_seconds}s` : '0s'}
                           </div>
-                          <div className="text-[9px] text-cyan-400">Retention benchmark</div>
+                          <div className="text-[9px] text-cyan-600 dark:text-cyan-400">Retention benchmark</div>
                         </div>
 
                         {/* 8. Creators Joined */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Creators Joined</div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Creators Joined</div>
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {dbCreatorsJoined}
                           </div>
-                          <div className="text-[9px] text-slate-400">Active slots locked</div>
+                          <div className="text-[9px] text-slate-500 dark:text-slate-400">Active slots locked</div>
                         </div>
 
                         {/* 9. Submissions */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Submissions</div>
-                          <div className="font-mono text-2xl font-extrabold text-white">
+                        <div className="bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-1">
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Submissions</div>
+                          <div className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
                             {dbSubmissions}
                           </div>
-                          <div className="text-[9px] text-slate-400">Verified & Pending</div>
+                          <div className="text-[9px] text-slate-500 dark:text-slate-400">Verified & Pending</div>
                         </div>
                       </div>
                     );
@@ -1224,25 +1224,25 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
 
                 {/* Channel Share Breakdown */}
-                <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-5">
+                <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 space-y-5">
                   <div>
-                    <h4 className="font-display font-bold text-base text-white">Platform Channel Share</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Distribution of campaign views across connected social networks.</p>
+                    <h4 className="font-display font-bold text-base text-slate-900 dark:text-white">Platform Channel Share</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Distribution of campaign views across connected social networks.</p>
                   </div>
 
                   <div className="space-y-4">
                     {platformShareList.map(({ platform, views, share }) => (
                       <div key={platform} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-1.5 font-bold text-white">
+                          <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
                             {renderPlatformIcon(platform, 'w-3.5 h-3.5')}
                             <span>{platform === 'X' ? 'X (Twitter)' : platform}</span>
                           </div>
-                          <span className="font-mono text-slate-300">
+                          <span className="font-mono text-slate-600 dark:text-slate-300">
                             {formatCompactNumber(views)} views ({share}%)
                           </span>
                         </div>
-                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
                           <div
                             className={`bg-gradient-to-r ${getPlatformGradient(platform)} h-full rounded-full transition-all duration-500`}
                             style={{ width: `${share}%` }}
@@ -1262,46 +1262,46 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
           <div className="space-y-6">
             
             {/* Budget card */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl relative overflow-hidden">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 rounded-3xl p-6 space-y-4 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <span>BUDGET</span>
-                <span className="text-emerald-400 font-sans flex items-center gap-1 font-bold">
+                <span className="text-emerald-600 dark:text-emerald-400 font-sans flex items-center gap-1 font-bold">
                   <span>🛡️</span> Secured
                 </span>
               </div>
 
               <div>
-                <div className="font-mono text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                <div className="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                   {formatCompactCurrency(totalBudget)}
                 </div>
-                <span className="text-[11px] text-slate-400 font-sans block mt-0.5">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-sans block mt-0.5">
                   Campaign Budget Pool
                 </span>
               </div>
 
               <div className="space-y-2">
-                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-orange-500 to-purple-600 h-full rounded-full transition-all duration-500"
                     style={{ width: `${budgetFillPercent}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between font-mono text-[10px] text-slate-400">
+                <div className="flex items-center justify-between font-mono text-[10px] text-slate-500 dark:text-slate-400">
                   <span>{formatCompactCurrency(activeCommittedBudget)} Spent</span>
-                  <span className="text-emerald-400 font-bold">{budgetFillPercent}% Filled</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{budgetFillPercent}% Filled</span>
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-4 space-y-2 text-xs font-sans text-slate-400">
+              <div className="border-t border-slate-100 dark:border-white/10 pt-4 space-y-2 text-xs font-sans text-slate-500 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>Format</span>
-                  <span className="text-white font-mono uppercase">{campaign.ad_format}</span>
+                  <span className="text-slate-900 dark:text-white font-mono uppercase">{campaign.ad_format}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Platform conversion</span>
                   <div className="flex items-center gap-1.5">
                     {acceptedPlatforms.map(p => (
-                      <div key={p} className="p-1 rounded-lg bg-white/5 border border-white/10" title={p}>
+                      <div key={p} className="p-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10" title={p}>
                         {renderPlatformIcon(p, "w-3.5 h-3.5")}
                       </div>
                     ))}
@@ -1309,39 +1309,39 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
                 <div className="flex justify-between">
                   <span>Audit duration</span>
-                  <span className="text-white font-mono">{campaign.required_live_duration_hours}h + {campaign.verification_grace_hours}h</span>
+                  <span className="text-slate-900 dark:text-white font-mono">{campaign.required_live_duration_hours}h + {campaign.verification_grace_hours}h</span>
                 </div>
               </div>
             </div>
 
             {/* Submission / Portal card */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 space-y-4">
-              <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider">Submission Portal</h3>
+            <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 rounded-3xl p-6 space-y-4 shadow-sm">
+              <h3 className="font-display font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">Submission Portal</h3>
 
               {errorMsg && (
-                <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+                <div className="p-3 text-xs bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400">
                   {errorMsg}
                 </div>
               )}
 
               {successMsg && (
-                <div className="p-3 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                <div className="p-3 text-xs bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
                   {successMsg}
                 </div>
               )}
 
               {userRole === 'advertiser' ? (
                 /* Advertiser View Banner */
-                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-xs text-blue-300 font-sans space-y-2">
+                <div className="p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl text-xs text-blue-800 dark:text-blue-300 font-sans space-y-2">
                   <div className="font-bold flex items-center gap-1.5 text-sm">
                     <span>📢</span>
                     <span>Advertiser Mode (Read-Only)</span>
                   </div>
-                  <p className="text-slate-300 leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                     You are viewing this campaign brief in advertiser mode. Verified creators use this portal to lock Campaign Budget and submit published post links.
                   </p>
                   <div className="pt-1">
-                    <Link href="/dashboard" className="text-kpugi-blue font-bold hover:underline block text-xs">
+                    <Link href="/dashboard" className="text-kpugi-blue dark:text-blue-400 font-bold hover:underline block text-xs">
                       Go to Advertiser Dashboard →
                     </Link>
                   </div>
@@ -1349,12 +1349,12 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
               ) : !isSignedIn ? (
                 /* Non-authenticated Creator State */
                 <div className="space-y-4">
-                  <p className="font-sans text-xs text-slate-400 leading-relaxed">
+                  <p className="font-sans text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     Sign in to your creator account to join this campaign, connect your placement handle, and lock your reserved escrow payout.
                   </p>
                   <Link
                     href={`/sign-in?redirect_url=${encodeURIComponent(`/browse/${campaignId}`)}`}
-                    className="w-full py-3.5 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white dark:bg-white dark:hover:bg-white/95 dark:text-black font-sans font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
                   >
                     <span>🔒</span>
                     <span>Sign in to Join</span>
@@ -1363,44 +1363,44 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
               ) : !submission ? (
                 /* Dynamic Not Joined State Card */
                 <div className="space-y-4">
-                  <p className="font-sans text-xs text-slate-400 leading-relaxed">
+                  <p className="font-sans text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     You have not joined this campaign yet. Connect one of your placement handles and click <strong>Join Campaign</strong> to reserve your Campaign Budget.
                   </p>
                   <button
                     onClick={() => setIsJoinModalOpen(true)}
-                    className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
+                    className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans font-bold text-xs shadow-md transition-all"
                   >
-                    JOIN
+                    Join Campaign
                   </button>
                 </div>
               ) : submission.status === 'joined' ? (
                 /* Joined but not submitted link form */
                 <form onSubmit={handleSubmitPost} className="space-y-4">
-                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-300 font-sans flex items-center gap-2">
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300 font-sans flex items-center gap-2">
                     <span>✓</span>
                     <span>You are registered using <strong>@{socialAccounts.find(s => s.id === submission.social_account_id)?.handle || 'connected handle'}</strong>.</span>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Published Post URL</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Published Post URL</label>
                     <input
                       type="url"
                       placeholder="e.g. https://www.instagram.com/p/..."
                       value={postUrl}
                       onChange={(e) => setPostUrl(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
                       required
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Backup Verification Screenshot</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Backup Verification Screenshot</label>
                     <input
                       type="text"
                       placeholder="Screenshot image URL (optional)"
                       value={screenshotUrl}
                       onChange={(e) => setScreenshotUrl(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
                     />
                   </div>
 
@@ -1408,7 +1408,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <button
                       type="submit"
                       disabled={isSubmitting || isUnjoining}
-                      className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 disabled:bg-white/10 disabled:text-slate-500 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/20 transition-all"
+                      className="w-full py-3 rounded-2xl bg-kpugi-blue hover:bg-blue-600 disabled:bg-slate-200 dark:disabled:bg-white/10 disabled:text-slate-400 text-white font-bold text-xs shadow-lg shadow-kpugi-blue/20 transition-all"
                     >
                       {isSubmitting ? 'Submitting Link...' : '🚀 Submit Post Link'}
                     </button>
@@ -1416,7 +1416,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       type="button"
                       onClick={() => setShowUnjoinConfirm(true)}
                       disabled={isSubmitting || isUnjoining}
-                      className="w-full py-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
+                      className="w-full py-2.5 rounded-xl border border-rose-200 dark:border-rose-500/20 hover:border-rose-400 dark:hover:border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
                     >
                       <span>🚪</span>
                       <span>{isUnjoining ? 'Leaving Slot...' : 'Unjoin Campaign & Release Slot'}</span>
@@ -1428,22 +1428,22 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 <div className="space-y-4">
                   <div className={`p-4 rounded-2xl border ${
                     submission.status === 'pending'
-                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+                      ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300'
                       : submission.status === 'verified_pass' || submission.status === 'paid'
-                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-                      : 'bg-red-500/10 border-red-500/20 text-red-300'
+                      ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-800 dark:text-red-300'
                   }`}>
                     <div className="flex items-center gap-2 font-bold font-sans text-xs uppercase mb-1">
                       <span>{submission.status === 'pending' ? '⏳ View Audit Active' : `✓ ${submission.status.replace(/_/g, ' ')}`}</span>
                     </div>
-                    <p className="font-sans text-xs text-slate-300 mt-1">
+                    <p className="font-sans text-xs text-slate-600 dark:text-slate-300 mt-1">
                       {submission.status === 'pending'
                         ? 'Automated auditors are verifying engagement and views hourly. Do not delete the post.'
                         : 'Audit verified. Escrow earnings released.'}
                     </p>
                   </div>
 
-                  <div className="space-y-2 text-xs font-sans text-slate-400 border-t border-white/5 pt-3">
+                  <div className="space-y-2 text-xs font-sans text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5 pt-3">
                     <div className="flex justify-between">
                       <span>Submitted Post</span>
                       <a href={submission.post_url ? getSafeExternalUrl(submission.post_url) : undefined} target="_blank" rel="noreferrer" className="text-kpugi-blue hover:underline font-mono truncate max-w-[150px]">
@@ -1452,7 +1452,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     </div>
                     <div className="flex justify-between">
                       <span>Reserved payout</span>
-                      <span className="text-white font-mono">{formatCompactCurrency(submission.reserved_amount)}</span>
+                      <span className="text-slate-900 dark:text-white font-mono font-bold">{formatCompactCurrency(submission.reserved_amount)}</span>
                     </div>
 
                     {submission.status !== 'paid' && (
@@ -1460,7 +1460,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                         type="button"
                         onClick={() => setShowDeleteLinkConfirm(true)}
                         disabled={isDeletingLink}
-                        className="w-full mt-3 py-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
+                        className="w-full mt-3 py-2.5 rounded-xl border border-rose-200 dark:border-rose-500/20 hover:border-rose-400 dark:hover:border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
                       >
                         <span>🗑️</span>
                         <span>{isDeletingLink ? 'Removing Link...' : 'Remove Link & Start Afresh'}</span>
@@ -1483,61 +1483,61 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       ───────────────────────────────────────────────────── */}
       {isJoinModalOpen && (() => {
         const modalContent = (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all overflow-y-auto min-h-screen w-screen">
-            <div className="bg-[#0B1026] border border-white/10 rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative my-auto">
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-md transition-all overflow-y-auto min-h-screen w-screen">
+            <div className="bg-white dark:bg-[#0B1026] border border-slate-200 dark:border-white/10 rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative my-auto text-slate-900 dark:text-white">
               
               <button
                 onClick={() => setIsJoinModalOpen(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white font-bold"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold"
               >
                 ✕
               </button>
 
               <div className="space-y-1">
-                <h3 className="font-display font-extrabold text-xl text-white">Join Campaign</h3>
-                <p className="text-xs text-slate-400">Select the social handle you will use to post for this campaign.</p>
+                <h3 className="font-display font-extrabold text-xl text-slate-900 dark:text-white">Join Campaign</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Select the social handle you will use to post for this campaign.</p>
               </div>
 
               <form onSubmit={handleJoinCampaign} className="space-y-4">
                 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Connect placement profile</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Connect placement profile</label>
                   {socialAccounts.length > 0 ? (
                     <select
                       value={selectedSocialId}
                       onChange={(e) => setSelectedSocialId(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
                       required
                     >
                       <option value="" disabled>Select Connected Handle</option>
                       {socialAccounts.map((account) => (
-                        <option key={account.id} value={account.id} className="bg-[#0B1026]">
+                        <option key={account.id} value={account.id} className="bg-white dark:bg-[#0B1026] text-slate-900 dark:text-white">
                           @{account.handle} ({account.platform.toUpperCase()})
                         </option>
                       ))}
                     </select>
                   ) : (
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 font-sans">
-                      No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-white">Accounts Settings</Link> to connect handles before joining.
+                    <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-sans">
+                      No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-slate-900 dark:text-white">Accounts Settings</Link> to connect handles before joining.
                     </div>
                   )}
                 </div>
 
-                <div className="border-t border-white/5 pt-4 space-y-2 text-xs font-sans text-slate-400">
+                <div className="border-t border-slate-100 dark:border-white/5 pt-4 space-y-2 text-xs font-sans text-slate-500 dark:text-slate-400">
                   <div className="flex justify-between">
                     <span>Base Payout Rate</span>
-                    <span className="text-kpugi-blue font-mono font-bold">{formatCompactCurrency(campaign.cpm_rate)} / 1k Views</span>
+                    <span className="text-kpugi-blue dark:text-blue-400 font-mono font-bold">{formatCompactCurrency(campaign.cpm_rate)} / 1k Views</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Minimum Threshold</span>
-                    <span className="text-white font-mono">{formatCompactNumber(campaign.min_view_threshold)} views</span>
+                    <span className="text-slate-900 dark:text-white font-mono font-bold">{formatCompactNumber(campaign.min_view_threshold)} views</span>
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isJoining || socialAccounts.length === 0}
-                  className="w-full py-3 rounded-2xl bg-white hover:bg-white/95 text-black font-sans font-bold text-xs shadow-lg transition-all"
+                  className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-black text-white dark:bg-white dark:hover:bg-white/95 dark:text-black font-sans font-bold text-xs shadow-lg transition-all"
                 >
                   {isJoining ? 'Joining Campaign...' : 'Confirm Join'}
                 </button>

@@ -225,31 +225,47 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const mentions: string[] = campaign.requirements?.mentions || [`@${campaign.company_name?.toLowerCase().replace(/\s+/g, '') || 'brand'}`];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink font-sans">
+    <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink dark:text-white font-sans">
       {/* ─────────────────────────────────────────────────────
          HERO HEADER CARD
       ───────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-xl border border-slate-800">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            {campaign.company_logo ? (
-              <img
-                src={campaign.company_logo}
-                alt={campaign.company_name || campaign.title}
-                className="w-14 h-14 rounded-2xl object-cover border border-white/20 shrink-0 shadow-md"
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-2xl bg-white/15 text-white font-bold text-xl flex items-center justify-center uppercase shrink-0 border border-white/20 shadow-md">
-                {(campaign.company_name || campaign.title).charAt(0)}
+      <div className="relative overflow-hidden p-5 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-[#1E2958] dark:from-[#090C19] dark:via-[#10152B] dark:to-[#172352] text-white shadow-xl border border-slate-800 dark:border-white/10">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
+          
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            {/* Top Row on mobile: Logo + Badges */}
+            <div className="flex items-center sm:items-start gap-3.5">
+              {campaign.company_logo ? (
+                <img
+                  src={campaign.company_logo}
+                  alt={campaign.company_name || campaign.title}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border border-white/20 shrink-0 shadow-md"
+                />
+              ) : (
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 text-white font-bold text-lg sm:text-xl flex items-center justify-center uppercase shrink-0 border border-white/20 shadow-md">
+                  {(campaign.company_name || campaign.title).charAt(0)}
+                </div>
+              )}
+
+              {/* Status and Code displayed inline on mobile header */}
+              <div className="sm:hidden flex-1 min-w-0">
+                <span className="font-sans text-xs font-semibold text-slate-300 block truncate">
+                  {campaign.company_name || 'Brand Partner'}
+                </span>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap font-sans">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {campaign.status || 'LIVE'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-200 border border-white/15 font-mono text-[10px] font-bold backdrop-blur-md">
+                    {campaign.campaign_code || `KPG-${campaign.id.slice(0, 8).toUpperCase()}`}
+                  </span>
+                </div>
               </div>
-            )}
+            </div>
 
-            <div className="space-y-2.5">
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                {campaign.title}
-              </h1>
-
-              <div className="flex items-center gap-2 flex-wrap font-sans">
+            <div className="space-y-2.5 flex-1 min-w-0">
+              <div className="hidden sm:flex items-center gap-2 flex-wrap font-sans">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   {campaign.status || 'LIVE'}
@@ -266,97 +282,103 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                 )}
               </div>
 
-              {campaign.channels && campaign.channels.length > 0 && (
-                <div className="flex items-center gap-1.5 pt-1">
-                  {(Array.from(
-                    new Set(
-                      campaign.channels.map((ch: string) => {
-                        const p = ch.toLowerCase();
-                        if (p.includes('tiktok')) return 'tiktok';
-                        if (p.includes('youtube') || p.includes('shorts')) return 'youtube';
-                        if (p.includes('facebook') || p.includes('fb')) return 'facebook';
-                        if (p.includes('twitter') || p.includes('x')) return 'x';
-                        if (p.includes('insta')) return 'instagram';
-                        return ch;
-                      })
-                    )
-                  ) as string[]).map((platform: string) => (
-                    <PlatformBadge key={platform} platform={platform} />
-                  ))}
+              <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                {campaign.title}
+              </h1>
+
+              {/* On mobile: show CPM and Channel badges in clean pill row */}
+              <div className="flex items-center gap-2.5 flex-wrap pt-0.5">
+                <div className="sm:hidden">
+                  {campaign.cpm_rate > 0 && (
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-xs font-bold backdrop-blur-md">
+                      {formatCompactCurrency(campaign.cpm_rate)} / 1k views
+                    </span>
+                  )}
                 </div>
-              )}
+
+                {campaign.channels && campaign.channels.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    {(Array.from(
+                      new Set(
+                        campaign.channels.map((ch: string) => {
+                          const p = ch.toLowerCase();
+                          if (p.includes('tiktok')) return 'tiktok';
+                          if (p.includes('youtube') || p.includes('shorts')) return 'youtube';
+                          if (p.includes('facebook') || p.includes('fb')) return 'facebook';
+                          if (p.includes('twitter') || p.includes('x')) return 'x';
+                          if (p.includes('insta')) return 'instagram';
+                          return ch;
+                        })
+                      )
+                    ) as string[]).map((platform: string) => (
+                      <PlatformBadge key={platform} platform={platform} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-center md:justify-end gap-2.5 shrink-0 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
-            {/* 1. View Briefing Button */}
+          {/* Action Toolbar on mobile vs desktop */}
+          <div className="flex items-center gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-white/10 w-full md:w-auto justify-end sm:justify-start md:justify-end flex-wrap">
+            {/* View Briefing Button */}
             <button
               onClick={() => {
                 const el = document.getElementById('content-brief-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
               title="View Campaign Briefing"
-              className="group h-10 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold transition-all duration-300 ease-out border border-white/15 backdrop-blur-md flex items-center overflow-hidden shadow-2xs"
+              className="flex-1 sm:flex-initial h-10 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold transition-all border border-white/15 backdrop-blur-md flex items-center justify-center gap-2 shadow-2xs"
             >
-              <FileText className="w-4 h-4 text-white shrink-0 group-hover:text-blue-300 transition-colors" />
-              <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
-                View Briefing
-              </span>
+              <FileText className="w-4 h-4 text-white shrink-0" />
+              <span>Briefing</span>
             </button>
 
             {hasSubmittedLink ? (
-              <div className="flex items-center gap-2">
-                {/* 2. Submitted Link Indicator */}
+              <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+                {/* Submitted Link Active Indicator */}
                 <div
                   title="Post link has been submitted and view verification is active"
-                  className="group h-10 px-3 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center backdrop-blur-md cursor-default overflow-hidden transition-all duration-300 ease-out shadow-2xs"
+                  className="flex-1 sm:flex-initial h-10 px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-sans text-xs font-bold flex items-center justify-center gap-2 backdrop-blur-md shadow-2xs"
                 >
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
-                    Post Link Active
-                  </span>
+                  <span>Link Active</span>
                 </div>
 
-                {/* 3. Delete / Remove Post Link Button */}
+                {/* Remove Link Button */}
                 {submissionState?.status !== 'paid' && (
                   <button
                     onClick={() => setShowDeleteLinkConfirm(true)}
                     disabled={isDeletingLink}
                     title="Remove Post Link & Reset Stats"
-                    className="group h-10 px-3 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all duration-300 ease-out backdrop-blur-md flex items-center overflow-hidden disabled:opacity-50 shadow-2xs"
+                    className="h-10 px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all backdrop-blur-md flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
                   >
                     <Trash2 className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
-                      {isDeletingLink ? 'Removing...' : 'Remove Link'}
-                    </span>
+                    <span className="hidden sm:inline">{isDeletingLink ? 'Removing...' : 'Remove'}</span>
                   </button>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                {/* 3. Unjoin Button */}
+              <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+                {/* Unjoin Button */}
                 <button
                   onClick={() => setShowUnjoinConfirm(true)}
                   disabled={isUnjoining}
                   title="Unjoin Campaign & Release Slot"
-                  className="group h-10 px-3 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all duration-300 ease-out backdrop-blur-md flex items-center overflow-hidden disabled:opacity-50 shadow-2xs"
+                  className="h-10 px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans text-xs font-bold transition-all backdrop-blur-md flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-2xs"
                 >
-                  <X className="w-4 h-4 text-rose-400 shrink-0 group-hover:rotate-90 transition-transform duration-300" />
-                  <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
-                    {isUnjoining ? 'Leaving...' : 'Unjoin'}
-                  </span>
+                  <X className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span className="hidden sm:inline">{isUnjoining ? 'Leaving...' : 'Unjoin'}</span>
                 </button>
 
-                {/* 4. Submit Post Link Button */}
+                {/* Submit Post Link Button */}
                 <button
                   onClick={() => setShowSubmitModal(true)}
                   title="Submit Published Post Link"
-                  className="group h-10 px-3 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-kpugi-ink font-sans text-xs font-bold transition-all duration-300 ease-out shadow-md flex items-center overflow-hidden"
+                  className="flex-1 sm:flex-initial h-10 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-sans text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5"
                 >
-                  <Plus className="w-4 h-4 text-kpugi-blue shrink-0 group-hover:rotate-90 transition-transform duration-300" />
-                  <span className="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-out whitespace-nowrap overflow-hidden">
-                    Submit Post Link
-                  </span>
+                  <Plus className="w-4 h-4 text-kpugi-blue shrink-0" />
+                  <span>Submit Link</span>
                 </button>
               </div>
             )}
