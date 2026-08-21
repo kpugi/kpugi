@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "scraper": "python .scraper/runner.py",
+    "settle": "node -e \"fetch('http://localhost:3000/api/cron/daily-settlement').then(r=>r.json()).then(console.log).catch(console.error)\"",
     "ngrok": "C:\\Users\\HP\\Downloads\\ngrok-v3-stable-windows-amd64\\ngrok.exe http 3000 --host-header=rewrite",
     "tunnel": "C:\\Users\\HP\\Downloads\\ngrok-v3-stable-windows-amd64\\ngrok.exe http 3000 --host-header=rewrite"
   },

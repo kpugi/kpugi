@@ -325,7 +325,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       status: statusLabel,
       isClearing,
       clearanceAt: tx.clearance_at,
-      settledAt: tx.settled_at || tx.created_at,
+      viewsCount: tx.views_count || tx.views_scraped || tx.views_delta || null,
       viewsScraped: tx.views_scraped,
       viewsDelta: tx.views_delta,
       cpmRate: tx.cpm_rate,
@@ -386,14 +386,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
           <div className="flex items-center justify-between">
             <span className="font-sans text-[11px] font-bold text-kpugi-slate uppercase tracking-wider flex items-center gap-1.5">
               Pending Clearance
-              <Info className="w-3.5 h-3.5 text-kpugi-slate" />
             </span>
-            {data.nextClearanceDate && pendingEscrow > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
-                <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
-                24h Window
-              </span>
-            )}
           </div>
 
           <div>
@@ -454,7 +447,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             {/* Corresponding Views Collation */}
             <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
               <Eye className="w-3.5 h-3.5 text-slate-400" />
-              <span><strong className="text-slate-800 font-bold font-mono">{Number(data.todayViews || 0).toLocaleString()}</strong> views</span>
+              <span><strong className="text-slate-800 font-bold font-mono">{Number(data.todayViews || 0).toLocaleString()}</strong> views today</span>
             </div>
           </div>
 
@@ -509,9 +502,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                       <React.Fragment key={tx.id}>
                         <tr
                           onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                          className={`hover:bg-slate-50/90 transition-colors cursor-pointer ${
-                            isExpanded ? 'bg-slate-50/70' : ''
-                          }`}
+                          className={`hover:bg-slate-50/90 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50/70' : ''
+                            }`}
                         >
                           <td className="py-4 px-4 font-medium text-slate-500 whitespace-nowrap">
                             <div>{tx.date}</div>
@@ -520,8 +512,9 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           <td className="py-4 px-4 whitespace-nowrap">
                             <div className="font-bold text-kpugi-ink">{tx.title}</div>
                             <div className="text-[11px] text-kpugi-slate flex items-center gap-1.5">
+
                               <span>{tx.sub}</span>
-                              <span className="text-slate-300">•</span>
+
                               <span className="font-mono text-[10px] text-slate-400">{tx.reference}</span>
                             </div>
                           </td>
@@ -549,9 +542,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           </td>
                           <td className="py-4 px-2 text-center text-slate-400">
                             <ChevronDown
-                              className={`w-4 h-4 transition-transform duration-200 inline-block ${
-                                isExpanded ? 'rotate-180 text-kpugi-blue' : ''
-                              }`}
+                              className={`w-4 h-4 transition-transform duration-200 inline-block ${isExpanded ? 'rotate-180 text-kpugi-blue' : ''
+                                }`}
                             />
                           </td>
                         </tr>
@@ -566,17 +558,13 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                       <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                          tx.isClearing
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.isClearing
                                             ? 'bg-amber-100 text-amber-800'
                                             : 'bg-emerald-100 text-emerald-800'
-                                        }`}
+                                          }`}
                                       >
                                         {tx.isClearing ? (
-                                          <>
-                                            <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
-                                            24h Anti-Fraud Grace Period Active
-                                          </>
+                                          <></>
                                         ) : (
                                           <>
                                             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -607,11 +595,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                       <Eye className="w-3 h-3 text-slate-400" /> Verified Traffic
                                     </span>
                                     <div className="font-mono font-bold text-base text-slate-900">
-                                      {(tx.viewsScraped || 0).toLocaleString()}{' '}
+                                      {(tx.viewsScraped || tx.viewsCount || 0).toLocaleString()}{' '}
                                       <span className="text-xs font-normal text-slate-500">views</span>
                                     </div>
                                     <div className="text-[10px] text-slate-500">
-                                      Cycle delta: +{(tx.viewsDelta || tx.viewsScraped || 0).toLocaleString()} views
+                                      Audited batch: {(tx.viewsDelta || tx.viewsScraped || tx.viewsCount || 0).toLocaleString()} views
                                     </div>
                                   </div>
 
@@ -621,7 +609,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                       <TrendingUp className="w-3 h-3 text-slate-400" /> Campaign CPM
                                     </span>
                                     <div className="font-mono font-bold text-base text-slate-900">
-                                      ₦{(tx.cpmRate || 2000).toLocaleString()}{' '}
+                                      ₦{(tx.cpmRate || 0).toLocaleString()}{' '}
                                       <span className="text-xs font-normal text-slate-500">/ 1k views</span>
                                     </div>
                                     <div className="text-[10px] text-slate-500">
@@ -691,9 +679,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 data.bankAccounts.map((acc, idx) => (
                   <div
                     key={acc.id || idx}
-                    className={`p-4 rounded-2xl border-2 flex items-start justify-between gap-3 transition-all ${
-                      acc.isPrimary ? 'bg-blue-50/50 border-kpugi-blue shadow-2xs' : 'bg-white border-kpugi-border hover:border-slate-300'
-                    }`}
+                    className={`p-4 rounded-2xl border-2 flex items-start justify-between gap-3 transition-all ${acc.isPrimary ? 'bg-blue-50/50 border-kpugi-blue shadow-2xs' : 'bg-white border-kpugi-border hover:border-slate-300'
+                      }`}
                   >
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                       <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="md" />
@@ -898,11 +885,10 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           key={acc.id}
                           type="button"
                           onClick={() => setSelectedWithdrawBankId(acc.id)}
-                          className={`w-full p-3 rounded-xl border-2 text-left flex items-center justify-between gap-3 transition-all ${
-                            isSelected
+                          className={`w-full p-3 rounded-xl border-2 text-left flex items-center justify-between gap-3 transition-all ${isSelected
                               ? 'border-kpugi-blue bg-blue-50/60 shadow-2xs'
                               : 'border-slate-200 hover:border-slate-300 bg-white'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <BankLogo bankName={acc.bankName} bankCode={acc.bankCode} size="sm" />
@@ -971,7 +957,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                 <label className="block text-xs font-bold text-kpugi-slate mb-1 uppercase tracking-wider">
                   Select Bank
                 </label>
-                
+
                 {/* Custom Trigger Button */}
                 <button
                   type="button"
@@ -1011,11 +997,10 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                               setIsBankDropdownOpen(false);
                               setBankSearchQuery('');
                             }}
-                            className={`w-full px-3 py-2.5 text-left text-xs font-sans transition-colors flex items-center justify-between rounded-lg ${
-                              selectedBankCode === b.code
+                            className={`w-full px-3 py-2.5 text-left text-xs font-sans transition-colors flex items-center justify-between rounded-lg ${selectedBankCode === b.code
                                 ? 'bg-blue-50 text-kpugi-blue font-bold'
                                 : 'hover:bg-slate-50 text-kpugi-ink'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <BankLogo bankName={b.name} bankCode={b.code} size="sm" />

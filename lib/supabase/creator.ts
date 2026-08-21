@@ -93,7 +93,23 @@ export interface CreatorEarningsData {
 export async function getCreatorOverviewData(profileId: string): Promise<CreatorOverviewData> {
   const supabase = createAdminClient();
 
-  // 1. Fetch Creator Profile to obtain creatorProfile.id and total_earned, kyc_status
+  // 0. Auto-release matured batches and auto-roll previous day's accruals
+  const { autoReleaseMaturedBatches, processDailyBatchSettlement } = await import('@/lib/supabase/settlement');
+  await autoReleaseMaturedBatches(supabase, profileId);
+
+  const todayUtcStart = new Date();
+  todayUtcStart.setUTCHours(0, 0, 0, 0);
+  const { data: previousDaySubs } = await supabase
+    .from('submissions')
+    .select('id')
+    .eq('creator_id', profileId)
+    .gt('pending_payout_amount', 0)
+    .lt('verified_at', todayUtcStart.toISOString())
+    .limit(1);
+
+  if (previousDaySubs && previousDaySubs.length > 0) {
+    await processDailyBatchSettlement(supabase, profileId);
+  }
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
     .select('id, total_earned, kyc_status')
@@ -121,6 +137,8 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
         submitted_at,
         reserved_amount,
         final_view_count,
+        last_paid_view_count,
+        max_verified_views,
         verified_at,
         payout_amount,
         pending_payout_amount,
@@ -209,12 +227,14 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   let todayAccrual = 0;
   let todayViews = 0;
 
-  submissions.forEach((s) => {
+  (rawSubmissions || []).forEach((s: any) => {
     const pendingPayout = Number(s.pending_payout_amount || 0);
     if (pendingPayout > 0) {
       todayAccrual += pendingPayout;
       const finalViews = Number(s.final_view_count || 0);
-      todayViews += finalViews;
+      const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
+      const deltaViews = Math.max(0, finalViews - lastPaid);
+      todayViews += deltaViews;
     }
   });
 
@@ -430,9 +450,23 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
 
-  // 1. Auto-release any matured 24h escrow batches before reading balances
-  const { autoReleaseMaturedBatches } = await import('@/lib/supabase/settlement');
+  // 1. Auto-release any matured 24h escrow batches and auto-roll previous day's accruals
+  const { autoReleaseMaturedBatches, processDailyBatchSettlement } = await import('@/lib/supabase/settlement');
   await autoReleaseMaturedBatches(supabase, profileId);
+
+  const todayUtcStart = new Date();
+  todayUtcStart.setUTCHours(0, 0, 0, 0);
+  const { data: previousDaySubs } = await supabase
+    .from('submissions')
+    .select('id')
+    .eq('creator_id', profileId)
+    .gt('pending_payout_amount', 0)
+    .lt('verified_at', todayUtcStart.toISOString())
+    .limit(1);
+
+  if (previousDaySubs && previousDaySubs.length > 0) {
+    await processDailyBatchSettlement(supabase, profileId);
+  }
 
   let { data: wallet } = await supabase
     .from('wallets')
@@ -471,7 +505,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     walletId
       ? supabase
           .from('wallet_transactions')
-          .select('*, campaigns:campaign_id(title)')
+          .select('*, campaigns:campaign_id(title, cpm_rate), submissions:submission_id(final_view_count, last_paid_view_count, payout_amount)')
           .eq('wallet_id', walletId)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -489,6 +523,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         payout_amount,
         pending_payout_amount,
         final_view_count,
+        last_paid_view_count,
+        max_verified_views,
         status,
         submitted_at,
         verified_at,
@@ -522,7 +558,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
   const lastWithdrawalDate = payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
 
-  // 2. Compute Today's In-Cycle Accrual & Views (Views gathered today 00:01 - 23:59 before midnight batch)
+  // 2. Compute Today's In-Cycle Accrual & Views (Only new views collected today)
   let todayAccrual = 0;
   let todayViews = 0;
 
@@ -533,7 +569,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       const finalViews = Number(s.final_view_count || 0);
       const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
       const deltaViews = Math.max(0, finalViews - lastPaid);
-      todayViews += deltaViews > 0 ? deltaViews : finalViews;
+      todayViews += deltaViews;
     }
   });
 
@@ -566,15 +602,22 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   // A. Format wallet_transactions (Daily Batches, completed payouts, reversals)
   rawTransactions.forEach((tx: any) => {
     const isClearing = tx.status === 'clearing';
-    const campTitle = tx.campaigns?.title || (tx.type === 'payout' ? 'Daily Settlement Batch' : 'Wallet Transaction');
+    const campTitle = tx.campaigns?.title || 'Daily Settlement Batch';
+    const subObj = tx.submissions;
+    const viewsSettled = subObj ? Number(subObj.last_paid_view_count || subObj.final_view_count || 0) : 0;
+    const cpmRate = Number(tx.campaigns?.cpm_rate || 0);
     const clearanceTime = tx.clears_at || new Date(new Date(tx.created_at).getTime() + 24 * 3600 * 1000).toISOString();
 
     formattedTransactions.push({
       id: tx.id,
       title: campTitle,
-      campaign_title: campTitle,
+      campaign_title: isClearing ? '24h Verification Escrow' : 'Settled to Available Balance',
       reference: tx.paystack_reference || `KP-TX-${tx.id.slice(0, 8).toUpperCase()}`,
       amount: Number(tx.amount || 0),
+      views_count: viewsSettled,
+      views_scraped: viewsSettled,
+      views_delta: viewsSettled,
+      cpm_rate: cpmRate,
       type: tx.type === 'withdrawal' || Number(tx.amount || 0) < 0 ? 'debit' : 'credit',
       transaction_type: tx.type,
       status: isClearing ? 'clearing' : tx.status,

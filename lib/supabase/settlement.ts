@@ -81,7 +81,7 @@ export async function processDailyBatchSettlement(
       .from('wallet_transactions')
       .insert({
         wallet_id: wallet.id,
-        type: 'payout',
+        type: 'payout_release',
         amount: totalBatchAmount,
         campaign_id: campaignId,
         submission_id: firstSub.id,
@@ -120,7 +120,7 @@ export async function processDailyBatchSettlement(
           last_paid_view_count: viewsScraped,
           payout_amount: Number(sub.payout_amount || 0) + payoutForSub,
           pending_payout_amount: 0,
-          auto_approve_at: clearsAt,
+          auto_approve_at: null,
         })
         .eq('id', sub.id);
     }
