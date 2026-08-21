@@ -93,36 +93,41 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
         <div className="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-kpugi-blue/20 blur-3xl pointer-events-none" />
         <div className="absolute right-1/3 -bottom-20 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2">
-              
-            </div>
-
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-5 sm:gap-6">
+          <div className="space-y-3 max-w-xl">
             <h1 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
               Welcome back, {companyName}
             </h1>
 
-            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-lg">
               Track real-time creator throughput, verify audience view velocity, and manage performance escrow across active briefs.
             </p>
           </div>
 
-          {/* Action CTAs */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {/* Action CTAs: Same line on mobile, Bottom Right on desktop, Expand on hover */}
+          <div className="flex flex-row items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0 sm:self-end">
+            {/* Create Campaign Expanding Button */}
             <Link
               href="/campaigns/new"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-kpugi-blue/30 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+              title="Create Campaign"
+              className="group relative inline-flex items-center justify-center h-10 sm:h-11 px-3 sm:px-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-kpugi-blue/30 hover:shadow-lg transition-all duration-300 ease-in-out flex-1 sm:flex-initial"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create Campaign</span>
+              <Plus className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:rotate-90" />
+              <span className="inline-block sm:max-w-0 sm:opacity-0 sm:group-hover:max-w-[140px] sm:group-hover:opacity-100 sm:group-hover:ml-2 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out">
+                Create Campaign
+              </span>
             </Link>
+
+            {/* Brand Wallet Expanding Button */}
             <Link
               href="/b/wallet"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm border border-slate-700 transition-all"
+              title="Brand Wallet"
+              className="group relative inline-flex items-center justify-center h-10 sm:h-11 px-3 sm:px-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700/80 transition-all duration-300 ease-in-out flex-1 sm:flex-initial"
             >
-              <Wallet className="w-4 h-4 text-slate-400" />
-              <span>Brand Wallet</span>
+              <Wallet className="w-4 h-4 shrink-0 text-slate-400 group-hover:text-white transition-colors" />
+              <span className="inline-block sm:max-w-0 sm:opacity-0 sm:group-hover:max-w-[120px] sm:group-hover:opacity-100 sm:group-hover:ml-2 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out">
+                Brand Wallet
+              </span>
             </Link>
           </div>
         </div>
