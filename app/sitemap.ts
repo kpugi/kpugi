@@ -5,11 +5,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const routes = [
     '',
+    '/brands',
+    '/creators',
     '/browse',
+    '/how-it-works',
     '/about',
     '/pricing',
-    '/creators',
-    '/advertisers',
     '/faq',
     '/privacy',
     '/terms',

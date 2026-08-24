@@ -52,7 +52,7 @@ keywords: [
     title: 'Kpugi — Where a Post Turns into a Payout',
     description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
     images: ['/kpugi_logo.png'],
-    creator: '@kpugiapp',
+    creator: '@kpugi_hq'
   },
   icons: {
     icon: '/kpugi_favicon.png',
