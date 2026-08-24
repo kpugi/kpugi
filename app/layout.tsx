@@ -3,11 +3,52 @@ import { ClerkProvider } from '@clerk/nextjs';
 import KnockProviderWrapper from '@/components/providers/KnockProviderWrapper';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
+import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import './globals.css';
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+
 export const metadata: Metadata = {
-  title: 'Kpugi — Where a Post Turns into a Payout',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Kpugi — Where a Post Turns into a Payout',
+    template: '%s | Kpugi',
+  },
   description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
+  keywords: [
+    'Kpugi',
+    'Creator Marketplace',
+    'Nigeria Creators',
+    'Paid Ad Placements',
+    'WhatsApp Status Monetization',
+    'TikTok Ads',
+    'Instagram Creators',
+  ],
+  authors: [{ name: 'Kpugi' }],
+  creator: 'Kpugi',
+  openGraph: {
+    type: 'website',
+    locale: 'en_NG',
+    url: siteUrl,
+    title: 'Kpugi — Where a Post Turns into a Payout',
+    description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
+    siteName: 'Kpugi',
+    images: [
+      {
+        url: '/kpugi_logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Kpugi Marketplace',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Kpugi — Where a Post Turns into a Payout',
+    description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
+    images: ['/kpugi_logo.png'],
+    creator: '@kpugiapp',
+  },
   icons: {
     icon: '/kpugi_favicon.png',
   },
@@ -44,6 +85,7 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden transition-colors duration-200">
+          <AnalyticsProvider />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

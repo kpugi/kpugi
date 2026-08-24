@@ -20,6 +20,7 @@
     "@deepgram/sdk": "^5.7.0",
     "@knocklabs/node": "^0.6.9",
     "@knocklabs/react": "^0.12.1",
+    "@microsoft/clarity": "^1.0.2",
     "@react-pdf/renderer": "^4.6.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
