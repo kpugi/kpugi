@@ -2,13 +2,13 @@ import React from 'react';
 import { Metadata } from 'next';
 import BrowseCampaignsClientView from '@/components/browse/BrowseCampaignsClientView';
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 const pageUrl = `${appUrl}/browse`;
 
 export const metadata: Metadata = {
-  title: 'Browse Campaigns | Verified CPM Placements for Nigerian Creators | Kpugi',
+  title: 'Browse Campaigns — Verified CPM Placements',
   description:
-    'Explore verified live CPM campaigns from top brands on Kpugi. Earn instant Naira payouts per 1,000 verified views on TikTok, Instagram, YouTube, and X. 100% escrow-backed with automated view audits.',
+    'Browse verified live CPM campaigns from top brands in Nigeria. Get paid per 1,000 verified views on TikTok, Instagram, and YouTube via escrow.',
   keywords: [
     'Kpugi',
     'Browse Campaigns',
@@ -26,12 +26,12 @@ export const metadata: Metadata = {
   creator: 'Kpugi',
   publisher: 'Kpugi Technologies',
   alternates: {
-    canonical: pageUrl,
+    canonical: '/browse',
   },
   openGraph: {
-    title: 'Browse Campaigns | Verified CPM Placements for Nigerian Creators | Kpugi',
+    title: 'Browse Campaigns — Verified CPM Placements | Kpugi',
     description:
-      'Explore verified live CPM campaigns from top brands on Kpugi. Earn instant Naira payouts per 1,000 verified views on TikTok, Instagram, YouTube, and X.',
+      'Browse verified live CPM campaigns from top brands in Nigeria. Get paid per 1,000 verified views on TikTok, Instagram, and YouTube.',
     url: pageUrl,
     siteName: 'Kpugi',
     locale: 'en_NG',
@@ -47,9 +47,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Browse Campaigns | Verified CPM Placements for Nigerian Creators | Kpugi',
+    title: 'Browse Campaigns — Verified CPM Placements | Kpugi',
     description:
-      'Explore verified live CPM campaigns from top brands on Kpugi. Earn instant Naira payouts per 1,000 verified views.',
+      'Browse verified live CPM campaigns from top brands in Nigeria. Get paid per 1,000 verified views on TikTok, Instagram, and YouTube.',
     site: '@kpugi_hq',
     creator: '@kpugi_hq',
     images: [`${appUrl}/images/kpugi_promo_banner.png`],

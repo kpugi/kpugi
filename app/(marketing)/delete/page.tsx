@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'User Data Deletion Instructions | Kpugi Creator Platform',
+  title: 'User Data Deletion Instructions',
   description: 'Step-by-step instructions on how users can delete their data and disconnect social media accounts from Kpugi.',
 };
 

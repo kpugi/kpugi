@@ -1,10 +1,11 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   const routes = [
     '',
+    '/browse',
     '/about',
     '/pricing',
     '/creators',
@@ -12,7 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/faq',
     '/privacy',
     '/terms',
-    '/campaigns',
     '/sign-in',
     '/sign-up',
   ];
@@ -20,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return routes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
-    changeFrequency: route === '' ? 'daily' : 'weekly',
-    priority: route === '' ? 1.0 : 0.8,
+    changeFrequency: route === '' || route === '/browse' ? 'daily' : 'weekly',
+    priority: route === '' ? 1.0 : (route === '/browse' ? 0.9 : 0.8),
   }));
 }

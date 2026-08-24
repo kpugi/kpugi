@@ -27,15 +27,15 @@ const isProtectedRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const hostname = req.headers.get('host') || '';
 
-  // 1. Handle go.kpugi.com subdomain requests seamlessly
+  // 1. Handle go.kpugi.com subdomain requests seamlessly by redirecting to primary /go prelander
   if (hostname.startsWith('go.kpugi.com') || hostname.startsWith('go.localhost')) {
     const urlParam = req.nextUrl.searchParams.get('url');
     if (!urlParam) {
-      return NextResponse.redirect(new URL('https://kpugi.com/browse', req.url));
+      return NextResponse.redirect(new URL('/browse', 'https://kpugi.com'));
     }
-    if (req.nextUrl.pathname === '/') {
-      return NextResponse.rewrite(new URL(`/go${req.nextUrl.search}`, req.url));
-    }
+    return NextResponse.redirect(
+      new URL(`/go?url=${encodeURIComponent(urlParam)}`, 'https://kpugi.com')
+    );
   }
 
   // 2. Rate limiter for public API endpoints

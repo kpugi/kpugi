@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Privacy Policy | Kpugi Creator Platform',
+  title: 'Privacy Policy',
   description: 'Kpugi Privacy Policy detailing data collection, OAuth social connection usage, and data protection practices.',
 };
 

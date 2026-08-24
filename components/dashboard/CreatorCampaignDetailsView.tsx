@@ -767,7 +767,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-2xl p-5 flex items-center justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          {renderPlatformIcon(acceptedPlatforms[0])}
                           <span className="font-sans text-sm font-bold text-slate-900 dark:text-white uppercase">Payout Rate</span>
                         </div>
                         <p className="font-sans text-xs text-slate-500 dark:text-slate-400"></p>
@@ -783,7 +782,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-2xl p-5 flex items-center justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-500">✓</span>
                           <span className="font-sans text-sm font-bold text-slate-900 dark:text-white">Min views</span>
                         </div>
                         <p className="font-sans text-xs text-slate-500 dark:text-slate-400">Required view conversion</p>

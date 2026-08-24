@@ -9,6 +9,20 @@ interface PageProps {
   params: Promise<{ campaignId: string }>;
 }
 
+function resolveValidImageUrl(imgUrl: string | null | undefined, base: string): string {
+  if (!imgUrl) return `${base}/images/kpugi_promo_banner.png`;
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    if (imgUrl.includes('ngrok-free.dev') || imgUrl.includes('localhost:3000')) {
+      return imgUrl.replace(/^https?:\/\/[^\/]+/, base);
+    }
+    return imgUrl;
+  }
+  if (imgUrl.startsWith('/')) {
+    return `${base}${imgUrl}`;
+  }
+  return `${base}/${imgUrl}`;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { campaignId } = await params;
   const campaignData = await getCampaignDetailsForCreator(campaignId, null);
@@ -16,28 +30,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!campaign) {
     return {
-      title: 'Campaign Not Found | Kpugi',
+      title: 'Campaign Not Found',
       description: 'The requested creator campaign could not be found on Kpugi.',
       robots: { index: false, follow: true },
     };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
   const pageUrl = `${appUrl}/browse/${campaignId}`;
   const cpmDisplay = `₦${Number(campaign.cpm_rate || 0).toLocaleString()}`;
   const brandName = campaign.company_name || 'Brand Partner';
   const channels = (campaign.channels && campaign.channels.length > 0)
-    ? campaign.channels.join(', ')
-    : 'TikTok, Instagram, YouTube';
-  const minViews = Number(campaign.min_view_threshold || 1000).toLocaleString();
+    ? campaign.channels.slice(0, 3).join(', ')
+    : 'TikTok, Instagram';
 
-  const title = `${campaign.title} | Kpugi`;
-  const description = `Join the ${campaign.title} campaign by ${brandName} on Kpugi. Earn ${cpmDisplay} CPM per 1,000 verified views on ${channels}. Min threshold: ${minViews} views. 100% escrow secured with automated view audits.`;
+  // Title without trailing '| Kpugi' so template in layout.tsx adds it cleanly without duplication
+  const pageTitle = `${campaign.title}`;
 
-  const coverImage = campaign.cover_image_url || campaign.company_logo || `${appUrl}/images/kpugi_promo_banner.png`;
+  // Concise description (<155 chars) for perfect Ahrefs/Google SEO score
+  const fullDesc = `Join ${campaign.title} by ${brandName} on Kpugi. Earn ${cpmDisplay} CPM per 1,000 verified views on ${channels}. Escrow-backed creator payouts.`;
+  const description = fullDesc.length > 155 ? fullDesc.slice(0, 152) + '...' : fullDesc;
+
+  const rawImage = campaign.cover_image_url || campaign.company_logo;
+  const coverImage = resolveValidImageUrl(rawImage, appUrl);
 
   return {
-    title,
+    title: pageTitle,
     description,
     keywords: [
       'Kpugi',
@@ -55,10 +73,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     creator: 'Kpugi',
     publisher: 'Kpugi Technologies',
     alternates: {
-      canonical: pageUrl,
+      canonical: `/browse/${campaignId}`,
     },
     openGraph: {
-      title,
+      title: pageTitle,
       description,
       url: pageUrl,
       siteName: 'Kpugi',
@@ -77,7 +95,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: pageTitle,
       description,
       site: '@kpugi_hq',
       creator: '@kpugi_hq',
