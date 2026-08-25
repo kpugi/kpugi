@@ -1,239 +1,848 @@
 import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  Wallet,
-  TrendingUp,
-  Sparkles,
-  Share2,
-  CheckCircle2,
-  Zap,
-  ArrowRight,
-  ShieldCheck,
-  Smartphone,
-  CreditCard,
-  Flame,
-  Award,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 export const metadata: Metadata = {
-  title: 'For Creators — Turn Posts into Verified Daily Payouts',
+  title: 'For Creators — Turn Your Posts into Daily Pay | Kpugi',
   description:
-    'Monetize your WhatsApp Status, TikTok, and Instagram views in Nigeria. Earn guaranteed CPM payouts deposited directly to your bank account.',
-  alternates: {
-    canonical: '/creators',
-  },
+    'Monetize your Instagram, TikTok, YouTube, Facebook, X and LinkedIn. Earn Naira payouts for every 1,000 real views your posts generate.',
+  alternates: { canonical: '/creators' },
   openGraph: {
-    title: 'For Creators — Turn Posts into Verified Daily Payouts | Kpugi',
+    title: 'For Creators — Turn Your Posts into Daily Pay | Kpugi',
     description:
-      'Monetize your WhatsApp Status, TikTok, and Instagram views in Nigeria. Earn guaranteed CPM payouts deposited directly to your bank account.',
+      'Monetize your Instagram, TikTok, YouTube, Facebook, X and LinkedIn. Earn Naira payouts for every 1,000 real views your posts generate.',
     url: 'https://kpugi.com/creators',
     siteName: 'Kpugi',
     type: 'website',
   },
 };
 
-export default function CreatorsPage() {
+// ─── Platform card ─────────────────────────────────────────────────────────
+const PLATFORMS = [
+  {
+    name: 'Instagram',
+    handle: 'Reels & Stories',
+    rate: '₦3,000 – ₦10,000',
+    color: '#E1306C',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="currentColor" strokeWidth="1.8"/>
+        <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.8"/>
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'TikTok',
+    handle: 'Short Videos',
+    rate: '₦2,500 – ₦8,000',
+    color: '#010101',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'YouTube',
+    handle: 'Shorts & Videos',
+    rate: '₦4,000 – ₦12,000',
+    color: '#FF0000',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="5" width="20" height="14" rx="4" stroke="currentColor" strokeWidth="1.8"/>
+        <path d="M10 9l5 3-5 3V9z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Facebook',
+    handle: 'Posts & Reels',
+    rate: '₦1,500 – ₦5,000',
+    color: '#1877F2',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8"/>
+        <path d="M15 8h-2a1 1 0 0 0-1 1v2h3l-.5 3H12v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'X',
+    handle: 'Posts & Threads',
+    rate: '₦1,000 – ₦4,000',
+    color: '#000000',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M4 4l16 16M4 20L20 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'LinkedIn',
+    handle: 'Posts & Articles',
+    rate: '₦2,000 – ₦6,000',
+    color: '#0A66C2',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.8"/>
+        <path d="M7 10v7M7 7v.5M12 17v-4a2 2 0 0 1 4 0v4M12 10v7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+];
+
+function PlatformCard({
+  name,
+  handle,
+  rate,
+  color,
+  icon,
+}: {
+  name: string;
+  handle: string;
+  rate: string;
+  color: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white selection:bg-emerald-500/20">
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-32">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-emerald-600/10 dark:bg-emerald-500/10 blur-[150px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/3 right-1/4 w-[400px] h-[250px] bg-blue-600/10 dark:bg-blue-500/10 blur-[140px] rounded-full pointer-events-none" />
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid #E4E7F0',
+        borderRadius: 20,
+        padding: '28px 24px',
+        flex: '1 1 0',
+        minWidth: 160,
+      }}
+    >
+      <div
+        style={{
+          color: color,
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {icon}
+      </div>
+      <div
+        style={{
+          fontFamily: "'Clash Display', sans-serif",
+          fontWeight: 600,
+          fontSize: '1rem',
+          color: '#0B1026',
+          marginBottom: 4,
+        }}
+      >
+        {name}
+      </div>
+      <div
+        style={{
+          fontFamily: "'Satoshi', sans-serif",
+          fontSize: '0.8125rem',
+          color: '#64748B',
+          marginBottom: 16,
+        }}
+      >
+        {handle}
+      </div>
+      <div
+        style={{
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: '0.8125rem',
+          color: '#17A75B',
+          fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {rate} / 1k views
+      </div>
+    </div>
+  );
+}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-          <div className="text-center max-w-3xl mx-auto space-y-6">
-            
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
-              <Flame className="h-3.5 w-3.5" />
-              <span>Where a Post Turns into a Payout</span>
-            </div>
+// ─── Step card (light) ────────────────────────────────────────────────────
+function StepCard({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid #E4E7F0',
+        borderRadius: 20,
+        padding: '28px 24px',
+        flex: '1 1 0',
+        minWidth: 180,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          fontFamily: "'Clash Display', sans-serif",
+          fontWeight: 700,
+          fontSize: '5rem',
+          color: 'rgba(23,167,91,0.06)',
+          lineHeight: 1,
+          position: 'absolute',
+          top: 10,
+          right: 16,
+          letterSpacing: '-0.04em',
+          userSelect: 'none',
+        }}
+      >
+        {n}
+      </div>
+      <div
+        style={{
+          fontFamily: "'Satoshi', sans-serif",
+          fontWeight: 700,
+          fontSize: '0.6875rem',
+          color: '#17A75B',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          marginBottom: 12,
+        }}
+      >
+        {n}
+      </div>
+      <h3
+        style={{
+          fontFamily: "'Clash Display', sans-serif",
+          fontWeight: 600,
+          fontSize: '1rem',
+          color: '#0B1026',
+          margin: '0 0 8px',
+          lineHeight: 1.3,
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        style={{
+          fontFamily: "'Satoshi', sans-serif",
+          fontSize: '0.8125rem',
+          color: '#64748B',
+          lineHeight: 1.65,
+          margin: 0,
+        }}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
 
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.1]">
-              Get paid in Naira for every <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-500 to-blue-600 dark:from-emerald-400 dark:via-teal-300 dark:to-blue-400">
-                1,000 verified views you generate.
-              </span>
-            </h1>
+// ─── Trust tile (light) ───────────────────────────────────────────────────
+function TrustTile({ value, title, body }: { value: string; title: string; body: string }) {
+  return (
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid #E4E7F0',
+        borderRadius: 20,
+        padding: '32px 28px',
+        flex: '1 1 0',
+        minWidth: 200,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'Clash Display', sans-serif",
+          fontWeight: 700,
+          fontSize: '2.25rem',
+          color: '#17A75B',
+          lineHeight: 1,
+          letterSpacing: '-0.03em',
+          marginBottom: 14,
+        }}
+      >
+        {value}
+      </div>
+      <h3
+        style={{
+          fontFamily: "'Clash Display', sans-serif",
+          fontWeight: 600,
+          fontSize: '0.9375rem',
+          color: '#0B1026',
+          margin: '0 0 8px',
+          lineHeight: 1.3,
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        style={{
+          fontFamily: "'Satoshi', sans-serif",
+          fontSize: '0.8125rem',
+          color: '#64748B',
+          lineHeight: 1.65,
+          margin: 0,
+        }}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-sans max-w-2xl mx-auto">
-              You don&apos;t need 100k followers to make serious money. Connect your WhatsApp, TikTok, or Instagram, browse ready-to-post brand campaigns, and receive instant bank transfers for your verified reach.
-            </p>
+// ─── FAQ item (light) ─────────────────────────────────────────────────────
+function FaqItem({ q, a }: { q: string; a: string }) {
+  return (
+    <details style={{ borderBottom: '1px solid #E4E7F0' }}>
+      <summary
+        style={{
+          fontFamily: "'Satoshi', sans-serif",
+          fontWeight: 600,
+          fontSize: '0.9375rem',
+          color: '#0B1026',
+          cursor: 'pointer',
+          padding: '20px 0',
+          listStyle: 'none',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        {q}
+        <span
+          aria-hidden
+          style={{ color: '#64748B', fontSize: '1.2rem', flexShrink: 0, marginLeft: 16 }}
+        >
+          +
+        </span>
+      </summary>
+      <p
+        style={{
+          fontFamily: "'Satoshi', sans-serif",
+          fontSize: '0.875rem',
+          color: '#64748B',
+          lineHeight: 1.7,
+          margin: '0 0 20px',
+          paddingRight: 32,
+        }}
+      >
+        {a}
+      </p>
+    </details>
+  );
+}
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/sign-up">
-                <Button className="w-full sm:w-auto h-12 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/25 transition-all">
-                  Join as a Creator →
-                </Button>
-              </Link>
-              <Link href="/browse">
-                <Button variant="outline" className="w-full sm:w-auto h-12 px-8 rounded-2xl border-slate-300 dark:border-white/15 font-bold text-sm hover:bg-slate-100 dark:hover:bg-white/10">
-                  Browse Live Campaigns
-                </Button>
-              </Link>
-            </div>
+// ─── Payout ticker strip ──────────────────────────────────────────────────
+const TICKER_ITEMS = [
+  '@tobivibes earned ₦6,400 · Instagram · 3,200 views',
+  '@lagosgist_ earned ₦3,700 · TikTok · 1,850 views',
+  '@adaeze.ng earned ₦10,200 · YouTube · 5,100 views',
+  '@freshwaves earned ₦4,800 · Facebook · 2,400 views',
+  '@abujabae_ earned ₦7,600 · LinkedIn · 3,800 views',
+  '@djkayshun earned ₦2,200 · X · 1,100 views',
+];
 
-            {/* Quick Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-6 pt-6 text-xs text-slate-500 dark:text-slate-400 font-medium">
-              <div className="flex items-center gap-1.5">
-                <CreditCard className="h-4 w-4 text-emerald-500" />
-                <span>Paystack Instant NGN Payouts</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Smartphone className="h-4 w-4 text-blue-500" />
-                <span>WhatsApp, TikTok & IG Supported</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-purple-500" />
-                <span>100% Escrow Guaranteed</span>
-              </div>
-            </div>
+// ─── Page ─────────────────────────────────────────────────────────────────
+export default function CreatorsPage() {
+  const faqs = [
+    {
+      q: 'Do I need a large following to earn on Kpugi?',
+      a: 'No. Any creator whose post gets at least 1,000 genuine views within the campaign window earns a payout. The quality of your audience matters more than the size of it.',
+    },
+    {
+      q: 'When do I get paid?',
+      a: 'Payouts are released automatically once your post clears the verification window and your views are confirmed. Funds land in your Kpugi wallet instantly and you can withdraw to your bank account anytime.',
+    },
+    {
+      q: 'What happens if my post doesn\'t reach 1,000 views?',
+      a: 'If your post falls below the minimum view count by the end of the campaign window, you won\'t receive a payout for that slot. The reserved budget returns to the campaign so another creator can claim it.',
+    },
+    {
+      q: 'Can I join multiple campaigns at the same time?',
+      a: 'Yes — you can post for as many active campaigns as you like. Each campaign is tracked separately.',
+    },
+    {
+      q: 'Which platforms can I connect?',
+      a: 'You can connect Instagram, TikTok, YouTube, Facebook, X and LinkedIn. Connect as many as you like to access more campaign opportunities.',
+    },
+  ];
 
-          </div>
+  const tickerLine = [...TICKER_ITEMS, ...TICKER_ITEMS].join('   ·   ');
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#F6F7FB',
+        color: '#0B1026',
+        fontFamily: "'Satoshi', system-ui, sans-serif",
+      }}
+    >
+      {/* ─── HERO ──────────────────────────────────────────────────────────── */}
+      <section
+        style={{
+          maxWidth: 900,
+          margin: '0 auto',
+          padding: '88px 24px 72px',
+          textAlign: 'center',
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: "'Clash Display', sans-serif",
+            fontWeight: 700,
+            fontSize: 'clamp(2.75rem, 6vw, 4.5rem)',
+            lineHeight: 1.05,
+            color: '#0B1026',
+            margin: '0 0 24px',
+            letterSpacing: '-0.025em',
+          }}
+        >
+          Your post.{' '}
+          <span
+            style={{
+              fontStyle: 'italic',
+              color: '#17A75B',
+            }}
+          >
+            Your pay.
+          </span>
+        </h1>
+        <p
+          style={{
+            fontSize: '1.125rem',
+            color: '#64748B',
+            lineHeight: 1.7,
+            margin: '0 auto 40px',
+            maxWidth: 540,
+          }}
+        >
+          Pick a brand campaign. Post on the platforms you already use.
+          Earn Naira for every 1,000 real people who see it — deposited straight
+          to your bank account.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <Link
+            href="/sign-up"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#17A75B',
+              color: '#ffffff',
+              fontFamily: "'Satoshi', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.9375rem',
+              padding: '14px 28px',
+              borderRadius: 12,
+              textDecoration: 'none',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Start Earning
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path d="M3 13L13 3M13 3H6M13 3V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+          <Link
+            href="/browse"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#ffffff',
+              color: '#0B1026',
+              fontFamily: "'Satoshi', sans-serif",
+              fontWeight: 600,
+              fontSize: '0.9375rem',
+              padding: '14px 28px',
+              borderRadius: 12,
+              textDecoration: 'none',
+              border: '1px solid #E4E7F0',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Browse Campaigns
+          </Link>
         </div>
       </section>
 
-      {/* Monetization Channels Grid */}
-      <section className="py-20 bg-slate-50/70 dark:bg-white/[0.02] border-y border-slate-200/80 dark:border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <Badge variant="secondary" className="font-bold text-xs">Supported Platforms</Badge>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Monetize the apps you use every single day
+      {/* ─── LIVE PAYOUT TICKER ────────────────────────────────────────────── */}
+      <div
+        style={{
+          background: '#0B1026',
+          padding: '14px 0',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            gap: 48,
+            animation: 'kpugi-ticker 40s linear infinite',
+            width: 'max-content',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '0.8125rem',
+            color: '#17A75B',
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
+          }}
+          aria-hidden
+        >
+          {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            <span key={i} style={{ flexShrink: 0 }}>
+              {item}
+              <span style={{ color: 'rgba(23,167,91,0.3)', margin: '0 24px' }}>·</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── PAYOUT MATH ───────────────────────────────────────────────────── */}
+      <section
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: '96px 24px 80px',
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)',
+            gap: 48,
+            alignItems: 'center',
+          }}
+          className="creators-math-grid"
+        >
+          <div>
+            <h2
+              style={{
+                fontFamily: "'Clash Display', sans-serif",
+                fontWeight: 700,
+                fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+                color: '#0B1026',
+                margin: '0 0 16px',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Simple maths. Real money.
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-              Whether you have an active WhatsApp contact list or high-velocity TikTok videos, Kpugi matches you with top Nigerian brand campaigns.
+            <p
+              style={{
+                fontSize: '1rem',
+                color: '#64748B',
+                lineHeight: 1.7,
+                margin: 0,
+                maxWidth: 400,
+              }}
+            >
+              The default rate is ₦2,000 per 1,000 views. Some brands pay more.
+              The more people see your post, the more you earn — automatically.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            {/* WhatsApp Status */}
-            <div className="p-8 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xl">
-                💬
-              </div>
-              <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">
-                WhatsApp Status
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Post sponsored banners and broadcast promos to your status. Submit your 24-hour viewer count screenshots for OCR view audit validation and instant payout.
-              </p>
-              <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                Avg. CPM: ₦1,500 – ₦4,000 / 1k views
-              </div>
+          {/* Formula card */}
+          <div
+            style={{
+              background: '#0B1026',
+              borderRadius: 24,
+              padding: '40px 36px',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginBottom: 20 }}>
+              // Payout formula
             </div>
-
-            {/* TikTok Videos */}
-            <div className="p-8 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center font-bold text-xl">
-                🎵
-              </div>
-              <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">
-                TikTok Videos
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Use campaign audio sounds or showcase sponsored brand clips. Our automated scrapers sync your view counter in real-time as your video goes viral.
-              </p>
-              <div className="text-xs font-bold text-pink-600 dark:text-pink-400">
-                Avg. CPM: ₦2,500 – ₦8,000 / 1k views
-              </div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', marginBottom: 8 }}>
+              (views ÷ 1,000) × ₦2,000
             </div>
-
-            {/* Instagram Reels & Stories */}
-            <div className="p-8 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xl">
-                📸
-              </div>
-              <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">
-                Instagram Reels & Stories
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Connect your professional Instagram creator account via official Meta Login. Track reel plays, story interactions, and claim escrow payouts automatically.
-              </p>
-              <div className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                Avg. CPM: ₦3,000 – ₦10,000 / 1k views
-              </div>
+            <div
+              style={{
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                marginTop: 16,
+                paddingTop: 20,
+              }}
+            >
+              {[
+                { views: '1,000', pay: '₦2,000' },
+                { views: '5,000', pay: '₦10,000' },
+                { views: '10,000', pay: '₦20,000' },
+                { views: '50,000', pay: '₦100,000' },
+              ].map((r) => (
+                <div
+                  key={r.views}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '8px 0',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    fontSize: '0.9375rem',
+                  }}
+                >
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{r.views} views</span>
+                  <span style={{ color: '#17A75B', fontWeight: 700 }}>{r.pay}</span>
+                </div>
+              ))}
             </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Creator How-To Flow */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <Badge variant="secondary" className="font-bold text-xs">Simple Payout Flow</Badge>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-              How creators earn on Kpugi
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 space-y-3">
-              <div className="text-emerald-500 font-mono text-sm font-bold">STEP 01</div>
-              <h4 className="font-display font-bold text-base text-slate-900 dark:text-white">Browse Live Deals</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Explore active brand campaigns with locked escrow budgets and transparent CPM rates.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 space-y-3">
-              <div className="text-emerald-500 font-mono text-sm font-bold">STEP 02</div>
-              <h4 className="font-display font-bold text-base text-slate-900 dark:text-white">Post Creative</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Download high-res brand creatives or record your video following the clear submission brief.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 space-y-3">
-              <div className="text-emerald-500 font-mono text-sm font-bold">STEP 03</div>
-              <h4 className="font-display font-bold text-base text-slate-900 dark:text-white">Submit Post URL</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Paste your live post link into Kpugi. Our automated background workers start counting verified views.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#0B1021] border border-slate-200/80 dark:border-white/10 space-y-3">
-              <div className="text-emerald-500 font-mono text-sm font-bold">STEP 04</div>
-              <h4 className="font-display font-bold text-base text-slate-900 dark:text-white">Withdraw Naira</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Withdraw earnings anytime to your NUBAN bank account (OPay, Kuda, GTBank, Zenith, Access).
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-700 to-blue-800 p-8 sm:p-14 text-white text-center space-y-6 shadow-2xl">
-            <div className="max-w-2xl mx-auto space-y-4">
-              <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Turn your views into daily income today.
-              </h2>
-              <p className="text-emerald-100 text-sm sm:text-base leading-relaxed">
-                Join over 2,500+ verified Nigerian creators already earning guaranteed payouts on Kpugi.
-              </p>
-              <div className="pt-2">
-                <Link href="/sign-up">
-                  <Button className="h-12 px-8 rounded-2xl bg-white text-slate-950 hover:bg-slate-100 font-bold text-sm shadow-xl transition-all">
-                    Create Free Creator Account →
-                  </Button>
-                </Link>
-              </div>
+            <div
+              style={{
+                marginTop: 14,
+                fontSize: '0.6875rem',
+                color: 'rgba(255,255,255,0.2)',
+              }}
+            >
+              * A 10% Kpugi service fee applies to each payout
             </div>
           </div>
         </div>
       </section>
 
+      {/* ─── PLATFORMS ─────────────────────────────────────────────────────── */}
+      <section
+        style={{
+          background: '#ffffff',
+          borderTop: '1px solid #E4E7F0',
+          borderBottom: '1px solid #E4E7F0',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '80px 24px',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Clash Display', sans-serif",
+              fontWeight: 700,
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+              color: '#0B1026',
+              margin: '0 0 8px',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            6 platforms. One dashboard.
+          </h2>
+          <p
+            style={{
+              fontSize: '1rem',
+              color: '#64748B',
+              margin: '0 0 44px',
+              maxWidth: 480,
+            }}
+          >
+            Connect the accounts you already have and start earning from the content
+            you&apos;re already creating.
+          </p>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            {PLATFORMS.map((p) => (
+              <PlatformCard key={p.name} {...p} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── HOW IT WORKS ──────────────────────────────────────────────────── */}
+      <section
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: '96px 24px 80px',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "'Clash Display', sans-serif",
+            fontWeight: 700,
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+            color: '#0B1026',
+            margin: '0 0 48px',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Four steps from signup to payout
+        </h2>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          <StepCard
+            n="01"
+            title="Create your account"
+            body="Sign up and connect the social accounts you want to monetize. Takes less than 5 minutes."
+          />
+          <StepCard
+            n="02"
+            title="Pick a campaign"
+            body="Browse live brand campaigns and choose ones that fit your audience. No approval needed — every campaign is open to all creators."
+          />
+          <StepCard
+            n="03"
+            title="Post and submit"
+            body="Post the brand's content to your account. Paste your live post link into Kpugi to clock in."
+          />
+          <StepCard
+            n="04"
+            title="Withdraw your Naira"
+            body="Once your views are verified, your earnings appear in your wallet. Withdraw to any Nigerian bank account instantly."
+          />
+        </div>
+      </section>
+
+      {/* ─── TRUST ─────────────────────────────────────────────────────────── */}
+      <section
+        style={{
+          background: '#ffffff',
+          borderTop: '1px solid #E4E7F0',
+          borderBottom: '1px solid #E4E7F0',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '80px 24px',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Clash Display', sans-serif",
+              fontWeight: 700,
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
+              color: '#0B1026',
+              margin: '0 0 44px',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Your views. Your earnings. Your terms.
+          </h2>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <TrustTile
+              value="Auto"
+              title="Views are the only metric"
+              body="No subjective review. No human approval. Your post gets tracked automatically and your payout is calculated purely from verified view counts."
+            />
+            <TrustTile
+              value="Held"
+              title="Brand budgets are locked in"
+              body="Before your post goes live, the brand's budget is already secured. If views are verified, you get paid — guaranteed."
+            />
+            <TrustTile
+              value="Now"
+              title="Withdraw anytime"
+              body="Your earnings are yours the moment they clear. Withdraw to GTBank, Opay, Kuda, Zenith, Access or any other Nigerian bank whenever you like."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FAQ ───────────────────────────────────────────────────────────── */}
+      <section
+        style={{
+          maxWidth: 740,
+          margin: '0 auto',
+          padding: '80px 24px',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "'Clash Display', sans-serif",
+            fontWeight: 700,
+            fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
+            color: '#0B1026',
+            margin: '0 0 8px',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Questions from creators
+        </h2>
+        <p
+          style={{
+            fontSize: '0.9375rem',
+            color: '#64748B',
+            margin: '0 0 36px',
+          }}
+        >
+          Everything you need before your first post.
+        </p>
+        {faqs.map((f) => (
+          <FaqItem key={f.q} q={f.q} a={f.a} />
+        ))}
+      </section>
+
+      {/* ─── FINAL CTA ─────────────────────────────────────────────────────── */}
+      <section
+        style={{
+          background: '#0B1026',
+          padding: '80px 24px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 700,
+            margin: '0 auto',
+            textAlign: 'center',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Clash Display', sans-serif",
+              fontWeight: 700,
+              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              color: '#ffffff',
+              margin: '0 0 16px',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Your next post could be your first payout.
+          </h2>
+          <p
+            style={{
+              fontSize: '1rem',
+              color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.65,
+              margin: '0 0 36px',
+            }}
+          >
+            Free to join. No minimum followers. Start earning from the content you&apos;re already making.
+          </p>
+          <Link
+            href="/sign-up"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#17A75B',
+              color: '#ffffff',
+              fontFamily: "'Satoshi', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.9375rem',
+              padding: '16px 36px',
+              borderRadius: 12,
+              textDecoration: 'none',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Create a Free Account
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path d="M3 13L13 3M13 3H6M13 3V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+        </div>
+      </section>
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes kpugi-ticker {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-33.333%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="kpugi-ticker"] { animation: none; }
+        }
+        @media (max-width: 768px) {
+          .creators-math-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
