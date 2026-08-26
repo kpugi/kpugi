@@ -196,3 +196,56 @@
   color: #ffffff !important;
   font-weight: 700 !important;
 }
+
+/* Ambient glow breathing animation for futuristic orb effects */
+@keyframes ambient-glow {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+.animate-ambient-glow {
+  animation: ambient-glow 8s ease-in-out infinite;
+}
+
+/* Glassmorphic border pulsing breathe effect for card */
+@keyframes card-breathe-creator {
+  0%, 100% {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(23, 167, 91, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+}
+
+.animate-card-breathe-creator {
+  animation: card-breathe-creator 6s ease-in-out infinite;
+}
+
+@keyframes card-breathe-brand {
+  0%, 100% {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(47, 73, 232, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+}
+
+.animate-card-breathe-brand {
+  animation: card-breathe-brand 6s ease-in-out infinite;
+}
+
+/* Reduced-motion support to disable high-movement animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ambient-glow,
+  .animate-card-breathe-creator,
+  .animate-card-breathe-brand {
+    animation: none !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+  }
+}

@@ -67,6 +67,9 @@ export default function BrandHero32() {
             dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.05)_1px,transparent_1px)]"
         />
 
+        {/* Seamless bottom fade mask */}
+        <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-[#F8F9FD] dark:from-[#08090D] to-transparent pointer-events-none z-[1]" />
+
         <div className="relative z-10 max-w-[880px] mx-auto w-full">
           {/* Title */}
           <motion.h1
