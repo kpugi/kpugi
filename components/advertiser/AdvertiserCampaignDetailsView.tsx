@@ -105,8 +105,8 @@ export default function AdvertiserCampaignDetailsView({
   // Reserves are strictly for first-joiners awaiting minimum view threshold
   const totalReservedAmount = submissions.reduce((sum, s) => {
     const subViews = Number(s.views_count || s.final_view_count || 0);
-    const totalPaid = Number(s.payout_amount || 0);
-    const hasPassed = subViews >= minThreshold || totalPaid > 0;
+    const totalEarned = Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0);
+    const hasPassed = subViews >= minThreshold || totalEarned > 0;
     if (hasPassed) return sum;
 
     return sum + baseSlotReserve;
@@ -555,7 +555,9 @@ export default function AdvertiserCampaignDetailsView({
                     {submissions.map((sub) => {
                       const verifiedViews = Number(sub.views_count || sub.final_view_count || 0);
                       const totalPaid = Number(sub.payout_amount || 0);
-                      const hasPassedMin = verifiedViews >= minThreshold || totalPaid > 0;
+                      const pendingPaid = Number(sub.pending_payout_amount || 0);
+                      const totalEarned = totalPaid + pendingPaid;
+                      const hasPassedMin = verifiedViews >= minThreshold || totalEarned > 0;
 
                       // Reserve applies strictly to first-joiners prior to passing minimum view threshold
                       const slotReserve = hasPassedMin ? 0 : baseSlotReserve;
@@ -597,16 +599,18 @@ export default function AdvertiserCampaignDetailsView({
                             {verifiedViews.toLocaleString()} views
                           </td>
                           <td className="py-3 px-3 text-right font-mono font-bold">
-                            {totalPaid > 0 ? (
+                            {totalEarned > 0 ? (
                               <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
-                                ₦{totalPaid.toLocaleString()}
+                                ₦{totalEarned.toLocaleString()}
                               </span>
                             ) : (
                               <span className="text-slate-500 dark:text-slate-400 font-medium">
                                 ₦0{' '}
-                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono ml-1">
-                                  (₦{slotReserve.toLocaleString()} reserved)
-                                </span>
+                                {slotReserve > 0 && (
+                                  <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono ml-1">
+                                    (₦{slotReserve.toLocaleString()} reserved)
+                                  </span>
+                                )}
                               </span>
                             )}
                           </td>

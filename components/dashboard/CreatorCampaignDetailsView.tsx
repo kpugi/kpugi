@@ -924,7 +924,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 {/* Header row with title */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">Audited Leaderboard</h3>
+                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white">Campaign Leaderboard</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Creators driving the highest verified view conversions for this campaign.</p>
                   </div>
                 </div>

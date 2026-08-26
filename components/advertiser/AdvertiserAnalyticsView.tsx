@@ -94,6 +94,7 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
       spent_budget: spent,
       cover_image_url: c.cover_image_url || c.company_logo || null,
       created_at: c.created_at,
+      platform_views: c.platform_views || {},
     };
   });
 
@@ -125,29 +126,14 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
     }
   }, [totalViews, campaigns.length]);
 
-  // Dynamic Multi-Platform channel distribution from live campaigns (supports X, TikTok, IG, YT, FB, LinkedIn)
+  // 100% Real Multi-Platform channel distribution strictly aggregated from verified submissions
   const getChannelViews = (targetKey: string) => {
     return campaigns.reduce((sum, c) => {
-      const channelStrings = [
-        c.channel,
-        ...(Array.isArray(c.channels) ? c.channels : []),
-        c.ad_format,
-      ].map((s) => (s || '').toLowerCase());
-
-      const matches = channelStrings.some((s) => {
-        if (targetKey === 'tiktok') return s.includes('tiktok');
-        if (targetKey === 'instagram') return s.includes('instagram') || s.includes('ig') || s.includes('reel');
-        if (targetKey === 'youtube') return s.includes('youtube') || s.includes('yt') || s.includes('short');
-        if (targetKey === 'twitter') return s.includes('twitter') || s === 'x' || s.includes('x ') || s.includes(' x') || s.startsWith('x');
-        if (targetKey === 'facebook') return s.includes('facebook') || s.includes('fb');
-        if (targetKey === 'linkedin') return s.includes('linkedin');
-        return s.includes(targetKey);
-      });
-
-      if (!matches) return sum;
-
-      const activeChannelsCount = (c.channels && c.channels.length > 0) ? c.channels.length : 1;
-      return sum + Math.round(c.views_delivered / activeChannelsCount);
+      const pViews = c.platform_views;
+      if (pViews && typeof pViews[targetKey] === 'number') {
+        return sum + pViews[targetKey];
+      }
+      return sum;
     }, 0);
   };
 

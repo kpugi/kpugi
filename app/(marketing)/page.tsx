@@ -66,17 +66,18 @@ async function getHomepageData() {
       .order('created_at', { ascending: false });
 
     // 2. Fetch real live marketplace stats from DB
-    const [{ data: creatorEarnedData }, { data: submissionsData }, { data: campaignsData }] = await Promise.all([
-      supabase.from('creator_profiles').select('total_earned'),
-      supabase.from('submissions').select('final_view_count, payout_amount, status'),
+    const [{ data: submissionsData }, { data: campaignsData }] = await Promise.all([
+      supabase.from('submissions').select('final_view_count, payout_amount, pending_payout_amount'),
       supabase.from('campaigns').select('spent_budget, total_budget'),
     ]);
 
-    const totalEarnedFromCreators = (creatorEarnedData || []).reduce((acc, curr) => acc + Number(curr.total_earned || 0), 0);
-    const totalPayoutsFromSubmissions = (submissionsData || []).reduce((acc, curr) => acc + Number(curr.payout_amount || 0), 0);
+    // Sum ALL accrued earnings = settled + pending (includes clearing, not just paid out)
+    const totalAccruedEarnings = (submissionsData || []).reduce(
+      (acc, curr) => acc + Number(curr.payout_amount || 0) + Number(curr.pending_payout_amount || 0),
+      0
+    );
     const totalSpentFromCampaigns = (campaignsData || []).reduce((acc, curr) => acc + Number(curr.spent_budget || 0), 0);
-    
-    const liveTotalEarnings = Math.max(totalEarnedFromCreators, totalPayoutsFromSubmissions, totalSpentFromCampaigns);
+    const liveTotalEarnings = Math.max(totalAccruedEarnings, totalSpentFromCampaigns);
     const totalViews = (submissionsData || []).reduce((acc, curr) => acc + Number(curr.final_view_count || 0), 0);
 
     return {

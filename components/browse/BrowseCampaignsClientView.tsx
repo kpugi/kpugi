@@ -13,6 +13,8 @@ import { CampaignGridSkeleton, FeaturedHeroSkeleton } from '@/components/ui/Skel
 type Platform = 'TikTok' | 'Instagram' | 'YouTube' | 'Facebook' | 'LinkedIn' | 'X';
 type Category = 'Fashion' | 'Food & Drink' | 'Tech' | 'Lifestyle' | 'Finance' | 'Gaming' | 'Beauty' | 'Sports';
 
+export type RankTier = 'trending' | 'hot' | 'popular';
+
 interface Campaign {
   id: string;
   brand: string;
@@ -32,6 +34,15 @@ interface Campaign {
   timePosted: string;
   is_featured: boolean;
   matchScore?: number;
+  rankBadges: RankTier[];
+  activityScores?: {
+    score24h: number;
+    score7d: number;
+    score30d: number;
+    views24h: number;
+    views7d: number;
+    totalViews: number;
+  };
 }
 
 const PLATFORMS: Platform[] = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'LinkedIn', 'X'];
@@ -294,6 +305,48 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
     <article className="group relative flex flex-col bg-white dark:bg-[#12141A] rounded-2xl overflow-hidden hover:bg-slate-50 dark:hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-kpugi-border dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 cursor-pointer shadow-xs">
       {/* Thumbnail Area */}
       <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
+        {/* Ranking Badges Overlay (Top-Left: Icon only, labels on hover) */}
+        {c.rankBadges && c.rankBadges.length > 0 && (
+          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
+            {c.rankBadges.map((tier) => {
+              if (tier === 'trending') {
+                return (
+                  <div
+                    key="trending"
+                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-emerald-950/85 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20 cursor-help"
+                    title="📈 Trending: High velocity in the past 24 hours"
+                  >
+                    <span>📈</span>
+                  </div>
+                );
+              }
+              if (tier === 'hot') {
+                return (
+                  <div
+                    key="hot"
+                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-amber-950/85 border-amber-500/50 text-amber-300 shadow-amber-500/20 cursor-help"
+                    title="🔥 Hot: High activity in the last 7 days"
+                  >
+                    <span>🔥</span>
+                  </div>
+                );
+              }
+              if (tier === 'popular') {
+                return (
+                  <div
+                    key="popular"
+                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-purple-950/85 border-purple-500/50 text-purple-300 shadow-purple-500/20 cursor-help"
+                    title="👑 Popular: High verified reach in the last 30 days"
+                  >
+                    <span>👑</span>
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        )}
+
         {/* AI Match Score Badge Overlay (Only for creators & guests, hidden for advertisers) */}
         {userRole !== 'advertiser' && (
           <div className="absolute top-3 right-3 z-20">
@@ -367,12 +420,15 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
           {c.tone}
         </p>
 
-        {/* Bottom Stats */}
-        <div className="mt-auto flex flex-col gap-3">
+        {/* Bottom Stats & Pool Budget Progress Slider */}
+        <div className="mt-auto flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <div className="text-[12px] font-semibold flex items-center gap-0.5">
-              <span className="text-kpugi-ink dark:text-white">{formatCompactCurrency(c.budgetSpent)}</span>
-              <span className="text-kpugi-slate dark:text-white/40">/{formatCompactCurrency(c.budgetTotal)}</span>
+            <div className="text-[12px] font-semibold flex items-center gap-1">
+              <span className="text-kpugi-ink dark:text-white font-mono">{formatCompactCurrency(c.budgetSpent)}</span>
+              <span className="text-kpugi-slate dark:text-white/40 font-mono">/{formatCompactCurrency(c.budgetTotal)}</span>
+              <span className="text-[10px] font-bold text-kpugi-blue dark:text-blue-400 ml-0.5 font-mono">
+                {Math.round(progress)}%
+              </span>
             </div>
             
             <div className="flex items-center gap-2">
@@ -385,12 +441,15 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
               </div>
             </div>
           </div>
+
+          {/* Dedicated Pool Budget Progress Slider Bar */}
+          <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden relative" title={`Budget Pool: ${Math.round(progress)}% spent`}>
+            <div 
+              className="h-full bg-gradient-to-r from-[#2F49E8] via-indigo-500 to-emerald-400 rounded-full transition-all duration-500" 
+              style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} 
+            />
+          </div>
         </div>
-      </div>
-      
-      {/* Progress Bar at bottom edge */}
-      <div className="w-full h-[2px] bg-slate-100 dark:bg-white/5">
-        <div className="h-full bg-kpugi-ink dark:bg-white transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
       </div>
     </article>
   );
@@ -518,13 +577,6 @@ function SponsoredAdRow() {
         </div>
       </td>
 
-      {/* Category */}
-      <td className="py-4 px-4 whitespace-nowrap">
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20">
-          ✨ Brand Sponsor
-        </span>
-      </td>
-
       {/* CPM Rate */}
       <td className="py-4 px-4 whitespace-nowrap font-mono text-emerald-400 font-bold text-xs">
         100% Escrow
@@ -561,6 +613,7 @@ export default function BrowseCampaignsClientView() {
   const [activePlatform, setActivePlatform] = useState<Platform | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedRank, setSelectedRank] = useState<string>('All');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedContent, setSelectedContent] = useState<string>('All');
   const [minCpm, setMinCpm] = useState<number>(0);
@@ -695,6 +748,15 @@ export default function BrowseCampaignsClientView() {
         is_featured: !!c.is_featured,
         matchScore: c.match_score || 94,
         status: c.status || 'live',
+        rankBadges: (c.rank_badges || []) as RankTier[],
+        activityScores: c.activity_scores || {
+          score24h: 0,
+          score7d: 0,
+          score30d: 0,
+          views24h: 0,
+          views7d: 0,
+          totalViews: 0,
+        },
       };
     });
   }, [dbCampaigns]);
@@ -719,12 +781,17 @@ export default function BrowseCampaignsClientView() {
   const filtered = useMemo(() => {
     let list = [...mappedCampaigns];
 
-    // 1. Platform Filter
+    // 1. Ranking Filter Tabs (Trending, Hot, Popular)
+    if (selectedRank !== 'All') {
+      list = list.filter((c) => c.rankBadges && c.rankBadges.includes(selectedRank as RankTier));
+    }
+
+    // 2. Platform Filter
     if (activePlatform) {
       list = list.filter((c) => c.platform.some(p => p.toLowerCase() === activePlatform.toLowerCase()));
     }
 
-    // 2. Search Query (Ajax-style local search & prepared for Google Custom Search Engine)
+    // 3. Search Query (Ajax-style local search & prepared for Google Custom Search Engine)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter((c) => 
@@ -736,7 +803,7 @@ export default function BrowseCampaignsClientView() {
       );
     }
 
-    // 3. Status Filter Dropdown
+    // 4. Status Filter Dropdown
     if (selectedStatus !== 'All') {
       if (selectedStatus === 'Open') {
         list = list.filter((c) => c.budgetSpent < c.budgetTotal);
@@ -747,12 +814,12 @@ export default function BrowseCampaignsClientView() {
       }
     }
 
-    // 4. Category Filter Dropdown
+    // 5. Category Filter Dropdown
     if (selectedCategory !== 'All') {
       list = list.filter((c) => c.category.toLowerCase() === selectedCategory.toLowerCase());
     }
 
-    // 5. Content Format Filter Dropdown
+    // 6. Content Format Filter Dropdown
     if (selectedContent !== 'All') {
       const target = selectedContent.toLowerCase();
       if (target === 'video') {
@@ -766,13 +833,19 @@ export default function BrowseCampaignsClientView() {
       }
     }
 
-    // 6. Minimum CPM Filter
+    // 7. Minimum CPM Filter
     if (minCpm > 0) {
       list = list.filter((c) => c.cpm >= minCpm);
     }
 
-    // 7. Sorting Pipeline (Syncs with both dropdown and table column headers)
-    if (sortColumn === 'cpm' || sortBy === 'cpm_high' || sortBy === 'cpm_low') {
+    // 8. Sorting Pipeline (Syncs with both dropdown and table column headers)
+    if (sortBy === 'trending') {
+      list.sort((a, b) => (b.activityScores?.score24h || 0) - (a.activityScores?.score24h || 0));
+    } else if (sortBy === 'hot') {
+      list.sort((a, b) => (b.activityScores?.score7d || 0) - (a.activityScores?.score7d || 0));
+    } else if (sortBy === 'popular') {
+      list.sort((a, b) => (b.activityScores?.score30d || 0) - (a.activityScores?.score30d || 0));
+    } else if (sortColumn === 'cpm' || sortBy === 'cpm_high' || sortBy === 'cpm_low') {
       const dir = sortColumn === 'cpm' ? sortDirection : sortBy === 'cpm_low' ? 'asc' : 'desc';
       list.sort((a, b) => dir === 'asc' ? a.cpm - b.cpm : b.cpm - a.cpm);
     } else if (sortColumn === 'minViews') {
@@ -794,10 +867,11 @@ export default function BrowseCampaignsClientView() {
     }
 
     return list;
-  }, [mappedCampaigns, activePlatform, searchQuery, selectedStatus, selectedCategory, selectedContent, minCpm, sortBy, sortColumn, sortDirection]);
+  }, [mappedCampaigns, selectedRank, activePlatform, searchQuery, selectedStatus, selectedCategory, selectedContent, minCpm, sortBy, sortColumn, sortDirection]);
 
   // Active filters count for badge
   const activeFiltersCount = (activePlatform ? 1 : 0) +
+    (selectedRank !== 'All' ? 1 : 0) +
     (selectedStatus !== 'All' ? 1 : 0) +
     (selectedCategory !== 'All' ? 1 : 0) +
     (selectedContent !== 'All' ? 1 : 0) +
@@ -807,6 +881,7 @@ export default function BrowseCampaignsClientView() {
 
   const resetAllFilters = () => {
     setActivePlatform(null);
+    setSelectedRank('All');
     setSearchQuery('');
     setSelectedStatus('All');
     setSelectedCategory('All');
@@ -893,6 +968,53 @@ export default function BrowseCampaignsClientView() {
 
         {/* Toolbar (Responsive Mobile & Desktop Layout) */}
         <div className="flex flex-col gap-3 mb-8">
+          {/* Quick Ranking Segment Tabs (Trending 📈, Hot 🔥, Popular 👑) */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button
+              onClick={() => setSelectedRank('All')}
+              className={`h-8 sm:h-9 px-3.5 sm:px-4 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                selectedRank === 'All'
+                  ? 'bg-kpugi-ink text-white dark:bg-white dark:text-black shadow-sm'
+                  : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>All Campaigns</span>
+            </button>
+            <button
+              onClick={() => setSelectedRank(selectedRank === 'trending' ? 'All' : 'trending')}
+              className={`h-8 sm:h-9 px-3.5 sm:px-4 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                selectedRank === 'trending'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 border border-emerald-500'
+                  : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:border-emerald-500/40 hover:text-emerald-500 dark:hover:text-emerald-400'
+              }`}
+            >
+              <span>📈</span>
+              <span>Trending (24h)</span>
+            </button>
+            <button
+              onClick={() => setSelectedRank(selectedRank === 'hot' ? 'All' : 'hot')}
+              className={`h-8 sm:h-9 px-3.5 sm:px-4 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                selectedRank === 'hot'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-500/25 border border-amber-500'
+                  : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:border-amber-500/40 hover:text-amber-500 dark:hover:text-amber-400'
+              }`}
+            >
+              <span>🔥</span>
+              <span>Hot (7d)</span>
+            </button>
+            <button
+              onClick={() => setSelectedRank(selectedRank === 'popular' ? 'All' : 'popular')}
+              className={`h-8 sm:h-9 px-3.5 sm:px-4 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                selectedRank === 'popular'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border border-purple-500'
+                  : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:border-purple-500/40 hover:text-purple-500 dark:hover:text-purple-400'
+              }`}
+            >
+              <span>👑</span>
+              <span>Popular (30d)</span>
+            </button>
+          </div>
+
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 w-full">
             
             {/* Top / Left Group: Search Bar + Filter Toggle Button */}
@@ -965,141 +1087,150 @@ export default function BrowseCampaignsClientView() {
                     key={p} 
                     onClick={() => setActivePlatform(activePlatform === p ? null : p)}
                     className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors
-                      ${activePlatform === p ? 'bg-kpugi-ink text-white dark:bg-white dark:text-black' : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'}
-                    `}
+                    ${activePlatform === p ? 'bg-kpugi-ink text-white dark:bg-white dark:text-black' : 'bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-white/70 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'}
+                  `}
+                >
+                  <PlatformIcon platform={p} className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+
+            {/* Separator on desktop */}
+            <div className="w-[1px] h-6 bg-kpugi-border dark:bg-white/10 shrink-0 mx-1 hidden md:block" />
+
+            {/* Dropdowns (Status, Category, Content) */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Status Filter */}
+              <div className="relative shrink-0">
+                <select 
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
+                >
+                  <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Status: All</option>
+                  <option value="Open" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🟢 Open & Active</option>
+                  <option value="Filling Fast" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🔥 Filling Fast</option>
+                  <option value="High CPM" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💰 High CPM (₦3.5k+)</option>
+                </select>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+
+              {/* Category Filter */}
+              <div className="relative shrink-0">
+                <select 
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
+                >
+                  <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Category: All</option>
+                  <option value="Tech" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💻 Tech & SaaS</option>
+                  <option value="Finance" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💳 Finance & Fintech</option>
+                  <option value="Food & Drink" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🍔 Food & Drink</option>
+                  <option value="Fashion" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">👗 Fashion & Apparel</option>
+                  <option value="Beauty" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💄 Beauty & Wellness</option>
+                  <option value="Lifestyle" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">✨ Lifestyle</option>
+                  <option value="Gaming" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🎮 Gaming</option>
+                </select>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+
+              {/* Content Format Filter */}
+              <div className="relative shrink-0">
+                <select 
+                  value={selectedContent}
+                  onChange={(e) => setSelectedContent(e.target.value)}
+                  className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
+                >
+                  <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Content: All</option>
+                  <option value="video" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🎬 Short-form Video</option>
+                  <option value="image" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">📸 Static Post</option>
+                  <option value="story" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">📱 Story / Carousel</option>
+                  <option value="text" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">✍️ Text / Tweet</option>
+                </select>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Expandable Advanced Filter Drawer */}
+        {showAdvancedFilters && (
+          <div className="p-5 rounded-2xl bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            
+            {/* Sort By Option */}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-white/60 block mb-2">
+                Sort Campaigns By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-[#1A1D24] border border-kpugi-border dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-kpugi-ink dark:text-white focus:outline-none focus:border-kpugi-blue"
+              >
+                <option value="featured" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">✨ Featured & AI Recommended</option>
+                <option value="trending" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">📈 Trending (Past 24h Activity)</option>
+                <option value="hot" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🔥 Hot (Last 7d Velocity)</option>
+                <option value="popular" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">👑 Popular (Last 30d Reach)</option>
+                <option value="cpm_high" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">💰 Highest Rate (CPM)</option>
+                <option value="cpm_low" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">📉 Lowest Rate (CPM)</option>
+                <option value="newest" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🕒 Recently Published</option>
+                <option value="match" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🎯 Highest Audience Match</option>
+              </select>
+            </div>
+
+            {/* Min CPM Filter */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-white/60">
+                  Minimum CPM Rate
+                </label>
+                <span className="font-mono text-xs font-bold text-kpugi-blue dark:text-blue-400">
+                  {minCpm === 0 ? 'Any' : `₦${minCpm.toLocaleString()}+`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                {[0, 2000, 3000, 5000].map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => setMinCpm(rate)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      minCpm === rate
+                        ? 'bg-kpugi-blue text-white'
+                        : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-kpugi-ink dark:text-white/70'
+                    }`}
                   >
-                    <PlatformIcon platform={p} className="w-4 h-4" />
+                    {rate === 0 ? 'All' : `₦${rate / 1000}k+`}
                   </button>
                 ))}
               </div>
+            </div>
 
-              {/* Separator on desktop */}
-              <div className="w-[1px] h-6 bg-kpugi-border dark:bg-white/10 shrink-0 mx-1 hidden md:block" />
-
-              {/* Dropdowns (Status, Category, Content) */}
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Status Filter */}
-                <div className="relative shrink-0">
-                  <select 
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
-                  >
-                    <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Status: All</option>
-                    <option value="Open" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🟢 Open & Active</option>
-                    <option value="Filling Fast" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🔥 Filling Fast</option>
-                    <option value="High CPM" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💰 High CPM (₦3.5k+)</option>
-                  </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-
-                {/* Category Filter */}
-                <div className="relative shrink-0">
-                  <select 
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
-                  >
-                    <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Category: All</option>
-                    <option value="Tech" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💻 Tech & SaaS</option>
-                    <option value="Finance" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💳 Finance & Fintech</option>
-                    <option value="Food & Drink" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🍔 Food & Drink</option>
-                    <option value="Fashion" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">👗 Fashion & Apparel</option>
-                    <option value="Beauty" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💄 Beauty & Wellness</option>
-                    <option value="Lifestyle" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">✨ Lifestyle</option>
-                    <option value="Gaming" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🎮 Gaming</option>
-                  </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-
-                {/* Content Format Filter */}
-                <div className="relative shrink-0">
-                  <select 
-                    value={selectedContent}
-                    onChange={(e) => setSelectedContent(e.target.value)}
-                    className="bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 rounded-full pl-3.5 pr-8 py-2 text-xs text-kpugi-ink dark:text-white appearance-none hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer outline-none font-medium focus:border-kpugi-blue shadow-xs"
-                  >
-                    <option value="All" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">Content: All</option>
-                    <option value="video" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🎬 Short-form Video</option>
-                    <option value="image" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">📸 Static Post</option>
-                    <option value="story" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">📱 Story / Carousel</option>
-                    <option value="text" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">✍️ Text / Tweet</option>
-                  </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-              </div>
+            {/* Reset Action */}
+            <div className="flex flex-col justify-end">
+              <button
+                onClick={resetAllFilters}
+                className="w-full py-2.5 rounded-xl border border-kpugi-border dark:border-white/10 hover:border-red-500/40 text-kpugi-slate dark:text-white/70 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-xs font-bold transition-all flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>Reset All Filters</span>
+              </button>
             </div>
 
           </div>
+        )}
 
-          {/* Expandable Advanced Filter Drawer */}
-          {showAdvancedFilters && (
-            <div className="p-5 rounded-2xl bg-white dark:bg-[#13151A] border border-kpugi-border dark:border-white/10 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-              
-              {/* Sort By Option */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-white/60 block mb-2">
-                  Sort Campaigns By
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#1A1D24] border border-kpugi-border dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-kpugi-ink dark:text-white focus:outline-none focus:border-kpugi-blue"
-                >
-                  <option value="featured" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">✨ Featured & AI Recommended</option>
-                  <option value="cpm_high" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">💰 Highest Rate (CPM)</option>
-                  <option value="cpm_low" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">📉 Lowest Rate (CPM)</option>
-                  <option value="newest" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🕒 Recently Published</option>
-                  <option value="match" className="bg-white dark:bg-[#1A1D24] text-kpugi-ink dark:text-white">🎯 Highest Audience Match</option>
-                </select>
-              </div>
-
-              {/* Min CPM Filter */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-white/60">
-                    Minimum CPM Rate
-                  </label>
-                  <span className="font-mono text-xs font-bold text-kpugi-blue dark:text-blue-400">
-                    {minCpm === 0 ? 'Any' : `₦${minCpm.toLocaleString()}+`}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  {[0, 2000, 3000, 5000].map((rate) => (
-                    <button
-                      key={rate}
-                      onClick={() => setMinCpm(rate)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                        minCpm === rate
-                          ? 'bg-kpugi-blue text-white'
-                          : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-kpugi-ink dark:text-white/70'
-                      }`}
-                    >
-                      {rate === 0 ? 'All' : `₦${rate / 1000}k+`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Reset Action */}
-              <div className="flex flex-col justify-end">
-                <button
-                  onClick={resetAllFilters}
-                  className="w-full py-2.5 rounded-xl border border-kpugi-border dark:border-white/10 hover:border-red-500/40 text-kpugi-slate dark:text-white/70 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-xs font-bold transition-all flex items-center justify-center gap-2"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                  <span>Reset All Filters</span>
-                </button>
-              </div>
-
-            </div>
-          )}
-
-          {/* Active Filter Badges */}
-          {activeFiltersCount > 0 && (
-            <div className="flex items-center gap-2 flex-wrap pt-2">
-              <span className="text-xs text-kpugi-slate dark:text-white/40">Active Filters:</span>
-              {searchQuery && (
+        {/* Active Filter Badges */}
+        {activeFiltersCount > 0 && (
+          <div className="flex items-center gap-2 flex-wrap pt-2">
+            <span className="text-xs text-kpugi-slate dark:text-white/40">Active Filters:</span>
+            {selectedRank !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
+                <span>Rank: {selectedRank === 'trending' ? '📈 Trending' : selectedRank === 'hot' ? '🔥 Hot' : '👑 Popular'}</span>
+                <button onClick={() => setSelectedRank('All')} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
+              </span>
+            )}
+            {searchQuery && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white border border-kpugi-border dark:border-white/10">
                   <span>Search: &ldquo;{searchQuery}&rdquo;</span>
                   <button onClick={() => setSearchQuery('')} className="hover:text-red-500 dark:hover:text-red-400 font-bold">✕</button>
@@ -1221,19 +1352,6 @@ export default function BrowseCampaignsClientView() {
                       {/* Platforms */}
                       <th className="py-4 px-4">Platforms</th>
 
-                      {/* Category */}
-                      <th 
-                        onClick={() => handleSort('category')}
-                        className="py-4 px-4 cursor-pointer hover:text-kpugi-ink dark:hover:text-white transition-colors select-none group/th"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span className={sortColumn === 'category' ? 'text-kpugi-ink dark:text-white font-extrabold' : 'group-hover/th:text-kpugi-ink dark:group-hover/th:text-white'}>Category</span>
-                          <span className={`text-[10px] ${sortColumn === 'category' ? 'text-kpugi-blue font-black' : 'text-slate-300 dark:text-white/20 group-hover/th:text-slate-600 dark:group-hover/th:text-white/60'}`}>
-                            {sortColumn === 'category' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
-                          </span>
-                        </div>
-                      </th>
-
                       {/* CPM Rate */}
                       <th 
                         onClick={() => handleSort('cpm')}
@@ -1293,9 +1411,26 @@ export default function BrowseCampaignsClientView() {
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <span className="font-bold text-sm text-kpugi-ink dark:text-white group-hover:text-kpugi-blue transition-colors truncate block">
-                                  {c.brief}
-                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-sm text-kpugi-ink dark:text-white group-hover:text-kpugi-blue transition-colors truncate block">
+                                    {c.brief}
+                                  </span>
+                                  {c.rankBadges?.map((tier) => (
+                                    <span
+                                      key={tier}
+                                      title={tier === 'trending' ? '📈 Trending (24h)' : tier === 'hot' ? '🔥 Hot (7d)' : '👑 Popular (30d)'}
+                                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] border cursor-help ${
+                                        tier === 'trending'
+                                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                          : tier === 'hot'
+                                          ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                          : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                      }`}
+                                    >
+                                      {tier === 'trending' ? '📈' : tier === 'hot' ? '🔥' : '👑'}
+                                    </span>
+                                  ))}
+                                </div>
                                 <div className="flex items-center gap-1 text-[11px] text-kpugi-slate dark:text-white/40">
                                   <span className="truncate">{c.brand}</span>
                                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-[#E4A12C] shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -1317,13 +1452,6 @@ export default function BrowseCampaignsClientView() {
                             </div>
                           </td>
 
-                          {/* Category */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-kpugi-ink dark:text-white/80 border border-slate-200 dark:border-white/10">
-                              {c.category}
-                            </span>
-                          </td>
-
                           {/* CPM Rate */}
                           <td className="py-4 px-4 whitespace-nowrap font-mono text-kpugi-ink dark:text-white font-bold text-xs">
                             {formatCompactCurrency(c.cpm)}
@@ -1335,11 +1463,22 @@ export default function BrowseCampaignsClientView() {
                             {formatCompactNumber(c.minViews)} views
                           </td>
 
-                          {/* Budget / Slots */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-mono text-xs font-semibold text-kpugi-ink dark:text-white block">
-                              {formatCompactCurrency(c.budgetSpent)} / {formatCompactCurrency(c.budgetTotal)}
-                            </span>
+                          {/* Budget / Slots with Progress Slider Bar */}
+                          <td className="py-4 px-4 whitespace-nowrap min-w-[150px]">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-mono text-xs font-semibold text-kpugi-ink dark:text-white block">
+                                {formatCompactCurrency(c.budgetSpent)} / {formatCompactCurrency(c.budgetTotal)}
+                              </span>
+                              <span className="text-[10px] font-bold text-kpugi-blue dark:text-blue-400 font-mono">
+                                {Math.round(c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mb-1">
+                              <div
+                                className="h-full bg-gradient-to-r from-kpugi-blue to-emerald-400 rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, Math.max(0, c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0))}%` }}
+                              />
+                            </div>
                             <span className="text-[10px] text-kpugi-slate dark:text-white/40 block">
                               {c.slotsFilled} creators joined
                             </span>

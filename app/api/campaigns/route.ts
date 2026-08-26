@@ -76,7 +76,14 @@ export async function GET(request: Request) {
           file_url
         ),
         submissions:submissions (
-          id
+          id,
+          final_view_count,
+          last_scraped_at,
+          verified_at,
+          submitted_at,
+          payout_amount,
+          pending_payout_amount,
+          status
         )
       `)
       .eq('status', 'live')
@@ -106,7 +113,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // Attach AI match scores and sanitize oversized base64 cover images
+    const now = Date.now();
+    const t24h = now - 24 * 60 * 60 * 1000;
+    const t7d = now - 7 * 24 * 60 * 60 * 1000;
+    const t30d = now - 30 * 24 * 60 * 60 * 1000;
+
+    // Attach AI match scores, ranking badges (Trending 24h, Hot 7d, Popular 30d), and sanitize cover images
     const enrichedCampaigns = (campaigns || []).map((camp) => {
       const matchScore = matchScoreMap[camp.id] ?? (effectiveCreatorId ? 75 : 94);
 
@@ -116,10 +128,61 @@ export async function GET(request: Request) {
         safeCoverUrl = camp.creatives?.[0]?.file_url || null;
       }
 
+      const subs: any[] = camp.submissions || [];
+
+      // Calculate live accrued spent budget = max(DB spent_budget, sum(payout_amount + pending_payout_amount))
+      const totalAccruedSpent = subs.reduce(
+        (sum, s) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
+        0
+      );
+      const liveSpentBudget = Math.max(Number(camp.spent_budget || 0), totalAccruedSpent);
+
+      // 1. Calculate Activity in 24 Hours (Trending: strictly requires verified views in last 24h)
+      const subs24h = subs.filter((s) => {
+        const subTime = s.submitted_at ? new Date(s.submitted_at).getTime() : 0;
+        const verTime = s.verified_at ? new Date(s.verified_at).getTime() : 0;
+        const scrapTime = s.last_scraped_at ? new Date(s.last_scraped_at).getTime() : 0;
+        return (subTime >= t24h || verTime >= t24h || scrapTime >= t24h) && Number(s.final_view_count || 0) > 0;
+      });
+      const views24h = subs24h.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0);
+      const isTrending = views24h > 0;
+
+      // 2. Calculate Activity in 7 Days (Hot: strictly requires verified views in last 7d)
+      const subs7d = subs.filter((s) => {
+        const subTime = s.submitted_at ? new Date(s.submitted_at).getTime() : 0;
+        const verTime = s.verified_at ? new Date(s.verified_at).getTime() : 0;
+        const scrapTime = s.last_scraped_at ? new Date(s.last_scraped_at).getTime() : 0;
+        return (subTime >= t7d || verTime >= t7d || scrapTime >= t7d) && Number(s.final_view_count || 0) > 0;
+      });
+      const views7d = subs7d.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0);
+      const isHot = views7d >= 10000;
+
+      // 3. Calculate Activity in 30 Days (Popular: strictly requires cumulative verified views >= 1,000)
+      const totalViews = subs.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0);
+      const isPopular = totalViews >= 100000;
+
+      // Compile all qualifying badges (only for campaigns with real verified views)
+      const rankBadges: ('trending' | 'hot' | 'popular')[] = [];
+      if (isTrending) rankBadges.push('trending');
+      if (isHot) rankBadges.push('hot');
+      if (isPopular) rankBadges.push('popular');
+
+      const activityScores = {
+        score24h: views24h,
+        score7d: views7d,
+        score30d: totalViews,
+        views24h,
+        views7d,
+        totalViews,
+      };
+
       return {
         ...camp,
+        spent_budget: liveSpentBudget,
         cover_image_url: safeCoverUrl,
         match_score: matchScore,
+        rank_badges: rankBadges,
+        activity_scores: activityScores,
       };
     });
 

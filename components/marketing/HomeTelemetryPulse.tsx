@@ -60,13 +60,13 @@ export default function HomeTelemetryPulse({ stats }: StatsProps) {
       icon: FaBolt,
       iconColor: 'text-emerald-500',
       value: earningsDisplay,
-      label: 'creator earnings settled',
+      label: 'Earned',
     },
     {
       icon: FaRocket,
       iconColor: 'text-[#2F49E8] dark:text-[#5B7CFF]',
       value: viewsDisplay,
-      label: 'audited human views',
+      label: 'Verified Views',
     },
     {
       icon: FaShieldAlt,

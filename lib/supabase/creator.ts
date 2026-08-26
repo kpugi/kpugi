@@ -450,23 +450,12 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
 
-  // 1. Auto-release any matured 24h escrow batches and auto-roll previous day's accruals
-  const { autoReleaseMaturedBatches, processDailyBatchSettlement } = await import('@/lib/supabase/settlement');
+  // Auto-release any matured 24h escrow batches into the available wallet balance.
+  // NOTE: processDailyBatchSettlement is intentionally NOT called here — settlement
+  // is handled exclusively by the GitHub Actions cron (/api/cron/daily-settlement).
+  // Calling it on page load caused orphaned clearing transactions and balance zeroing.
+  const { autoReleaseMaturedBatches } = await import('@/lib/supabase/settlement');
   await autoReleaseMaturedBatches(supabase, profileId);
-
-  const todayUtcStart = new Date();
-  todayUtcStart.setUTCHours(0, 0, 0, 0);
-  const { data: previousDaySubs } = await supabase
-    .from('submissions')
-    .select('id')
-    .eq('creator_id', profileId)
-    .gt('pending_payout_amount', 0)
-    .lt('verified_at', todayUtcStart.toISOString())
-    .limit(1);
-
-  if (previousDaySubs && previousDaySubs.length > 0) {
-    await processDailyBatchSettlement(supabase, profileId);
-  }
 
   let { data: wallet } = await supabase
     .from('wallets')

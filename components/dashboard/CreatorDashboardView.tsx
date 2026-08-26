@@ -280,12 +280,23 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                           const v = featuredSub.final_view_count || 0;
                           const thresh = featuredSub.campaign.min_view_threshold || 1000;
                           const cpm = featuredSub.campaign.cpm_rate || 0;
-                          const viewsAmt = v >= thresh && cpm > 0 ? Math.floor((v / 1000) * cpm) : 0;
-                          const totalAmt = Math.max(
-                            Number(featuredSub.payout_amount || 0) + Number(featuredSub.pending_payout_amount || 0),
-                            viewsAmt,
-                            Number(featuredSub.reserved_amount || 0)
-                          );
+                          const totalBudget = Number(featuredSub.campaign.total_budget || 0);
+                          const maxPoolCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
+
+                          // DB accrued amount (already verified and capped at 25% pool cap by settlement engine)
+                          const dbAccrued = Number(featuredSub.payout_amount || 0) + Number(featuredSub.pending_payout_amount || 0);
+
+                          // Fallback views-based calculation strictly capped at 25% pool max
+                          const rawViewsAmt = v >= thresh && cpm > 0 ? Math.floor((v / 1000) * cpm) : 0;
+                          const viewsAmt = Math.min(rawViewsAmt, maxPoolCap);
+
+                          const totalAmt = dbAccrued > 0 
+                            ? dbAccrued 
+                            : Math.min(
+                                Math.max(viewsAmt, Number(featuredSub.reserved_amount || 0)),
+                                maxPoolCap
+                              );
+
                           return formatCompactCurrency(totalAmt);
                         })()}
                       </div>

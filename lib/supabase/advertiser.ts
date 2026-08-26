@@ -19,6 +19,7 @@ export interface AdvertiserCampaign {
   company_logo: string | null;
   cover_image_url?: string | null;
   requirements?: any;
+  platform_views?: Record<string, number>;
 }
 
 export interface DashboardRecentActivity {
@@ -90,7 +91,16 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         cover_image_url,
         requirements,
         deleted,
-        submissions:submissions!left(id, status, final_view_count, creator_id, payout_amount, pending_payout_amount)
+        submissions:submissions!left(
+          id, 
+          status, 
+          final_view_count, 
+          creator_id, 
+          payout_amount, 
+          pending_payout_amount,
+          post_url,
+          social_account:social_accounts!left(platform)
+        )
       `)
       .eq('advertiser_id', profileId)
       .eq('deleted', false)
@@ -200,6 +210,33 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     );
     const campaignSpent = Math.max(Number(c.spent_budget || 0), committedSpend);
 
+    // Accurately map real views delivered per platform from actual submissions
+    const platformViews: Record<string, number> = {
+      tiktok: 0,
+      instagram: 0,
+      youtube: 0,
+      twitter: 0,
+      facebook: 0,
+      linkedin: 0,
+    };
+
+    subs.forEach((s: any) => {
+      const pRaw = (s.social_account?.platform || '').toLowerCase();
+      const url = (s.post_url || '').toLowerCase();
+      let p = 'other';
+      if (pRaw.includes('tiktok') || url.includes('tiktok.com')) p = 'tiktok';
+      else if (pRaw.includes('instagram') || url.includes('instagram.com')) p = 'instagram';
+      else if (pRaw.includes('youtube') || url.includes('youtube.com') || url.includes('youtu.be')) p = 'youtube';
+      else if (pRaw.includes('twitter') || pRaw.includes('x') || url.includes('x.com') || url.includes('twitter.com')) p = 'twitter';
+      else if (pRaw.includes('facebook') || url.includes('facebook.com') || url.includes('fb.watch')) p = 'facebook';
+      else if (pRaw.includes('linkedin') || url.includes('linkedin.com')) p = 'linkedin';
+
+      const v = Number(s.final_view_count || 0);
+      if (platformViews[p] !== undefined) {
+        platformViews[p] += v;
+      }
+    });
+
     const campaignImg = c.cover_image_url || c.requirements?.creative_image_url || advertiserAvatarUrl || null;
 
     return {
@@ -221,6 +258,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       company_logo: campaignImg,
       cover_image_url: c.cover_image_url || null,
       requirements: c.requirements || {},
+      platform_views: platformViews,
     };
   }) as AdvertiserCampaign[];
 
