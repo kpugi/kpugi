@@ -90,18 +90,19 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden transition-colors duration-200">
-          <AnalyticsProvider />
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange={false}
-          >
-            <NetworkStatusBanner />
-            <KnockProviderWrapper>
-              {children}
-            </KnockProviderWrapper>
-          </ThemeProvider>
+          <AnalyticsProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange={false}
+            >
+              <NetworkStatusBanner />
+              <KnockProviderWrapper>
+                {children}
+              </KnockProviderWrapper>
+            </ThemeProvider>
+          </AnalyticsProvider>
         </body>
       </html>
     </ClerkProvider>
