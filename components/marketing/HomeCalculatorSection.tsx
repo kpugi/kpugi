@@ -330,18 +330,23 @@ export default function HomeCalculatorSection() {
                      
                     </div>
 
-                    <div className="flex items-baseline justify-between mb-4">
-                      <div className="text-slate-900 dark:text-white text-4xl sm:text-5xl font-bold tracking-tight">
-                        {activeTab === 'creator' ? (
-                          <>
-                            <span className="text-2xl font-sans font-bold text-slate-500 mr-0.5">₦</span>
-                            <span className="font-mono tabular-nums">{creatorEarnings.toLocaleString()}</span>
-                          </>
-                        ) : (
-                          <>
+                    <div className="flex items-end justify-between mb-4">
+                      <div className="flex flex-col">
+                        <div className="text-slate-900 dark:text-white text-4xl sm:text-5xl font-bold tracking-tight">
+                          {activeTab === 'creator' ? (
+                            <>
+                              <span className="text-2xl font-sans font-bold text-slate-500 mr-0.5">₦</span>
+                              <span className="font-mono tabular-nums">{creatorEarnings.toLocaleString()}</span>
+                            </>
+                          ) : (
                             <span className="font-mono tabular-nums">{brandGuaranteedViews.toLocaleString()}</span>
-                            <span className="text-lg font-sans font-medium text-slate-500 ml-1">Views</span>
-                          </>
+                          )}
+                        </div>
+                        {activeTab === 'brand' && (
+                          <span className="flex items-center gap-1 text-[11px] font-sans font-semibold text-slate-400 dark:text-white/40 mt-1.5 uppercase tracking-widest">
+                            <Eye className="h-3 w-3" />
+                            Impressions
+                          </span>
                         )}
                       </div>
                       <button className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">

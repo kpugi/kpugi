@@ -39,7 +39,7 @@ export default function HomeEcosystemSection() {
       highlight: 'Weekly Payouts',
       description:
         'Pick live brand briefs, share with your audience, and receive automated milestone payouts into your bank.',
-      buttonText: 'Start Earning as Creator',
+      buttonText: 'Start now',
       buttonHref: '/creators',
       isPopular: true,
       popularBadgeText: 'Instant Settlement',
