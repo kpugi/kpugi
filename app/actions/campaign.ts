@@ -836,7 +836,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
     // Fetch active creator profiles
     const { data: creators } = await supabase
       .from('profiles')
-      .select('id, clerk_id, email, full_name')
+      .select('id, clerk_id, email, full_name, username')
       .eq('role', 'creator')
       .limit(100);
 
@@ -846,8 +846,13 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
     const actionUrl = `/c/campaigns/${campaign.id}`;
 
-    const { sendEmail, renderReusableEmailTemplate } = await import('@/lib/resend/send-email');
+    const { sendEmail, renderReusableEmailTemplate, renderChannelIcons } = await import('@/lib/resend/send-email');
     const { triggerNotification } = await import('@/lib/knock/notify');
+
+    const campaignChannels = Array.isArray(campaign.channels) && campaign.channels.length > 0
+      ? campaign.channels
+      : ['TikTok', 'Instagram'];
+    const channelIconsHtml = renderChannelIcons(campaignChannels, appUrl);
 
     for (const creator of creators) {
       // 1. Dispatch In-App Notification to Creator Bell
@@ -873,26 +878,23 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
       // 2. Dispatch Branded Email to Creator
       if (!creator.email) continue;
       try {
+        const creatorHandle = creator.username ? `${creator.username.replace(/^@/, '')}` : (creator.full_name || 'Creator');
+
         const html = renderReusableEmailTemplate({
           to: creator.email,
-          subject: `New Campaign Drop 🚀: Earn ₦${cpmFormatted}/1k views on "${campaign.title}"`,
-          previewText: `New campaign drop on Kpugi! Earn ₦${cpmFormatted} per 1,000 views on "${campaign.title}"`,
-          icon: 'rocket',
-          headline: 'New Campaign Drop 🚀',
-          subtitle: `Yooo ${creator.full_name || 'Creator'}, a brand just dropped a new campaign with ready-to-post creatives!`,
+          subject: 'New Campaign Available 🚀',
+          previewText: 'A new campaign is now available on Kpugi with ready-to-post creatives.',
+          headline: 'New Campaign Available 🚀',
+          subtitle: `Yooo ${creatorHandle}!, a new campaign is now available with ready-to-post creatives!`,
           details: [
             { label: 'CAMPAIGN', value: campaign.title },
-            { label: 'PAYOUT RATE', value: `₦${cpmFormatted} / 1k views`, isMonospace: true },
-            { label: 'AD FORMAT', value: campaign.ad_format || 'Video / Image' },
-            {
-              label: 'STATUS',
-              value: 'Active',
-              statusBadge: { text: 'Open Drop', variant: 'green' },
-            },
+            { label: 'CPM', value: `₦${cpmFormatted}/1k views`, isMonospace: true },
+            { label: 'FORMAT', value: campaign.ad_format || 'Video / Image' },
+            ...(channelIconsHtml ? [{ label: 'CHANNELS', value: channelIconsHtml }] : []),
           ],
           noticeText: 'Slots are first-come, first-served. Grab your creatives, post, and lock in your views before the budget cap is reached!',
           cta: {
-            label: 'Claim Slot & Grab Creatives',
+            label: 'Claim Slot',
             url: `${appUrl}${actionUrl}`,
             subtext: 'Open the brief on Kpugi to grab pre-approved captions, assets, and mandatory tags.',
           },
@@ -900,7 +902,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
 
         await sendEmail({
           to: creator.email,
-          subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
+          subject: 'New Campaign Available 🚀',
           html,
         });
       } catch (e) {

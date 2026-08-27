@@ -89,8 +89,9 @@ export default function Navbar() {
               
               {/* For Brands */}
               <NavigationMenuItem>
-                <Link href="/brands" legacyBehavior passHref>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/brands"
                     className={cn(
                       'rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all duration-200',
                       pathname === '/brands'
@@ -99,14 +100,15 @@ export default function Navbar() {
                     )}
                   >
                     For Brands
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               {/* Creators */}
               <NavigationMenuItem>
-                <Link href="/creators" legacyBehavior passHref>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/creators"
                     className={cn(
                       'rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all duration-200',
                       pathname === '/creators'
@@ -115,14 +117,15 @@ export default function Navbar() {
                     )}
                   >
                     Creators
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               {/* Browse with LIVE Badge */}
               <NavigationMenuItem>
-                <Link href="/browse" legacyBehavior passHref>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/browse"
                     className={cn(
                       'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all duration-200',
                       pathname === '/browse'
@@ -137,14 +140,15 @@ export default function Navbar() {
                     >
                       LIVE
                     </Badge>
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               {/* How It Works */}
               <NavigationMenuItem>
-                <Link href="/how-it-works" legacyBehavior passHref>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/how-it-works"
                     className={cn(
                       'rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all duration-200',
                       pathname === '/how-it-works'
@@ -153,8 +157,8 @@ export default function Navbar() {
                     )}
                   >
                     How It Works
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
             </NavigationMenuList>

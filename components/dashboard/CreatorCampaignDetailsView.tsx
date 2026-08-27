@@ -21,6 +21,7 @@ type TabType = 'overview' | 'instructions' | 'top_performers' | 'live_reach';
 
 export default function CreatorCampaignDetailsView({ data, campaignId, userRole = 'public' }: CreatorCampaignDetailsViewProps) {
   const router = useRouter();
+  const isSignedIn = userRole !== 'public';
   const { campaign, creatives, submission, socialAccounts, allSubmissions } = data;
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -1466,6 +1467,20 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
               )}
 
+            </div>
+
+            {/* Sticky Advertise With Us Banner (Desktop Only) */}
+            <div className="hidden lg:block sticky top-24 pt-1">
+              <Link
+                href="/brands"
+                className="block rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl border border-slate-200/80 dark:border-white/10 group transition-all duration-300 hover:scale-[1.01]"
+              >
+                <img
+                  src="/images/advertise_banner.jpg"
+                  alt="Advertise With Us — Kpugi"
+                  className="w-full h-auto object-cover rounded-3xl block"
+                />
+              </Link>
             </div>
 
           </div>

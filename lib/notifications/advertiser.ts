@@ -25,21 +25,25 @@ export async function notifyAdvertiserWelcome({
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Welcome to Kpugi, ${companyName}! 🚀`,
+    subject: 'Welcome to Kpugi 🚀',
     previewText: 'Launch performance campaigns and tap into verified creators.',
-    icon: 'star',
-    headline: `Welcome to Kpugi, ${companyName}! 🚀`,
-    subtitle: `Your brand partner account is officially set up. Fund your balance, launch performance video campaigns, and pay only for verified view milestones reached by creators.`,
+    headline: 'Welcome to Kpugi 🚀',
+    subtitle: `Welcome ${companyName}!, your brand partner account is officially active. Fund your balance, launch performance campaigns, and pay strictly for confirmed creator views.`,
+    details: [
+      { label: 'STEP 1', value: 'Deposit budget to your brand wallet' },
+      { label: 'STEP 2', value: 'Create campaign brief & upload creatives' },
+      { label: 'STEP 3', value: 'Creators post and drive verified views' },
+    ],
     cta: {
-      label: 'Launch Your First Campaign',
+      label: 'Launch First Campaign',
       url: `${appUrl}/b/campaigns/new`,
     },
   });
 
   await sendEmail({
     to: email,
-    subject: `Welcome to Kpugi, ${companyName}! 🚀`,
-    previewText: 'Launch performance campaigns and pay only for real, verified views.',
+    subject: 'Welcome to Kpugi 🚀',
+    previewText: 'Launch performance campaigns and pay strictly for confirmed views.',
     html,
   });
 }
@@ -77,20 +81,14 @@ export async function notifyAdvertiserWalletFunded({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Deposit Confirmed! ${formattedAmount} Added to Your Balance 💳`,
-    previewText: `Your deposit of ${formattedAmount} was successfully confirmed and added to your balance.`,
-    icon: 'wallet',
-    headline: 'Funds Added to Balance 💳',
+    subject: 'Deposit Confirmed 💳',
+    previewText: `Your deposit of ${formattedAmount} was successfully confirmed.`,
+    headline: 'Deposit Confirmed 💳',
     subtitle: 'Your payment was successfully confirmed via Paystack. Your balance is ready to power your campaign drops.',
     details: [
-      { label: 'PAYMENT REFERENCE', value: reference, isMonospace: true },
       { label: 'AMOUNT DEPOSITED', value: formattedAmount, isMonospace: true },
       { label: 'UPDATED BALANCE', value: formattedBalance, isMonospace: true },
-      {
-        label: 'STATUS',
-        value: 'Completed',
-        statusBadge: { text: 'Completed', variant: 'green' },
-      },
+      { label: 'PAYMENT REFERENCE', value: reference, isMonospace: true },
     ],
     noticeText: 'These funds can be allocated directly towards performance campaigns with 100% verified view tracking.',
     cta: {
@@ -101,7 +99,7 @@ export async function notifyAdvertiserWalletFunded({
 
   await sendEmail({
     to: email,
-    subject: `Deposit Confirmed! ${formattedAmount} Added to Your Balance 💳`,
+    subject: 'Deposit Confirmed 💳',
     previewText: `Your deposit of ${formattedAmount} was successfully confirmed.`,
     html,
   });
@@ -147,22 +145,16 @@ export async function notifyAdvertiserCampaignLive({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Your Campaign is Live & Cooking! 🚀 "${campaignTitle}"`,
-    previewText: `Budget is locked and "${campaignTitle}" is live. Creators are already eyeing this drop.`,
-    icon: 'check',
+    subject: 'Campaign is Live & Cooking 🚀',
+    previewText: `Budget is locked and "${campaignTitle}" is live. Creators are claiming slots.`,
     headline: 'Campaign is Live & Ready to Cook 🚀',
-    subtitle: `Budget is locked in and your briefing is live. Creators are already eyeing this drop to grab creatives and post.`,
+    subtitle: `Budget is locked in and your briefing is live. Creators are already claiming slots to post your creatives.`,
     details: [
-      { label: 'CAMPAIGN NAME', value: campaignTitle },
+      { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'BUDGET LOCKED', value: formattedBudget, isMonospace: true },
-      { label: 'CPM PAYOUT RATE', value: `₦${cpmRate.toLocaleString()} / 1k views` },
-      {
-        label: 'STATUS',
-        value: 'Live',
-        statusBadge: { text: 'Live', variant: 'green' },
-      },
+      { label: 'CPM', value: `₦${cpmRate.toLocaleString()}/1k views`, isMonospace: true },
     ],
-    noticeText: 'We track every view in real-time. As creators publish and clock in views, you will see verified view counts and payout settlements update live on your dashboard.',
+    noticeText: 'We track every view in real-time. As creators publish and clock in views, verified view counts and payout settlements update live on your dashboard.',
     cta: {
       label: 'Open Campaign Dashboard',
       url: `${appUrl}${actionUrl}`,
@@ -171,7 +163,7 @@ export async function notifyAdvertiserCampaignLive({
 
   await sendEmail({
     to: email,
-    subject: `Your Campaign is Live & Cooking! 🚀 "${campaignTitle}"`,
+    subject: 'Campaign is Live & Cooking 🚀',
     html,
   });
 }
@@ -195,7 +187,6 @@ export async function notifyAdvertiserCreatorJoined({
 }) {
   const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
 
-  // In-app notification
   await triggerNotification({
     workflowKey: 'creator-joined',
     recipients: [clerkId],
@@ -232,12 +223,13 @@ export async function notifyAdvertiserCreatorSubmitted({
 }) {
   const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const cleanHandle = `@${creatorHandle.replace(/^@/, '')}`;
 
   await triggerNotification({
     workflowKey: 'creator-submitted-post',
     recipients: [clerkId],
     data: {
-      creatorHandle: `@${creatorHandle.replace(/^@/, '')}`,
+      creatorHandle: cleanHandle,
       platform,
       campaignTitle,
       postUrl,
@@ -249,18 +241,17 @@ export async function notifyAdvertiserCreatorSubmitted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `New Post Link Dropped for "${campaignTitle}" 📹`,
-    previewText: `@${creatorHandle.replace(/^@/, '')} just submitted their live post link.`,
-    icon: 'check',
+    subject: 'Creator Dropped a Live Link 📹',
+    previewText: `${cleanHandle} just submitted their live post link for "${campaignTitle}".`,
     headline: 'Creator Dropped a Live Link 📹',
-    subtitle: `Creator @${creatorHandle.replace(/^@/, '')} (${platform.toUpperCase()}) just submitted their live post for "${campaignTitle}".`,
+    subtitle: `Creator ${cleanHandle} (${platform.toUpperCase()}) just submitted their live post link for "${campaignTitle}".`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
-      { label: 'CREATOR', value: `@${creatorHandle.replace(/^@/, '')}` },
+      { label: 'CREATOR', value: cleanHandle },
       { label: 'PLATFORM', value: platform.toUpperCase() },
-      { label: 'STATUS', value: 'Tracking Views', statusBadge: { text: 'Tracking', variant: 'blue' } },
+      { label: 'LIVE POST LINK', value: postUrl },
     ],
-    noticeText: 'Our automated tracking is now monitoring view performance. Once verified milestones are achieved, payouts will settle seamlessly.',
+    noticeText: 'Our automated view tracking is now monitoring performance. Once verified view milestones are achieved, payouts will settle smoothly.',
     cta: {
       label: 'View Campaign Submissions',
       url: `${appUrl}${actionUrl}`,
@@ -269,7 +260,7 @@ export async function notifyAdvertiserCreatorSubmitted({
 
   await sendEmail({
     to: email,
-    subject: `New Post Link Dropped for "${campaignTitle}" 📹`,
+    subject: 'Creator Dropped a Live Link 📹',
     html,
   });
 }
@@ -371,14 +362,13 @@ export async function notifyAdvertiserBudgetDepleted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Campaign Budget 100% Reserved! 🔥 "${campaignTitle}"`,
+    subject: 'Budget 100% Locked & Moving 🔥',
     previewText: `All slots for "${campaignTitle}" have been claimed by creators.`,
-    icon: 'star',
     headline: 'Budget 100% Locked & Moving 🔥',
     subtitle: `Every slot for "${campaignTitle}" has been claimed by active creators. Want to keep the views and engagement rolling? Top up your budget anytime.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
-      { label: 'SLOT STATUS', value: '100% Claimed', statusBadge: { text: 'Fully Claimed', variant: 'blue' } },
+      { label: 'SLOT STATUS', value: '100% Claimed' },
     ],
     cta: {
       label: 'Top Up Campaign Budget',
@@ -388,7 +378,7 @@ export async function notifyAdvertiserBudgetDepleted({
 
   await sendEmail({
     to: email,
-    subject: `Campaign Budget 100% Reserved! 🔥 "${campaignTitle}"`,
+    subject: 'Budget 100% Locked & Moving 🔥',
     html,
   });
 }
@@ -428,26 +418,24 @@ export async function notifyAdvertiserCampaignCompleted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Campaign Wrapped! Check Out The Numbers 📊 "${campaignTitle}"`,
+    subject: 'Campaign Wrap Up 📊',
     previewText: `Your campaign "${campaignTitle}" delivered ${totalViews.toLocaleString()} verified views.`,
-    icon: 'check',
-    headline: "That's a Wrap! 📊",
-    subtitle: `Your campaign "${campaignTitle}" has officially wrapped up. Here is your final performance snapshot:`,
+    headline: 'Campaign Wrap Up 📊',
+    subtitle: `Your campaign "${campaignTitle}" has reached completion. Here is your final performance snapshot:`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'TOTAL VERIFIED VIEWS', value: `${totalViews.toLocaleString()} views`, isMonospace: true },
-      { label: 'TOTAL CAMPAIGN SPEND', value: `₦${totalSpent.toLocaleString()}`, isMonospace: true },
-      { label: 'STATUS', value: 'Completed', statusBadge: { text: 'Completed', variant: 'green' } },
+      { label: 'TOTAL SPENT', value: `₦${totalSpent.toLocaleString()}`, isMonospace: true },
     ],
     cta: {
-      label: 'View Full Campaign Analytics',
+      label: 'View Campaign Analytics',
       url: `${appUrl}${actionUrl}`,
     },
   });
 
   await sendEmail({
     to: email,
-    subject: `Campaign Wrapped! Check Out The Numbers 📊 "${campaignTitle}"`,
+    subject: 'Campaign Wrap Up 📊',
     html,
   });
 }
