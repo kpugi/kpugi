@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { CheckCircle2, Download, Printer, ArrowRight, X, ShieldCheck, FileText, XCircle, Clock } from 'lucide-react';
+import { Download, Printer, X, FileText } from 'lucide-react';
 import { InvoicePDFDocument, InvoiceData } from '@/components/invoice/InvoicePDFDocument';
 
 export type { InvoiceData };
@@ -23,21 +22,14 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
     return () => setMounted(false);
   }, []);
 
-  const isPaid = data.status === 'COMPLETED' || data.status === 'PAID';
-  const isCancelled = data.status === 'CANCELLED' || data.status === 'FAILED';
-  const isPending = data.status === 'PENDING';
-
   const handlePrint = () => {
     window.print();
   };
 
   const formattedDate = new Date(data.issued_at).toLocaleString('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
   });
 
   const isDeposit = data.transaction_type === 'deposit' || data.transaction_type === 'wallet_deposit';
@@ -50,25 +42,33 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
 
   const finalTotal = isDeposit ? data.total_amount : (data.escrow_budget || data.total_amount);
 
-  const descriptionText = isDeposit
-    ? (data.campaign_title
-        ? `Campaign Budget Deposit (${data.campaign_title})`
-        : 'Wallet Account Top-Up (Paystack Checkout)')
-    : (data.campaign_title
-        ? `Campaign Budget: ${data.campaign_title}`
-        : 'Campaign Budget Allocation');
+  const descriptionTitle = data.campaign_title
+    ? `Campaign: ${data.campaign_title}`
+    : 'Wallet Balance Deposit';
+
+  const durationStr = data.campaign_title ? 'Active Run' : 'Permanent';
+
+  const formatCurrency = (val: number) =>
+    `NGN ${Number(val).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const paymentSourceStr = data.payment_method === 'wallet'
+    ? 'Kpugi Wallet'
+    : 'Paystack Card / Transfer';
 
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Top Header Bar */}
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Top Dark Header Bar */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-xs">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-display text-sm font-extrabold text-white">Official Payment Receipt</h3>
+              <h3 className="font-display text-sm font-extrabold text-white">Receipt / Invoice Preview</h3>
               <p className="text-[10px] text-slate-400 font-mono">{data.receipt_number}</p>
             </div>
           </div>
@@ -81,143 +81,128 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
           </button>
         </div>
 
-        {/* Printable Document Container (Flat Paper View) */}
-        <div className="p-6 sm:p-8 space-y-6 font-sans text-xs flex-1 overflow-y-auto print-container bg-white relative">
-          {/* Decorative Stamp Watermark */}
-          <div className="absolute top-28 right-8 sm:right-16 pointer-events-none select-none opacity-[0.14] sm:opacity-[0.18] rotate-[-12deg] z-10 transition-all duration-300">
-            <div className={`w-28 h-28 rounded-full border-4 border-double flex flex-col items-center justify-center font-display font-black tracking-widest text-center uppercase ${
-              isCancelled ? 'border-rose-600 text-rose-600' : isPending ? 'border-amber-600 text-amber-600' : 'border-emerald-600 text-emerald-600'
-            }`}>
-              <div className="text-[10px] font-bold tracking-widest leading-none">KPUGI</div>
-              <div className="text-[17px] font-black my-0.5 leading-none">{isCancelled ? 'CANCELLED' : isPending ? 'PENDING' : 'PAID'}</div>
-              <div className="text-[8px] font-extrabold tracking-wider leading-none">OFFICIAL</div>
-            </div>
-          </div>
-          {/* Executive Document Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200 gap-4">
+        {/* Printable Spaceship Receipt View */}
+        <div className="p-6 sm:p-10 space-y-6 font-sans text-xs flex-1 overflow-y-auto print-container bg-white">
+          
+          {/* Header Row */}
+          <div className="flex justify-between items-start pb-5 border-b border-slate-200">
             <div>
-              <div className="flex items-center gap-3">
-                <img src="/kpugi_logo.png" alt="Kpugi Logo" className="h-12 w-auto object-contain" />
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1.5 font-medium">Official Payment Receipt</p>
+              <img src="/kpugi_logo.png" alt="Kpugi Logo" className="h-11 w-auto object-contain" />
+             
             </div>
 
-            <div className="sm:text-right space-y-1">
-              {isCancelled ? (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-extrabold uppercase tracking-wider">
-                  <XCircle className="w-3.5 h-3.5 text-slate-500" />
-                  <span>CANCELLED</span>
-                </div>
-              ) : isPending ? (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-extrabold uppercase tracking-wider">
-                  <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                  <span>PENDING</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-extrabold uppercase tracking-wider">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>PAID & VERIFIED</span>
-                </div>
-              )}
-              <div className="text-[11px] font-mono text-slate-600 pt-1">
-                Ref: <span className="font-bold text-slate-900">{data.receipt_number}</span>
+            <div className="text-right">
+              <h2 className="text-lg font-bold text-slate-900">Receipt / Invoice</h2>
+              <p className="text-slate-500 text-[11px] mt-1">
+                Invoice / Receipt number: <span className="font-bold text-slate-900">{data.receipt_number}</span>
+              </p>
+              <p className="text-slate-500 text-[11px] mt-0.5">
+                Date: <span className="font-bold text-slate-900">{formattedDate}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Order Details Card */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <h4 className="font-bold text-slate-900 text-xs mb-3">Order details</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-2.5 gap-x-4 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">BILLED TO</span>
+                <span className="font-bold text-slate-900">
+                  {data.advertiser_email || data.advertiser_name || 'Brand Partner'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">PAYMENT SOURCE</span>
+                <span className="font-bold text-slate-900">{paymentSourceStr}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">FINAL COST</span>
+                <span className="font-bold text-slate-900">{formatCurrency(finalTotal)}</span>
               </div>
             </div>
           </div>
 
-          {/* 2-Column Metadata Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-200 text-xs">
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Issued By</span>
-              <p className="font-bold text-slate-900 text-sm">Kpugi Media</p>
-              <p className="text-slate-500 text-[11px]">Social Ad Marketplace</p>
-              <p className="text-slate-500 text-[11px]">Rivers State, Nigeria • billing@kpugi.com</p>
-            </div>
-
-            <div className="space-y-1 sm:border-l sm:border-slate-200 sm:pl-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Billed To</span>
-              {data.advertiser_email && <p className="text-slate-500 text-[11px]">{data.advertiser_email}</p>}
-              <p className="text-slate-500 text-[11px]">Date: {formattedDate}</p>
-              <p className="text-slate-500 text-[11px] uppercase">Payment Method: <span className="font-bold text-slate-800">{data.payment_method}</span></p>
-            </div>
-          </div>
-
-          {/* Itemized Table */}
-          <div className="border border-slate-200 overflow-hidden">
+          {/* Items Table */}
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 border-b border-slate-200 text-[10px] font-extrabold uppercase text-slate-500">
-                  <th className="py-3 px-4">Description</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
+                <tr className="border-b-2 border-slate-300 text-[10px] font-bold uppercase text-slate-600 tracking-wider">
+                  <th className="pb-2">DESCRIPTION</th>
+                  <th className="pb-2 text-right">PRICE</th>
+                  <th className="pb-2 text-center">DURATION</th>
+                  <th className="pb-2 text-center">QTY</th>
+                  <th className="pb-2 text-right">AMOUNT</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-xs">
+              <tbody className="divide-y divide-slate-100 text-xs">
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-slate-900">
-                    {descriptionText}
-                    {data.campaign_code && (
-                      <span className="block font-mono text-[10px] text-slate-500 font-normal mt-0.5">
-                        Campaign Code: {data.campaign_code}
-                      </span>
-                    )}
+                  <td className="py-3 pr-2">
+                    <span className="font-bold text-slate-900 block">{descriptionTitle}</span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-600 font-medium capitalize">
-                    {isDeposit ? (hasFeaturedAddOn ? 'Deposit Allocation' : 'Wallet Deposit') : 'Campaign Escrow'}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900">
-                    ₦{Number(mainRowAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </td>
+                  <td className="py-3 text-right text-slate-700">{formatCurrency(mainRowAmount)}</td>
+                  <td className="py-3 text-center text-slate-700">{durationStr}</td>
+                  <td className="py-3 text-center text-slate-700">1</td>
+                  <td className="py-3 text-right font-bold text-slate-900">{formatCurrency(mainRowAmount)}</td>
                 </tr>
 
-                {hasFeaturedAddOn ? (
+                {hasFeaturedAddOn && data.featured_fee ? (
                   <tr>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      Featured Campaign Placement Add-On
+                    <td className="py-3 pr-2">
+                      <span className="font-bold text-slate-900 block">Featured Campaign Placement Boost</span>
+                      <span className="text-[10px] text-slate-500">Top banner placement & high priority creator notifications</span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 font-medium">Add-On Fee</td>
-                    <td className="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900">
-                      ₦{Number(data.featured_fee).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
+                    <td className="py-3 text-right text-slate-700">{formatCurrency(data.featured_fee)}</td>
+                    <td className="py-3 text-center text-slate-700">7 Days</td>
+                    <td className="py-3 text-center text-slate-700">1</td>
+                    <td className="py-3 text-right font-bold text-slate-900">{formatCurrency(data.featured_fee)}</td>
                   </tr>
                 ) : null}
               </tbody>
             </table>
           </div>
 
-          {/* Summary Box */}
+          {/* Totals Section */}
           <div className="flex justify-end">
-            <div className="w-full sm:w-72 p-4 bg-slate-50 border border-slate-200 space-y-2 text-xs">
-              <div className="flex justify-between items-center text-slate-500">
-                <span>Subtotal:</span>
-                <span className="font-mono font-bold text-slate-800">
-                  ₦{Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
+            <div className="w-full sm:w-60 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-bold text-slate-900">{formatCurrency(finalTotal)}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-500">
-                <span>Platform Fee:</span>
-                <span className="font-mono font-bold text-slate-800">₦0.00</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200 font-extrabold text-sm text-slate-900">
-                <span>{isCancelled ? 'Total Amount:' : isPending ? 'Total Pending:' : 'Total Paid:'}</span>
-                <span className={`font-mono text-base font-extrabold ${isCancelled ? 'text-slate-600' : isPending ? 'text-amber-600' : 'text-emerald-600'}`}>
-                  ₦{Number(finalTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
+              <div className="flex justify-between items-center pt-2 border-t-2 border-slate-900 font-bold text-sm text-slate-900">
+                <span>Total</span>
+                <span className="text-base font-extrabold text-blue-600">{formatCurrency(finalTotal)}</span>
               </div>
             </div>
           </div>
 
-          {/* Security & Escrow Guarantee Footer */}
-          <div className="p-4 bg-slate-50 border border-slate-200 flex items-start gap-3">
-            <ShieldCheck className={`w-5 h-5 shrink-0 mt-0.5 ${isCancelled ? 'text-slate-400' : 'text-blue-600'}`} />
-            <div className="space-y-0.5 text-xs">
+          {/* Additional Transaction Details (Spaceship Style) */}
+          <div className="pt-5 border-t border-slate-200 space-y-3 text-xs">
+            <h4 className="font-bold text-slate-900">Additional Transaction Details</h4>
+            
+            <div className="space-y-1">
+              <p className="font-bold text-slate-800 text-[11px]">Campaign Deployment</p>
               <p className="text-slate-600 text-[11px] leading-relaxed">
-                {isCancelled
-                  ? 'This transaction invoice has been cancelled. No funds were processed, charged, or transferred. If you intended to complete this deposit, please start a new deposit session.'
-                  : 'This official receipt is generated automatically by Kpugi Media Platform. Funds allocated for campaigns are locked in smart escrow and released to creators upon verified view thresholds.'
-                }
+                If you launched an ad campaign, it is now live and accepting creator submissions. You can discover top-performing creators in Kpugi Marketplace or visit your Campaign Dashboard to monitor verified view counts, submissions, and milestone releases.
               </p>
             </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-800 text-[11px]">Customer Support</p>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                Feel free to contact our Customer Service team if you have any questions or concerns. We are available 24/7 at support@kpugi.com.
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="pt-5 border-t border-slate-200 text-center space-y-1 text-[11px] text-slate-500">
+            <p className="font-semibold text-slate-700">
+              &copy; {new Date().getFullYear()} Kpugi Marketplace • support@kpugi.com
+            </p>
+            <p className="text-[10px] text-slate-400">
+              Kpugi is a performance media marketplace for creators and brands. All rights reserved.
+            </p>
           </div>
         </div>
 
@@ -228,7 +213,7 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
             <PDFDownloadLink
               document={<InvoicePDFDocument data={data} />}
               fileName={`Receipt_${data.receipt_number}.pdf`}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
             >
               {({ loading }) => (
                 <>
@@ -242,14 +227,19 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors flex items-center gap-1.5"
             >
               <Printer className="w-4 h-4" />
               <span>Print</span>
             </button>
           </div>
 
-        
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 font-semibold text-xs transition-colors"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

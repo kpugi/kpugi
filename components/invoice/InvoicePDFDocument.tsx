@@ -33,12 +33,16 @@ export interface InvoiceData {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 36,
+    paddingTop: 36,
+    paddingBottom: 36,
+    paddingHorizontal: 40,
     fontFamily: 'Helvetica',
     fontSize: 9,
     color: '#0F172A',
     backgroundColor: '#FFFFFF',
   },
+
+  // Header
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -48,246 +52,295 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
   },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2563EB',
-    letterSpacing: -0.5,
+  brandBox: {
+    alignItems: 'flex-start',
   },
-  brandSub: {
-    fontSize: 8,
+  logoImage: {
+    width: 120,
+    height: 46,
+    objectFit: 'contain',
+    marginBottom: 4,
+  },
+  logoSub: {
+    fontSize: 8.5,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#64748B',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  receiptMetaBox: {
+    alignItems: 'flex-end',
+  },
+  receiptTitle: {
+    fontSize: 16,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  metaLabelText: {
+    fontSize: 8.5,
     color: '#64748B',
     marginTop: 2,
   },
-  receiptBadgeBox: {
-    alignItems: 'flex-end',
-  },
-  docHeaderTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  receiptNum: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#2563EB',
-    marginTop: 4,
+  metaValueHighlight: {
     fontFamily: 'Helvetica-Bold',
-  },
-  statusTag: {
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 8,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  statusPaid: {
-    backgroundColor: '#DCFCE7',
-    color: '#166534',
-  },
-  statusCancelled: {
-    backgroundColor: '#F1F5F9',
-    color: '#475569',
-  },
-  statusPending: {
-    backgroundColor: '#FEF3C7',
-    color: '#D97706',
-  },
-  metaGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    padding: 12,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  metaCol: {
-    width: '48%',
-  },
-  sectionTitle: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#94A3B8',
-    textTransform: 'uppercase',
-    marginBottom: 6,
-    letterSpacing: 0.5,
-  },
-  metaValueBold: {
-    fontSize: 10,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  metaValueText: {
-    fontSize: 9,
-    color: '#475569',
-    marginTop: 2,
-  },
-  table: {
-    width: '100%',
-    marginBottom: 20,
+
+  // Order details card
+  orderDetailsBox: {
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 6,
-    overflow: 'hidden',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 22,
+  },
+  orderDetailsTitle: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+    marginBottom: 10,
+  },
+  orderGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  orderGridCol: {
+    width: '32%',
+  },
+  orderItemLabel: {
+    fontSize: 8,
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  orderItemValue: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  orderItemValueMono: {
+    fontSize: 8.5,
+    color: '#334155',
+  },
+
+  // Table
+  tableContainer: {
+    marginBottom: 18,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#CBD5E1',
+    paddingBottom: 6,
+    marginBottom: 6,
   },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  colDesc: {
-    flex: 3,
-  },
-  colType: {
-    flex: 1.5,
-  },
-  colAmount: {
-    flex: 1.5,
-    textAlign: 'right',
-  },
-  thText: {
+  thDesc: {
+    flex: 3.5,
     fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
     fontWeight: 'bold',
     color: '#475569',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  tdText: {
-    fontSize: 9,
-    color: '#0F172A',
-  },
-  tdTextBold: {
-    fontSize: 9,
+  thPrice: {
+    flex: 1.3,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
     fontWeight: 'bold',
-    color: '#0F172A',
+    color: '#475569',
+    textTransform: 'uppercase',
+    textAlign: 'right',
+    letterSpacing: 0.5,
   },
-  tdAmountText: {
-    fontSize: 10,
+  thDuration: {
+    flex: 1.1,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
     fontWeight: 'bold',
-    color: '#0F172A',
+    color: '#475569',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
-  summaryContainer: {
+  thQty: {
+    flex: 0.7,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#475569',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  thAmount: {
+    flex: 1.5,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#475569',
+    textTransform: 'uppercase',
+    textAlign: 'right',
+    letterSpacing: 0.5,
+  },
+  tableRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 28,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    alignItems: 'center',
   },
-  summaryBox: {
-    width: '50%',
-    padding: 12,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+  tdDesc: {
+    flex: 3.5,
   },
-  summaryRow: {
+  tdDescTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  tdDescSub: {
+    fontSize: 7.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  tdPrice: {
+    flex: 1.3,
+    fontSize: 8.5,
+    color: '#334155',
+    textAlign: 'right',
+  },
+  tdDuration: {
+    flex: 1.1,
+    fontSize: 8.5,
+    color: '#334155',
+    textAlign: 'center',
+  },
+  tdQty: {
+    flex: 0.7,
+    fontSize: 8.5,
+    color: '#334155',
+    textAlign: 'center',
+  },
+  tdAmount: {
+    flex: 1.5,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+    textAlign: 'right',
+  },
+
+  // Totals Section
+  totalsSection: {
+    alignItems: 'flex-end',
+    marginTop: 6,
+    marginBottom: 24,
+  },
+  totalsBox: {
+    width: '45%',
+  },
+  totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
-  summaryRowTotal: {
+  totalLabel: {
+    fontSize: 9,
+    color: '#64748B',
+  },
+  totalVal: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  finalTotalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 8,
-    marginTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#CBD5E1',
+    marginTop: 4,
+    borderTopWidth: 1.5,
+    borderTopColor: '#0F172A',
   },
-  totalText: {
+  finalTotalLabel: {
     fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
     fontWeight: 'bold',
-    color: '#166534',
+    color: '#0F172A',
   },
+  finalTotalVal: {
+    fontSize: 13,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#2563EB',
+  },
+
+  // Spaceship Guidance Box: Additional Transaction Details
+  additionalSection: {
+    marginTop: 8,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  additionalTitle: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  guidanceBlock: {
+    marginBottom: 8,
+  },
+  guidanceHeading: {
+    fontSize: 8.5,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  guidanceText: {
+    fontSize: 8,
+    color: '#64748B',
+    lineHeight: 1.35,
+  },
+
+  // Footer
   footer: {
     marginTop: 'auto',
-    paddingTop: 16,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     textAlign: 'center',
   },
-  footerHeading: {
+  footerCompany: {
     fontSize: 8,
-    fontWeight: 'bold',
-    color: '#2563EB',
-    marginBottom: 4,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+    marginBottom: 3,
   },
-  footerText: {
-    fontSize: 8,
-    color: '#64748B',
+  footerDisclaimer: {
+    fontSize: 7.5,
+    color: '#94A3B8',
     lineHeight: 1.3,
-  },
-  watermarkContainer: {
-    position: 'absolute',
-    top: 115,
-    right: 60,
-    width: 80,
-    height: 80,
-    transform: 'rotate(-12deg)',
-    opacity: 0.12,
-  },
-  watermarkOuterCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
-    borderStyle: 'solid',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  watermarkInnerCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  watermarkTextBrand: {
-    fontSize: 7,
-    fontFamily: 'Helvetica-Bold',
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  watermarkTextStatus: {
-    fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
-    fontWeight: 'bold',
-    marginVertical: 1,
-  },
-  watermarkTextOfficial: {
-    fontSize: 5,
-    fontFamily: 'Helvetica-Bold',
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
 });
 
 export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) => {
   const formattedDate = new Date(data.issued_at).toLocaleString('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
   });
 
   const isDeposit = data.transaction_type === 'deposit' || data.transaction_type === 'wallet_deposit';
@@ -300,170 +353,144 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
 
   const finalTotal = isDeposit ? data.total_amount : (data.escrow_budget || data.total_amount);
 
-  const descriptionText = isDeposit
-    ? (data.campaign_title
-        ? `Campaign Budget Deposit (${data.campaign_title})`
-        : 'Wallet Account Top-Up (Paystack Checkout)')
-    : (data.campaign_title
-        ? `Campaign Budget Allocation: ${data.campaign_title}`
-        : 'Campaign Budget Allocation');
+  const descriptionTitle = data.campaign_title
+    ? `Campaign: ${data.campaign_title}`
+    : 'Wallet Balance Deposit';
 
-  const mainRowAmountStr = `N${Number(mainRowAmount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  const durationStr = data.campaign_title ? 'Active Run' : 'Permanent';
 
-  const totalAmountStr = `N${Number(finalTotal).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  // Format currency with standard NGN for PDF rendering (avoids Helvetica font broken Naira symbol ¦)
+  const formatCurrency = (val: number) =>
+    `NGN ${Number(val).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
-  const isPaid = data.status === 'COMPLETED' || data.status === 'PAID';
-  const isCancelled = data.status === 'CANCELLED' || data.status === 'FAILED';
-  const isPending = data.status === 'PENDING';
-
-  const statusText = isCancelled
-    ? 'CANCELLED'
-    : isPending
-      ? 'PENDING'
-      : 'PAID & VERIFIED ✓';
-
-  const stampColor = isCancelled ? '#E11D48' : isPending ? '#D97706' : '#059669';
+  const paymentSourceStr = data.payment_method === 'wallet'
+    ? 'Kpugi Wallet'
+    : 'Paystack Card / Transfer';
 
   return (
     <Document title={`Receipt_${data.receipt_number}`}>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+
+        {/* Top Header */}
         <View style={styles.headerRow}>
-          <View>
-            <Image src={logoUrl} style={{ width: 90, height: 28, objectFit: 'contain', marginBottom: 4 }} />
-            <Text style={styles.brandSub}>Official Payment Receipt</Text>
+          <View style={styles.brandBox}>
+            <Image src={logoUrl} style={styles.logoImage} />
           </View>
-          <View style={styles.receiptBadgeBox}>
-            <Text style={styles.docHeaderTitle}>Payment Receipt</Text>
-            <Text style={styles.receiptNum}>{data.receipt_number}</Text>
-            <Text style={[
-              styles.statusTag,
-              isCancelled ? styles.statusCancelled : isPending ? styles.statusPending : styles.statusPaid
-            ]}>
-              {statusText}
+          <View style={styles.receiptMetaBox}>
+            <Text style={styles.receiptTitle}>Receipt / Invoice</Text>
+            <Text style={styles.metaLabelText}>
+              Invoice / Receipt number: <Text style={styles.metaValueHighlight}>{data.receipt_number}</Text>
+            </Text>
+            <Text style={styles.metaLabelText}>
+              Date: <Text style={styles.metaValueHighlight}>{formattedDate}</Text>
             </Text>
           </View>
         </View>
 
-        {/* Metadata Grid */}
-        <View style={styles.metaGrid}>
-          <View style={styles.metaCol}>
-            <Text style={styles.sectionTitle}>ISSUED BY</Text>
-            <Text style={styles.metaValueBold}>Kpugi Media</Text>
-            <Text style={styles.metaValueText}>Social Ad Marketpace</Text>
-            <Text style={styles.metaValueText}>Rivers State, Nigeria • billing@kpugi.com</Text>
-          </View>
-          <View style={styles.metaCol}>
-            <Text style={styles.sectionTitle}>BILLED TO</Text>
-            {data.advertiser_email && <Text style={styles.metaValueText}>{data.advertiser_email}</Text>}
-            <Text style={styles.metaValueText}>Date: {formattedDate}</Text>
-            <Text style={styles.metaValueText}>Method: {data.payment_method.toUpperCase()}</Text>
+        {/* Order Details Box */}
+        <View style={styles.orderDetailsBox}>
+          <Text style={styles.orderDetailsTitle}>Order details</Text>
+
+          <View style={styles.orderGrid}>
+            <View style={styles.orderGridCol}>
+              <Text style={styles.orderItemLabel}>BILLED TO</Text>
+              <Text style={styles.orderItemValue}>
+                {data.advertiser_email || data.advertiser_name || 'Brand Partner'}
+              </Text>
+            </View>
+            <View style={styles.orderGridCol}>
+              <Text style={styles.orderItemLabel}>PAYMENT SOURCE</Text>
+              <Text style={styles.orderItemValue}>{paymentSourceStr}</Text>
+            </View>
+            <View style={styles.orderGridCol}>
+              <Text style={styles.orderItemLabel}>FINAL COST</Text>
+              <Text style={styles.orderItemValue}>{formatCurrency(finalTotal)}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Table */}
-        <View style={styles.table}>
+        {/* Items Table */}
+        <View style={styles.tableContainer}>
           <View style={styles.tableHeader}>
-            <View style={styles.colDesc}>
-              <Text style={styles.thText}>Description</Text>
-            </View>
-            <View style={styles.colType}>
-              <Text style={styles.thText}>Type</Text>
-            </View>
-            <View style={styles.colAmount}>
-              <Text style={styles.thText}>Amount</Text>
-            </View>
+            <Text style={styles.thDesc}>DESCRIPTION</Text>
+            <Text style={styles.thPrice}>PRICE</Text>
+            <Text style={styles.thDuration}>DURATION</Text>
+            <Text style={styles.thQty}>QTY</Text>
+            <Text style={styles.thAmount}>AMOUNT</Text>
           </View>
 
+          {/* Main Item Row */}
           <View style={styles.tableRow}>
-            <View style={styles.colDesc}>
-              <Text style={styles.tdTextBold}>{descriptionText}</Text>
-              {data.campaign_code && (
-                <Text style={{ fontSize: 8, color: '#64748B', marginTop: 2 }}>
-                  Campaign Code: {data.campaign_code}
-                </Text>
-              )}
+            <View style={styles.tdDesc}>
+              <Text style={styles.tdDescTitle}>{descriptionTitle}</Text>
             </View>
-            <View style={styles.colType}>
-              <Text style={styles.tdText}>
-                {isDeposit ? (hasFeaturedAddOn ? 'Deposit Allocation' : 'Deposit') : 'Campaign Escrow'}
-              </Text>
-            </View>
-            <View style={styles.colAmount}>
-              <Text style={styles.tdAmountText}>{mainRowAmountStr}</Text>
-            </View>
+            <Text style={styles.tdPrice}>{formatCurrency(mainRowAmount)}</Text>
+            <Text style={styles.tdDuration}>{durationStr}</Text>
+            <Text style={styles.tdQty}>1</Text>
+            <Text style={styles.tdAmount}>{formatCurrency(mainRowAmount)}</Text>
           </View>
 
-          {hasFeaturedAddOn ? (
+          {/* Featured Placement Row (If applied) */}
+          {hasFeaturedAddOn && data.featured_fee ? (
             <View style={styles.tableRow}>
-              <View style={styles.colDesc}>
-                <Text style={styles.tdTextBold}>Featured Campaign Placement Add-On</Text>
+              <View style={styles.tdDesc}>
+                <Text style={styles.tdDescTitle}>Featured Campaign Placement Boost</Text>
+                <Text style={styles.tdDescSub}>Top banner placement & high priority creator notifications</Text>
               </View>
-              <View style={styles.colType}>
-                <Text style={styles.tdText}>Add-On Fee</Text>
-              </View>
-              <View style={styles.colAmount}>
-                <Text style={styles.tdAmountText}>
-                  N{Number(data.featured_fee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Text>
-              </View>
+              <Text style={styles.tdPrice}>{formatCurrency(data.featured_fee)}</Text>
+              <Text style={styles.tdDuration}>7 Days</Text>
+              <Text style={styles.tdQty}>1</Text>
+              <Text style={styles.tdAmount}>{formatCurrency(data.featured_fee)}</Text>
             </View>
           ) : null}
         </View>
 
-        {/* Summary Box */}
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryBox}>
-            <View style={styles.summaryRow}>
-              <Text style={{ fontSize: 9, color: '#64748B' }}>Subtotal:</Text>
-              <Text style={{ fontSize: 9, color: '#0F172A', fontWeight: 'bold' }}>{totalAmountStr}</Text>
+        {/* Totals Section */}
+        <View style={styles.totalsSection}>
+          <View style={styles.totalsBox}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Subtotal</Text>
+              <Text style={styles.totalVal}>{formatCurrency(finalTotal)}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={{ fontSize: 9, color: '#64748B' }}>Platform Fee:</Text>
-              <Text style={{ fontSize: 9, color: '#0F172A', fontWeight: 'bold' }}>N0.00</Text>
+            <View style={styles.finalTotalRow}>
+              <Text style={styles.finalTotalLabel}>Total</Text>
+              <Text style={styles.finalTotalVal}>{formatCurrency(finalTotal)}</Text>
             </View>
-            <View style={styles.summaryRowTotal}>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#0F172A' }}>
-                {isCancelled ? 'Total Amount:' : isPending ? 'Total Pending:' : 'Total Paid:'}
-              </Text>
-              <Text style={[
-                styles.totalText,
-                isCancelled ? { color: '#475569' } : isPending ? { color: '#D97706' } : {}
-              ]}>
-                {totalAmountStr}
-              </Text>
-            </View>
+          </View>
+        </View>
+
+        {/* Additional Transaction Details (Spaceship-style guidance) */}
+        <View style={styles.additionalSection}>
+          <Text style={styles.additionalTitle}>Additional Transaction Details</Text>
+
+          <View style={styles.guidanceBlock}>
+            <Text style={styles.guidanceHeading}>Campaign Deployment</Text>
+            <Text style={styles.guidanceText}>
+              If you launched an ad campaign, it is now live and accepting creator submissions. You can discover top-performing creators in Kpugi Marketplace or visit your Campaign Dashboard to monitor verified view counts, submissions, and milestone releases.
+            </Text>
+          </View>
+
+          <View style={styles.guidanceBlock}>
+            <Text style={styles.guidanceHeading}>Customer Support</Text>
+            <Text style={styles.guidanceText}>
+              Feel free to contact our Customer Service team if you have any questions or concerns. We are available 24/7 at support@kpugi.com.
+            </Text>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            {isCancelled
-              ? 'This transaction invoice has been cancelled. No funds were processed or charged. For any assistance, please contact billing@kpugi.com.'
-              : 'This official payment receipt is generated automatically by Kpugi Media Platform. Funds allocated for campaigns are locked in escrow and released to creators upon verified view thresholds.'
-            }
+          <Text style={styles.footerCompany}>
+            © {new Date().getFullYear()} Kpugi Marketplace
+          </Text>
+          <Text style={styles.footerDisclaimer}>
+            Kpugi is a performance media marketplace for creators and brands. All rights reserved.
           </Text>
         </View>
 
-        {/* Decorative Stamp Watermark (Rendered last so it overlaps opaque layouts instead of getting covered) */}
-        <View style={styles.watermarkContainer}>
-          <View style={[styles.watermarkOuterCircle, { borderColor: stampColor }]}>
-            <View style={[styles.watermarkInnerCircle, { borderColor: stampColor }]}>
-              <Text style={[styles.watermarkTextBrand, { color: stampColor }]}>KPUGI</Text>
-              <Text style={[styles.watermarkTextStatus, { color: stampColor }]}>
-                {isCancelled ? 'CANCELLED' : isPending ? 'PENDING' : 'PAID'}
-              </Text>
-              <Text style={[styles.watermarkTextOfficial, { color: stampColor }]}>OFFICIAL</Text>
-            </View>
-          </View>
-        </View>
       </Page>
     </Document>
   );

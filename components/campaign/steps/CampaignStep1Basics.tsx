@@ -205,22 +205,22 @@ export function CampaignStep1Basics({
   const currentDescLength = (formData.description || '').length;
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans text-slate-900 dark:text-white">
       {/* Title & Subtitle Section */}
       <div className="text-center space-y-2">
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight">
           Let's start with the basics.
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
           Give your campaign a memorable name and tell us what you're trying to achieve.
         </p>
       </div>
 
       {/* AI Error Alert */}
       {(aiError || imageError) && (
-        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between gap-2">
+        <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-500/30 text-red-700 dark:text-rose-300 text-xs font-medium flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-500 dark:text-rose-400 shrink-0" />
             <span>{imageError || aiError}</span>
           </div>
           <button
@@ -229,7 +229,7 @@ export function CampaignStep1Basics({
               setAiError('');
               setImageError('');
             }}
-            className="text-red-500 hover:text-red-700 font-bold"
+            className="text-red-500 dark:text-rose-400 hover:text-red-700 font-bold"
           >
             ×
           </button>
@@ -239,18 +239,18 @@ export function CampaignStep1Basics({
       {/* Campaign Title Input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-800">Campaign Title *</label>
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">Campaign Title *</label>
 
           <button
             type="button"
             disabled={isAiLoading || isTranscribing}
             onClick={() => handleAiPolish('title')}
-            className="text-[11px] font-bold text-[#4f46e5] bg-[#eeedfd] hover:bg-[#e4e1fd] border border-[#dcd8fc] px-3 py-1 rounded-full transition-all flex items-center gap-1 disabled:opacity-50"
+            className="text-[11px] font-bold text-[#4f46e5] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 hover:bg-[#e4e1fd] dark:hover:bg-indigo-900/50 border border-[#dcd8fc] dark:border-indigo-500/30 px-3 py-1 rounded-full transition-all flex items-center gap-1 disabled:opacity-50"
           >
             {isAiLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4f46e5]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4f46e5] dark:text-indigo-400" />
             ) : (
-              <Sparkles className="w-3.5 h-3.5 text-[#4f46e5]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#4f46e5] dark:text-indigo-400" />
             )}
             <span>{isAiLoading ? 'Polishing...' : 'AI Polish'}</span>
           </button>
@@ -261,18 +261,18 @@ export function CampaignStep1Basics({
           value={formData.title || ''}
           onChange={(e) => updateFormData({ title: e.target.value.slice(0, 100) })}
           placeholder="e.g. Kpugi Mobile App Launch Nigeria 2026"
-          className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#4338ca] focus:border-transparent outline-none font-medium transition-all"
+          className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 focus:border-transparent outline-none font-medium transition-all"
         />
       </div>
 
       {/* Rectangular Campaign Cover Banner Upload */}
-      <div className="space-y-2.5 pt-2 border-t border-slate-100">
+      <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-white/10">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <ImageIcon className="w-4 h-4 text-[#4338ca]" />
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <ImageIcon className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
             <span>Cover Banner</span>
           </label>
-          <span className="text-[10px] font-mono font-bold text-slate-500 bg-[#f8f7ff] border border-[#e2e0fb] px-2.5 py-0.5 rounded-full">
+          <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 px-2.5 py-0.5 rounded-full">
             JPG, PNG (Max 5MB)
           </span>
         </div>
@@ -286,7 +286,7 @@ export function CampaignStep1Basics({
         />
 
         {formData.cover_image_url ? (
-          <div className="relative w-full aspect-[16/9] max-h-60 rounded-2xl overflow-hidden border border-[#e2e0fb] bg-slate-900 shadow-xs group">
+          <div className="relative w-full aspect-[16/9] max-h-60 rounded-2xl overflow-hidden border border-[#e2e0fb] dark:border-white/10 bg-slate-900 shadow-xs group">
             <img
               src={formData.cover_image_url}
               alt="Campaign Banner Preview"
@@ -321,16 +321,16 @@ export function CampaignStep1Basics({
         ) : (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-full p-6 sm:p-8 rounded-2xl bg-[#f8f7ff] border-2 border-dashed border-[#c7d2fe] hover:border-[#4338ca] hover:bg-[#eeedfd] transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-2.5 group"
+            className="w-full p-6 sm:p-8 rounded-2xl bg-[#f8f7ff] dark:bg-white/[0.03] border-2 border-dashed border-[#c7d2fe] dark:border-indigo-500/30 hover:border-[#4338ca] dark:hover:border-indigo-400 hover:bg-[#eeedfd] dark:hover:bg-indigo-950/20 transition-all flex flex-col items-center justify-center text-center cursor-pointer space-y-2.5 group"
           >
-            <div className="w-12 h-12 rounded-full bg-[#eeedfd] group-hover:bg-[#4338ca] text-[#4338ca] group-hover:text-white flex items-center justify-center transition-all">
+            <div className="w-12 h-12 rounded-full bg-[#eeedfd] dark:bg-indigo-950/60 group-hover:bg-[#4338ca] dark:group-hover:bg-indigo-600 text-[#4338ca] dark:text-indigo-400 group-hover:text-white flex items-center justify-center transition-all">
               <Upload className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#4338ca] transition-colors">
+              <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#4338ca] dark:group-hover:text-indigo-300 transition-colors">
                 Click to upload campaign header banner
               </p>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                 Rectangular landscape format (16:9 recommended) • Max 5MB
               </p>
             </div>
@@ -339,8 +339,8 @@ export function CampaignStep1Basics({
       </div>
 
       {/* Goal Cards Grid */}
-      <div className="space-y-4 pt-2 border-t border-slate-100">
-        <h3 className="font-display font-extrabold text-base text-slate-900 text-center">
+      <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-white/10">
+        <h3 className="font-display font-extrabold text-base text-slate-900 dark:text-white text-center">
           What's the main goal?
         </h3>
 
@@ -355,22 +355,22 @@ export function CampaignStep1Basics({
                 onClick={() => updateFormData({ objective: goal.id })}
                 className={`p-5 rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center space-y-2.5 min-h-[140px] justify-center ${
                   isSelected
-                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
-                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
+                    ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-xs'
+                    : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
+                    isSelected ? 'bg-[#4338ca] dark:bg-indigo-600 text-white' : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-display font-extrabold text-sm text-slate-900 leading-tight">
+                  <h4 className="font-display font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
                     {goal.title}
                   </h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">
                     {goal.desc}
                   </p>
                 </div>
@@ -381,9 +381,9 @@ export function CampaignStep1Basics({
       </div>
 
       {/* The Brief (Description & Voice Narration) */}
-      <div className="space-y-2 pt-2 border-t border-slate-100">
+      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/10">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="text-xs font-bold text-slate-800">The Brief</label>
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">The Brief</label>
 
           <div className="flex items-center gap-2">
             {/* Deepgram Voice Narration */}
@@ -394,7 +394,7 @@ export function CampaignStep1Basics({
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border ${
                 isRecording
                   ? 'bg-red-500 text-white border-red-500 animate-pulse'
-                  : 'bg-[#eeedfd] text-[#4f46e5] border-[#dcd8fc] hover:bg-[#e4e1fd]'
+                  : 'bg-[#eeedfd] dark:bg-indigo-950/50 text-[#4f46e5] dark:text-indigo-400 border-[#dcd8fc] dark:border-indigo-500/30 hover:bg-[#e4e1fd] dark:hover:bg-indigo-900/50'
               }`}
             >
               {isTranscribing ? (
@@ -402,7 +402,7 @@ export function CampaignStep1Basics({
               ) : isRecording ? (
                 <MicOff className="w-3.5 h-3.5" />
               ) : (
-                <Mic className="w-3.5 h-3.5 text-[#4f46e5]" />
+                <Mic className="w-3.5 h-3.5 text-[#4f46e5] dark:text-indigo-400" />
               )}
               <span>
                 {isTranscribing ? 'Transcribing...' : isRecording ? 'Recording... Stop' : 'Narrate'}
@@ -414,12 +414,12 @@ export function CampaignStep1Basics({
               type="button"
               disabled={isAiLoading || isTranscribing}
               onClick={() => handleAiPolish('description')}
-              className="text-[11px] font-bold text-[#4f46e5] bg-[#eeedfd] hover:bg-[#e4e1fd] border border-[#dcd8fc] px-3 py-1 rounded-full transition-all flex items-center gap-1 disabled:opacity-50"
+              className="text-[11px] font-bold text-[#4f46e5] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 hover:bg-[#e4e1fd] dark:hover:bg-indigo-900/50 border border-[#dcd8fc] dark:border-indigo-500/30 px-3 py-1 rounded-full transition-all flex items-center gap-1 disabled:opacity-50"
             >
               {isAiLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4f46e5]" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4f46e5] dark:text-indigo-400" />
               ) : (
-                <Sparkles className="w-3.5 h-3.5 text-[#4f46e5]" />
+                <Sparkles className="w-3.5 h-3.5 text-[#4f46e5] dark:text-indigo-400" />
               )}
               <span>{isAiLoading ? 'Generating...' : 'AI Expand'}</span>
             </button>
@@ -439,24 +439,24 @@ export function CampaignStep1Basics({
                 ? 'NVIDIA NIM AI is crafting your creator briefing...'
                 : 'Explain your product, campaign goals, key selling points, and target audience...'
             }
-            className={`w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#4338ca] focus:border-transparent outline-none font-medium leading-relaxed transition-all ${
-              isTranscribing || isAiLoading ? 'border-[#4338ca] bg-purple-50/20' : ''
+            className={`w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 focus:border-transparent outline-none font-medium leading-relaxed transition-all ${
+              isTranscribing || isAiLoading ? 'border-[#4338ca] bg-purple-50/20 dark:bg-indigo-950/30' : ''
             }`}
           />
 
           {(isTranscribing || isAiLoading) && (
-            <div className="absolute inset-0 bg-white/70 rounded-2xl flex items-center justify-center gap-2 backdrop-blur-[1px]">
-              <Loader2 className="w-4 h-4 animate-spin text-[#4338ca]" />
-              <span className="text-xs font-bold text-slate-800">
+            <div className="absolute inset-0 bg-white/70 dark:bg-[#12141A]/80 rounded-2xl flex items-center justify-center gap-2 backdrop-blur-[1px]">
+              <Loader2 className="w-4 h-4 animate-spin text-[#4338ca] dark:text-indigo-400" />
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 {isTranscribing ? 'Transcribing voice audio...' : 'AI expanding creator brief...'}
               </span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 dark:text-slate-500">
           <span>Campaign Brief (max 500 chars)</span>
-          <span className={currentDescLength >= 480 ? 'text-amber-600 font-bold' : ''}>
+          <span className={currentDescLength >= 480 ? 'text-amber-600 dark:text-amber-400 font-bold' : ''}>
             {currentDescLength} / 500
           </span>
         </div>

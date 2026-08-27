@@ -46,58 +46,58 @@ export function CampaignStep5Launch({
   const totalPayable = totalBudget + featuredFee;
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans text-slate-900 dark:text-white">
       {/* Step Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold mx-auto mb-1">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 text-xs font-mono font-bold mx-auto mb-1">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>PAYMENT VERIFIED!</span>
         </div>
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight">
           Alright, let's get this out there!
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
           Payment has been confirmed. Review your ready-to-post creative briefing card below and launch your campaign to qualified creators.
         </p>
       </div>
 
       {/* Verified Escrow Payment Confirmation Banner */}
-      <div className="p-5 rounded-3xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-3.5 shadow-xs">
-        <div className="flex items-center justify-between border-b border-[#e2e0fb] pb-3 text-xs">
-          <span className="font-bold text-slate-800 flex items-center gap-1.5">
-            <Receipt className="w-4 h-4 text-[#4338ca]" />
+      <div className="p-5 rounded-3xl bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 space-y-3.5 shadow-xs">
+        <div className="flex items-center justify-between border-b border-[#e2e0fb] dark:border-white/10 pb-3 text-xs">
+          <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <Receipt className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
             <span>Payment Reference</span>
           </span>
-          <span className="font-mono font-bold text-[#4338ca] bg-white px-3 py-1 rounded-full border border-[#dcd8fc]">
+          <span className="font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-white dark:bg-white/10 px-3 py-1 rounded-full border border-[#dcd8fc] dark:border-white/10">
             {paymentRef || `KPG-PAY-${Date.now().toString(36).slice(-5).toUpperCase()}`}
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Payment Method</div>
-            <div className="font-bold text-slate-800 text-xs capitalize truncate">
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-0.5">
+            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Payment Method</div>
+            <div className="font-bold text-slate-800 dark:text-slate-200 text-xs capitalize truncate">
               {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Card / Transfer'}
             </div>
           </div>
 
-          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Campaign Budget</div>
-            <div className="font-mono text-xs font-bold text-slate-900 truncate" title={`₦${totalBudget.toLocaleString()}`}>
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-0.5">
+            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Campaign Budget</div>
+            <div className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate" title={`₦${totalBudget.toLocaleString()}`}>
               {formatCompactCurrency(totalBudget)}
             </div>
           </div>
 
-          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">CPM Rate</div>
-            <div className="font-mono text-xs font-bold text-[#4338ca] truncate">
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-0.5">
+            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">CPM Rate</div>
+            <div className="font-mono text-xs font-bold text-[#4338ca] dark:text-indigo-400 truncate">
               ₦{cpmRate.toLocaleString()} / 1k
             </div>
           </div>
 
-          <div className="p-3.5 bg-white rounded-2xl border border-slate-200 space-y-0.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Total Paid</div>
-            <div className="font-mono text-xs font-bold text-emerald-600 truncate" title={`₦${totalPayable.toLocaleString()}`}>
+          <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-0.5">
+            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Total Paid</div>
+            <div className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate" title={`₦${totalPayable.toLocaleString()}`}>
               {formatCompactCurrency(totalPayable)}
             </div>
           </div>
@@ -107,8 +107,8 @@ export function CampaignStep5Launch({
       {/* Live Creator Briefing Card Preview */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <Eye className="w-4 h-4 text-[#4338ca]" />
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <Eye className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
             <span>PREVIEW</span>
           </label>
           <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export function CampaignStep5Launch({
           </div>
         </div>
 
-        <div className="rounded-3xl bg-slate-900 text-white shadow-xl border border-slate-800 overflow-hidden">
+        <div className="rounded-3xl bg-slate-900 dark:bg-[#161820] text-white shadow-xl border border-slate-800 dark:border-white/10 overflow-hidden">
           {formData.cover_image_url && (
             <div className="w-full h-44 sm:h-56 overflow-hidden relative border-b border-white/10">
               <img
@@ -130,7 +130,7 @@ export function CampaignStep5Launch({
                 alt="Campaign Banner"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 dark:from-[#161820] via-slate-900/30 dark:via-[#161820]/30 to-transparent" />
             </div>
           )}
 
@@ -144,7 +144,7 @@ export function CampaignStep5Launch({
                 <h3 className="font-display text-2xl font-extrabold text-white">
                   {formData.title || 'Untitled Campaign'}
                 </h3>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed max-w-2xl">
+                <p className="text-xs text-slate-300 dark:text-slate-400 mt-2 leading-relaxed max-w-2xl">
                   {formData.description || 'No description provided.'}
                 </p>
               </div>
@@ -213,8 +213,8 @@ export function CampaignStep5Launch({
       </div>
 
       {/* Security & Notification Notice */}
-      <div className="flex items-center gap-2.5 text-xs text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-        <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+      <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/10">
+        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span className="leading-relaxed">
           Clicking <strong>Publish Campaign</strong> below will immediately release this briefing to qualified creators and send real-time push notifications & emails.
         </span>
@@ -226,7 +226,7 @@ export function CampaignStep5Launch({
           type="button"
           disabled={isPublishing}
           onClick={onConfirmLaunch}
-          className="w-full sm:w-auto px-10 py-4 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-base font-extrabold transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-50"
+          className="w-full sm:w-auto px-10 py-4 rounded-full bg-[#4338ca] hover:bg-[#3730a3] dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-base font-extrabold transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-50"
         >
           <Rocket className="w-5 h-5 text-amber-300 animate-bounce" />
           <span>

@@ -123,20 +123,20 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
   ];
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans text-slate-900 dark:text-white">
       {/* Title & Subtitle Section - Step 1 & 2 Style */}
       <div className="text-center space-y-2">
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight">
           Let's reach the right audience.
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
           Select target social media platforms, creator niches, and follower qualification filters.
         </p>
       </div>
 
       {/* Target Platforms Grid (Official SVG Brand Icons) */}
       <div className="space-y-4 pt-2">
-        <h3 className="font-display font-extrabold text-base text-slate-900 text-center">
+        <h3 className="font-display font-extrabold text-base text-slate-900 dark:text-white text-center">
           Select Target Platforms
         </h3>
 
@@ -151,22 +151,22 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
                 onClick={() => toggleChannel(p.id)}
                 className={`p-4.5 rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center space-y-2.5 min-h-[140px] justify-center ${
                   isSelected
-                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
-                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
+                    ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-xs'
+                    : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
+                    isSelected ? 'bg-[#4338ca] dark:bg-indigo-600 text-white' : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-display font-extrabold text-sm text-slate-900 leading-tight">
+                  <h4 className="font-display font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
                     {p.name}
                   </h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">{p.desc}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">{p.desc}</p>
                 </div>
               </div>
             );
@@ -175,15 +175,15 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
       </div>
 
       {/* Creator Niche & Categories Grid with Icons */}
-      <div className="space-y-4 pt-2 border-t border-slate-100">
+      <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-white/10">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-bold text-slate-900">Niche & Categories</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Niche & Categories</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Select one or more niches.
             </p>
           </div>
-          <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
+          <span className="text-[10px] font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-full border border-[#dcd8fc] dark:border-indigo-500/30">
             {selectedNiches.length} Selected
           </span>
         </div>
@@ -199,18 +199,18 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
                 onClick={() => toggleNiche(niche.id)}
                 className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-2.5 ${
                   isSelected
-                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
-                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
+                    ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-xs'
+                    : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
+                    isSelected ? 'bg-[#4338ca] dark:bg-indigo-600 text-white' : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-bold text-slate-900 truncate">{niche.label}</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{niche.label}</span>
               </div>
             );
           })}
@@ -218,8 +218,8 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
       </div>
 
       {/* Minimum Creator Follower Filter */}
-      <div className="space-y-3 p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb]">
-        <label className="text-xs font-bold text-slate-900 flex items-center justify-between">
+      <div className="space-y-3 p-5 rounded-2xl bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10">
+        <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
           <span>Minimum Follower Requirement</span>
         </label>
 
@@ -236,12 +236,12 @@ export function CampaignStep3Targeting({ formData, updateFormData }: Step3Props)
                 }
                 className={`p-3.5 rounded-xl border cursor-pointer text-xs font-bold flex items-center justify-between transition-all ${
                   isSelected
-                    ? 'bg-white border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                    ? 'bg-white dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-xs'
+                    : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
                 }`}
               >
                 <span>{range.label}</span>
-                {isSelected && <Check className="w-4 h-4 text-[#4338ca]" />}
+                {isSelected && <Check className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />}
               </div>
             );
           })}

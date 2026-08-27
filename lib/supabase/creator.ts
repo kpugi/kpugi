@@ -298,8 +298,18 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     };
   });
 
+  const submissionsTotalEarned = (rawSubmissions || []).reduce(
+    (sum: number, s: any) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
+    0
+  );
+  const liveTotalEarned = Math.max(
+    Number(creatorProfile?.total_earned || 0),
+    submissionsTotalEarned,
+    Number(wallet?.balance || 0)
+  );
+
   return {
-    totalEarned: creatorProfile?.total_earned || 0,
+    totalEarned: liveTotalEarned,
     walletBalance: wallet?.balance || 0,
     todayAccrual,
     todayViews: todayViews > 0 ? todayViews : totalVerifiedViews,
@@ -583,7 +593,15 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   });
 
   const availableBalance = Number(wallet?.balance || 0);
-  const totalEarned = Number(creator?.total_earned || 0);
+  const submissionsTotalEarned = (rawSubmissions || []).reduce(
+    (sum: number, s: any) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
+    0
+  );
+  const totalEarned = Math.max(
+    Number(creator?.total_earned || 0),
+    submissionsTotalEarned,
+    availableBalance + pendingEscrow + totalWithdrawn
+  );
 
   // 4. Construct Clean, Non-Duplicative Transaction History
   const formattedTransactions: any[] = [];

@@ -17,7 +17,7 @@ export async function notifyAdvertiserWelcome({
     recipients: [clerkId],
     data: { 
       companyName,
-      action_url: '/dashboard',
+      action_url: '/b/dashboard',
     },
     profileId,
   });
@@ -25,21 +25,21 @@ export async function notifyAdvertiserWelcome({
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Welcome to the big leagues, ${companyName}! 🏢`,
-    previewText: 'Launch performance campaigns backed by 100% escrow protection.',
+    subject: `Welcome to Kpugi, ${companyName}! 🚀`,
+    previewText: 'Launch performance campaigns and tap into verified creators.',
     icon: 'star',
-    headline: 'Welcome to the Big Leagues 🏢!',
-    subtitle: `Hello ${companyName}, your brand partner account is ready. Fund your balance, launch performance video campaigns, and pay only for verified view milestones reached by creators.`,
+    headline: `Welcome to Kpugi, ${companyName}! 🚀`,
+    subtitle: `Your brand partner account is officially set up. Fund your balance, launch performance video campaigns, and pay only for verified view milestones reached by creators.`,
     cta: {
-      label: 'Create First Campaign',
-      url: `${appUrl}/campaigns/new`,
+      label: 'Launch Your First Campaign',
+      url: `${appUrl}/b/campaigns/new`,
     },
   });
 
   await sendEmail({
     to: email,
-    subject: `Welcome to the big leagues, ${companyName}! 🏢`,
-    previewText: 'Launch performance campaigns backed by 100% escrow protection.',
+    subject: `Welcome to Kpugi, ${companyName}! 🚀`,
+    previewText: 'Launch performance campaigns and pay only for real, verified views.',
     html,
   });
 }
@@ -66,41 +66,43 @@ export async function notifyAdvertiserWalletFunded({
       amount: `₦${amount.toLocaleString()}`,
       newBalance: `₦${newBalance.toLocaleString()}`,
       reference,
-      action_url: '/wallet',
+      action_url: '/b/wallet',
     },
     profileId,
   });
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const formattedAmount = `₦${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const formattedBalance = `₦${newBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Wallet Loaded 💳! ₦${amount.toLocaleString()} is ready to fund your next viral campaign`,
-    previewText: 'Your escrow wallet has been funded successfully.',
+    subject: `Deposit Confirmed! ${formattedAmount} Added to Your Balance 💳`,
+    previewText: `Your deposit of ${formattedAmount} was successfully confirmed and added to your balance.`,
     icon: 'wallet',
-    headline: 'Wallet Loaded 💳!',
-    subtitle: 'Say less! 💰 Your deposit payment was successfully confirmed via Paystack.',
-    cardTitle: 'Transaction Details',
+    headline: 'Funds Added to Balance 💳',
+    subtitle: 'Your payment was successfully confirmed via Paystack. Your balance is ready to power your campaign drops.',
     details: [
-      { label: 'Paystack Reference', value: reference, isMonospace: true },
-      { label: 'Date', value: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
-      { label: 'Total Available Balance', value: `₦${newBalance.toLocaleString()}`, isMonospace: true },
+      { label: 'PAYMENT REFERENCE', value: reference, isMonospace: true },
+      { label: 'AMOUNT DEPOSITED', value: formattedAmount, isMonospace: true },
+      { label: 'UPDATED BALANCE', value: formattedBalance, isMonospace: true },
+      {
+        label: 'STATUS',
+        value: 'Completed',
+        statusBadge: { text: 'Completed', variant: 'green' },
+      },
     ],
-    highlightBar: {
-      label: 'Amount Deposited',
-      value: `₦${amount.toLocaleString()}`,
-      bgColor: '#2563EB',
-    },
+    noticeText: 'These funds can be allocated directly towards performance campaigns with 100% verified view tracking.',
     cta: {
-      label: 'View Dashboard',
+      label: 'View Brand Wallet',
       url: `${appUrl}/b/wallet`,
-      subtext: 'Or login to your account to view full transaction history.',
     },
   });
 
   await sendEmail({
     to: email,
-    subject: `Wallet Loaded 💳! ₦${amount.toLocaleString()} is ready to fund your next viral campaign`,
-    previewText: 'Your escrow wallet has been funded successfully.',
+    subject: `Deposit Confirmed! ${formattedAmount} Added to Your Balance 💳`,
+    previewText: `Your deposit of ${formattedAmount} was successfully confirmed.`,
     html,
   });
 }
@@ -122,7 +124,7 @@ export async function notifyAdvertiserCampaignLive({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
@@ -138,33 +140,38 @@ export async function notifyAdvertiserCampaignLive({
     profileId,
   });
 
+  const formattedBudget = `₦${totalBudget.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Lights, camera, action 🎬! "${campaignTitle}" is live and catching views`,
-    previewText: `Your campaign "${campaignTitle}" is funded and live!`,
-    icon: 'rocket',
-    headline: 'We Cooked 🍳! Campaign Live!',
-    subtitle: `Your campaign "${campaignTitle}" is funded and live on the Kpugi creator marketplace.`,
-    cardTitle: 'Campaign Details',
+    subject: `Your Campaign is Live & Cooking! 🚀 "${campaignTitle}"`,
+    previewText: `Budget is locked and "${campaignTitle}" is live. Creators are already eyeing this drop.`,
+    icon: 'check',
+    headline: 'Campaign is Live & Ready to Cook 🚀',
+    subtitle: `Budget is locked in and your briefing is live. Creators are already eyeing this drop to grab creatives and post.`,
     details: [
-      { label: 'Campaign Title', value: campaignTitle },
-      { label: 'CPM Rate', value: `₦${cpmRate.toLocaleString()} per 1k views` },
+      { label: 'CAMPAIGN NAME', value: campaignTitle },
+      { label: 'BUDGET LOCKED', value: formattedBudget, isMonospace: true },
+      { label: 'CPM PAYOUT RATE', value: `₦${cpmRate.toLocaleString()} / 1k views` },
+      {
+        label: 'STATUS',
+        value: 'Live',
+        statusBadge: { text: 'Live', variant: 'green' },
+      },
     ],
-    highlightBar: {
-      label: 'Total Escrow Budget',
-      value: `₦${totalBudget.toLocaleString()}`,
-      bgColor: '#2563EB',
-    },
+    noticeText: 'We track every view in real-time. As creators publish and clock in views, you will see verified view counts and payout settlements update live on your dashboard.',
     cta: {
-      label: 'View Campaign Dashboard',
+      label: 'Open Campaign Dashboard',
       url: `${appUrl}${actionUrl}`,
-      subtext: 'Track real-time view counts and creator submissions.',
     },
   });
 
   await sendEmail({
     to: email,
-    subject: `Lights, camera, action 🎬! "${campaignTitle}" is live and catching views`,
+    subject: `Your Campaign is Live & Cooking! 🚀 "${campaignTitle}"`,
     html,
   });
 }
@@ -186,14 +193,14 @@ export async function notifyAdvertiserCreatorJoined({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
 
-  // In-app notification only
+  // In-app notification
   await triggerNotification({
     workflowKey: 'creator-joined',
     recipients: [clerkId],
     data: {
-      creatorHandle: `@${creatorHandle}`,
+      creatorHandle: `@${creatorHandle.replace(/^@/, '')}`,
       platform,
       campaignTitle,
       reservedAmount: `₦${reservedAmount.toLocaleString()}`,
@@ -223,13 +230,14 @@ export async function notifyAdvertiserCreatorSubmitted({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'creator-submitted-post',
     recipients: [clerkId],
     data: {
-      creatorHandle: `@${creatorHandle}`,
+      creatorHandle: `@${creatorHandle.replace(/^@/, '')}`,
       platform,
       campaignTitle,
       postUrl,
@@ -239,19 +247,30 @@ export async function notifyAdvertiserCreatorSubmitted({
     profileId,
   });
 
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `New Post Link Dropped for "${campaignTitle}" 📹`,
+    previewText: `@${creatorHandle.replace(/^@/, '')} just submitted their live post link.`,
+    icon: 'check',
+    headline: 'Creator Dropped a Live Link 📹',
+    subtitle: `Creator @${creatorHandle.replace(/^@/, '')} (${platform.toUpperCase()}) just submitted their live post for "${campaignTitle}".`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'CREATOR', value: `@${creatorHandle.replace(/^@/, '')}` },
+      { label: 'PLATFORM', value: platform.toUpperCase() },
+      { label: 'STATUS', value: 'Tracking Views', statusBadge: { text: 'Tracking', variant: 'blue' } },
+    ],
+    noticeText: 'Our automated tracking is now monitoring view performance. Once verified milestones are achieved, payouts will settle seamlessly.',
+    cta: {
+      label: 'View Campaign Submissions',
+      url: `${appUrl}${actionUrl}`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `New Post Link Submitted for "${campaignTitle}"`,
-    html: `
-      <h2 style="margin-top:0;">Creator Submitted Live Post Link 📹</h2>
-      <p>Creator <strong>@${creatorHandle}</strong> (${platform.toUpperCase()}) submitted a live link for <strong>"${campaignTitle}"</strong>.</p>
-      
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:8px; margin:16px 0;">
-        <p style="margin:0; font-size:14px; color:#64748b;"><strong>Live Post:</strong> <a href="${postUrl}" style="color:#2563eb;">${postUrl}</a></p>
-      </div>
-
-      <p style="font-size:13px; color:#64748b;">Our automated verification system is now tracking view performance and will automatically settle creator payouts as verified milestones are achieved.</p>
-    `,
+    subject: `New Post Link Dropped for "${campaignTitle}" 📹`,
+    html,
   });
 }
 
@@ -272,13 +291,13 @@ export async function notifyAdvertiserSubmissionVerified({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
 
   await triggerNotification({
     workflowKey: 'creator-verified',
     recipients: [clerkId],
     data: {
-      creatorHandle: `@${creatorHandle}`,
+      creatorHandle: `@${creatorHandle.replace(/^@/, '')}`,
       campaignTitle,
       trackedViews: trackedViews.toLocaleString(),
       payoutAmount: `₦${payoutAmount.toLocaleString()}`,
@@ -306,13 +325,13 @@ export async function notifyAdvertiserSubmissionFailed({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
 
   await triggerNotification({
     workflowKey: 'creator-failed',
     recipients: [clerkId],
     data: {
-      creatorHandle: `@${creatorHandle}`,
+      creatorHandle: `@${creatorHandle.replace(/^@/, '')}`,
       campaignTitle,
       failureReason,
       refundedAmount: `₦${refundedAmount.toLocaleString()}`,
@@ -336,7 +355,8 @@ export async function notifyAdvertiserBudgetDepleted({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'budget-depleted',
@@ -349,14 +369,27 @@ export async function notifyAdvertiserBudgetDepleted({
     profileId,
   });
 
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Campaign Budget 100% Reserved! 🔥 "${campaignTitle}"`,
+    previewText: `All slots for "${campaignTitle}" have been claimed by creators.`,
+    icon: 'star',
+    headline: 'Budget 100% Locked & Moving 🔥',
+    subtitle: `Every slot for "${campaignTitle}" has been claimed by active creators. Want to keep the views and engagement rolling? Top up your budget anytime.`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'SLOT STATUS', value: '100% Claimed', statusBadge: { text: 'Fully Claimed', variant: 'blue' } },
+    ],
+    cta: {
+      label: 'Top Up Campaign Budget',
+      url: `${appUrl}${actionUrl}`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `⚠️ Budget Fully Reserved for "${campaignTitle}"`,
-    html: `
-      <h2 style="margin-top:0; color:#d97706;">Campaign Budget Fully Committed ⚠️</h2>
-      <p>100% of the budget for <strong>"${campaignTitle}"</strong> has been reserved by creators.</p>
-      <p>You can top up your campaign budget anytime to allow more creators to participate.</p>
-    `,
+    subject: `Campaign Budget 100% Reserved! 🔥 "${campaignTitle}"`,
+    html,
   });
 }
 
@@ -377,7 +410,8 @@ export async function notifyAdvertiserCampaignCompleted({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'campaign-completed',
@@ -392,24 +426,28 @@ export async function notifyAdvertiserCampaignCompleted({
     profileId,
   });
 
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Campaign Wrapped! Check Out The Numbers 📊 "${campaignTitle}"`,
+    previewText: `Your campaign "${campaignTitle}" delivered ${totalViews.toLocaleString()} verified views.`,
+    icon: 'check',
+    headline: "That's a Wrap! 📊",
+    subtitle: `Your campaign "${campaignTitle}" has officially wrapped up. Here is your final performance snapshot:`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'TOTAL VERIFIED VIEWS', value: `${totalViews.toLocaleString()} views`, isMonospace: true },
+      { label: 'TOTAL CAMPAIGN SPEND', value: `₦${totalSpent.toLocaleString()}`, isMonospace: true },
+      { label: 'STATUS', value: 'Completed', statusBadge: { text: 'Completed', variant: 'green' } },
+    ],
+    cta: {
+      label: 'View Full Campaign Analytics',
+      url: `${appUrl}${actionUrl}`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `📊 Campaign Completed: "${campaignTitle}" Summary`,
-    html: `
-      <h2 style="margin-top:0; color:#16a34a;">Campaign Finished! 📊</h2>
-      <p>Your ad campaign <strong>"${campaignTitle}"</strong> has finished its required duration.</p>
-      
-      <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px;">
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:12px 16px; color:#64748b;">Total Verified Views:</td>
-          <td style="padding:12px 16px; font-weight:800; text-align:right;">${totalViews.toLocaleString()} views</td>
-        </tr>
-        <tr>
-          <td style="padding:12px 16px; color:#64748b;">Total Spend:</td>
-          <td style="padding:12px 16px; font-weight:800; color:#2563eb; text-align:right;">₦${totalSpent.toLocaleString()}</td>
-        </tr>
-      </table>
-    `,
+    subject: `Campaign Wrapped! Check Out The Numbers 📊 "${campaignTitle}"`,
+    html,
   });
 }
-

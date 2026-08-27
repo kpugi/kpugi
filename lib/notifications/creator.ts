@@ -17,33 +17,37 @@ export async function notifyCreatorWelcome({
     recipients: [clerkId],
     data: { 
       name,
-      action_url: '/dashboard',
+      action_url: '/c/campaigns',
     },
     profileId,
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Welcome to Kpugi, ${name}! 🚀 Let's get that bag`,
+    previewText: 'Start monetizing your short-form video views today.',
+    icon: 'star',
+    headline: `Welcome to Kpugi, ${name}! 🎉`,
+    subtitle: `Your creator account is officially live. Connect your handles, claim campaign drops, and start earning per 1,000 verified views.`,
+    details: [
+      { label: 'STEP 1', value: 'Connect TikTok, Instagram or X handle' },
+      { label: 'STEP 2', value: 'Claim slots in active brand campaigns' },
+      { label: 'STEP 3', value: 'Post brief creatives & submit your link' },
+      { label: 'STEP 4', value: 'Get paid per 1,000 verified views' },
+    ],
+    cta: {
+      label: 'Explore Active Campaigns',
+      url: `${appUrl}/c/campaigns`,
+      subtext: 'Browse open campaigns and claim your spot before budget caps fill up.',
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Welcome to Kpugi, ${name}! 🚀`,
+    subject: `Welcome to Kpugi, ${name}! 🚀 Let's get that bag`,
     previewText: 'Start monetizing your short-form video views today.',
-    html: `
-      <h2 style="margin-top:0;">Welcome to Kpugi, ${name}! 🎉</h2>
-      <p>Your creator account is active. Connect your TikTok or Instagram handle, browse available performance campaigns, and start earning per 1,000 verified views.</p>
-      
-      <div style="background:#f8fafc; border-left:4px solid #2563eb; padding:16px; margin:20px 0;">
-        <h4 style="margin:0 0 8px 0;">How it works:</h4>
-        <ol style="margin:0; padding-left:20px;">
-          <li>Claim a slot in an active brand campaign.</li>
-          <li>Post your video using the brand's brief and mandatory tags.</li>
-          <li>Submit your live video link within 72 hours.</li>
-          <li>Automated scrapers verify your view counts and release funds to your wallet.</li>
-        </ol>
-      </div>
-
-      <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/dashboard" class="btn">Explore Campaigns</a>
-      </p>
-    `,
+    html,
   });
 }
 
@@ -66,19 +70,36 @@ export async function notifyCreatorSocialConnected({
     data: { 
       platform, 
       handle,
-      action_url: '/accounts',
+      action_url: '/c/accounts',
     },
     profileId,
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const cleanHandle = `@${handle.replace(/^@/, '')}`;
+
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Handle Connected: ${cleanHandle} (${platform.toUpperCase()}) ✅`,
+    previewText: `Your ${platform.toUpperCase()} profile is verified and ready.`,
+    icon: 'check',
+    headline: 'Handle Connected & Verified ✅',
+    subtitle: `Your ${platform.toUpperCase()} account ${cleanHandle} has been successfully linked to Kpugi. You can now claim brand campaigns matching your follower tier.`,
+    details: [
+      { label: 'PLATFORM', value: platform.toUpperCase() },
+      { label: 'CONNECTED HANDLE', value: cleanHandle },
+      { label: 'STATUS', value: 'Connected', statusBadge: { text: 'Active', variant: 'green' } },
+    ],
+    cta: {
+      label: 'Browse Matching Campaigns',
+      url: `${appUrl}/c/campaigns`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Social Account Connected: @${handle} (${platform.toUpperCase()})`,
-    html: `
-      <h2 style="margin-top:0;">Social Account Connected ✅</h2>
-      <p>Your <strong>${platform.toUpperCase()}</strong> account <strong>@${handle}</strong> has been successfully linked to Kpugi.</p>
-      <p>You can now use this page to join campaigns matching your follower base and platform requirements.</p>
-    `,
+    subject: `Handle Connected: ${cleanHandle} (${platform.toUpperCase()}) ✅`,
+    html,
   });
 }
 
@@ -95,9 +116,9 @@ export async function notifyCreatorJoinedCampaign({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/c/campaigns/${campaignId}` : '/c/dashboard';
   
-  // In-app only for routine campaign joins to avoid inbox clutter
+  // In-app notification
   await triggerNotification({
     workflowKey: 'campaign-joined',
     recipients: [clerkId],
@@ -126,7 +147,8 @@ export async function notifyCreatorPostSubmitted({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/c/campaigns/${campaignId}` : '/c/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'post-submitted',
@@ -140,20 +162,30 @@ export async function notifyCreatorPostSubmitted({
     profileId,
   });
 
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Post Link Locked In! 📌 "${campaignTitle}"`,
+    previewText: `Your post for "${campaignTitle}" is now being tracked.`,
+    icon: 'check',
+    headline: 'Post Link Locked In 📌',
+    subtitle: `Your submission for "${campaignTitle}" was received and is now being actively monitored by our automated scrapers.`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'SUBMITTED LINK', value: postUrl },
+      { label: 'STATUS', value: 'Tracking Views', statusBadge: { text: 'Tracking', variant: 'blue' } },
+    ],
+    noticeText: 'Reminder: Keep your post public and published for the full duration so our automated checks can verify your view milestones.',
+    cta: {
+      label: 'Track Progress on Dashboard',
+      url: `${appUrl}${actionUrl}`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Submission Received for "${campaignTitle}"`,
+    subject: `Post Link Locked In! 📌 "${campaignTitle}"`,
     previewText: 'Your live post URL was successfully recorded for performance tracking.',
-    html: `
-      <h2 style="margin-top:0;">Post Link Submitted 📌</h2>
-      <p>Your post for campaign <strong>"${campaignTitle}"</strong> was received and is now being monitored by Kpugi scrapers.</p>
-      
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:8px; margin:16px 0;">
-        <p style="margin:0; font-size:14px; color:#64748b;"><strong>Submitted Link:</strong> <a href="${postUrl}" style="color:#2563eb;">${postUrl}</a></p>
-      </div>
-
-      <p><strong>Reminder:</strong> Please keep the post public and published for the full campaign duration so automated checks can verify view milestones.</p>
-    `,
+    html,
   });
 }
 
@@ -174,7 +206,8 @@ export async function notifyCreatorVerificationPassed({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/c/campaigns/${campaignId}` : '/c/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'verification-passed',
@@ -189,30 +222,38 @@ export async function notifyCreatorVerificationPassed({
     profileId,
   });
 
+  const formattedPayout = `₦${payoutAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Bag Secured! 🎉 You earned ${formattedPayout} on "${campaignTitle}"`,
+    previewText: `Your post verified ${trackedViews.toLocaleString()} views! Earnings added to your wallet.`,
+    icon: 'star',
+    headline: 'Verification Passed! Bag Secured 🌟',
+    subtitle: `Congratulations! Your post for "${campaignTitle}" crushed the view goal with ${trackedViews.toLocaleString()} verified views.`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'VERIFIED VIEWS', value: `${trackedViews.toLocaleString()} views`, isMonospace: true },
+      { label: 'NET PAYOUT', value: formattedPayout, isMonospace: true },
+      { label: 'STATUS', value: 'Verified & Paid', statusBadge: { text: 'Paid', variant: 'green' } },
+    ],
+    highlightBar: {
+      label: 'Credited to Wallet',
+      value: formattedPayout,
+      bgColor: '#10B981',
+    },
+    cta: {
+      label: 'View Wallet & Cash Out',
+      url: `${appUrl}/c/wallet`,
+      subtext: 'Withdraw straight to your linked Nigerian bank account anytime.',
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `🎉 Verification Passed: You earned ₦${payoutAmount.toLocaleString()} on "${campaignTitle}"`,
+    subject: `Bag Secured! 🎉 You earned ${formattedPayout} on "${campaignTitle}"`,
     previewText: `Your post verified ${trackedViews.toLocaleString()} views! Earnings added to your wallet.`,
-    html: `
-      <h2 style="margin-top:0; color:#16a34a;">Verification Passed! 🌟</h2>
-      <p>Congratulations! Your post for campaign <strong>"${campaignTitle}"</strong> has successfully completed verification.</p>
-      
-      <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px; overflow:hidden;">
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:12px 16px; color:#64748b;">Verified Views:</td>
-          <td style="padding:12px 16px; font-weight:700; text-align:right;">${trackedViews.toLocaleString()} views</td>
-        </tr>
-        <tr>
-          <td style="padding:12px 16px; color:#64748b;">Net Earnings (after 10% commission):</td>
-          <td style="padding:12px 16px; font-weight:800; color:#16a34a; font-size:18px; text-align:right;">₦${payoutAmount.toLocaleString()}</td>
-        </tr>
-      </table>
-
-      <p>Earnings have been credited to your Kpugi Wallet and are ready for withdrawal.</p>
-      <p style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com'}/creator/wallet" class="btn">View Wallet & Withdraw</a>
-      </p>
-    `,
+    html,
   });
 }
 
@@ -231,7 +272,8 @@ export async function notifyCreatorVerificationFailed({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/c/campaigns/${campaignId}` : '/c/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'verification-failed',
@@ -245,19 +287,29 @@ export async function notifyCreatorVerificationFailed({
     profileId,
   });
 
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Heads Up: Verification Issue on "${campaignTitle}" ⚠️`,
+    previewText: `We ran into an issue verifying your post for "${campaignTitle}".`,
+    icon: 'star',
+    headline: 'Verification Check Needed ⚠️',
+    subtitle: `We could not complete verification for your submission on "${campaignTitle}".`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'REASON', value: failureReason },
+      { label: 'STATUS', value: 'Incomplete', statusBadge: { text: 'Failed', variant: 'yellow' } },
+    ],
+    noticeText: 'Common causes include: failing to reach the minimum view count floor, making the post private/deleted, or unlinking your social account permissions.',
+    cta: {
+      label: 'Review on Dashboard',
+      url: `${appUrl}${actionUrl}`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Submission Update: Verification Issue for "${campaignTitle}"`,
-    html: `
-      <h2 style="margin-top:0; color:#dc2626;">Verification Could Not Be Completed ⚠️</h2>
-      <p>Unfortunately, your submission for campaign <strong>"${campaignTitle}"</strong> did not meet verification criteria.</p>
-      
-      <div style="background:#fef2f2; border:1px solid #fecaca; padding:16px; border-radius:8px; margin:16px 0; color:#991b1b;">
-        <strong>Reason:</strong> ${failureReason}
-      </div>
-
-      <p>Common reasons include: failing to reach the minimum view count floor within the campaign duration, taking down or privatizing the post, or revoking social account permissions.</p>
-    `,
+    subject: `Heads Up: Verification Issue on "${campaignTitle}" ⚠️`,
+    html,
   });
 }
 
@@ -278,7 +330,8 @@ export async function notifyCreatorPayoutReleased({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/campaigns/${campaignId}` : '/dashboard';
+  const actionUrl = campaignId ? `/c/campaigns/${campaignId}` : '/c/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
     workflowKey: 'payout-released',
@@ -293,35 +346,37 @@ export async function notifyCreatorPayoutReleased({
     profileId,
   });
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const formattedAmount = `₦${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const formattedBalance = `₦${newBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Yooo! You got paid 💰! ₦${amount.toLocaleString()} just hit your creator wallet for "${campaignTitle}"`,
-    previewText: `₦${amount.toLocaleString()} added to your wallet!`,
+    subject: `Yooo! You got paid 💰 ${formattedAmount} for "${campaignTitle}"`,
+    previewText: `${formattedAmount} added to your wallet!`,
     icon: 'wallet',
-    headline: 'Yooo! You Got Paid 💰!',
-    subtitle: `Your video submission for "${campaignTitle}" passed verification and funds have been credited to your creator wallet.`,
-    cardTitle: 'Payout Details',
+    headline: 'Yooo! You Got Paid 💰',
+    subtitle: `Your video submission for "${campaignTitle}" passed verification and funds just hit your creator wallet.`,
     details: [
-      { label: 'Campaign Title', value: campaignTitle },
-      { label: 'Date Credited', value: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
-      { label: 'Updated Wallet Balance', value: `₦${newBalance.toLocaleString()}`, isMonospace: true },
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'AMOUNT CREDITED', value: formattedAmount, isMonospace: true },
+      { label: 'UPDATED WALLET BALANCE', value: formattedBalance, isMonospace: true },
+      { label: 'STATUS', value: 'Paid', statusBadge: { text: 'Credited', variant: 'green' } },
     ],
     highlightBar: {
       label: 'Earnings Credited',
-      value: `₦${amount.toLocaleString()}`,
+      value: formattedAmount,
       bgColor: '#10B981',
     },
     cta: {
-      label: 'View Wallet & Withdraw',
+      label: 'View Wallet & Cash Out',
       url: `${appUrl}/c/wallet`,
-      subtext: 'Withdraw your earnings straight to your bank account anytime.',
+      subtext: 'Withdraw straight to your Nigerian bank account anytime.',
     },
   });
 
   await sendEmail({
     to: email,
-    subject: `Yooo! You got paid 💰! ₦${amount.toLocaleString()} just hit your creator wallet for "${campaignTitle}"`,
+    subject: `Yooo! You got paid 💰 ${formattedAmount} for "${campaignTitle}"`,
     html,
   });
 }
@@ -351,32 +406,37 @@ export async function notifyCreatorWithdrawalCompleted({
       bankName,
       accountMasked,
       reference,
-      action_url: '/earnings',
+      action_url: '/c/wallet',
     },
     profileId,
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const formattedAmount = `₦${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Funds Dispatched! ${formattedAmount} On the Way to ${bankName} 🏧`,
+    previewText: `Your withdrawal of ${formattedAmount} is on its way.`,
+    icon: 'wallet',
+    headline: 'Transfer Dispatched 🏧',
+    subtitle: `Your withdrawal request of ${formattedAmount} has been processed via Paystack and sent straight to your bank account.`,
+    details: [
+      { label: 'DESTINATION BANK', value: bankName },
+      { label: 'ACCOUNT NUMBER', value: accountMasked, isMonospace: true },
+      { label: 'AMOUNT DISPATCHED', value: formattedAmount, isMonospace: true },
+      { label: 'TRANSFER REFERENCE', value: reference, isMonospace: true },
+      { label: 'STATUS', value: 'Dispatched', statusBadge: { text: 'Dispatched', variant: 'green' } },
+    ],
+    cta: {
+      label: 'View Wallet History',
+      url: `${appUrl}/c/wallet`,
+    },
+  });
+
   await sendEmail({
     to: email,
-    subject: `Bank Transfer Dispatched: ₦${amount.toLocaleString()} to ${bankName}`,
-    html: `
-      <h2 style="margin-top:0; color:#2563eb;">Withdrawal Dispatched 🏧</h2>
-      <p>Your withdrawal request of <strong>₦${amount.toLocaleString()}</strong> has been processed and sent to your bank account via Paystack.</p>
-      
-      <table style="width:100%; border-collapse:collapse; margin:20px 0; background:#f8fafc; border-radius:8px;">
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Destination Bank:</td>
-          <td style="padding:10px 16px; font-weight:700; text-align:right;">${bankName}</td>
-        </tr>
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:10px 16px; color:#64748b;">Account Number:</td>
-          <td style="padding:10px 16px; font-family:monospace; text-align:right;">${accountMasked}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 16px; color:#64748b;">Transfer Reference:</td>
-          <td style="padding:10px 16px; font-family:monospace; text-align:right;">${reference}</td>
-        </tr>
-      </table>
-    `,
+    subject: `Funds Dispatched! ${formattedAmount} On the Way to ${bankName} 🏧`,
+    html,
   });
 }

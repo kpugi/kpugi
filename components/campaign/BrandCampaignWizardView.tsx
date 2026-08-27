@@ -229,7 +229,7 @@ export function BrandCampaignWizardView({
     if (method === 'wallet') {
       if (walletBalance < totalPayableAmount) {
         setErrorMessage(
-          `Insufficient escrow wallet balance (Available: ₦${walletBalance.toLocaleString()}). Please top up your wallet or select Instant Card & Bank Transfer.`
+          `Insufficient wallet balance (Available: ₦${walletBalance.toLocaleString()}). Please top up your wallet or select Instant Card & Bank Transfer.`
         );
         return;
       }
@@ -394,22 +394,22 @@ export function BrandCampaignWizardView({
   const totalPayableAmount = Number(formData.total_budget || 100000) + (formData.is_featured ? 2500 : 0);
 
   return (
-    <div className="min-h-screen bg-[#f4f3ff] py-6 sm:py-8 px-4 sm:px-8 font-sans relative">
+    <div className="min-h-screen bg-[#f4f3ff] dark:bg-[#0B0E14] py-6 sm:py-8 px-4 sm:px-8 font-sans relative text-slate-900 dark:text-white transition-colors">
       <div className="w-full max-w-6xl mx-auto space-y-6">
         
         {/* Subtle Wizard Navigation Bar with Exit Button */}
-        <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-            <span className="text-slate-400">Campaign Creation</span>
+        <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+            <span className="text-slate-400 dark:text-slate-500">Campaign Creation</span>
             <span>•</span>
-            <span className="text-slate-900 font-extrabold truncate max-w-[200px] sm:max-w-xs">
+            <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[200px] sm:max-w-xs">
               {formData.title || 'Untitled Campaign'}
             </span>
           </div>
 
           <Link
             href="/b/campaigns"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-200/70 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs font-bold transition-all shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-200/70 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white text-xs font-bold transition-all shrink-0 border border-transparent dark:border-white/5"
             title="Exit Campaign Wizard"
           >
             <span>Exit</span>
@@ -434,17 +434,19 @@ export function BrandCampaignWizardView({
                   <div
                     className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all ${
                       isCurrent
-                        ? 'bg-[#4338ca] text-white shadow-md ring-4 ring-[#4338ca]/15'
+                        ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-md ring-4 ring-[#4338ca]/15 dark:ring-indigo-500/20'
                         : isCompleted
-                        ? 'bg-[#4338ca] text-white'
-                        : 'bg-[#e9e8fa] text-slate-400'
+                        ? 'bg-[#4338ca] dark:bg-indigo-600 text-white'
+                        : 'bg-[#e9e8fa] dark:bg-white/10 text-slate-400 dark:text-slate-500'
                     }`}
                   >
                     {isCompleted ? <Check className="w-4 h-4" /> : step.number}
                   </div>
                   <span
                     className={`text-[10px] sm:text-xs font-bold ${
-                      isCurrent ? 'text-[#4338ca]' : 'text-slate-400'
+                      isCurrent
+                        ? 'text-[#4338ca] dark:text-indigo-400'
+                        : 'text-slate-400 dark:text-slate-500'
                     }`}
                   >
                     {step.title}
@@ -454,7 +456,9 @@ export function BrandCampaignWizardView({
                 {idx < steps.length - 1 && (
                   <div
                     className={`h-[2px] w-6 sm:w-16 mb-5 transition-all ${
-                      currentStep > step.number ? 'bg-[#4338ca]' : 'bg-slate-200'
+                      currentStep > step.number
+                        ? 'bg-[#4338ca] dark:bg-indigo-600'
+                        : 'bg-slate-200 dark:bg-white/10'
                     }`}
                   />
                 )}
@@ -464,7 +468,7 @@ export function BrandCampaignWizardView({
         </div>
 
         {/* Main Card Container */}
-        <div className="w-full max-w-6xl mx-auto bg-white rounded-3xl p-5 sm:p-12 shadow-sm border border-[#e8e6fd] space-y-8">
+        <div className="w-full max-w-6xl mx-auto bg-white dark:bg-[#12141A] rounded-3xl p-5 sm:p-12 shadow-sm border border-[#e8e6fd] dark:border-white/10 space-y-8 text-slate-900 dark:text-white">
           {currentStep === 1 && (
             <CampaignStep1Basics
               formData={formData}
@@ -504,17 +508,17 @@ export function BrandCampaignWizardView({
           )}
 
           {/* Action Bar Section: Error & Success Messages Render Directly Above Buttons */}
-          <div className="pt-6 border-t border-slate-100 space-y-4">
+          <div className="pt-6 border-t border-slate-100 dark:border-white/10 space-y-4">
             {errorMessage && (
-              <div className="w-full p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between gap-2 animate-fadeIn shadow-2xs">
+              <div className="w-full p-4 rounded-2xl bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-500/30 text-red-700 dark:text-rose-300 text-xs font-medium flex items-center justify-between gap-2 animate-fadeIn shadow-2xs">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500 dark:text-rose-400" />
                   <span>{errorMessage}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setErrorMessage('')}
-                  className="text-red-500 hover:text-red-700 font-bold text-base"
+                  className="text-red-500 dark:text-rose-400 hover:text-red-700 font-bold text-base"
                 >
                   ×
                 </button>
@@ -522,15 +526,15 @@ export function BrandCampaignWizardView({
             )}
 
             {successMessage && (
-              <div className="w-full p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between gap-2 animate-fadeIn shadow-2xs">
+              <div className="w-full p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-medium flex items-center justify-between gap-2 animate-fadeIn shadow-2xs">
                 <div className="flex items-center gap-2 font-bold">
-                  <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   <span>{successMessage}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSuccessMessage('')}
-                  className="text-emerald-600 hover:text-emerald-800 font-bold text-base"
+                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 font-bold text-base"
                 >
                   ×
                 </button>
@@ -543,7 +547,7 @@ export function BrandCampaignWizardView({
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="w-full sm:w-auto px-6 py-3 rounded-full border border-slate-300 bg-white text-slate-700 text-xs sm:text-sm font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-full border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back</span>
@@ -554,14 +558,14 @@ export function BrandCampaignWizardView({
                 type="button"
                 disabled={isDrafting}
                 onClick={handleSaveDraft}
-                className="w-full sm:w-auto px-7 py-3 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
+                className="w-full sm:w-auto px-7 py-3 rounded-full border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
               >
                 {isDrafting ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-[#4338ca]" />
+                  <Loader2 className="w-4 h-4 animate-spin text-[#4338ca] dark:text-indigo-400" />
                 ) : autoSaveStatus === 'saved' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <Save className="w-4 h-4 text-slate-600" />
+                  <Save className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                 )}
                 <span>
                   {isDrafting
@@ -578,7 +582,7 @@ export function BrandCampaignWizardView({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="w-full sm:w-auto px-8 py-3 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-xs sm:text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-3 rounded-full bg-[#4338ca] hover:bg-[#3730a3] dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   <span>Continue to {steps[currentStep]?.title || 'Next Step'}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -590,7 +594,7 @@ export function BrandCampaignWizardView({
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleExecutePaymentStep4}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] text-white text-xs sm:text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 active:scale-[0.99] disabled:opacity-50"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#4338ca] hover:bg-[#3730a3] dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs sm:text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 active:scale-[0.99] disabled:opacity-50"
                 >
                   <Lock className="w-4.5 h-4.5 text-amber-300" />
                   <span>

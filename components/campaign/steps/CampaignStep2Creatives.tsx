@@ -287,20 +287,20 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   };
 
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans text-slate-900 dark:text-white">
       {/* Title & Subtitle Section - Step 1 Style */}
       <div className="text-center space-y-2">
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 tracking-tight">
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight">
           Let's configure requirements.
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
           Specify ad format, mandatory hashtags, brand mentions, and creative assets for creators.
         </p>
       </div>
 
       {/* Ad Format Selection Grid (Same as Step 1 Goal Selection) */}
       <div className="space-y-4 pt-2">
-        <h3 className="font-display font-extrabold text-base text-slate-900 text-center">
+        <h3 className="font-display font-extrabold text-base text-slate-900 dark:text-white text-center">
           Select Ad Format
         </h3>
 
@@ -315,22 +315,22 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
                 onClick={() => handleSelectAdFormat(format.id)}
                 className={`p-5 rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center space-y-2.5 min-h-[140px] justify-center ${
                   isSelected
-                    ? 'bg-[#eeedfd] border-2 border-[#4338ca] text-[#4338ca] shadow-xs'
-                    : 'bg-[#f8f7ff] border border-[#e2e0fb] hover:border-slate-300 text-slate-700'
+                    ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-xs'
+                    : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-[#4338ca] text-white' : 'bg-[#e9e6fd] text-[#4338ca]'
+                    isSelected ? 'bg-[#4338ca] dark:bg-indigo-600 text-white' : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-display font-extrabold text-sm text-slate-900 leading-tight">
+                  <h4 className="font-display font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
                     {format.title}
                   </h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">
                     {format.desc}
                   </p>
                 </div>
@@ -343,29 +343,29 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
       {/* ─────────────────────────────────────────────────────
           DYNAMIC AD FORMAT CREATIVE ASSET INPUTS
       ───────────────────────────────────────────────────── */}
-      <div className="space-y-4 pt-2 border-t border-slate-100">
+      <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-white/10">
         
         {/* CASE 1: VIDEO ASSET */}
         {isVideoFormat && (
-          <div className="p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-4">
+          <div className="p-5 rounded-2xl bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Video className="w-4 h-4 text-[#4338ca]" />
+              <label className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Video className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
                 <span>Video Asset*</span>
               </label>
 
               {/* Mutually-Exclusive Mode Selector */}
-              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#dcd8fc]">
+              <div className="flex items-center gap-1 bg-white dark:bg-white/10 p-1 rounded-xl border border-[#dcd8fc] dark:border-white/10">
                 <button
                   type="button"
                   disabled={isLinkEntered}
                   onClick={() => setActiveVideoTab('upload')}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
                     activeVideoTab === 'upload'
-                      ? 'bg-[#4338ca] text-white shadow-xs'
+                      ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
                       : isLinkEntered
-                      ? 'text-slate-300 cursor-not-allowed'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title={isLinkEntered ? 'Clear video link to upload a video file' : 'Upload MP4 video file'}
                 >
@@ -377,10 +377,10 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
                   onClick={() => setActiveVideoTab('url')}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
                     activeVideoTab === 'url'
-                      ? 'bg-[#4338ca] text-white shadow-xs'
+                      ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
                       : isFileUploaded
-                      ? 'text-slate-300 cursor-not-allowed'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title={isFileUploaded ? 'Remove uploaded video file to attach a URL link' : 'Attach video URL link'}
                 >
@@ -390,14 +390,14 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             </div>
 
             {videoUploadError && (
-              <p className="text-[11px] font-bold text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">{videoUploadError}</p>
+              <p className="text-[11px] font-bold text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/40 p-2.5 rounded-xl border border-red-200 dark:border-rose-500/30">{videoUploadError}</p>
             )}
 
             {/* TAB 1: FILE UPLOAD MODE */}
             {activeVideoTab === 'upload' && (
               <div className="space-y-3">
                 {isFileUploaded ? (
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-black aspect-video max-h-[220px] flex items-center justify-center group">
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-black aspect-video max-h-[220px] flex items-center justify-center group">
                     <video
                       src={rawVideoVal}
                       controls
@@ -414,12 +414,12 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
                     </button>
                   </div>
                 ) : isLinkEntered ? (
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-900 font-sans flex items-center justify-between">
+                  <div className="p-4 bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/20 dark:border-amber-500/30 rounded-xl text-xs text-amber-900 dark:text-amber-300 font-sans flex items-center justify-between">
                     <span>A video link is attached. Clear the video link to upload an MP4 file.</span>
                     <button
                       type="button"
                       onClick={removeVideoAsset}
-                      className="text-[11px] font-bold text-amber-900 underline hover:text-black shrink-0 ml-2"
+                      className="text-[11px] font-bold text-amber-900 dark:text-amber-300 underline hover:text-black dark:hover:text-white shrink-0 ml-2"
                     >
                       Clear Link
                     </button>
@@ -427,11 +427,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
                 ) : (
                   <div
                     onClick={() => videoInputRef.current?.click()}
-                    className="h-32 border-2 border-dashed border-[#c7d2fe] hover:border-[#4338ca] rounded-2xl flex flex-col items-center justify-center p-4 cursor-pointer bg-white transition-all text-center group"
+                    className="h-32 border-2 border-dashed border-[#c7d2fe] dark:border-indigo-500/30 hover:border-[#4338ca] dark:hover:border-indigo-400 rounded-2xl flex flex-col items-center justify-center p-4 cursor-pointer bg-white dark:bg-white/[0.03] transition-all text-center group"
                   >
-                    <Upload className="w-6 h-6 text-[#4338ca] mb-1.5 group-hover:scale-110 transition-transform" />
-                    <span className="text-xs font-bold text-slate-800">Upload Campaign Video</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">MP4, WEBM, MOV (Max 50MB)</span>
+                    <Upload className="w-6 h-6 text-[#4338ca] dark:text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Upload Campaign Video</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">MP4, WEBM, MOV (Max 50MB)</span>
                   </div>
                 )}
                 <input
@@ -448,12 +448,12 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             {activeVideoTab === 'url' && (
               <div className="space-y-3">
                 {isFileUploaded ? (
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-900 font-sans flex items-center justify-between">
+                  <div className="p-4 bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/20 dark:border-amber-500/30 rounded-xl text-xs text-amber-900 dark:text-amber-300 font-sans flex items-center justify-between">
                     <span>A video file is uploaded. Remove the video file to enter a video link.</span>
                     <button
                       type="button"
                       onClick={removeVideoAsset}
-                      className="text-[11px] font-bold text-amber-900 underline hover:text-black shrink-0 ml-2"
+                      className="text-[11px] font-bold text-amber-900 dark:text-amber-300 underline hover:text-black dark:hover:text-white shrink-0 ml-2"
                     >
                       Remove Video File
                     </button>
@@ -466,22 +466,22 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
                         value={isLinkEntered ? rawVideoVal : ''}
                         onChange={(e) => handleVideoUrlChange(e.target.value)}
                         placeholder="Paste YouTube, TikTok, Instagram, Google Drive, or MP4 URL..."
-                        className="flex-1 px-4 py-3 rounded-xl bg-white border border-[#dcd8fc] text-xs font-medium text-slate-900 focus:ring-2 focus:ring-[#4338ca] outline-none"
+                        className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-[#dcd8fc] dark:border-white/10 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 outline-none"
                       />
                       {isLinkEntered && (
                         <button
                           type="button"
                           onClick={removeVideoAsset}
-                          className="px-3.5 py-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition-all shrink-0"
+                          className="px-3.5 py-3 rounded-xl bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shrink-0"
                         >
                           Clear
                         </button>
                       )}
                     </div>
                     {isLinkEntered && (
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                        <span className="font-mono text-slate-700 truncate max-w-xs">{rawVideoVal}</span>
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1 shrink-0">
+                      <div className="p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex items-center justify-between text-xs">
+                        <span className="font-mono text-slate-700 dark:text-slate-300 truncate max-w-xs">{rawVideoVal}</span>
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1 shrink-0">
                           <CheckCircle2 className="w-3 h-3" />
                           <span>Video Link Attached</span>
                         </span>
@@ -496,23 +496,23 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
 
         {/* CASE 2: IMAGE ASSET */}
         {isImageFormat && (
-          <div className="p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-4">
+          <div className="p-5 rounded-2xl bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-[#4338ca]" />
+              <label className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
                 <span>Campaign Asset*</span>
               </label>
-              <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
+              <span className="text-[10px] font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-full border border-[#dcd8fc] dark:border-indigo-500/30">
                 Optimized
               </span>
             </div>
 
             {imageUploadError && (
-              <p className="text-[11px] font-bold text-red-600">{imageUploadError}</p>
+              <p className="text-[11px] font-bold text-red-600 dark:text-rose-400">{imageUploadError}</p>
             )}
 
             {formData.requirements?.creative_image_url ? (
-              <div className="relative h-44 w-full rounded-2xl overflow-hidden border border-slate-200 group bg-slate-900">
+              <div className="relative h-44 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 group bg-slate-900">
                 <img
                   src={formData.requirements.creative_image_url}
                   alt="Creative Asset"
@@ -534,11 +534,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             ) : (
               <div
                 onClick={() => imageInputRef.current?.click()}
-                className="h-32 border-2 border-dashed border-[#c7d2fe] hover:border-[#4338ca] rounded-2xl flex flex-col items-center justify-center p-4 cursor-pointer bg-white transition-all text-center group"
+                className="h-32 border-2 border-dashed border-[#c7d2fe] dark:border-indigo-500/30 hover:border-[#4338ca] dark:hover:border-indigo-400 rounded-2xl flex flex-col items-center justify-center p-4 cursor-pointer bg-white dark:bg-white/[0.03] transition-all text-center group"
               >
-                <Upload className="w-6 h-6 text-[#4338ca] mb-1.5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold text-slate-800">Click to upload official campaign banner/photo</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP (Auto-optimized in browser)</span>
+                <Upload className="w-6 h-6 text-[#4338ca] dark:text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Click to upload official campaign banner/photo</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG, WEBP (Auto-optimized in browser)</span>
               </div>
             )}
             <input
@@ -554,11 +554,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
         {/* Ready-to-Post Text Copy / Caption */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-[#4338ca]" />
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
               <span>Ready-to-Post Caption*</span>
             </label>
-            <span className="text-[10px] font-mono font-bold text-[#4338ca] bg-[#eeedfd] px-2.5 py-0.5 rounded-full border border-[#dcd8fc]">
+            <span className="text-[10px] font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-full border border-[#dcd8fc] dark:border-indigo-500/30">
               Creators Copy
             </span>
           </div>
@@ -571,7 +571,7 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               })
             }
             placeholder="e.g. 🔥 Exciting news! Kpugi platform is officially launching in Nigeria. Join thousands of creators today! Link in bio #KpugiLaunch"
-            className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none leading-relaxed transition-all"
+            className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 outline-none leading-relaxed transition-all"
           />
         </div>
       </div>
@@ -579,8 +579,8 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
       {/* Asset Pack & Google Drive Links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <LinkIcon className="w-3.5 h-3.5 text-[#4338ca]" />
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <LinkIcon className="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400" />
             <span>Google Drive Asset Pack URL</span>
           </label>
           <input
@@ -592,13 +592,13 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               })
             }
             placeholder="https://drive.google.com/drive/folders/..."
-            className="w-full px-4 py-3 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none transition-all"
+            className="w-full px-4 py-3 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 outline-none transition-all"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#4338ca]" />
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400" />
             <span>Google Doc Guidelines Brief URL</span>
           </label>
           <input
@@ -610,25 +610,25 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               })
             }
             placeholder="https://docs.google.com/document/d/..."
-            className="w-full px-4 py-3 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#4338ca] outline-none transition-all"
+            className="w-full px-4 py-3 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 outline-none transition-all"
           />
         </div>
       </div>
 
       {/* Mandatory Hashtags & Mentions */}
-      <div className="p-5 rounded-2xl bg-[#f8f7ff] border border-[#e2e0fb] space-y-4">
+      <div className="p-5 rounded-2xl bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-bold text-slate-900">Hashtags</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5">Included in post captions.</p>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Hashtags</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Included in post captions.</p>
           </div>
           <button
             type="button"
             disabled={isAiLoading}
             onClick={handleAiTags}
-            className="text-[11px] font-bold text-[#4f46e5] bg-white border border-[#dcd8fc] px-3 py-1 rounded-full hover:bg-slate-50 transition-all flex items-center gap-1"
+            className="text-[11px] font-bold text-[#4f46e5] dark:text-indigo-400 bg-white dark:bg-white/10 border border-[#dcd8fc] dark:border-white/10 px-3 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-white/20 transition-all flex items-center gap-1"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
             <span>Auto-Suggest</span>
           </button>
         </div>
@@ -642,12 +642,12 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               onChange={(e) => setTagInput(e.target.value)}
               placeholder="Add hashtag (e.g. #KpugiLaunch)..."
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addHashtag())}
-              className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#4338ca]"
+              className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500"
             />
             <button
               type="button"
               onClick={addHashtag}
-              className="px-4 py-2 rounded-xl bg-[#4338ca] text-white text-xs font-bold hover:bg-[#3730a3]"
+              className="px-4 py-2 rounded-xl bg-[#4338ca] dark:bg-indigo-600 text-white text-xs font-bold hover:bg-[#3730a3] dark:hover:bg-indigo-700"
             >
               Add
             </button>
@@ -656,11 +656,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             {hashtags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#eeedfd] text-[#4338ca] text-xs font-mono font-bold border border-[#dcd8fc]"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#eeedfd] dark:bg-indigo-950/50 text-[#4338ca] dark:text-indigo-300 text-xs font-mono font-bold border border-[#dcd8fc] dark:border-indigo-500/30"
               >
                 <span>{tag}</span>
                 <button type="button" onClick={() => removeHashtag(tag)}>
-                  <X className="w-3.5 h-3.5 hover:text-red-500" />
+                  <X className="w-3.5 h-3.5 hover:text-red-500 dark:hover:text-rose-400" />
                 </button>
               </span>
             ))}
@@ -668,7 +668,7 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
         </div>
 
         {/* Mentions */}
-        <div className="space-y-2 pt-3 border-t border-slate-200">
+        <div className="space-y-2 pt-3 border-t border-slate-200 dark:border-white/10">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -676,12 +676,12 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
               onChange={(e) => setMentionInput(e.target.value)}
               placeholder="Add brand mention (e.g. @KpugiApp)..."
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMention())}
-              className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#4338ca]"
+              className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500"
             />
             <button
               type="button"
               onClick={addMention}
-              className="px-4 py-2 rounded-xl bg-[#4338ca] text-white text-xs font-bold hover:bg-[#3730a3]"
+              className="px-4 py-2 rounded-xl bg-[#4338ca] dark:bg-indigo-600 text-white text-xs font-bold hover:bg-[#3730a3] dark:hover:bg-indigo-700"
             >
               Add
             </button>
@@ -690,11 +690,11 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
             {mentions.map((m) => (
               <span
                 key={m}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-mono font-bold border border-purple-200"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-xs font-mono font-bold border border-purple-200 dark:border-purple-500/30"
               >
                 <span>{m}</span>
                 <button type="button" onClick={() => removeMention(m)}>
-                  <X className="w-3.5 h-3.5 hover:text-red-500" />
+                  <X className="w-3.5 h-3.5 hover:text-red-500 dark:hover:text-rose-400" />
                 </button>
               </span>
             ))}

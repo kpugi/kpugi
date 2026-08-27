@@ -65,10 +65,10 @@ export function CampaignPaymentBridgeModal({
             <CheckCircle2 className="w-9 h-9" />
           </div>
           <h2 className="font-display font-extrabold text-2xl text-slate-900 tracking-tight">
-            Payment Verified & Escrow Locked
+            Payment Verified & Locked
           </h2>
           <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
-            Your transaction was processed successfully and escrow funds are locked in smart contract.
+            Your transaction was processed successfully and campaign budget is safely secured.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export function CampaignPaymentBridgeModal({
           <div className="flex justify-between items-center text-slate-600">
             <span>Payment Method</span>
             <span className="font-bold text-slate-800 capitalize">
-              {paymentMethod === 'wallet' ? 'Kpugi Escrow Wallet' : 'Instant Card / Bank Transfer'}
+              {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Instant Card / Bank Transfer'}
             </span>
           </div>
 

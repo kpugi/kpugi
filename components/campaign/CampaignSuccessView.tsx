@@ -115,76 +115,76 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0efff] via-[#f8f7ff] to-[#eff6ff] flex flex-col items-center justify-start py-10 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0efff] via-[#f8f7ff] to-[#eff6ff] dark:from-[#0B0E14] dark:via-[#12141A] dark:to-[#0B0E14] flex flex-col items-center justify-start py-10 px-4 text-slate-900 dark:text-white">
       <div className="w-full max-w-2xl mx-auto space-y-6">
 
         {/* Hero Success Banner */}
-        <div className="bg-white rounded-3xl border border-indigo-100 shadow-xl p-8 text-center space-y-4 relative overflow-hidden">
+        <div className="bg-white dark:bg-[#12141A] rounded-3xl border border-indigo-100 dark:border-white/10 shadow-xl p-8 text-center space-y-4 relative overflow-hidden">
           {/* Background decorative orbs */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-indigo-100/60 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-purple-100/60 blur-3xl pointer-events-none" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-indigo-100/60 dark:bg-indigo-900/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-purple-100/60 dark:bg-purple-900/20 blur-3xl pointer-events-none" />
 
           <div className="relative flex justify-center">
-            <div className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-emerald-100 flex items-center justify-center shadow-lg">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+            <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border-4 border-emerald-100 dark:border-emerald-500/30 flex items-center justify-center shadow-lg">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 dark:text-emerald-400" />
             </div>
           </div>
 
           <div className="relative space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-xs font-bold tracking-wide mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 rounded-full text-emerald-700 dark:text-emerald-300 text-xs font-bold tracking-wide mb-2">
               <Rocket className="w-3 h-3" />
               <span>CAMPAIGN IS LIVE</span>
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight">
               You&apos;re live! 🎉
             </h1>
-            <p className="text-sm text-slate-500 font-medium max-w-sm mx-auto">
-              <span className="font-bold text-slate-700">&ldquo;{campaign.title}&rdquo;</span> is
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
+              <span className="font-bold text-slate-700 dark:text-slate-200">&ldquo;{campaign.title}&rdquo;</span> is
               now visible to qualified creators on Kpugi.
             </p>
           </div>
         </div>
 
         {/* Campaign Details Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+        <div className="bg-white dark:bg-[#12141A] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm divide-y divide-slate-100 dark:divide-white/10">
           <div className="p-5 flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Campaign ID</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Campaign ID</span>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-indigo-600 text-sm">{campaign.campaign_code}</span>
+              <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm">{campaign.campaign_code}</span>
               <button
                 onClick={handleCopyCode}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
                 title="Copy campaign code"
               >
-                {copiedCode ? <BadgeCheck className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                {copiedCode ? <BadgeCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
           {receipt && (
             <div className="p-5 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Receipt ID</span>
-              <span className="font-mono font-bold text-slate-700 text-sm">{receipt.receipt_number}</span>
+              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Receipt ID</span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">{receipt.receipt_number}</span>
             </div>
           )}
 
           <div className="p-5 flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Budget Locked</span>
-            <span className="font-mono font-extrabold text-slate-900">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Budget Locked</span>
+            <span className="font-mono font-extrabold text-slate-900 dark:text-white">
               ₦{campaign.total_budget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </span>
           </div>
 
           <div className="p-5 flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">CPM Rate</span>
-            <span className="font-mono font-bold text-slate-700">₦{campaign.cpm_rate.toLocaleString()} / 1k views</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">CPM Rate</span>
+            <span className="font-mono font-bold text-slate-700 dark:text-slate-300">₦{campaign.cpm_rate.toLocaleString()} / 1k views</span>
           </div>
 
           <div className="p-5 flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Platforms</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Platforms</span>
             <div className="flex flex-wrap gap-1.5 justify-end">
               {campaign.channels.map((ch) => (
-                <span key={ch} className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+                <span key={ch} className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-100 dark:border-indigo-500/30">
                   {ch}
                 </span>
               ))}
@@ -193,8 +193,8 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
 
           {campaign.is_featured && (
             <div className="p-5 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Boost</span>
-              <span className="flex items-center gap-1 text-amber-600 font-bold text-xs">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Boost</span>
+              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-xs">
                 <Star className="w-3.5 h-3.5" /> Featured Campaign
               </span>
             </div>
@@ -202,8 +202,8 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
 
           {receipt && (
             <div className="p-5 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Payment</span>
-              <span className="capitalize font-bold text-slate-700 text-sm">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Payment</span>
+              <span className="capitalize font-bold text-slate-700 dark:text-slate-300 text-sm">
                 {receipt.payment_method === 'wallet' ? 'Kpugi Wallet' : 'Card / Bank Transfer'}
               </span>
             </div>
@@ -211,15 +211,15 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
         </div>
 
         {/* Share & Copy Row */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-          <h3 className="font-display font-extrabold text-sm text-slate-900 flex items-center gap-2">
-            <Share2 className="w-4 h-4 text-indigo-500" />
+        <div className="bg-white dark:bg-[#12141A] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm p-5 space-y-4">
+          <h3 className="font-display font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
             Share Your Campaign
           </h3>
 
           {/* Copy Link */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-            <span className="flex-1 text-xs font-mono text-slate-500 truncate">{campaignLink}</span>
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5">
+            <span className="flex-1 text-xs font-mono text-slate-500 dark:text-slate-400 truncate">{campaignLink}</span>
             <button
               onClick={handleCopyLink}
               className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
@@ -235,7 +235,7 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
               href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900 text-slate-700 font-bold text-xs transition-all"
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all"
             >
               <Twitter className="w-4 h-4" />
               X / Twitter
@@ -244,7 +244,7 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
               href={`https://wa.me/?text=${shareText}%20${shareUrl}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 text-slate-700 font-bold text-xs transition-all"
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all"
             >
               <MessageCircle className="w-4 h-4" />
               WhatsApp
@@ -253,7 +253,7 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
               href={`https://www.linkedin.com/shareArticle?mini=true&url=${shareUrl}&title=${encodeURIComponent(campaign.title)}&summary=${shareText}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 hover:bg-[#0077b5] hover:text-white hover:border-[#0077b5] text-slate-700 font-bold text-xs transition-all"
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-[#0077b5] hover:text-white hover:border-[#0077b5] text-slate-700 dark:text-slate-300 font-bold text-xs transition-all"
             >
               <Linkedin className="w-4 h-4" />
               LinkedIn
@@ -263,11 +263,11 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
 
         {/* Download Receipt PDF */}
         {mounted && pdfData && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div className="bg-white dark:bg-[#12141A] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-bold text-slate-900 text-sm">Payment Receipt</p>
-                <p className="text-xs text-slate-400 mt-0.5">Download official PDF for your records</p>
+                <p className="font-bold text-slate-900 dark:text-white text-sm">Payment Receipt</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Download official PDF for your records</p>
               </div>
               <PDFDownloadLink
                 document={<InvoicePDFDocument data={pdfData} />}
@@ -275,7 +275,7 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
               >
                 {({ loading }) => (
                   <button
-                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-50"
                     disabled={loading}
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -291,7 +291,7 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-10">
           <Link
             href={`/b/campaigns/${campaign.id}`}
-            className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-[#4338ca] hover:bg-[#3730a3] text-white font-extrabold text-sm shadow-lg hover:shadow-xl transition-all"
+            className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-[#4338ca] hover:bg-[#3730a3] dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-extrabold text-sm shadow-lg hover:shadow-xl transition-all"
           >
             <Zap className="w-5 h-5 text-amber-300" />
             <span>View Campaign</span>
@@ -300,9 +300,9 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
 
           <Link
             href="/b/campaigns/new"
-            className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-indigo-200 text-slate-800 font-extrabold text-sm shadow-sm transition-all"
+            className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 border-2 border-slate-200 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/40 text-slate-800 dark:text-white font-extrabold text-sm shadow-sm transition-all"
           >
-            <Plus className="w-5 h-5 text-indigo-500" />
+            <Plus className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
             <span>New Campaign</span>
           </Link>
         </div>

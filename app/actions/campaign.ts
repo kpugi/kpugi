@@ -836,7 +836,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
     // Fetch active creator profiles
     const { data: creators } = await supabase
       .from('profiles')
-      .select('id, email, full_name')
+      .select('id, clerk_id, email, full_name')
       .eq('role', 'creator')
       .limit(100);
 
@@ -844,40 +844,63 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
 
     const cpmFormatted = Number(campaign.cpm_rate || 2000).toLocaleString();
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+    const actionUrl = `/c/campaigns/${campaign.id}`;
 
     const { sendEmail, renderReusableEmailTemplate } = await import('@/lib/resend/send-email');
+    const { triggerNotification } = await import('@/lib/knock/notify');
 
     for (const creator of creators) {
+      // 1. Dispatch In-App Notification to Creator Bell
+      try {
+        if (creator.clerk_id || creator.id) {
+          await triggerNotification({
+            workflowKey: 'new-campaign-available',
+            recipients: [creator.clerk_id || creator.id],
+            data: {
+              campaignTitle: campaign.title,
+              cpmRate: `₦${cpmFormatted}/1k views`,
+              adFormat: campaign.ad_format || 'Video / Image',
+              campaignId: campaign.id,
+              action_url: actionUrl,
+            },
+            profileId: creator.id,
+          });
+        }
+      } catch (notifErr) {
+        console.error('[Notification Helper] Error sending in-app notification to creator:', notifErr);
+      }
+
+      // 2. Dispatch Branded Email to Creator
       if (!creator.email) continue;
       try {
         const html = renderReusableEmailTemplate({
           to: creator.email,
-          subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
-          previewText: `New campaign live on Kpugi! Earn ₦${cpmFormatted} per 1,000 views on "${campaign.title}"`,
+          subject: `New Campaign Drop 🚀: Earn ₦${cpmFormatted}/1k views on "${campaign.title}"`,
+          previewText: `New campaign drop on Kpugi! Earn ₦${cpmFormatted} per 1,000 views on "${campaign.title}"`,
           icon: 'rocket',
-          headline: 'New Campaign Drop 🚀!',
-          subtitle: `Hi ${creator.full_name || 'Creator'}, a new brand campaign is live on Kpugi with ready-to-post creatives!`,
-          cardTitle: 'Campaign Details',
+          headline: 'New Campaign Drop 🚀',
+          subtitle: `Yooo ${creator.full_name || 'Creator'}, a brand just dropped a new campaign with ready-to-post creatives!`,
           details: [
-            { label: 'Campaign Title', value: campaign.title },
-            { label: 'Ad Format', value: campaign.ad_format || 'Short Video' },
+            { label: 'CAMPAIGN', value: campaign.title },
+            { label: 'PAYOUT RATE', value: `₦${cpmFormatted} / 1k views`, isMonospace: true },
+            { label: 'AD FORMAT', value: campaign.ad_format || 'Video / Image' },
+            {
+              label: 'STATUS',
+              value: 'Active',
+              statusBadge: { text: 'Open Drop', variant: 'green' },
+            },
           ],
-          highlightBar: {
-            label: 'Payout Rate',
-            value: `₦${cpmFormatted} / 1k views`,
-            bgColor: '#2563EB',
-          },
+          noticeText: 'Slots are first-come, first-served. Grab your creatives, post, and lock in your views before the budget cap is reached!',
           cta: {
-            label: 'Let\'s Go!',
-            url: `${appUrl}/dashboard`,
-            subtext: 'Grab the approved creative asset and publish to start earning!',
+            label: 'Claim Slot & Grab Creatives',
+            url: `${appUrl}${actionUrl}`,
+            subtext: 'Open the brief on Kpugi to grab pre-approved captions, assets, and mandatory tags.',
           },
         });
 
         await sendEmail({
           to: creator.email,
           subject: `🔥 New Ad Campaign Available: ${campaign.title} (₦${cpmFormatted}/1k views)`,
-          previewText: `New campaign live on Kpugi! Earn ₦${cpmFormatted} per 1,000 views on "${campaign.title}"`,
           html,
         });
       } catch (e) {
