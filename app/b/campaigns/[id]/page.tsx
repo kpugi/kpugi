@@ -11,9 +11,15 @@ export default async function BrandSingleCampaignPage({ params }: { params: Prom
     redirect('/sign-in');
   }
 
+  // Only advertisers can access brand campaign management
+  if (userProfile.profile.role !== 'advertiser' && !userProfile.advertiserProfile) {
+    notFound();
+  }
+
   const { id } = await params;
   const data = await getBrandCampaignDetails(id, userProfile.profile.id);
 
+  // If the campaign doesn't exist or is not owned by this advertiser, trigger 404
   if (!data || !data.campaign) {
     notFound();
   }

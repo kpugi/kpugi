@@ -204,9 +204,9 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
             <table className="w-full text-left font-sans text-xs border-collapse">
               <thead>
                 <tr className="border-b border-kpugi-border dark:border-white/10 bg-slate-50/70 dark:bg-[#161820] text-kpugi-slate dark:text-slate-400 uppercase text-[10px] tracking-wider font-bold">
-                  <th className="py-4 px-5">Campaign & Brand</th>
-                  <th className="py-4 px-4">Rate CPM</th>
-                  <th className="py-4 px-4">Min Threshold</th>
+                  <th className="py-4 px-5">Campaign</th>
+                  <th className="py-4 px-4">CPM</th>
+                  <th className="py-4 px-4">Threshold</th>
                   <th className="py-4 px-4">Reserved / Earned</th>
                   <th className="py-4 px-4">Status</th>
                   <th className="py-4 px-5 text-right">Action</th>
@@ -269,7 +269,7 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
                           {formatCompactCurrency(isOnlyReserved ? (item.reservedAmount || 0) : (item.earnedAmount || 0))}
                         </span>
                         <span className="text-[9px] text-kpugi-slate dark:text-slate-400 uppercase tracking-wider font-bold">
-                          {isOnlyReserved ? 'Escrow Reserved' : 'Verified Payout'}
+                          {isOnlyReserved ? 'Reserved' : 'Verified Payout'}
                         </span>
                       </td>
 

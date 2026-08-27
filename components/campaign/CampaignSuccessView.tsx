@@ -39,9 +39,16 @@ interface CampaignSuccessViewProps {
     payment_method: string;
     issued_at: string;
   } | null;
+  advertiserEmail?: string;
+  advertiserName?: string;
 }
 
-export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewProps) {
+export function CampaignSuccessView({
+  campaign,
+  receipt,
+  advertiserEmail = '',
+  advertiserName = '',
+}: CampaignSuccessViewProps) {
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -110,7 +117,8 @@ export function CampaignSuccessView({ campaign, receipt }: CampaignSuccessViewPr
         status: 'PAID',
         campaign_title: campaign.title,
         campaign_code: campaign.campaign_code,
-        advertiser_name: 'Brand Partner',
+        advertiser_email: advertiserEmail || '',
+        advertiser_name: advertiserEmail || advertiserName || 'Brand Partner',
       }
     : null;
 

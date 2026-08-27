@@ -441,14 +441,14 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
     const recipientEmail = userProfile.profile.email || paystackData?.customer?.email;
     if (recipientEmail) {
       const { notifyAdvertiserWalletFunded } = await import('@/lib/notifications/advertiser');
-      notifyAdvertiserWalletFunded({
-        clerkId: userProfile.profile.clerk_id,
+      await notifyAdvertiserWalletFunded({
+        clerkId: userProfile.profile.clerk_id || profileId,
         email: recipientEmail,
         amount: amountNGN,
         newBalance,
         reference,
         profileId,
-      }).catch((err) => console.error('[Paystack Deposit Notification Error]:', err));
+      });
     }
 
     if (shouldRevalidate) {

@@ -86,7 +86,8 @@ export async function GET(request: Request) {
           status
         )
       `)
-      .eq('status', 'live')
+      .in('status', ['live', 'completed'])
+      .eq('deleted', false)
       .order('created_at', { ascending: false });
 
     if (error) {

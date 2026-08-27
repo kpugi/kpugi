@@ -26,7 +26,7 @@ export default async function CampaignSuccessPage({ params }: PageProps) {
 
   const { data: receipt } = await supabase
     .from('payment_receipts')
-    .select('receipt_number, total_amount, payment_method, issued_at, transaction_type')
+    .select('receipt_number, total_amount, payment_method, issued_at, transaction_type, advertiser_email')
     .eq('campaign_id', id)
     .eq('advertiser_id', userProfile.profile.id)
     .order('issued_at', { ascending: false })
@@ -52,6 +52,8 @@ export default async function CampaignSuccessPage({ params }: PageProps) {
         payment_method: receipt.payment_method,
         issued_at: receipt.issued_at,
       } : null}
+      advertiserEmail={receipt?.advertiser_email || userProfile.profile.email || ''}
+      advertiserName={userProfile.profile.company_name || userProfile.profile.display_name || userProfile.profile.email || ''}
     />
   );
 }

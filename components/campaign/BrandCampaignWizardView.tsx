@@ -23,18 +23,18 @@ export function BrandCampaignWizardView({
   initialData,
 }: BrandCampaignWizardViewProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
+  // Payment State
+  const initialRef = initialData?.paystack_reference || initialData?.requirements?.paystack_reference || '';
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(Boolean(initialRef || initialData?.is_paid));
+  const [verifiedPaymentRef, setVerifiedPaymentRef] = useState(initialRef);
+
+  const [currentStep, setCurrentStep] = useState(initialRef || initialData?.is_paid ? 5 : 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-
-  // Payment State
-  const initialRef = initialData?.paystack_reference || initialData?.requirements?.paystack_reference || '';
-  const [isPaymentCompleted, setIsPaymentCompleted] = useState(Boolean(initialRef || initialData?.is_paid));
-  const [verifiedPaymentRef, setVerifiedPaymentRef] = useState(initialRef);
 
   const [formData, setFormData] = useState({
     id: initialData?.id || '',
@@ -87,8 +87,15 @@ export function BrandCampaignWizardView({
       });
 
       if (res.success && res.campaignId) {
-        if (!formData.id) {
+        const isNew = !formData.id;
+        if (isNew) {
           setFormData((prev) => ({ ...prev, id: res.campaignId! }));
+        }
+        // Update URL query parameter without triggering full reload/remount
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('draftId') !== res.campaignId) {
+          urlParams.set('draftId', res.campaignId);
+          window.history.replaceState(null, '', `${window.location.pathname}?${urlParams.toString()}`);
         }
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 3000);
@@ -166,6 +173,14 @@ export function BrandCampaignWizardView({
 
     if (res.success && res.campaignId) {
       setFormData((prev) => ({ ...prev, id: res.campaignId! }));
+      
+      // Update URL query parameter without triggering full reload/remount
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('draftId') !== res.campaignId) {
+        urlParams.set('draftId', res.campaignId);
+        window.history.replaceState(null, '', `${window.location.pathname}?${urlParams.toString()}`);
+      }
+
       setSuccessMessage('Draft saved successfully! You can resume editing anytime.');
       setTimeout(() => setSuccessMessage(''), 5000);
     } else {
@@ -256,12 +271,23 @@ export function BrandCampaignWizardView({
         payment_method: 'wallet',
       });
 
+      const campaignId = (draftRes.success && draftRes.campaignId) ? draftRes.campaignId : formData.id;
+
       setFormData((prev) => ({
         ...prev,
-        id: (draftRes.success && draftRes.campaignId) ? draftRes.campaignId : prev.id,
+        id: campaignId,
         paystack_reference: walletRef,
         is_paid: true,
       }));
+
+      // Update URL query parameter without triggering full reload/remount
+      if (campaignId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('draftId') !== campaignId) {
+          urlParams.set('draftId', campaignId);
+          window.history.replaceState(null, '', `${window.location.pathname}?${urlParams.toString()}`);
+        }
+      }
 
       setCurrentStep(5);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -307,12 +333,23 @@ export function BrandCampaignWizardView({
           payment_method: 'paystack',
         });
 
+        const campaignId = (draftRes.success && draftRes.campaignId) ? draftRes.campaignId : formData.id;
+
         setFormData((prev) => ({
           ...prev,
-          id: (draftRes.success && draftRes.campaignId) ? draftRes.campaignId : prev.id,
+          id: campaignId,
           paystack_reference: ref,
           is_paid: true,
         }));
+
+        // Update URL query parameter without triggering full reload/remount
+        if (campaignId) {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('draftId') !== campaignId) {
+            urlParams.set('draftId', campaignId);
+            window.history.replaceState(null, '', `${window.location.pathname}?${urlParams.toString()}`);
+          }
+        }
 
         setCurrentStep(5);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -428,7 +465,9 @@ export function BrandCampaignWizardView({
                 <div
                   className="flex flex-col items-center gap-1.5 cursor-pointer"
                   onClick={() => {
-                    if (step.number < currentStep) setCurrentStep(step.number);
+                    if (step.number < currentStep || isPaymentCompleted) {
+                      setCurrentStep(step.number);
+                    }
                   }}
                 >
                   <div

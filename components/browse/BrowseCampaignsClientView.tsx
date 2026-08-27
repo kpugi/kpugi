@@ -305,46 +305,54 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
     <article className="group relative flex flex-col bg-white dark:bg-[#12141A] rounded-2xl overflow-hidden hover:bg-slate-50 dark:hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-kpugi-border dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 cursor-pointer shadow-xs">
       {/* Thumbnail Area */}
       <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
-        {/* Ranking Badges Overlay (Top-Left: Icon only, labels on hover) */}
-        {c.rankBadges && c.rankBadges.length > 0 && (
+        {/* Ranking Badges Overlay or Completed Badge */}
+        {c.status === 'completed' ? (
           <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
-            {c.rankBadges.map((tier) => {
-              if (tier === 'trending') {
-                return (
-                  <div
-                    key="trending"
-                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-emerald-950/85 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20 cursor-help"
-                    title="📈 Trending: High velocity in the past 24 hours"
-                  >
-                    <span>📈</span>
-                  </div>
-                );
-              }
-              if (tier === 'hot') {
-                return (
-                  <div
-                    key="hot"
-                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-amber-950/85 border-amber-500/50 text-amber-300 shadow-amber-500/20 cursor-help"
-                    title="🔥 Hot: High activity in the last 7 days"
-                  >
-                    <span>🔥</span>
-                  </div>
-                );
-              }
-              if (tier === 'popular') {
-                return (
-                  <div
-                    key="popular"
-                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-purple-950/85 border-purple-500/50 text-purple-300 shadow-purple-500/20 cursor-help"
-                    title="👑 Popular: High verified reach in the last 30 days"
-                  >
-                    <span>👑</span>
-                  </div>
-                );
-              }
-              return null;
-            })}
+            <span className="px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-300 border border-white/20 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-md">
+              🏁 Completed
+            </span>
           </div>
+        ) : (
+          c.rankBadges && c.rankBadges.length > 0 && (
+            <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
+              {c.rankBadges.map((tier) => {
+                if (tier === 'trending') {
+                  return (
+                    <div
+                      key="trending"
+                      className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-emerald-950/85 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20 cursor-help"
+                      title="📈 Trending: High velocity in the past 24 hours"
+                    >
+                      <span>📈</span>
+                    </div>
+                  );
+                }
+                if (tier === 'hot') {
+                  return (
+                    <div
+                      key="hot"
+                      className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-amber-950/85 border-amber-500/50 text-amber-300 shadow-amber-500/20 cursor-help"
+                      title="🔥 Hot: High activity in the last 7 days"
+                    >
+                      <span>🔥</span>
+                    </div>
+                  );
+                }
+                if (tier === 'popular') {
+                  return (
+                    <div
+                      key="popular"
+                      className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-purple-950/85 border-purple-500/50 text-purple-300 shadow-purple-500/20 cursor-help"
+                      title="👑 Popular: High verified reach in the last 30 days"
+                    >
+                      <span>👑</span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+            </div>
+          )
         )}
 
         {/* AI Match Score Badge Overlay (Only for creators & guests, hidden for advertisers) */}
@@ -806,11 +814,13 @@ export default function BrowseCampaignsClientView() {
     // 4. Status Filter Dropdown
     if (selectedStatus !== 'All') {
       if (selectedStatus === 'Open') {
-        list = list.filter((c) => c.budgetSpent < c.budgetTotal);
+        list = list.filter((c) => c.status !== 'completed' && c.budgetSpent < c.budgetTotal);
       } else if (selectedStatus === 'Filling Fast') {
-        list = list.filter((c) => (c.budgetSpent / (c.budgetTotal || 1)) >= 0.5 || c.slotsFilled >= 10);
+        list = list.filter((c) => c.status !== 'completed' && ((c.budgetSpent / (c.budgetTotal || 1)) >= 0.5 || c.slotsFilled >= 10));
       } else if (selectedStatus === 'High CPM') {
         list = list.filter((c) => c.cpm >= 3500);
+      } else if (selectedStatus === 'Completed') {
+        list = list.filter((c) => c.status === 'completed');
       }
     }
 
@@ -1111,6 +1121,7 @@ export default function BrowseCampaignsClientView() {
                   <option value="Open" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🟢 Open & Active</option>
                   <option value="Filling Fast" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🔥 Filling Fast</option>
                   <option value="High CPM" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">💰 High CPM (₦3.5k+)</option>
+                  <option value="Completed" className="bg-white dark:bg-[#13151A] text-kpugi-ink dark:text-white">🏁 Completed Drops</option>
                 </select>
                 <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-kpugi-slate dark:text-white/40 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </div>
@@ -1415,21 +1426,27 @@ export default function BrowseCampaignsClientView() {
                                   <span className="font-bold text-sm text-kpugi-ink dark:text-white group-hover:text-kpugi-blue transition-colors truncate block">
                                     {c.brief}
                                   </span>
-                                  {c.rankBadges?.map((tier) => (
-                                    <span
-                                      key={tier}
-                                      title={tier === 'trending' ? '📈 Trending (24h)' : tier === 'hot' ? '🔥 Hot (7d)' : '👑 Popular (30d)'}
-                                      className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] border cursor-help ${
-                                        tier === 'trending'
-                                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                          : tier === 'hot'
-                                          ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                                          : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
-                                      }`}
-                                    >
-                                      {tier === 'trending' ? '📈' : tier === 'hot' ? '🔥' : '👑'}
+                                  {c.status === 'completed' ? (
+                                    <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/15 text-[9px] font-bold uppercase tracking-wider">
+                                      🏁 Completed
                                     </span>
-                                  ))}
+                                  ) : (
+                                    c.rankBadges?.map((tier) => (
+                                      <span
+                                        key={tier}
+                                        title={tier === 'trending' ? '📈 Trending (24h)' : tier === 'hot' ? '🔥 Hot (7d)' : '👑 Popular (30d)'}
+                                        className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] border cursor-help ${
+                                          tier === 'trending'
+                                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                            : tier === 'hot'
+                                            ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                            : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                        }`}
+                                      >
+                                        {tier === 'trending' ? '📈' : tier === 'hot' ? '🔥' : '👑'}
+                                      </span>
+                                    ))
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-1 text-[11px] text-kpugi-slate dark:text-white/40">
                                   <span className="truncate">{c.brand}</span>

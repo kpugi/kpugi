@@ -43,6 +43,10 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
       .single();
 
     if (draft) {
+      if (draft.status === 'live') {
+        redirect(`/b/campaigns/${draft.id}/success`);
+      }
+
       const payRef = draft.requirements?.paystack_reference || draft.paystack_reference || '';
       const payMethod = draft.requirements?.payment_method || draft.payment_method || 'wallet';
 

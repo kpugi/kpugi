@@ -405,6 +405,14 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   </span>
                 </div>
               )}
+
+              {campaign.status === 'completed' && (
+                <div className="flex items-center backdrop-blur-md px-3 py-1 rounded-full border shadow-md bg-purple-950/60 text-purple-300 border-purple-500/40">
+                  <span className="font-sans text-xs font-bold uppercase tracking-wider">
+                    🏁 Completed
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Campaign Title */}
@@ -1262,9 +1270,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 rounded-3xl p-6 space-y-4 shadow-sm relative overflow-hidden">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <span>BUDGET</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-sans flex items-center gap-1 font-bold">
-                  <span>🛡️</span> Secured
-                </span>
+                {campaign.status === 'completed' ? (
+                  <span className="text-purple-600 dark:text-purple-400 font-sans flex items-center gap-1 font-bold">
+                    <span>🏁</span> Settled & Closed
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-sans flex items-center gap-1 font-bold">
+                    <span>🛡️</span> Secured
+                  </span>
+                )}
               </div>
 
               <div>
@@ -1272,20 +1286,26 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   {formatCompactCurrency(totalBudget)}
                 </div>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-sans block mt-0.5">
-                  Campaign Budget Pool
+                  {campaign.status === 'completed' ? 'Final Settled Budget' : 'Campaign Budget Pool'}
                 </span>
               </div>
 
               <div className="space-y-2">
                 <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-orange-500 to-purple-600 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${budgetFillPercent}%` }}
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      campaign.status === 'completed'
+                        ? 'bg-purple-600'
+                        : 'bg-gradient-to-r from-orange-500 to-purple-600'
+                    }`}
+                    style={{ width: campaign.status === 'completed' ? '100%' : `${budgetFillPercent}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between font-mono text-[10px] text-slate-500 dark:text-slate-400">
-                  <span>{formatCompactCurrency(activeCommittedBudget)} Spent</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{budgetFillPercent}% Filled</span>
+                  <span>{formatCompactCurrency(activeCommittedBudget)} {campaign.status === 'completed' ? 'Distributed' : 'Spent'}</span>
+                  <span className={campaign.status === 'completed' ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
+                    {campaign.status === 'completed' ? '100% Concluded' : `${budgetFillPercent}% Filled`}
+                  </span>
                 </div>
               </div>
 
@@ -1306,7 +1326,9 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
                 <div className="flex justify-between">
                   <span>Audit duration</span>
-                  <span className="text-slate-900 dark:text-white font-mono">{campaign.required_live_duration_hours}h + {campaign.verification_grace_hours}h</span>
+                  <span className="text-slate-900 dark:text-white font-mono">
+                    {campaign.status === 'completed' ? 'Concluded' : `${campaign.required_live_duration_hours}h + ${campaign.verification_grace_hours}h`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1327,7 +1349,27 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </div>
               )}
 
-              {userRole === 'advertiser' ? (
+              {campaign.status === 'completed' || campaign.status === 'archived' ? (
+                /* Completed Campaign State */
+                <div className="space-y-4">
+                  <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-xs text-slate-700 dark:text-slate-300 font-sans space-y-2">
+                    <div className="font-bold flex items-center gap-1.5 text-sm text-slate-900 dark:text-white">
+                      <span>🏁</span>
+                      <span>Campaign Completed</span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-xs">
+                      This campaign drop is fully completed. All slots and creator payouts have been settled. No new slots or submissions are available.
+                    </p>
+                  </div>
+                  <button
+                    disabled
+                    className="w-full py-3.5 rounded-2xl bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500 font-sans font-bold text-xs cursor-not-allowed border border-slate-200 dark:border-white/10 flex items-center justify-center gap-2"
+                  >
+                    <span>🔒</span>
+                    <span>Completed</span>
+                  </button>
+                </div>
+              ) : userRole === 'advertiser' ? (
                 /* Advertiser View Banner */
                 <div className="p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl text-xs text-blue-800 dark:text-blue-300 font-sans space-y-2">
                   <div className="font-bold flex items-center gap-1.5 text-sm">

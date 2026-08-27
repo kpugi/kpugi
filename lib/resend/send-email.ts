@@ -144,9 +144,11 @@ export function renderReusableEmailTemplate(params: ReusableEmailParams): string
   <div style="max-width: 500px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">
     
     <!-- Clean Centered Brand Header -->
-    <div style="background-color: #FFFFFF; padding: 22px 24px 18px 24px; text-align: center; border-bottom: 1px solid #F1F5F9;">
+    <div style="background-color: #FFFFFF; padding: 24px 24px 20px 24px; text-align: center; border-bottom: 1px solid #F1F5F9;">
       <a href="${appUrl}" style="text-decoration: none; display: inline-block;">
-        <img src="${appUrl}/kpugi_logo.png" alt="Kpugi" height="36" style="height: 36px; width: auto; max-width: 140px; display: inline-block; object-fit: contain; border: 0;" />
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 900; color: #2563EB; letter-spacing: -1px; line-height: 1; text-decoration: none;">
+          Kpugi<span style="color: #4F46E5;">.</span>
+        </span>
       </a>
     </div>
 
@@ -185,7 +187,7 @@ export function renderReusableEmailTemplate(params: ReusableEmailParams): string
     <!-- Clean Footer -->
     <div style="background-color: #F8FAFC; padding: 20px 24px 24px 24px; text-align: center; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B; line-height: 1.5;">
       <p style="margin: 0 0 10px 0; font-size: 12.5px; color: #475569; font-weight: 500;">
-        Got questions or need a hand? <a href="mailto:support@kpugi.com" style="color: #2563EB; text-decoration: none; font-weight: 700;">Holler at Kpugi Support</a>
+        Got questions or need a hand? <a href="mailto:support@kpugi.com" style="color: #2563EB; text-decoration: none; font-weight: 700;">Holla at us</a>
       </p>
 
       <p style="margin: 0; font-size: 11px; color: #94A3B8;">
@@ -225,7 +227,10 @@ export async function sendEmail({
   }
 
   try {
-    const fromAddress = process.env.EMAIL_FROM || 'Kpugi <notifications@updates.kpugi.com>';
+    const fromAddress =
+      process.env.RESEND_FROM_EMAIL ||
+      process.env.EMAIL_FROM ||
+      'Tuazor From Kpugi <hello@kpugi.com>';
 
     const result = await resend.emails.send({
       from: fromAddress,
@@ -234,10 +239,15 @@ export async function sendEmail({
       html,
     });
 
-    console.log('[Resend Email Sent Successfully]:', { to, subject, data: result });
-    return { success: true, data: result };
+    if (result.error) {
+      console.error('[Resend Error Response]:', { to, subject, error: result.error });
+      return { success: false, error: result.error };
+    }
+
+    console.log('[Resend Email Sent Successfully]:', { to, subject, id: result.data?.id });
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('[Resend Error Sending Email]:', error);
+    console.error('[Resend Exception Sending Email]:', error);
     return { success: false, error };
   }
 }

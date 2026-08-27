@@ -788,17 +788,17 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
         .eq('profile_id', advertiserId)
         .maybeSingle();
 
-      if (brandProfile?.email && brandProfile?.clerk_id) {
+      if (brandProfile?.email) {
         const { notifyAdvertiserCampaignLive } = await import('@/lib/notifications/advertiser');
-        notifyAdvertiserCampaignLive({
-          clerkId: brandProfile.clerk_id,
+        await notifyAdvertiserCampaignLive({
+          clerkId: brandProfile.clerk_id || advertiserId,
           email: brandProfile.email,
           campaignTitle: campaign.title,
           totalBudget,
           cpmRate,
           campaignId: campaign.id,
           profileId: advertiserId,
-        }).catch((e) => console.error('[Campaign Action] Brand notification error:', e));
+        });
       }
     } catch (e) {
       console.error('[Campaign Action] Error dispatching brand notification:', e);
@@ -834,17 +834,22 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
     const supabase = createAdminClient();
 
     // Fetch active creator profiles
-    const { data: creators } = await supabase
+    const { data: creators, error: fetchErr } = await supabase
       .from('profiles')
-      .select('id, clerk_id, email, full_name, username')
+      .select('id, clerk_id, email, full_name')
       .eq('role', 'creator')
       .limit(100);
+
+    if (fetchErr) {
+      console.error('[notifyCreatorsNewCampaign] Error fetching creators:', fetchErr);
+      return;
+    }
 
     if (!creators || creators.length === 0) return;
 
     const cpmFormatted = Number(campaign.cpm_rate || 2000).toLocaleString();
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
-    const actionUrl = `/c/campaigns/${campaign.id}`;
+    const actionUrl = `/browse/${campaign.id}`;
 
     const { sendEmail, renderReusableEmailTemplate, renderChannelIcons } = await import('@/lib/resend/send-email');
     const { triggerNotification } = await import('@/lib/knock/notify');
@@ -876,9 +881,20 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
       }
 
       // 2. Dispatch Branded Email to Creator
-      if (!creator.email) continue;
+      if (
+        !creator.email ||
+        creator.email.includes('clerk_user_') ||
+        creator.email.endsWith('@fitness.com') ||
+        creator.email.endsWith('@marketing.com') ||
+        creator.email.endsWith('@lifestyle.com') ||
+        creator.email.endsWith('@example.com')
+      ) {
+        continue;
+      }
+
       try {
         const creatorHandle = creator.username ? `${creator.username.replace(/^@/, '')}` : (creator.full_name || 'Creator');
+        const emailSubject = `🔥 New Ad Campaign Available`;
 
         const html = renderReusableEmailTemplate({
           to: creator.email,
@@ -900,13 +916,15 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
           },
         });
 
-        await sendEmail({
+        const emailRes = await sendEmail({
           to: creator.email,
-          subject: 'New Campaign Available 🚀',
+          subject: emailSubject,
+          previewText: `New campaign brief "${campaign.title}" is now live.`,
           html,
         });
+        console.log('[notifyCreatorsNewCampaign] Creator email dispatch:', { email: creator.email, result: emailRes });
       } catch (e) {
-        // Suppress individual creator email error
+        console.error('[notifyCreatorsNewCampaign] Failed to dispatch email to:', creator.email, e);
       }
     }
   } catch (err) {

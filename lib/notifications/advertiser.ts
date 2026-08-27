@@ -146,9 +146,9 @@ export async function notifyAdvertiserCampaignLive({
   const html = renderReusableEmailTemplate({
     to: email,
     subject: 'Campaign is Live & Cooking 🚀',
-    previewText: `Budget is locked and "${campaignTitle}" is live. Creators are claiming slots.`,
+    previewText: `Budget is locked and "${campaignTitle}" is live. Creators are ready to claim slots.`,
     headline: 'Campaign is Live & Ready to Cook 🚀',
-    subtitle: `Budget is locked in and your briefing is live. Creators are already claiming slots to post your creatives.`,
+    subtitle: `Budget is locked in and your campaign is live. Creators are ready to claim slots and amplify for campaign for absolute virality!`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'BUDGET LOCKED', value: formattedBudget, isMonospace: true },
