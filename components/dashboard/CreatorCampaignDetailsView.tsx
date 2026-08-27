@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
@@ -22,7 +21,6 @@ type TabType = 'overview' | 'instructions' | 'top_performers' | 'live_reach';
 
 export default function CreatorCampaignDetailsView({ data, campaignId, userRole = 'public' }: CreatorCampaignDetailsViewProps) {
   const router = useRouter();
-  const { isSignedIn } = useUser();
   const { campaign, creatives, submission, socialAccounts, allSubmissions } = data;
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');

@@ -854,7 +854,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
       try {
         if (creator.clerk_id || creator.id) {
           await triggerNotification({
-            workflowKey: 'new-campaign-available',
+            workflowKey: 'new-campaign-alert',
             recipients: [creator.clerk_id || creator.id],
             data: {
               campaignTitle: campaign.title,
