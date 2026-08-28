@@ -8,7 +8,9 @@ import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
 import {
   notifyCreatorVerificationPassed,
   notifyCreatorVerificationFailed,
+  notifyJoinedCreatorsCampaignCompleted,
 } from '@/lib/notifications/creator';
+import { notifyAdvertiserCampaignCompleted } from '@/lib/notifications/advertiser';
 import { triggerNotification } from '@/lib/knock/notify';
 
 // ─── 1. Create Campaign Server Action ─────────────────────────────────────────
@@ -247,9 +249,6 @@ export async function updateCampaignStatusAction(formData: FormData) {
   // Trigger completion notifications
   if (newStatus === 'completed' && campaign.status !== 'completed') {
     try {
-      const { notifyAdvertiserCampaignCompleted } = await import('@/lib/notifications/advertiser');
-      const { notifyJoinedCreatorsCampaignCompleted } = await import('@/lib/notifications/creator');
-
       const totalViews = campaignSubmissions?.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0) || 0;
 
       // 1. Notify advertiser (brand)

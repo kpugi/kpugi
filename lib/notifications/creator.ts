@@ -1,5 +1,6 @@
 import { triggerNotification } from '@/lib/knock/notify';
 import { sendEmail, renderReusableEmailTemplate } from '@/lib/resend/send-email';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export async function notifyCreatorWelcome({
   clerkId,
@@ -452,29 +453,49 @@ export async function notifyJoinedCreatorsCampaignCompleted({
 }: {
   campaignTitle: string;
   campaignId: string;
-  supabaseClient: any;
+  supabaseClient?: any;
 }) {
   try {
-    const { data: submissions, error } = await supabaseClient
+    const supabase = supabaseClient || createAdminClient();
+    const { data: submissions, error: subErr } = await supabase
       .from('submissions')
-      .select('profiles(id, clerk_id, email, full_name)')
+      .select('creator_id')
       .eq('campaign_id', campaignId);
 
-    if (error || !submissions || submissions.length === 0) return;
+    if (subErr) {
+      console.error('[Notification Helper] Error fetching submissions for completed campaign:', subErr);
+      return;
+    }
+
+    if (!submissions || submissions.length === 0) return;
+
+    const creatorIds = Array.from(new Set(submissions.map((s: any) => s.creator_id).filter(Boolean)));
+    if (creatorIds.length === 0) return;
+
+    const { data: profiles, error: profErr } = await supabaseClient
+      .from('profiles')
+      .select('id, clerk_id, email, full_name')
+      .in('id', creatorIds);
+
+    if (profErr) {
+      console.error('[Notification Helper] Error fetching creator profiles for completed campaign:', profErr);
+      return;
+    }
+
+    if (!profiles || profiles.length === 0) return;
 
     const actionUrl = `/c/dashboard`;
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
     const seenEmails = new Set<string>();
 
-    for (const sub of submissions) {
-      const profile = sub.profiles as any;
+    for (const profile of profiles) {
       if (!profile || !profile.email || seenEmails.has(profile.email)) continue;
       seenEmails.add(profile.email);
 
       // 1. In-App Notification
       try {
         await triggerNotification({
-          workflowKey: 'campaign-completed-creator',
+          workflowKey: 'campaign-completed',
           recipients: [profile.clerk_id || profile.id],
           data: {
             campaignTitle,

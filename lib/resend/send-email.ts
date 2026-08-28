@@ -169,8 +169,8 @@ export function renderReusableEmailTemplate(params: ReusableEmailParams): string
     
     <!-- Clean Centered Brand Header -->
     <div style="background-color: #FFFFFF; padding: 24px 24px 20px 24px; text-align: center; border-bottom: 1px solid #F1F5F9;">
-      <a href="${appUrl}" style="text-decoration: none; display: inline-block;">
-        <img src="${appUrl}/kpugi_logo.png" alt="Kpugi." style="display: block; height: 32px; border: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 900; color: #2563EB; letter-spacing: -1px; line-height: 1; text-decoration: none;" />
+      <a href="${appUrl}" style="text-decoration: none; display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 900; color: #2563EB; letter-spacing: -1px; line-height: 1;">
+        Kpugi<span style="color: #0F172A;">.</span>
       </a>
     </div>
 

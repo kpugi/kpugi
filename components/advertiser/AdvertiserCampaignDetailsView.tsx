@@ -57,9 +57,16 @@ export default function AdvertiserCampaignDetailsView({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [statusConfirm, setStatusConfirm] = useState<'live' | 'paused' | 'completed' | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [auditPage, setAuditPage] = useState(1);
   const auditPageSize = 8;
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const { campaign, creatives, submissions, metrics } = data;
 
@@ -263,7 +270,7 @@ export default function AdvertiserCampaignDetailsView({
             <>
               {campaign.status === 'live' ? (
                 <button
-                  onClick={() => handleStatusToggle('paused')}
+                  onClick={() => setStatusConfirm('paused')}
                   disabled={isSubmitting}
                   className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-2xs"
                   title="Pause Campaign"
@@ -275,7 +282,7 @@ export default function AdvertiserCampaignDetailsView({
                 </button>
               ) : (
                 <button
-                  onClick={() => handleStatusToggle('live')}
+                  onClick={() => setStatusConfirm('live')}
                   disabled={isSubmitting}
                   className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-sm"
                   title="Resume Campaign"
@@ -288,7 +295,7 @@ export default function AdvertiserCampaignDetailsView({
               )}
 
               <button
-                onClick={() => handleStatusToggle('completed')}
+                onClick={() => setStatusConfirm('completed')}
                 disabled={isSubmitting}
                 className="group relative h-9 px-2.5 hover:px-3.5 rounded-xl bg-slate-900 dark:bg-white hover:bg-black dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs transition-all duration-300 ease-in-out flex items-center gap-2 overflow-hidden shadow-sm"
                 title="Complete & Refund Remaining Escrow"
@@ -1165,6 +1172,131 @@ export default function AdvertiserCampaignDetailsView({
             }
           }}
         />
+      )}
+
+      {/* Status Confirmation Modal (Pause, Resume, Complete) */}
+      {statusConfirm && mounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden text-kpugi-ink dark:text-white">
+            
+            {/* Modal Header & Icon */}
+            {statusConfirm === 'paused' ? (
+              <div className="p-6 bg-amber-500/10 dark:bg-amber-950/40 text-center space-y-3 border-b border-amber-200/50 dark:border-amber-500/20">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center mx-auto shadow-sm">
+                  <Pause className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-extrabold text-amber-950 dark:text-amber-200">Pause Campaign?</h3>
+                  <p className="text-xs text-amber-900/80 dark:text-amber-300/80 mt-1 max-w-xs mx-auto leading-relaxed">
+                    Temporarily halt creator bookings and view metric tracking. You can resume at any time.
+                  </p>
+                </div>
+              </div>
+            ) : statusConfirm === 'live' ? (
+              <div className="p-6 bg-emerald-500/10 dark:bg-emerald-950/40 text-center space-y-3 border-b border-emerald-200/50 dark:border-emerald-500/20">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center mx-auto shadow-sm">
+                  <Play className="w-6 h-6 fill-emerald-600 dark:fill-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-extrabold text-emerald-950 dark:text-emerald-200">Resume Campaign?</h3>
+                  <p className="text-xs text-emerald-900/80 dark:text-emerald-300/80 mt-1 max-w-xs mx-auto leading-relaxed">
+                    Re-enable active creator joins and resume hourly view metrics verification.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 bg-slate-900 text-white text-center space-y-3 border-b border-white/10">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 text-emerald-400 border border-white/10 flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-extrabold">Complete Campaign?</h3>
+                  <p className="text-xs text-slate-300 mt-1 max-w-xs mx-auto leading-relaxed">
+                    End campaign performance and instantly refund all unspent pool budget back to your Brand Wallet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs">
+              {statusConfirm === 'completed' && (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2.5">
+                  <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                    <span>Total Allocated Budget:</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">₦{campaign.total_budget.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                    <span>Total Verified Spend:</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">₦{campaign.spent_budget.toLocaleString()}</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span>Refunded to Brand Wallet:</span>
+                    <span className="font-mono text-sm">₦{Math.max(0, campaign.total_budget - campaign.spent_budget).toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+
+              {statusConfirm === 'paused' && (
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    Existing creators will still retain their slots, but new submissions and scrapes will pause until you resume.
+                  </p>
+                </div>
+              )}
+
+              {statusConfirm === 'live' && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    Your campaign will appear live in the creator discovery feeds and resume hourly verification checks.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStatusConfirm(null)}
+                  disabled={isSubmitting}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 font-bold text-xs text-slate-700 dark:text-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = statusConfirm;
+                    setStatusConfirm(null);
+                    if (next) handleStatusToggle(next);
+                  }}
+                  disabled={isSubmitting}
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-md flex items-center gap-1.5 ${
+                    statusConfirm === 'paused'
+                      ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
+                      : statusConfirm === 'live'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                      : 'bg-slate-900 dark:bg-emerald-600 hover:bg-black dark:hover:bg-emerald-700 shadow-slate-900/20'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    'Processing...'
+                  ) : statusConfirm === 'paused' ? (
+                    'Confirm Pause'
+                  ) : statusConfirm === 'live' ? (
+                    'Confirm Resume'
+                  ) : (
+                    'Confirm & Refund'
+                  )}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
