@@ -454,11 +454,11 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
                         <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
                           <span className="flex items-center gap-1">
                             <Eye className="w-3.5 h-3.5 text-slate-400" />
-                            <strong>{formatCompactNumber(camp.views_delivered || 0)}</strong> views
+                            <strong>{formatCompactNumber(camp.views_delivered || 0)}</strong>
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3.5 h-3.5 text-slate-400" />
-                            <strong>{camp.creators_count || 0}</strong> creators
+                            <strong>{camp.creators_count || 0}</strong>
                           </span>
                         </div>
 
@@ -466,7 +466,7 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
                           href={`/b/campaigns/${camp.id}`}
                           className="inline-flex items-center gap-1 text-xs font-bold text-kpugi-blue dark:text-blue-400 hover:underline"
                         >
-                          <span>Manage Brief</span>
+                          <span>View</span>
                           <ArrowRight className="w-3 h-3" />
                         </Link>
                       </div>

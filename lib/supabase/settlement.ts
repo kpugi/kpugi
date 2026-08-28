@@ -189,8 +189,14 @@ export async function autoReleaseMaturedBatches(
       .update({ status: 'completed' })
       .eq('id', batch.id);
 
-    // 2. Credit creator wallet balance
-    const currentBalance = Number(wallet.balance || 0);
+    // 2. Credit creator wallet balance (fetch latest balance from DB to prevent stale loop overwrites)
+    const { data: latestWallet } = await supabaseAdmin
+      .from('wallets')
+      .select('balance')
+      .eq('id', wallet.id)
+      .single();
+
+    const currentBalance = Number(latestWallet?.balance || 0);
     await supabaseAdmin
       .from('wallets')
       .update({ balance: currentBalance + amount })

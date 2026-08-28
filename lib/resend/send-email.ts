@@ -39,31 +39,55 @@ export interface ReusableEmailParams {
 
 export function renderChannelIcons(channels: string[] | undefined, appUrl?: string): string {
   if (!channels || channels.length === 0) return '';
-  const base = (appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
   
   return channels
     .map((channel) => {
       const c = channel.toLowerCase().trim();
-      let iconName = 'tiktok';
+      let iconUrl = 'https://img.icons8.com/color/48/globe.png';
       let label = channel;
+      let bgColor = '#F1F5F9';
+      let textColor = '#334155';
+      let borderColor = '#E2E8F0';
+
       if (c.includes('insta') || c.includes('ig')) {
-        iconName = 'instagram';
+        iconUrl = 'https://img.icons8.com/color/48/instagram-new.png';
         label = 'Instagram';
+        bgColor = '#FDF2F8';
+        textColor = '#BE185D';
+        borderColor = '#FBCFE8';
       } else if (c.includes('tiktok') || c.includes('tik')) {
-        iconName = 'tiktok';
+        iconUrl = 'https://img.icons8.com/color/48/tiktok.png';
         label = 'TikTok';
+        bgColor = '#ECFDF5';
+        textColor = '#047857';
+        borderColor = '#A7F3D0';
       } else if (c.includes('youtube') || c.includes('yt') || c.includes('short')) {
-        iconName = 'youtube';
+        iconUrl = 'https://img.icons8.com/color/48/youtube-play.png';
         label = 'YouTube';
+        bgColor = '#FEF2F2';
+        textColor = '#B91C1C';
+        borderColor = '#FEE2E2';
       } else if (c.includes('twitter') || c === 'x' || c.startsWith('x/')) {
-        iconName = 'x';
+        iconUrl = 'https://img.icons8.com/color/48/twitterx--v2.png';
         label = 'X';
+        bgColor = '#F8FAFC';
+        textColor = '#0F172A';
+        borderColor = '#E2E8F0';
       } else if (c.includes('face') || c.includes('fb')) {
-        iconName = 'facebook';
+        iconUrl = 'https://img.icons8.com/color/48/facebook-new.png';
         label = 'Facebook';
+        bgColor = '#EFF6FF';
+        textColor = '#1D4ED8';
+        borderColor = '#BFDBFE';
+      } else if (c.includes('link') || c.includes('ln')) {
+        iconUrl = 'https://img.icons8.com/color/48/linkedin.png';
+        label = 'LinkedIn';
+        bgColor = '#EFF6FF';
+        textColor = '#1D4ED8';
+        borderColor = '#BFDBFE';
       }
 
-      return `<img src="${base}/icons/${iconName}.png" alt="${label}" title="${label}" width="26" height="26" style="width: 26px; height: 26px; border-radius: 6px; display: inline-block; vertical-align: middle; margin-right: 8px; border: 0;" />`;
+      return `<span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background-color: ${bgColor}; color: ${textColor}; font-size: 12px; font-weight: 700; margin-right: 6px; margin-bottom: 6px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; border: 1px solid ${borderColor}; vertical-align: middle;"><img src="${iconUrl}" alt="" width="14" height="14" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 5px; border: 0;" />${label}</span>`;
     })
     .join('');
 }
@@ -146,9 +170,7 @@ export function renderReusableEmailTemplate(params: ReusableEmailParams): string
     <!-- Clean Centered Brand Header -->
     <div style="background-color: #FFFFFF; padding: 24px 24px 20px 24px; text-align: center; border-bottom: 1px solid #F1F5F9;">
       <a href="${appUrl}" style="text-decoration: none; display: inline-block;">
-        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 900; color: #2563EB; letter-spacing: -1px; line-height: 1; text-decoration: none;">
-          Kpugi<span style="color: #4F46E5;">.</span>
-        </span>
+        <img src="${appUrl}/kpugi_logo.png" alt="Kpugi." style="display: block; height: 32px; border: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 900; color: #2563EB; letter-spacing: -1px; line-height: 1; text-decoration: none;" />
       </a>
     </div>
 

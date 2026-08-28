@@ -134,6 +134,7 @@ export async function POST(req: Request) {
       
       notifyCreatorJoinedCampaign({
         clerkId: userProfile.profile.clerk_id,
+        email: userProfile.profile.email || '',
         campaignTitle: campaign.title || 'Campaign',
         reservedAmount,
         campaignId: campaign.id,
@@ -151,7 +152,8 @@ export async function POST(req: Request) {
             if (advProfile) {
               notifyAdvertiserCreatorJoined({
                 clerkId: advProfile.clerk_id,
-                creatorHandle: userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'Creator',
+                email: advProfile.email || '',
+                creatorHandle: userProfile.creatorProfile?.creator_handle || userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'Creator',
                 platform: socialAccount.platform || 'social',
                 campaignTitle: campaign.title || 'Campaign',
                 reservedAmount,

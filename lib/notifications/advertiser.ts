@@ -170,6 +170,7 @@ export async function notifyAdvertiserCampaignLive({
 
 export async function notifyAdvertiserCreatorJoined({
   clerkId,
+  email,
   creatorHandle,
   platform,
   campaignTitle,
@@ -178,6 +179,7 @@ export async function notifyAdvertiserCreatorJoined({
   profileId,
 }: {
   clerkId: string;
+  email: string;
   creatorHandle: string;
   platform: string;
   campaignTitle: string;
@@ -186,12 +188,14 @@ export async function notifyAdvertiserCreatorJoined({
   profileId?: string;
 }) {
   const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const cleanHandle = `@${creatorHandle.replace(/^@/, '')}`;
 
   await triggerNotification({
     workflowKey: 'creator-joined',
     recipients: [clerkId],
     data: {
-      creatorHandle: `@${creatorHandle.replace(/^@/, '')}`,
+      creatorHandle: cleanHandle,
       platform,
       campaignTitle,
       reservedAmount: `₦${reservedAmount.toLocaleString()}`,
@@ -199,6 +203,31 @@ export async function notifyAdvertiserCreatorJoined({
       action_url: actionUrl,
     },
     profileId,
+  });
+
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: 'Creator Joined Campaign! 🚀',
+    previewText: `${cleanHandle} has joined "${campaignTitle}".`,
+    headline: 'Creator Joined Campaign! 🚀',
+    subtitle: `Great news!, a creator has joined your campaign and reserved slots to amplify your brand.`,
+    details: [
+      { label: 'CAMPAIGN', value: campaignTitle },
+      { label: 'CREATOR', value: cleanHandle },
+      { label: 'PLATFORM', value: platform.toUpperCase() },
+      { label: 'BUDGET RESERVED', value: `₦${reservedAmount.toLocaleString()}`, isMonospace: true },
+    ],
+    noticeText: 'The reserved budget is locked in escrow. Once the creator posts and view metrics are scraped, payouts will be released automatically based on their performance.',
+    cta: {
+      label: 'View Campaign Progress',
+      url: `${appUrl}${actionUrl}`,
+    },
+  });
+
+  await sendEmail({
+    to: email,
+    subject: 'Creator Joined Campaign! 🚀',
+    html,
   });
 }
 

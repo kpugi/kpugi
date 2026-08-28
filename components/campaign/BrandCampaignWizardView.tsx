@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, ArrowRight, ArrowLeft, AlertCircle, Save, Loader2, Rocket, Lock, CheckCircle2, X } from 'lucide-react';
@@ -75,22 +75,33 @@ export function BrandCampaignWizardView({
     }));
   };
 
-  // Debounced Auto-Save Effect — stops once campaign is published
-  useEffect(() => {
-    if (!formData.title?.trim() || isSubmitting || isPublished) return;
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef<any>(null);
 
-    const timer = setTimeout(async () => {
-      setAutoSaveStatus('saving');
+  const saveDraftQueue = async (dataToSave: any) => {
+    if (isSavingRef.current) {
+      pendingSaveRef.current = dataToSave;
+      return;
+    }
+
+    isSavingRef.current = true;
+    setAutoSaveStatus('saving');
+
+    try {
       const res = await saveCampaignDraftAction({
-        ...formData,
-        paystack_reference: verifiedPaymentRef || formData.paystack_reference,
+        ...dataToSave,
+        paystack_reference: verifiedPaymentRef || dataToSave.paystack_reference,
       });
 
       if (res.success && res.campaignId) {
-        const isNew = !formData.id;
-        if (isNew) {
-          setFormData((prev) => ({ ...prev, id: res.campaignId! }));
-        }
+        setFormData((prev) => {
+          const updated = { ...prev, id: res.campaignId! };
+          if (pendingSaveRef.current) {
+            pendingSaveRef.current.id = res.campaignId!;
+          }
+          return updated;
+        });
+
         // Update URL query parameter without triggering full reload/remount
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('draftId') !== res.campaignId) {
@@ -102,6 +113,25 @@ export function BrandCampaignWizardView({
       } else {
         setAutoSaveStatus('idle');
       }
+    } catch (err) {
+      console.error('Auto-save error:', err);
+      setAutoSaveStatus('idle');
+    } finally {
+      isSavingRef.current = false;
+      if (pendingSaveRef.current) {
+        const nextData = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        saveDraftQueue(nextData);
+      }
+    }
+  };
+
+  // Debounced Auto-Save Effect — stops once campaign is published
+  useEffect(() => {
+    if (!formData.title?.trim() || isSubmitting || isPublished) return;
+
+    const timer = setTimeout(async () => {
+      saveDraftQueue(formData);
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -112,7 +142,10 @@ export function BrandCampaignWizardView({
     formData.total_budget,
     formData.channels,
     formData.requirements,
+    formData.id,
     verifiedPaymentRef,
+    isSubmitting,
+    isPublished,
   ]);
 
   const steps = [
@@ -595,7 +628,7 @@ export function BrandCampaignWizardView({
 
               <button
                 type="button"
-                disabled={isDrafting}
+                disabled={isDrafting || autoSaveStatus === 'saving'}
                 onClick={handleSaveDraft}
                 className="w-full sm:w-auto px-7 py-3 rounded-full border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
               >
