@@ -622,10 +622,10 @@ export async function unjoinCampaignAction(campaignId: string) {
   const supabase = createAdminClient();
   const profileId = userProfile.profile.id;
 
-  // 1. Find the submission in 'joined' status
+  // 1. Find the submission (any status)
   const { data: submission, error: findErr } = await supabase
     .from('submissions')
-    .select('id, status, reserved_amount, campaign_id')
+    .select('id, status, reserved_amount, payout_amount, pending_payout_amount, campaign_id')
     .eq('campaign_id', campaignId)
     .eq('creator_id', profileId)
     .maybeSingle();
@@ -634,29 +634,97 @@ export async function unjoinCampaignAction(campaignId: string) {
     return { success: false, error: 'You have not joined this campaign.' };
   }
 
-  if (submission.status !== 'joined') {
-    return { success: false, error: 'Cannot unjoin after a post link has already been submitted.' };
-  }
+  const clearedPayout = Number(submission.payout_amount || 0);
+  const pendingPayout = Number(submission.pending_payout_amount || 0);
+  const totalEarnedForSub = clearedPayout + pendingPayout;
+  const subReserved = Number(submission.reserved_amount || 0);
 
-  // 2. Release reserved budget on campaign
+  // 2. Delete verification checks, submission audits, and previous wallet transactions for this submission
+  await Promise.all([
+    supabase
+      .from('verification_checks')
+      .delete()
+      .eq('submission_id', submission.id),
+    supabase
+      .from('submission_audits')
+      .delete()
+      .eq('submission_id', submission.id),
+    supabase
+      .from('wallet_transactions')
+      .delete()
+      .eq('submission_id', submission.id),
+  ]);
+
+  // 3. Release reserved and spent budget on campaign (refund back to pool)
   const { data: campaign } = await supabase
     .from('campaigns')
-    .select('id, reserved_budget')
+    .select('id, reserved_budget, spent_budget, total_budget, status')
     .eq('id', campaignId)
     .maybeSingle();
 
   if (campaign) {
     const currentReserved = Number(campaign.reserved_budget || 0);
-    const subReserved = Number(submission.reserved_amount || 0);
+    const currentSpent = Number(campaign.spent_budget || 0);
     const newReserved = Math.max(0, currentReserved - subReserved);
+    const newSpent = Math.max(0, currentSpent - totalEarnedForSub);
+    const totalBudget = Number(campaign.total_budget || 0);
+    const shouldReopen = campaign.status === 'completed' && newSpent < totalBudget;
 
     await supabase
       .from('campaigns')
-      .update({ reserved_budget: newReserved })
+      .update({
+        reserved_budget: newReserved,
+        spent_budget: newSpent,
+        ...(shouldReopen ? { status: 'live' } : {}),
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', campaignId);
   }
 
-  // 3. Delete the submission record
+  // 4. Clawback if funds were already settled in creator's wallet
+  if (clearedPayout > 0) {
+    const { data: creatorWallet } = await supabase
+      .from('wallets')
+      .select('id, balance')
+      .eq('profile_id', profileId)
+      .eq('wallet_type', 'creator_earnings')
+      .maybeSingle();
+
+    if (creatorWallet) {
+      const newBalance = Math.max(0, Number(creatorWallet.balance || 0) - clearedPayout);
+      await supabase
+        .from('wallets')
+        .update({ balance: newBalance })
+        .eq('id', creatorWallet.id);
+
+      await supabase.from('wallet_transactions').insert({
+        wallet_id: creatorWallet.id,
+        type: 'withdrawal',
+        amount: -clearedPayout,
+        campaign_id: campaignId,
+        submission_id: submission.id,
+        status: 'completed',
+        paystack_reference: `KP-CLAWBACK-${submission.id.slice(0, 8)}-${Date.now()}`,
+      });
+    }
+
+    const { data: creatorProfile } = await supabase
+      .from('creator_profiles')
+      .select('profile_id, total_earned')
+      .eq('profile_id', profileId)
+      .maybeSingle();
+
+    if (creatorProfile) {
+      await supabase
+        .from('creator_profiles')
+        .update({
+          total_earned: Math.max(0, Number(creatorProfile.total_earned || 0) - clearedPayout),
+        })
+        .eq('profile_id', profileId);
+    }
+  }
+
+  // 5. Delete the submission record
   const { error: delErr } = await supabase
     .from('submissions')
     .delete()
@@ -667,9 +735,11 @@ export async function unjoinCampaignAction(campaignId: string) {
   }
 
   revalidatePath(`/campaigns/${campaignId}`);
+  revalidatePath(`/c/campaigns/${campaignId}`);
   revalidatePath('/c/campaigns');
   revalidatePath('/campaigns');
   revalidatePath('/dashboard');
+  revalidatePath('/c/dashboard');
   return { success: true };
 }
 
@@ -701,6 +771,8 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
   }
 
   const clearedPayout = Number(submission.payout_amount || 0);
+  const pendingPayout = Number(submission.pending_payout_amount || 0);
+  const totalEarnedForSub = clearedPayout + pendingPayout;
 
   // 2. Delete verification checks, submission audits, and previous wallet transactions for this submission
   await Promise.all([
@@ -746,7 +818,31 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
     return { success: false, error: updateErr.message || 'Failed to remove post link.' };
   }
 
-  // 4. Clawback & Reversal: If funds had cleared to creator balance, reverse and refund campaign
+  // 4. Refund campaign spent_budget (both cleared + pending payouts)
+  if (totalEarnedForSub > 0) {
+    const { data: camp } = await supabase
+      .from('campaigns')
+      .select('id, spent_budget, total_budget, status')
+      .eq('id', campaignId)
+      .maybeSingle();
+
+    if (camp) {
+      const newSpent = Math.max(0, Number(camp.spent_budget || 0) - totalEarnedForSub);
+      const totalBudget = Number(camp.total_budget || 0);
+      const shouldReopen = camp.status === 'completed' && newSpent < totalBudget;
+
+      await supabase
+        .from('campaigns')
+        .update({
+          spent_budget: newSpent,
+          ...(shouldReopen ? { status: 'live' } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', campaignId);
+    }
+  }
+
+  // 5. Clawback & Reversal: If funds had cleared to creator balance, reverse creator wallet
   if (clearedPayout > 0) {
     // A. Deduct cleared amount from creator's wallet
     const { data: creatorWallet } = await supabase
@@ -757,7 +853,7 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
       .maybeSingle();
 
     if (creatorWallet) {
-      const newBalance = Number(creatorWallet.balance || 0) - clearedPayout;
+      const newBalance = Math.max(0, Number(creatorWallet.balance || 0) - clearedPayout);
       await supabase
         .from('wallets')
         .update({ balance: newBalance })
@@ -773,21 +869,6 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
         status: 'completed',
         paystack_reference: `KP-CLAWBACK-${submission.id.slice(0, 8)}-${Date.now()}`,
       });
-    }
-
-    // B. Refund campaign spent_budget
-    const { data: camp } = await supabase
-      .from('campaigns')
-      .select('id, spent_budget')
-      .eq('id', campaignId)
-      .maybeSingle();
-
-    if (camp) {
-      const newSpent = Math.max(0, Number(camp.spent_budget || 0) - clearedPayout);
-      await supabase
-        .from('campaigns')
-        .update({ spent_budget: newSpent })
-        .eq('id', campaignId);
     }
   }
 

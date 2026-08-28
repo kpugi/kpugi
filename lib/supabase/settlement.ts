@@ -17,7 +17,7 @@ export async function processDailyBatchSettlement(
 ): Promise<{ batchesCreated: number; totalAccrualSettled: number }> {
   let query = supabaseAdmin
     .from('submissions')
-    .select('id, campaign_id, creator_id, final_view_count, last_paid_view_count, pending_payout_amount, payout_amount, campaigns!inner(title, spent_budget)')
+    .select('id, campaign_id, creator_id, final_view_count, last_paid_view_count, pending_payout_amount, payout_amount, campaigns!inner(title, spent_budget, total_budget, advertiser_id, status)')
     .gt('pending_payout_amount', 0);
 
   if (creatorProfileId) {
@@ -125,14 +125,6 @@ export async function processDailyBatchSettlement(
         .eq('id', sub.id);
     }
 
-    // 5. Update campaign spent budget
-    const currentSpent = Number((firstSub.campaigns as any)?.spent_budget || 0);
-    await supabaseAdmin
-      .from('campaigns')
-      .update({
-        spent_budget: currentSpent + totalBatchAmount,
-      })
-      .eq('id', campaignId);
 
     batchesCreated++;
     totalAccrualSettled += totalBatchAmount;

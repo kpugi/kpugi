@@ -224,3 +224,29 @@ class DatabaseClient:
         else:
             logger.error(f"Failed to insert submission audit record (HTTP {resp['status_code']}): {resp['error']}")
             return False
+
+    def update_campaign_budget(self, campaign_id: str, spent_increment: float, reserved_decrement: float, new_status: Optional[str] = None) -> bool:
+        """
+        Updates the campaign spent_budget, reserved_budget, and status in real-time.
+        """
+        url = f"{self.rest_url}/campaigns"
+        params = {"id": f"eq.{campaign_id}"}
+        
+        campaign_map = self._fetch_campaigns_by_ids([campaign_id])
+        campaign = campaign_map.get(campaign_id)
+        if not campaign:
+            return False
+            
+        current_spent = float(campaign.get('spent_budget') or 0.0)
+        current_reserved = float(campaign.get('reserved_budget') or 0.0)
+        
+        payload = {
+            "spent_budget": current_spent + spent_increment,
+            "reserved_budget": max(0.0, current_reserved - reserved_decrement),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if new_status:
+            payload["status"] = new_status
+            
+        resp = self._http_request("PATCH", url, data=payload, params=params)
+        return resp["status_code"] in (200, 204)

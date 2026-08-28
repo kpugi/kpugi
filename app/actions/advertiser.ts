@@ -170,7 +170,7 @@ export async function updateCampaignStatusAction(formData: FormData) {
   // Fetch campaign
   const { data: campaign } = await supabase
     .from('campaigns')
-    .select('id, advertiser_id, total_budget, spent_budget, status')
+    .select('id, title, advertiser_id, total_budget, spent_budget, status')
     .eq('id', campaignId)
     .eq('advertiser_id', userProfile.profile.id)
     .single();
@@ -187,9 +187,22 @@ export async function updateCampaignStatusAction(formData: FormData) {
     return { success: false, error: 'Completed campaigns cannot be resumed or modified.' };
   }
 
+  // Fetch all submissions to calculate actual live accrued spent budget
+  const { data: campaignSubmissions } = await supabase
+    .from('submissions')
+    .select('payout_amount, pending_payout_amount, final_view_count')
+    .eq('campaign_id', campaign.id);
+
+  const totalAccruedSpent = campaignSubmissions?.reduce(
+    (sum, s) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
+    0
+  ) || 0;
+
+  const liveSpentBudget = Math.max(Number(campaign.spent_budget || 0), totalAccruedSpent);
+
   // If concluding/completing campaign, refund remaining unspent budget to brand wallet
   if (newStatus === 'completed' && campaign.status !== 'completed') {
-    const unspentBudget = Math.max(0, Number(campaign.total_budget) - Number(campaign.spent_budget));
+    const unspentBudget = Math.max(0, Number(campaign.total_budget) - liveSpentBudget);
 
     if (unspentBudget > 0) {
       const { data: wallet } = await supabase
@@ -229,6 +242,36 @@ export async function updateCampaignStatusAction(formData: FormData) {
 
   if (error) {
     return { success: false, error: 'Failed to update campaign status.' };
+  }
+
+  // Trigger completion notifications
+  if (newStatus === 'completed' && campaign.status !== 'completed') {
+    try {
+      const { notifyAdvertiserCampaignCompleted } = await import('@/lib/notifications/advertiser');
+      const { notifyJoinedCreatorsCampaignCompleted } = await import('@/lib/notifications/creator');
+
+      const totalViews = campaignSubmissions?.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0) || 0;
+
+      // 1. Notify advertiser (brand)
+      await notifyAdvertiserCampaignCompleted({
+        clerkId: userProfile.profile.clerk_id,
+        email: userProfile.profile.email || '',
+        campaignTitle: campaign.title || 'Campaign',
+        totalViews,
+        totalSpent: liveSpentBudget,
+        campaignId: campaign.id,
+        profileId: userProfile.profile.id,
+      });
+
+      // 2. Notify all joined creators
+      await notifyJoinedCreatorsCampaignCompleted({
+        campaignTitle: campaign.title || 'Campaign',
+        campaignId: campaign.id,
+        supabaseClient: supabase,
+      });
+    } catch (e) {
+      console.error('[updateCampaignStatusAction] Error sending completion notifications:', e);
+    }
   }
 
   revalidatePath(`/b/campaigns/${campaignId}`);

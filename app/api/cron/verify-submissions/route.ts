@@ -24,7 +24,7 @@ export async function GET() {
     for (const sub of submissions || []) {
       const { data: campaign } = await supabase
         .from('campaigns')
-        .select('id, title, cpm_rate, min_view_threshold, total_budget')
+        .select('id, title, cpm_rate, min_view_threshold, total_budget, spent_budget, reserved_budget, advertiser_id, status')
         .eq('id', sub.campaign_id)
         .maybeSingle();
 
@@ -113,6 +113,68 @@ export async function GET() {
           console.error('[verify-submissions cron] Update error for sub:', sub.id, updateErr);
         } else {
           updatedCount++;
+
+          // Real-time Campaign Budget Deduction
+          const deltaPayout = incrementalPayout - Number(sub.pending_payout_amount || 0);
+          if (deltaPayout > 0) {
+            const currentSpent = Number(campaign.spent_budget || 0);
+            const currentReserved = Number(campaign.reserved_budget || 0);
+            const newSpent = currentSpent + deltaPayout;
+            const isDepleted = newSpent >= totalBudget;
+
+            await supabase
+              .from('campaigns')
+              .update({
+                spent_budget: newSpent,
+                reserved_budget: Math.max(0, currentReserved - deltaPayout),
+                ...(isDepleted ? { status: 'completed' } : {}),
+                updated_at: now.toISOString(),
+              })
+              .eq('id', campaign.id);
+
+            // Trigger completion notifications immediately on depletion
+            if (isDepleted && campaign.status !== 'completed') {
+              try {
+                const { notifyAdvertiserCampaignCompleted } = await import('@/lib/notifications/advertiser');
+                const { notifyJoinedCreatorsCampaignCompleted } = await import('@/lib/notifications/creator');
+
+                // Fetch advertiser profile for notification
+                const { data: advertiserProfile } = await supabase
+                  .from('profiles')
+                  .select('clerk_id, email')
+                  .eq('id', campaign.advertiser_id)
+                  .maybeSingle();
+
+                if (advertiserProfile) {
+                  // Count total views delivered
+                  const { data: viewRes } = await supabase
+                    .from('submissions')
+                    .select('final_view_count')
+                    .eq('campaign_id', campaign.id);
+                  
+                  const totalViews = viewRes?.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0) || 0;
+
+                  await notifyAdvertiserCampaignCompleted({
+                    clerkId: advertiserProfile.clerk_id,
+                    email: advertiserProfile.email || '',
+                    campaignTitle: campaign.title || 'Campaign',
+                    totalViews,
+                    totalSpent: newSpent,
+                    campaignId: campaign.id,
+                    profileId: campaign.advertiser_id,
+                  });
+                }
+
+                await notifyJoinedCreatorsCampaignCompleted({
+                  campaignTitle: campaign.title || 'Campaign',
+                  campaignId: campaign.id,
+                  supabaseClient: supabase,
+                });
+              } catch (err) {
+                console.error('[verify-submissions cron] Error sending completion notifications on depletion:', err);
+              }
+            }
+          }
         }
       }
     }

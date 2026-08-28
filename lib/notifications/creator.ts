@@ -444,3 +444,77 @@ export async function notifyCreatorWithdrawalCompleted({
     html,
   });
 }
+
+export async function notifyJoinedCreatorsCampaignCompleted({
+  campaignTitle,
+  campaignId,
+  supabaseClient,
+}: {
+  campaignTitle: string;
+  campaignId: string;
+  supabaseClient: any;
+}) {
+  try {
+    const { data: submissions, error } = await supabaseClient
+      .from('submissions')
+      .select('profiles(id, clerk_id, email, full_name)')
+      .eq('campaign_id', campaignId);
+
+    if (error || !submissions || submissions.length === 0) return;
+
+    const actionUrl = `/c/dashboard`;
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+    const seenEmails = new Set<string>();
+
+    for (const sub of submissions) {
+      const profile = sub.profiles as any;
+      if (!profile || !profile.email || seenEmails.has(profile.email)) continue;
+      seenEmails.add(profile.email);
+
+      // 1. In-App Notification
+      try {
+        await triggerNotification({
+          workflowKey: 'campaign-completed-creator',
+          recipients: [profile.clerk_id || profile.id],
+          data: {
+            campaignTitle,
+            campaignId,
+            action_url: actionUrl,
+          },
+          profileId: profile.id,
+        });
+      } catch (err) {
+        console.error('[Notification Helper] Error sending in-app notification to creator:', err);
+      }
+
+      // 2. Email Notification
+      try {
+        const html = renderReusableEmailTemplate({
+          to: profile.email,
+          subject: `Campaign Concluded: ${campaignTitle} 🏁`,
+          previewText: `The campaign "${campaignTitle}" has ended.`,
+          headline: 'Campaign Concluded 🏁',
+          subtitle: `Hi ${profile.full_name || 'Creator'}, the campaign "${campaignTitle}" has ended and submissions are now closed.`,
+          details: [
+            { label: 'CAMPAIGN', value: campaignTitle },
+          ],
+          noticeText: 'If you have already posted and submitted your live link, view tracking and automatic settlements will continue until your 24h grace period finishes.',
+          cta: {
+            label: 'Open Dashboard',
+            url: `${appUrl}${actionUrl}`,
+          },
+        });
+
+        await sendEmail({
+          to: profile.email,
+          subject: `Campaign Concluded: ${campaignTitle} 🏁`,
+          html,
+        });
+      } catch (err) {
+        console.error('[Notification Helper] Error sending email to creator:', err);
+      }
+    }
+  } catch (err) {
+    console.error('[Notification Helper] Error in notifyJoinedCreatorsCampaignCompleted:', err);
+  }
+}
