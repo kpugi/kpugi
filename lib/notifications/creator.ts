@@ -112,7 +112,7 @@ export async function notifyCreatorJoinedCampaign({
   profileId,
 }: {
   clerkId: string;
-  email: string;
+  email?: string;
   campaignTitle: string;
   reservedAmount: number;
   campaignId?: string;
@@ -133,28 +133,30 @@ export async function notifyCreatorJoinedCampaign({
     profileId,
   });
 
-  const html = renderReusableEmailTemplate({
-    to: email,
-    subject: 'Campaign Slot Secured! 🔒',
-    previewText: `Your budget slot for "${campaignTitle}" is locked in.`,
-    headline: 'Campaign Slot Secured! 🔒',
-    subtitle: `Awesome!, you've successfully reserved your slot for "${campaignTitle}". Your payout budget of ₦${reservedAmount.toLocaleString()} is locked in escrow.`,
-    details: [
-      { label: 'CAMPAIGN', value: campaignTitle },
-      { label: 'RESERVED PAYOUT', value: `₦${reservedAmount.toLocaleString()}`, isMonospace: true },
-    ],
-    noticeText: 'Please download the creative assets, copy the caption copy, post on your social handles, and submit your live link on the dashboard to trigger view counting and verification.',
-    cta: {
-      label: 'Open Creator Workspace',
-      url: `${appUrl}${actionUrl}`,
-    },
-  });
+  if (email && !email.includes('clerk_user_') && !email.endsWith('@example.com')) {
+    const html = renderReusableEmailTemplate({
+      to: email,
+      subject: 'Campaign Slot Secured! 🔒',
+      previewText: `Your budget slot for "${campaignTitle}" is locked in.`,
+      headline: 'Campaign Slot Secured! 🔒',
+      subtitle: `Awesome!, you've successfully reserved your slot for "${campaignTitle}". Your payout budget of ₦${reservedAmount.toLocaleString()} is locked in escrow.`,
+      details: [
+        { label: 'CAMPAIGN', value: campaignTitle },
+        { label: 'RESERVED PAYOUT', value: `₦${reservedAmount.toLocaleString()}`, isMonospace: true },
+      ],
+      noticeText: 'Please download the creative assets, copy the caption copy, post on your social handles, and submit your live link on the dashboard to trigger view counting and verification.',
+      cta: {
+        label: 'Open Creator Workspace',
+        url: `${appUrl}${actionUrl}`,
+      },
+    });
 
-  await sendEmail({
-    to: email,
-    subject: 'Campaign Slot Secured! 🔒',
-    html,
-  });
+    await sendEmail({
+      to: email,
+      subject: 'Campaign Slot Secured! 🔒',
+      html,
+    });
+  }
 }
 
 export async function notifyCreatorPostSubmitted({

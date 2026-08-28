@@ -893,7 +893,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
       }
 
       try {
-        const creatorHandle = creator.username ? `${creator.username.replace(/^@/, '')}` : (creator.full_name || 'Creator');
+        const creatorHandle = creator.full_name ? `${creator.full_name.replace(/^@/, '')}` : 'Creator';
         const emailSubject = `🔥 New Ad Campaign Available`;
 
         const html = renderReusableEmailTemplate({

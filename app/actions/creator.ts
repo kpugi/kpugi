@@ -226,6 +226,7 @@ export async function submitCampaignVideoAction(formData: FormData) {
   // Fire campaign submission notification
   notifyCreatorJoinedCampaign({
     clerkId: userProfile.profile.clerk_id,
+    email: userProfile.profile.email,
     campaignTitle: campaign.title || 'Campaign',
     reservedAmount: campaign.cpm_rate || 0,
     campaignId: campaignId,

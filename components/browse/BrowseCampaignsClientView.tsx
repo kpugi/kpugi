@@ -35,6 +35,7 @@ interface Campaign {
   is_featured: boolean;
   matchScore?: number;
   rankBadges: RankTier[];
+  status?: string;
   activityScores?: {
     score24h: number;
     score7d: number;
