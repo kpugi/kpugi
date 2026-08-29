@@ -209,11 +209,11 @@ export function renderReusableEmailTemplate(params: ReusableEmailParams): string
     <!-- Clean Footer -->
     <div style="background-color: #F8FAFC; padding: 20px 24px 24px 24px; text-align: center; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B; line-height: 1.5;">
       <p style="margin: 0 0 10px 0; font-size: 12.5px; color: #475569; font-weight: 500;">
-        Got questions or need a hand? <a href="mailto:support@kpugi.com" style="color: #2563EB; text-decoration: none; font-weight: 700;">Holla at us</a>
+        Stuck or need a pull up? <a href="mailto:support@kpugi.com" style="color: #2563EB; text-decoration: none; font-weight: 700;">Holla at us anytime ⚡</a>
       </p>
 
       <p style="margin: 0; font-size: 11px; color: #94A3B8;">
-        &copy; ${year} Kpugi Marketplace. The #1 performance ad network for creators & brands.
+        &copy; ${year} Kpugi Marketplace. The #1 performance ad network turning views into direct cash.
       </p>
     </div>
 

@@ -28,15 +28,15 @@ export async function notifyCreatorWelcome({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Welcome to Kpugi 🚀',
-    previewText: 'Start monetizing your short-form video views today.',
-    headline: 'Welcome to Kpugi 🎉',
-    subtitle: `Yooo ${cleanName}!, your creator account is officially live. Connect your handles, claim campaign drops, and get paid per 1,000 verified views.`,
+    subject: `Welcome to the Squad 🚀 Let's Get This Bag!`,
+    previewText: `Sync your socials, claim drops, and start monetizing views today.`,
+    headline: 'Welcome to Kpugi 🎉 We outside!',
+    subtitle: `Yooo ${cleanName}! Your creator account is officially active. Sync your social handles, claim hot campaign drops, and turn your views into real cash. No cap.`,
     details: [
       { label: 'STEP 1', value: 'Connect TikTok, Instagram or X handle' },
-      { label: 'STEP 2', value: 'Claim slots in active brand campaigns' },
+      { label: 'STEP 2', value: 'Claim slots in active brand campaign drops' },
       { label: 'STEP 3', value: 'Post brief creatives & lock in your live link' },
-      { label: 'STEP 4', value: 'Get paid per 1,000 verified views' },
+      { label: 'STEP 4', value: 'Get paid per 1,000 verified views automatically' },
     ],
     cta: {
       label: 'Explore Active Campaigns',
@@ -47,7 +47,7 @@ export async function notifyCreatorWelcome({
 
   await sendEmail({
     to: email,
-    subject: 'Welcome to Kpugi 🚀',
+    subject: `Welcome to the Squad 🚀 Let's Get This Bag!`,
     previewText: 'Start monetizing your short-form video views today.',
     html,
   });
@@ -82,10 +82,10 @@ export async function notifyCreatorSocialConnected({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Handle Connected & Verified ✅',
+    subject: 'Handle Verified & Locked 🔓 We\'re live!',
     previewText: `Your ${platform.toUpperCase()} profile is verified and ready.`,
-    headline: 'Handle Connected & Verified ✅',
-    subtitle: `Yooo ${cleanHandle}!, your ${platform.toUpperCase()} profile is now verified and active. You're all set to claim campaigns matching your tier.`,
+    headline: 'Handle Verified & Locked 🔓',
+    subtitle: `Yooo ${cleanHandle}! Your ${platform.toUpperCase()} profile passed the vibe check and is officially verified. You're unlocked and ready to claim top-tier campaign drops!`,
     details: [
       { label: 'PLATFORM', value: platform.toUpperCase() },
       { label: 'CONNECTED HANDLE', value: cleanHandle },
@@ -98,7 +98,7 @@ export async function notifyCreatorSocialConnected({
 
   await sendEmail({
     to: email,
-    subject: 'Handle Connected & Verified ✅',
+    subject: 'Handle Verified & Locked 🔓 We\'re live!',
     html,
   });
 }
@@ -136,15 +136,15 @@ export async function notifyCreatorJoinedCampaign({
   if (email && !email.includes('clerk_user_') && !email.endsWith('@example.com')) {
     const html = renderReusableEmailTemplate({
       to: email,
-      subject: 'Campaign Slot Secured! 🔒',
-      previewText: `Your budget slot for "${campaignTitle}" is locked in.`,
-      headline: 'Campaign Slot Secured! 🔒',
-      subtitle: `Awesome!, you've successfully reserved your slot for "${campaignTitle}". Your payout budget of ₦${reservedAmount.toLocaleString()} is locked in escrow.`,
+      subject: 'Slot Secured 🔒 Let\'s Cook!',
+      previewText: `Your budget slot for "${campaignTitle}" is locked in escrow.`,
+      headline: 'Slot Secured 🔒 Let\'s Cook!',
+      subtitle: `Major W! You just snagged a slot for "${campaignTitle}". Your payout budget of ₦${reservedAmount.toLocaleString()} is safely locked in escrow waiting for your views to pop off.`,
       details: [
         { label: 'CAMPAIGN', value: campaignTitle },
         { label: 'RESERVED PAYOUT', value: `₦${reservedAmount.toLocaleString()}`, isMonospace: true },
       ],
-      noticeText: 'Please download the creative assets, copy the caption copy, post on your social handles, and submit your live link on the dashboard to trigger view counting and verification.',
+      noticeText: 'Download the creative assets, grab the caption details, post on your socials, and drop your live link on the dashboard to start tracking views.',
       cta: {
         label: 'Open Creator Workspace',
         url: `${appUrl}${actionUrl}`,
@@ -153,7 +153,7 @@ export async function notifyCreatorJoinedCampaign({
 
     await sendEmail({
       to: email,
-      subject: 'Campaign Slot Secured! 🔒',
+      subject: 'Slot Secured 🔒 Let\'s Cook!',
       html,
     });
   }
@@ -191,10 +191,10 @@ export async function notifyCreatorPostSubmitted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Post Link Locked In 📌',
-    previewText: `Your post for "${campaignTitle}" is now being tracked.`,
-    headline: 'Post Link Locked In 📌',
-    subtitle: `Yooo!, your submission for "${campaignTitle}" was received and is now being actively monitored by our scrapers.`,
+    subject: 'Link Locked In 📌 Motion Detected!',
+    previewText: `Your post for "${campaignTitle}" is now being actively tracked.`,
+    headline: 'Link Locked In 📌 Motion Detected!',
+    subtitle: `Link dropped! We received your live post for "${campaignTitle}". Our automated scrapers are now tracking your views in real-time. Let it cook 🔥`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'POST LINK', value: postUrl },
@@ -208,7 +208,7 @@ export async function notifyCreatorPostSubmitted({
 
   await sendEmail({
     to: email,
-    subject: 'Post Link Locked In 📌',
+    subject: 'Link Locked In 📌 Motion Detected!',
     previewText: 'Your live post URL was successfully recorded for performance tracking.',
     html,
   });
@@ -251,10 +251,10 @@ export async function notifyCreatorVerificationPassed({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Bag Secured! 🎉',
+    subject: `BAG SECURED! 💰 ${trackedViews.toLocaleString()} Views Cleared!`,
     previewText: `Your post verified ${trackedViews.toLocaleString()} views! Earnings added to your wallet.`,
     headline: 'Bag Secured! 🎉',
-    subtitle: `Yooo!, congratulations! Your post for "${campaignTitle}" hit the view milestone with ${trackedViews.toLocaleString()} verified views.`,
+    subtitle: `Yooo! You went crazy on this one 🔥 Your post for "${campaignTitle}" just passed ${trackedViews.toLocaleString()} verified views. Funds have officially landed in your creator wallet!`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'VERIFIED VIEWS', value: `${trackedViews.toLocaleString()} views`, isMonospace: true },
@@ -269,7 +269,7 @@ export async function notifyCreatorVerificationPassed({
 
   await sendEmail({
     to: email,
-    subject: 'Bag Secured! 🎉',
+    subject: `BAG SECURED! 💰 ${trackedViews.toLocaleString()} Views Cleared!`,
     previewText: `Your post verified ${trackedViews.toLocaleString()} views! Earnings added to your wallet.`,
     html,
   });
@@ -307,10 +307,10 @@ export async function notifyCreatorVerificationFailed({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Verification Check Needed ⚠️',
+    subject: 'Vibe Check Needed ⚠️ Hold up...',
     previewText: `We ran into an issue verifying your post for "${campaignTitle}".`,
-    headline: 'Verification Check Needed ⚠️',
-    subtitle: `Yooo!, we could not verify your submission on "${campaignTitle}".`,
+    headline: 'Vibe Check Needed ⚠️',
+    subtitle: `Yooo! We ran into a slight hiccup verifying your submission for "${campaignTitle}". Don't stress though—check your dashboard to fix it real quick.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'REASON', value: failureReason },
@@ -324,7 +324,7 @@ export async function notifyCreatorVerificationFailed({
 
   await sendEmail({
     to: email,
-    subject: 'Verification Check Needed ⚠️',
+    subject: 'Vibe Check Needed ⚠️ Hold up...',
     html,
   });
 }
@@ -367,10 +367,10 @@ export async function notifyCreatorPayoutReleased({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Yooo! You Got Paid 💰',
-    previewText: `${formattedAmount} added to your wallet!`,
+    subject: 'Funds Hit Different 🤑 Wallet Credited!',
+    previewText: `${formattedAmount} added to your creator wallet!`,
     headline: 'Yooo! You Got Paid 💰',
-    subtitle: `Yooo!, your video submission for "${campaignTitle}" passed verification and funds just landed in your creator wallet.`,
+    subtitle: `Yooo! That content paid off! ₦${formattedAmount} from "${campaignTitle}" was just deposited into your creator wallet. Time to cash out or stack it up 💸`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'AMOUNT CREDITED', value: formattedAmount, isMonospace: true },
@@ -385,7 +385,7 @@ export async function notifyCreatorPayoutReleased({
 
   await sendEmail({
     to: email,
-    subject: 'Yooo! You Got Paid 💰',
+    subject: 'Funds Hit Different 🤑 Wallet Credited!',
     html,
   });
 }
@@ -425,10 +425,10 @@ export async function notifyCreatorWithdrawalCompleted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Cashout Complete 💸',
+    subject: 'Cashout Complete 💸 Bag In Direct Deposit!',
     previewText: `Your withdrawal of ${formattedAmount} is on its way.`,
     headline: 'Cashout Complete 💸',
-    subtitle: `Yooo!, your withdrawal request of ${formattedAmount} has been processed via Paystack and sent straight to your bank account.`,
+    subtitle: `Yooo! ${formattedAmount} is heading straight to your bank account right now. Hard work pays off—go enjoy your gains! 🔥`,
     details: [
       { label: 'DESTINATION BANK', value: bankName },
       { label: 'ACCOUNT NUMBER', value: accountMasked, isMonospace: true },
@@ -443,7 +443,7 @@ export async function notifyCreatorWithdrawalCompleted({
 
   await sendEmail({
     to: email,
-    subject: 'Cashout Complete 💸',
+    subject: 'Cashout Complete 💸 Bag In Direct Deposit!',
     html,
   });
 }
@@ -512,25 +512,26 @@ export async function notifyJoinedCreatorsCampaignCompleted({
 
       // 2. Email Notification
       try {
+        const cleanName = profile.full_name ? profile.full_name.replace(/^@/, '') : 'Creator';
         const html = renderReusableEmailTemplate({
           to: profile.email,
-          subject: `Campaign Concluded: ${campaignTitle} 🏁`,
-          previewText: `The campaign "${campaignTitle}" has ended.`,
-          headline: 'Campaign Concluded 🏁',
-          subtitle: `Hi ${profile.full_name || 'Creator'}, the campaign "${campaignTitle}" has ended and submissions are now closed.`,
+          subject: `Campaign Wrapped 🏁 Drop Complete!`,
+          previewText: `The campaign "${campaignTitle}" has officially wrapped up.`,
+          headline: 'Campaign Wrapped 🏁',
+          subtitle: `Yooo ${cleanName}! The "${campaignTitle}" campaign drop has officially wrapped up. Big shoutout for bringing the heat! Any remaining view tracking will finish automatically.`,
           details: [
             { label: 'CAMPAIGN', value: campaignTitle },
           ],
           noticeText: 'If you have already posted and submitted your live link, view tracking and automatic settlements will continue until your 24h grace period finishes.',
           cta: {
-            label: 'Open Dashboard',
+            label: 'Open Creator Dashboard',
             url: `${appUrl}${actionUrl}`,
           },
         });
 
         await sendEmail({
           to: profile.email,
-          subject: `Campaign Concluded: ${campaignTitle} 🏁`,
+          subject: `Campaign Wrapped 🏁 Drop Complete!`,
           html,
         });
       } catch (err) {

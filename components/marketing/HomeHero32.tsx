@@ -60,7 +60,7 @@ export default function HomeHero32({
 
   return (
     <>
-      <section className="relative min-h-[85vh] sm:min-h-[90vh] w-full overflow-hidden flex flex-col items-center justify-center px-4 pt-12 pb-24 text-center selection:bg-white/25">
+      <section className="relative min-h-[85vh] sm:min-h-[90vh] w-full overflow-hidden flex flex-col items-center justify-center px-4 pt-28 sm:pt-36 lg:pt-40 pb-24 text-center selection:bg-white/25">
         {/* Background Image Container with Smooth Bottom Fade to Blend with Next Section */}
         <div className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden">
           <img

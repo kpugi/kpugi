@@ -212,7 +212,7 @@ export default function DashboardHeader({
         <div className="flex items-center gap-2 shrink-0">
           <KnockNotificationBell />
 
-          <ThemeToggle />
+          <ThemeToggle variant="compact" />
 
           {/* Help */}
           <button className="hidden sm:flex p-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink dark:text-slate-300 dark:hover:text-white hover:bg-kpugi-paper dark:hover:bg-white/5 transition-colors">

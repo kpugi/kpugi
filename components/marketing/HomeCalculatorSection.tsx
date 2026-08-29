@@ -134,7 +134,7 @@ export default function HomeCalculatorSection() {
                   : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              For Creators (Earnings)
+              Creators
             </button>
             <button
               onClick={() => setActiveTab('brand')}
@@ -144,7 +144,7 @@ export default function HomeCalculatorSection() {
                   : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              For Brands (Reach & Budget)
+              Brands
             </button>
           </div>
         </div>
@@ -165,11 +165,10 @@ export default function HomeCalculatorSection() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <label className="font-display font-semibold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-[#17A75B]" />
-                      Estimated Video Views
+                      Estimated Views
                     </label>
                     <span className="font-mono font-bold text-lg sm:text-xl text-[#17A75B] dark:text-emerald-400 tabular-nums">
-                      {creatorViews.toLocaleString()} views
+                      {creatorViews.toLocaleString()}
                     </span>
                   </div>
                   <div className="relative py-2">
@@ -194,7 +193,7 @@ export default function HomeCalculatorSection() {
                 {/* CPM Preset Selectors */}
                 <div>
                   <label className="font-display font-semibold text-slate-800 dark:text-white text-sm sm:text-base block mb-4">
-                    Campaign Target CPM Rate
+                    CPM Rate
                   </label>
                   <div className="grid grid-cols-3 gap-3">
                     {[2000, 2500, 3500].map((rate) => (
@@ -231,7 +230,6 @@ export default function HomeCalculatorSection() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <label className="font-display font-semibold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2">
-                      <Coins className="h-4 w-4 text-[#2F49E8]" />
                       Campaign Budget
                     </label>
                     <span className="font-mono font-bold text-lg sm:text-xl text-[#2F49E8] dark:text-[#5B7CFF] tabular-nums">
@@ -260,7 +258,7 @@ export default function HomeCalculatorSection() {
                 {/* Brand CPM Preset Selectors */}
                 <div>
                   <label className="font-display font-semibold text-slate-800 dark:text-white text-sm sm:text-base block mb-4">
-                    Target CPM Cap Rate
+                  CPM Rate
                   </label>
                   <div className="grid grid-cols-3 gap-3">
                     {[2000, 2500, 3000].map((rate) => (
@@ -283,7 +281,7 @@ export default function HomeCalculatorSection() {
                 <div className="space-y-3 pt-6 border-t border-slate-200/50 dark:border-white/5 text-xs text-slate-600 dark:text-white/60">
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="h-4 w-4 text-[#2F49E8] shrink-0" />
-                    <span>Zero upfront risk — only pay for audited human view impressions.</span>
+                    <span>Zero upfront risk — only pay for verified impressions.</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="h-4 w-4 text-[#2F49E8] shrink-0" />
@@ -344,13 +342,11 @@ export default function HomeCalculatorSection() {
                         </div>
                         {activeTab === 'brand' && (
                           <span className="flex items-center gap-1 text-[11px] font-sans font-semibold text-slate-400 dark:text-white/40 mt-1.5 uppercase tracking-widest">
-                            <Eye className="h-3 w-3" />
                             Impressions
                           </span>
                         )}
                       </div>
                       <button className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-                        <ArrowUpRight className="h-7 w-7" strokeWidth={2.5} />
                       </button>
                     </div>
 

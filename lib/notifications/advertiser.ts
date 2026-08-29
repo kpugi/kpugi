@@ -25,10 +25,10 @@ export async function notifyAdvertiserWelcome({
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Welcome to Kpugi 🚀',
+    subject: 'Welcome to Kpugi 🚀 Real Creators, Real Motion!',
     previewText: 'Launch performance campaigns and tap into verified creators.',
     headline: 'Welcome to Kpugi 🚀',
-    subtitle: `Welcome ${companyName}!, your brand partner account is officially active. Fund your balance, launch performance campaigns, and pay strictly for confirmed creator views.`,
+    subtitle: `Welcome ${companyName}! You're in good hands. Fund your brand wallet, drop your campaign briefs, and let vetted creators take your brand viral. Zero fluff, 100% verified views.`,
     details: [
       { label: 'STEP 1', value: 'Deposit budget to your brand wallet' },
       { label: 'STEP 2', value: 'Create campaign brief & upload creatives' },
@@ -42,7 +42,7 @@ export async function notifyAdvertiserWelcome({
 
   await sendEmail({
     to: email,
-    subject: 'Welcome to Kpugi 🚀',
+    subject: 'Welcome to Kpugi 🚀 Real Creators, Real Motion!',
     previewText: 'Launch performance campaigns and pay strictly for confirmed views.',
     html,
   });
@@ -81,10 +81,10 @@ export async function notifyAdvertiserWalletFunded({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Deposit Confirmed 💳',
+    subject: 'Funds Locked & Loaded 💳 Time to Drop!',
     previewText: `Your deposit of ${formattedAmount} was successfully confirmed.`,
     headline: 'Deposit Confirmed 💳',
-    subtitle: 'Your payment was successfully confirmed via Paystack. Your balance is ready to power your campaign drops.',
+    subtitle: `Payment confirmed! Your brand wallet is now loaded with ${formattedAmount}. Your budget is primed to ignite creator campaigns and drive real reach.`,
     details: [
       { label: 'AMOUNT DEPOSITED', value: formattedAmount, isMonospace: true },
       { label: 'UPDATED BALANCE', value: formattedBalance, isMonospace: true },
@@ -99,7 +99,7 @@ export async function notifyAdvertiserWalletFunded({
 
   await sendEmail({
     to: email,
-    subject: 'Deposit Confirmed 💳',
+    subject: 'Funds Locked & Loaded 💳 Time to Drop!',
     previewText: `Your deposit of ${formattedAmount} was successfully confirmed.`,
     html,
   });
@@ -145,10 +145,10 @@ export async function notifyAdvertiserCampaignLive({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Campaign is Live & Cooking 🚀',
+    subject: 'Campaign Live & Cooking 🔥 Motion Initiated!',
     previewText: `Budget is locked and "${campaignTitle}" is live. Creators are ready to claim slots.`,
-    headline: 'Campaign is Live & Ready to Cook 🚀',
-    subtitle: `Budget is locked in and your campaign is live. Creators are ready to claim slots and amplify for campaign for absolute virality!`,
+    headline: 'Campaign Live & Cooking 🚀',
+    subtitle: `We are LIVE! "${campaignTitle}" is officially out in the wild. Creators are already claiming slots to turn your content into pure virality.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'BUDGET LOCKED', value: formattedBudget, isMonospace: true },
@@ -163,7 +163,7 @@ export async function notifyAdvertiserCampaignLive({
 
   await sendEmail({
     to: email,
-    subject: 'Campaign is Live & Cooking 🚀',
+    subject: 'Campaign Live & Cooking 🔥 Motion Initiated!',
     html,
   });
 }
@@ -207,10 +207,10 @@ export async function notifyAdvertiserCreatorJoined({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Creator Joined Campaign! 🚀',
+    subject: `Creator Picked Up The Drop! 🚀 ${cleanHandle} is in!`,
     previewText: `${cleanHandle} has joined "${campaignTitle}".`,
     headline: 'Creator Joined Campaign! 🚀',
-    subtitle: `Great news!, a creator has joined your campaign and reserved slots to amplify your brand.`,
+    subtitle: `Big motion! Creator ${cleanHandle} just grabbed a slot in "${campaignTitle}". Their budget slot is locked in escrow while they prep the post.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'CREATOR', value: cleanHandle },
@@ -226,7 +226,7 @@ export async function notifyAdvertiserCreatorJoined({
 
   await sendEmail({
     to: email,
-    subject: 'Creator Joined Campaign! 🚀',
+    subject: `Creator Picked Up The Drop! 🚀 ${cleanHandle} is in!`,
     html,
   });
 }
@@ -270,10 +270,10 @@ export async function notifyAdvertiserCreatorSubmitted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Creator Dropped a Live Link 📹',
+    subject: 'Live Post Dropped 📹 Content is Cooking!',
     previewText: `${cleanHandle} just submitted their live post link for "${campaignTitle}".`,
     headline: 'Creator Dropped a Live Link 📹',
-    subtitle: `Creator ${cleanHandle} (${platform.toUpperCase()}) just submitted their live post link for "${campaignTitle}".`,
+    subtitle: `Content is live! ${cleanHandle} (${platform.toUpperCase()}) dropped their live video link for "${campaignTitle}". We're actively scraping & tracking views right now.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'CREATOR', value: cleanHandle },
@@ -289,7 +289,7 @@ export async function notifyAdvertiserCreatorSubmitted({
 
   await sendEmail({
     to: email,
-    subject: 'Creator Dropped a Live Link 📹',
+    subject: 'Live Post Dropped 📹 Content is Cooking!',
     html,
   });
 }
@@ -391,10 +391,10 @@ export async function notifyAdvertiserBudgetDepleted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Budget 100% Locked & Moving 🔥',
+    subject: '100% Budget Locked 🔥 Campaign Sold Out!',
     previewText: `All slots for "${campaignTitle}" have been claimed by creators.`,
-    headline: 'Budget 100% Locked & Moving 🔥',
-    subtitle: `Every slot for "${campaignTitle}" has been claimed by active creators. Want to keep the views and engagement rolling? Top up your budget anytime.`,
+    headline: 'Budget 100% Claimed 🔥',
+    subtitle: `Pure fire! Every single slot for "${campaignTitle}" has been snagged by creators. Want to keep the viral train rolling? Top up your campaign budget anytime.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'SLOT STATUS', value: '100% Claimed' },
@@ -407,7 +407,7 @@ export async function notifyAdvertiserBudgetDepleted({
 
   await sendEmail({
     to: email,
-    subject: 'Budget 100% Locked & Moving 🔥',
+    subject: '100% Budget Locked 🔥 Campaign Sold Out!',
     html,
   });
 }
@@ -447,10 +447,10 @@ export async function notifyAdvertiserCampaignCompleted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Campaign Wrap Up 📊',
+    subject: 'Campaign Wrap Up 📊 Final Scoreboard Inside!',
     previewText: `Your campaign "${campaignTitle}" delivered ${totalViews.toLocaleString()} verified views.`,
     headline: 'Campaign Wrap Up 📊',
-    subtitle: `Your campaign "${campaignTitle}" has reached completion. Here is your final performance snapshot:`,
+    subtitle: `That's a wrap! "${campaignTitle}" officially completed with ${totalViews.toLocaleString()} verified views delivered. Check out your final performance report!`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'TOTAL VERIFIED VIEWS', value: `${totalViews.toLocaleString()} views`, isMonospace: true },
@@ -464,7 +464,7 @@ export async function notifyAdvertiserCampaignCompleted({
 
   await sendEmail({
     to: email,
-    subject: 'Campaign Wrap Up 📊',
+    subject: 'Campaign Wrap Up 📊 Final Scoreboard Inside!',
     html,
   });
 }

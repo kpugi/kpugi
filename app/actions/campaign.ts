@@ -894,14 +894,14 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
 
       try {
         const creatorHandle = creator.full_name ? `${creator.full_name.replace(/^@/, '')}` : 'Creator';
-        const emailSubject = `🔥 New Ad Campaign Available`;
+        const emailSubject = `🔥 NEW DROP ALERT! Bag Available inside`;
 
         const html = renderReusableEmailTemplate({
           to: creator.email,
-          subject: 'New Campaign Available 🚀',
-          previewText: 'A new campaign is now available on Kpugi with ready-to-post creatives.',
-          headline: 'New Campaign Available 🚀',
-          subtitle: `Yooo ${creatorHandle}!, a new campaign is now available with ready-to-post creatives!`,
+          subject: '🔥 NEW DROP ALERT! Bag Available inside',
+          previewText: `New campaign drop "${campaign.title}" is now live on Kpugi!`,
+          headline: 'New Campaign Drop 🚀',
+          subtitle: `Yooo ${creatorHandle}! Fresh motion just dropped! "${campaign.title}" is live paying ₦${cpmFormatted}/1k views. Grab your slot before the budget gets cleaned out!`,
           details: [
             { label: 'CAMPAIGN', value: campaign.title },
             { label: 'CPM', value: `₦${cpmFormatted}/1k views`, isMonospace: true },
@@ -910,7 +910,7 @@ export async function notifyCreatorsNewCampaign(campaign: any) {
           ],
           noticeText: 'Slots are first-come, first-served. Grab your creatives, post, and lock in your views before the budget cap is reached!',
           cta: {
-            label: 'Claim Slot',
+            label: 'Claim Slot Now',
             url: `${appUrl}${actionUrl}`,
             subtext: 'Open the brief on Kpugi to grab pre-approved captions, assets, and mandatory tags.',
           },

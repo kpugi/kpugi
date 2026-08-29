@@ -181,39 +181,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ─── DUAL PRE-FOOTER CTA ────────────────────────────────────────────── */}
-      <section className="py-20 px-6 max-w-[1100px] mx-auto">
-        <div className="bg-[#08090D] text-white rounded-3xl p-8 sm:p-14 relative overflow-hidden border border-white/10 shadow-2xl">
-          <div
-            aria-hidden
-            className="absolute top-0 right-0 w-[400px] h-[400px] pointer-events-none rounded-full bg-[#2F49E8]/25 blur-3xl"
-          />
-          <div className="relative z-10 text-center max-w-2xl mx-auto">
-            <h2 className="font-clash font-bold text-[clamp(2rem,4.5vw,3.5rem)] leading-tight mb-4">
-              Ready to experience creator performance?
-            </h2>
-            <p className="font-satoshi text-base text-white/60 mb-8 leading-relaxed">
-              Whether you are an advertiser scaling campaign reach or a creator turning views into income, Kpugi delivers 100% verified results.
-            </p>
-
-            <div className="flex flex-row items-center justify-center gap-3 w-full max-w-[420px] mx-auto">
-              <Link
-                href="/brands"
-                className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[48px] bg-[#2F49E8] text-white font-satoshi font-bold text-sm px-4 rounded-xl no-underline whitespace-nowrap shadow-lg shadow-[#2F49E8]/30 transition-transform hover:scale-[1.03]"
-              >
-                <span>For Brands →</span>
-              </Link>
-              <Link
-                href="/creators"
-                className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[48px] bg-white/10 text-white font-satoshi font-semibold text-sm px-4 rounded-xl no-underline border border-white/15 backdrop-blur-md whitespace-nowrap transition-all hover:bg-white/20 hover:scale-[1.03]"
-              >
-                <span>For Creators →</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
     </div>
   );
 }

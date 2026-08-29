@@ -141,8 +141,7 @@ export default function DashboardLayoutShell({
                       alt="Kpugi"
                       width={96}
                       height={28}
-                      style={{ width: 'auto', height: 'auto' }}
-                      className="object-contain"
+                      className="h-7 w-auto object-contain"
                       priority
                     />
                   ) : (
@@ -151,8 +150,7 @@ export default function DashboardLayoutShell({
                       alt="Kpugi"
                       width={28}
                       height={28}
-                      style={{ width: 'auto', height: 'auto' }}
-                      className="rounded-lg"
+                      className="w-7 h-7 rounded-lg object-contain"
                       priority
                     />
                   )}
@@ -182,10 +180,9 @@ export default function DashboardLayoutShell({
                         alt="KpugiBot"
                         width={22}
                         height={22}
-                        style={{ width: 'auto', height: 'auto' }}
-                        className="rounded-md object-contain"
+                        className="w-5.5 h-5.5 rounded-md object-contain shrink-0"
                       />
-                      <span>KpugiBot AI</span>
+                      <span>KpugiBot</span>
                     </span>
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   </div>
@@ -211,8 +208,7 @@ export default function DashboardLayoutShell({
                     alt="KpugiBot"
                     width={28}
                     height={28}
-                    style={{ width: 'auto', height: 'auto' }}
-                    className="rounded-lg object-contain group-hover:scale-110 transition-transform"
+                    className="w-7 h-7 rounded-lg object-contain group-hover:scale-110 transition-transform shrink-0"
                   />
                 </button>
               )}
@@ -254,8 +250,7 @@ export default function DashboardLayoutShell({
                       alt="Kpugi"
                       width={90}
                       height={28}
-                      style={{ width: 'auto', height: 'auto' }}
-                      className="object-contain"
+                      className="h-7 w-auto object-contain"
                     />
                   </Link>
                   <button
@@ -350,8 +345,7 @@ export default function DashboardLayoutShell({
                       alt="KpugiBot"
                       width={20}
                       height={20}
-                      style={{ width: 'auto', height: 'auto' }}
-                      className="rounded-md object-contain"
+                      className="w-5 h-5 rounded-md object-contain shrink-0"
                     />
                     <span>KpugiBot AI Support</span>
                   </div>
