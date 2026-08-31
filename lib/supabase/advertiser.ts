@@ -55,6 +55,10 @@ export interface AdvertiserDashboardData {
   }[];
   advertiserAvatarUrl: string | null;
   companyName: string;
+  unreviewedCompletedCampaigns?: {
+    campaignId: string;
+    title: string;
+  }[];
 }
 
 export async function getAdvertiserDashboardData(profileId: string): Promise<AdvertiserDashboardData> {
@@ -267,6 +271,20 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     .filter((c) => c.status === 'live' || c.status === 'budget_committed')
     .reduce((sum, c) => sum + Math.max(0, c.total_budget - c.spent_budget), 0);
 
+  const { data: userReviews } = await supabase
+    .from('campaign_reviews')
+    .select('campaign_id')
+    .eq('reviewer_profile_id', profileId);
+
+  const reviewedCampaignIds = new Set((userReviews || []).map((r: any) => r.campaign_id));
+
+  const unreviewedCompletedCampaigns = camps
+    .filter((c) => c.status === 'completed' && !reviewedCampaignIds.has(c.id))
+    .map((c) => ({
+      campaignId: c.id,
+      title: c.title,
+    }));
+
   return {
     totalSpent,
     walletBalance: Number(wallet?.balance || 0),
@@ -280,6 +298,7 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
     recentNotifications: notifications || [],
     advertiserAvatarUrl,
     companyName,
+    unreviewedCompletedCampaigns,
   };
 }
 

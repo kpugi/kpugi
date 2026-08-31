@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -23,6 +23,8 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  Star,
+  Sparkles,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { submitCampaignVideoAction, unjoinCampaignAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
@@ -30,6 +32,9 @@ import { validatePostUrlOwnership, parseSocialPostUrl } from '@/lib/utils/social
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { CampaignReviewModal } from '@/components/reviews/CampaignReviewModal';
+import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
+import { getCampaignReviewStatusAction } from '@/app/actions/reviews';
 
 interface CreatorCampaignWorkspaceViewProps {
   data: CampaignDetailsForCreator;
@@ -38,12 +43,35 @@ interface CreatorCampaignWorkspaceViewProps {
 
 export default function CreatorCampaignWorkspaceView({ data, campaignId }: CreatorCampaignWorkspaceViewProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { campaign, submission, creatives, allSubmissions, socialAccounts = [] } = data;
   const [submissionState, setSubmissionState] = useState(submission);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [existingReview, setExistingReview] = useState<any>(null);
 
   useEffect(() => {
     setSubmissionState(submission);
   }, [submission]);
+
+  useEffect(() => {
+    async function checkReview() {
+      try {
+        const res = await getCampaignReviewStatusAction(campaignId);
+        if (res.reviewed) {
+          setHasReviewed(true);
+          setExistingReview(res.review);
+        }
+      } catch (err) {
+        console.error('Failed to fetch review status', err);
+      }
+    }
+    checkReview();
+
+    if (searchParams?.get('review') === 'true') {
+      setShowReviewModal(true);
+    }
+  }, [campaignId, searchParams]);
 
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -442,6 +470,50 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           </span>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────
+         CAMPAIGN REVIEW SECTION (CREATOR'S OWN REVIEW)
+      ───────────────────────────────────────────────────── */}
+      {(isCompleted || isReserveMet || submissionState?.status === 'paid') && (
+        hasReviewed && existingReview ? (
+          <CampaignReviewsDisplay
+            variant="single"
+            summary={{
+              averageRating: existingReview.rating || 5,
+              totalReviews: 1,
+              sentimentCounts: {},
+              topTags: [],
+              reviews: [existingReview],
+            }}
+            ownReview={existingReview}
+          />
+        ) : (
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-purple-500/10 border border-emerald-500/20 dark:border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="size-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+                <Star className="size-5 fill-current" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-base text-slate-950 dark:text-white flex items-center gap-2">
+                  <span>How was working with {campaign.company_name || 'this brand'}?</span>
+                </h3>
+                <p className="font-sans text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                  Share quick feedback on brief clarity, CPM rates, and payouts in 20 seconds.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowReviewModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#12141A] hover:bg-slate-50 dark:hover:bg-white/10 text-kpugi-ink dark:text-white border border-slate-200 dark:border-white/15 font-display font-bold text-xs shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <Sparkles className="size-3.5 text-emerald-500" />
+              <span>Leave a Review ⭐</span>
+            </button>
+          </div>
+        )
+      )}
 
       {/* ─────────────────────────────────────────────────────
          MIDDLE ROW: SUBMISSION TRACKER (LEFT) & CONTENT BRIEF (RIGHT)
@@ -896,6 +968,22 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         variant="danger"
         isLoading={isUnjoining}
         theme="light"
+      />
+
+      {/* ─────────────────────────────────────────────────────
+         CAMPAIGN REVIEW MODAL
+      ───────────────────────────────────────────────────── */}
+      <CampaignReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        campaignId={campaignId}
+        campaignTitle={campaign.title}
+        brandName={campaign.company_name}
+        role="creator"
+        metricsHighlight={earnedAmount > 0 ? `₦${earnedAmount.toLocaleString()} earned` : `${totalViews.toLocaleString()} views`}
+        onSubmitted={() => {
+          setHasReviewed(true);
+        }}
       />
     </div>
   );

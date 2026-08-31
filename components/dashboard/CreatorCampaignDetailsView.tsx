@@ -10,6 +10,8 @@ import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { getSafeExternalUrl } from '@/lib/utils/url';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
+import { getCampaignReviewsSummaryAction, CampaignReviewsSummary } from '@/app/actions/reviews';
 
 interface CreatorCampaignDetailsViewProps {
   data: CampaignDetailsForCreator;
@@ -29,10 +31,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const [postUrl, setPostUrl] = useState<string>('');
   const [screenshotUrl, setScreenshotUrl] = useState<string>('');
   const [mounted, setMounted] = useState<boolean>(false);
+  const [reviewsSummary, setReviewsSummary] = useState<CampaignReviewsSummary | null>(null);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    const targetId = campaign?.id || campaignId;
+    if (targetId && campaign && (campaign.status === 'completed' || campaign.status === 'archived')) {
+      getCampaignReviewsSummaryAction(targetId).then((res) => {
+        setReviewsSummary(res);
+      }).catch((err) => console.error('Failed to load reviews summary', err));
+    }
+  }, [campaign, campaignId]);
   
   // Interaction states
   const [isJoinModalOpen, setIsJoinModalOpen] = useState<boolean>(false);
@@ -838,6 +848,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                     </a>
                   </div>
                 </div>
+
+                {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    ⭐ VERIFIED PARTICIPANT REVIEWS (COMPLETED CAMPAIGNS ONLY)
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                {(campaign.status === 'completed' || campaign.status === 'archived') && reviewsSummary && (
+                  <CampaignReviewsDisplay
+                    summary={reviewsSummary}
+                    variant="all"
+                    title="Reviews & Ratings"
+                    subtitle="Verified creator feedback on CPM payout reliability, brief clarity, and brand collaboration."
+                  />
+                )}
               </div>
             )}
 

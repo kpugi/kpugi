@@ -429,7 +429,7 @@ export async function notifyAdvertiserCampaignCompleted({
   campaignId?: string;
   profileId?: string;
 }) {
-  const actionUrl = campaignId ? `/b/campaigns/${campaignId}` : '/b/dashboard';
+  const actionUrl = campaignId ? `/b/campaigns/${campaignId}?review=true` : '/b/dashboard';
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   await triggerNotification({
@@ -448,16 +448,16 @@ export async function notifyAdvertiserCampaignCompleted({
   const html = renderReusableEmailTemplate({
     to: email,
     subject: 'Campaign Wrap Up 📊 Final Scoreboard Inside!',
-    previewText: `Your campaign "${campaignTitle}" delivered ${totalViews.toLocaleString()} verified views.`,
+    previewText: `Your campaign "${campaignTitle}" delivered ${totalViews.toLocaleString()} verified views. Rate your experience!`,
     headline: 'Campaign Wrap Up 📊',
-    subtitle: `That's a wrap! "${campaignTitle}" officially completed with ${totalViews.toLocaleString()} verified views delivered. Check out your final performance report!`,
+    subtitle: `That's a wrap! "${campaignTitle}" officially completed with ${totalViews.toLocaleString()} verified views delivered. How was your campaign experience on Kpugi? Leave a quick 20-second review to help other brands and improve platform matching.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
       { label: 'TOTAL VERIFIED VIEWS', value: `${totalViews.toLocaleString()} views`, isMonospace: true },
       { label: 'TOTAL SPENT', value: `₦${totalSpent.toLocaleString()}`, isMonospace: true },
     ],
     cta: {
-      label: 'View Campaign Analytics',
+      label: 'Rate Experience & View Full Report ⭐',
       url: `${appUrl}${actionUrl}`,
     },
   });

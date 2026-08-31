@@ -9,18 +9,53 @@ import BrandPricingSplitSection from '@/components/advertiser/BrandPricingSplitS
 import BrandTestimonialsVertical from '@/components/advertiser/BrandTestimonialsVertical';
 import BrandCTASection from '@/components/advertiser/BrandCTASection';
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+
 export const metadata: Metadata = {
-  title: 'For Brands — Pay Only for Real Views | Kpugi',
+  metadataBase: new URL(siteUrl),
+  title: {
+    absolute: 'For Brands — Pay Only for Real Verified Views | Kpugi',
+  },
   description:
-    'Launch creator campaigns in Nigeria. Set your budget, distribute your content to hundreds of creators, and only pay when real people actually see it.',
-  alternates: { canonical: '/brands' },
+    'Launch creator campaigns across Nigeria. Distribute content to hundreds of verified creators and only pay when real audiences engage and view.',
+  keywords: [
+    'influencer marketing Nigeria for brands',
+    'hire Nigerian creators',
+    'performance ads Nigeria',
+    'CPM advertising Nigeria',
+    'brand creator campaigns',
+    'verified view advertising',
+    'TikTok ads Nigeria creators',
+    'Instagram influencer campaigns Nigeria',
+    'Kpugi brands',
+    'guaranteed view advertising Nigeria',
+  ],
+  alternates: {
+    canonical: '/brands',
+  },
   openGraph: {
-    title: 'For Brands — Pay Only for Real Views | Kpugi',
-    description:
-      'Launch creator campaigns in Nigeria. Set your budget, distribute your content to hundreds of creators, and only pay when real people actually see it.',
-    url: 'https://kpugi.com/brands',
-    siteName: 'Kpugi',
     type: 'website',
+    locale: 'en_NG',
+    url: `${siteUrl}/brands`,
+    siteName: 'Kpugi',
+    title: 'For Brands — Pay Only for Real Verified Views | Kpugi',
+    description:
+      'Launch creator campaigns across Nigeria. Distribute content to hundreds of verified creators and only pay when real audiences engage and view.',
+    images: [
+      {
+        url: `${siteUrl}/og-brands.png`,
+        width: 1200,
+        height: 630,
+        alt: 'Kpugi for Brands — Guaranteed View Performance Marketing',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'For Brands — Pay Only for Real Verified Views | Kpugi',
+    description:
+      'Launch creator campaigns across Nigeria. Distribute content to hundreds of verified creators and only pay when real audiences engage and view.',
+    images: [`${siteUrl}/og-brands.png`],
   },
 };
 
@@ -134,13 +169,100 @@ export default async function BrandsPage() {
     },
   ];
 
-  return (
-    <div className="min-h-screen bg-[#F8F9FD] dark:bg-[#08090D] text-slate-900 dark:text-white font-satoshi transition-colors duration-300">
-      {/* ─── HERO (HERO32 MOTION PHYSICS) ──────────────────────────────────── */}
-      <BrandHero32 />
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${siteUrl}/brands#webpage`,
+        url: `${siteUrl}/brands`,
+        name: 'For Brands — Pay Only for Real Verified Views | Kpugi',
+        description:
+          'Launch creator campaigns across Nigeria. Distribute content to hundreds of verified creators and only pay when real audiences engage and view.',
+        inLanguage: 'en-NG',
+        isPartOf: {
+          '@type': 'WebSite',
+          '@id': `${siteUrl}/#website`,
+          url: siteUrl,
+          name: 'Kpugi',
+        },
+      },
+      {
+        '@type': 'Service',
+        '@id': `${siteUrl}/brands#service`,
+        name: 'Kpugi Performance Creator Campaigns for Brands',
+        provider: {
+          '@type': 'Organization',
+          name: 'Kpugi',
+          url: siteUrl,
+          logo: `${siteUrl}/logo.png`,
+        },
+        serviceType: 'Performance Influencer Marketing & CPM Advertising',
+        areaServed: 'NG',
+        description:
+          'Performance creator marketplace where Nigerian brands distribute media assets to vetted creators and only pay for verified, authentic views.',
+      },
+      {
+        '@type': 'HowTo',
+        '@id': `${siteUrl}/brands#howto`,
+        name: 'How to Launch a Guaranteed View Campaign on Kpugi',
+        description: 'Step-by-step guide for brands to distribute content and only pay for verified creator views.',
+        step: [
+          {
+            '@type': 'HowToStep',
+            position: 1,
+            name: 'Create Campaign Brief & Set CPM Budget',
+            text: 'Choose your platforms, upload video/image creative assets, write your guidelines, and set your target CPM rate and budget.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 2,
+            name: 'Escrow Funds Safely',
+            text: 'Fund your campaign securely. Your money stays protected in escrow and is only drawn down upon verified view delivery.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 3,
+            name: 'Creators Claim & Publish',
+            text: 'Vetted Nigerian creators accept your brief, post your exact assets to their audience, and submit the live link.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 4,
+            name: 'Automated View Auditing & Settlement',
+            text: 'Kpugi automated scraper audits live views in real-time. Payouts release only for verified results, and unspent budget is refunded.',
+          },
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        '@id': `${siteUrl}/brands#faq`,
+        mainEntity: faqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: f.a,
+          },
+        })),
+      },
+    ],
+  };
 
-      {/* ─── BRAND CLOUD ───────────────────────────────────────────────────── */}
-      <section className="relative py-20 overflow-hidden">
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="min-h-screen bg-[#F8F9FD] dark:bg-[#08090D] text-slate-900 dark:text-white font-satoshi transition-colors duration-300">
+        {/* ─── HERO (HERO32 MOTION PHYSICS) ──────────────────────────────────── */}
+        <div id="hero">
+          <BrandHero32 />
+        </div>
+
+        {/* ─── BRAND CLOUD ───────────────────────────────────────────────────── */}
+        <section id="partners" className="relative py-20 overflow-hidden">
         {/* Ambient Glow */}
         <div
           aria-hidden
@@ -190,10 +312,12 @@ export default async function BrandsPage() {
       </section>
 
       {/* ─── PRICING & PERFORMANCE SPLIT SECTION ──────────────────────────── */}
-      <BrandPricingSplitSection />
+      <div id="pricing">
+        <BrandPricingSplitSection />
+      </div>
 
       {/* ─── WHY BRANDS TRUST US — BENTO GRID ─────────────────────────────── */}
-      <section className="bg-[#F8F9FD] dark:bg-[#08090D] transition-colors duration-300">
+      <section id="features" className="bg-[#F8F9FD] dark:bg-[#08090D] transition-colors duration-300">
         <div className="max-w-[1200px] mx-auto py-20 px-6">
           {/* Heading */}
           <div className="text-center mb-14">
@@ -597,10 +721,12 @@ export default async function BrandsPage() {
       </section>
 
       {/* ─── TESTIMONIALS & CASE STUDIES ─────────────────────────────────────── */}
-      <BrandTestimonialsVertical reviews={reviews} />
+      <div id="testimonials">
+        <BrandTestimonialsVertical reviews={reviews} />
+      </div>
 
       {/* ─── FAQ ───────────────────────────────────────────────────────────── */}
-      <section className="bg-[#F8F9FD] dark:bg-[#08090D] transition-colors duration-300">
+      <section id="faqs" className="bg-[#F8F9FD] dark:bg-[#08090D] transition-colors duration-300">
         <div className="max-w-[740px] mx-auto py-20 px-6">
           <h2 className="font-clash font-bold text-[clamp(1.5rem,3vw,2.25rem)] text-slate-900 dark:text-white mb-2 tracking-[-0.02em]">
             Questions from brands
@@ -615,12 +741,15 @@ export default async function BrandsPage() {
       </section>
 
       {/* ─── FINAL CTA SECTION ─────────────────────────────────────────────── */}
-      <BrandCTASection
-        brands={brands.map((b: any) => ({
-          company_name: b.company_name,
-          avatar_url: b.profiles?.avatar_url ?? null,
-        }))}
-      />
+      <div id="cta">
+        <BrandCTASection
+          brands={brands.map((b: any) => ({
+            company_name: b.company_name,
+            avatar_url: b.profiles?.avatar_url ?? null,
+          }))}
+        />
+      </div>
     </div>
+    </>
   );
 }

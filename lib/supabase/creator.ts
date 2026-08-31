@@ -45,6 +45,11 @@ export interface CreatorOverviewData {
   recentNotifications: any[];
   recentActivity: any[];
   kycStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+  unreviewedCompletedCampaigns?: {
+    campaignId: string;
+    title: string;
+    companyName?: string;
+  }[];
 }
 
 export interface CreatorCampaignItem {
@@ -308,6 +313,26 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     Number(wallet?.balance || 0)
   );
 
+  const { data: userReviews } = await supabase
+    .from('campaign_reviews')
+    .select('campaign_id')
+    .eq('reviewer_profile_id', profileId);
+
+  const reviewedCampaignIds = new Set((userReviews || []).map((r: any) => r.campaign_id));
+
+  const unreviewedCompletedCampaigns = submissions
+    .filter(
+      (s) =>
+        (s.status === 'paid' || s.status === 'completed' || s.campaign?.status === 'completed') &&
+        s.campaign?.id &&
+        !reviewedCampaignIds.has(s.campaign.id)
+    )
+    .map((s) => ({
+      campaignId: s.campaign.id,
+      title: s.campaign.title,
+      companyName: s.campaign.company_name,
+    }));
+
   return {
     totalEarned: liveTotalEarned,
     walletBalance: wallet?.balance || 0,
@@ -324,6 +349,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     recentNotifications: notifications || [],
     recentActivity: submissions.slice(0, 5),
     kycStatus: (creatorProfile?.kyc_status as any) || 'unverified',
+    unreviewedCompletedCampaigns,
   };
 }
 

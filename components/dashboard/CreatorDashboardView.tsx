@@ -25,6 +25,7 @@ import { CreatorOverviewData } from '@/lib/supabase/creator';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency } from '@/lib/utils/format';
 import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
+import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo';
 
 interface CreatorDashboardProps {
   displayName: string;
@@ -34,6 +35,15 @@ interface CreatorDashboardProps {
 export default function CreatorDashboardView({ displayName, data }: CreatorDashboardProps) {
   const featuredSub = data.submissions.find((sub) => sub.status === 'pending' || sub.status === 'under_review') || data.submissions[0];
   const hasActiveCampaign = !!featuredSub;
+
+  const pendingPostSubmissions = (data.submissions || [])
+    .filter((s) => (!s.post_url || s.post_url.trim() === '') && (s.status === 'joined' || s.status === 'pending' || s.status === 'reserved'))
+    .map((s) => ({
+      id: s.id,
+      campaignId: s.campaign?.id || '',
+      campaignTitle: s.campaign?.title || 'Brand Campaign',
+    }))
+    .filter((s) => Boolean(s.campaignId));
 
   // 60-Minute Automated View Sync Countdown Timer
   const computeRemainingSeconds = () => {
@@ -90,30 +100,14 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
       </div>
 
       {/* ─────────────────────────────────────────────────────
-         2. KYC VERIFICATION REMINDER BANNER (Conditional)
+         2. ACTION CENTER (TO-DO WIDGET)
       ───────────────────────────────────────────────────── */}
-      {data.kycStatus !== 'verified' && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50 dark:from-amber-950/40 dark:via-amber-900/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div>
-              <h3 className="font-display font-bold text-sm text-slate-900 dark:text-amber-200 flex items-center gap-2">
-                <span>ID Verification Required</span>
-              </h3>
-              <p className="font-sans text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                To protect campaign payouts and comply with platform regulations, creators must verify their official government ID (NIN, Voter Card, or Passport) before requesting withdrawals.
-              </p>
-            </div>
-          </div>
-
-          <Link
-            href="/c/settings"
-            className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all flex items-center gap-1.5 self-start sm:self-center"
-          >
-            <span>Complete Verification</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
+      <DashboardActionTodo
+        role="creator"
+        kycStatus={data.kycStatus}
+        unreviewedCampaigns={data.unreviewedCompletedCampaigns}
+        pendingPostSubmissions={pendingPostSubmissions}
+      />
 
       {/* ─────────────────────────────────────────────────────
          3. CREATOR LEVEL & RANK WIDGET

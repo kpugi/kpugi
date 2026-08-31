@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   BarChart3,
   Users,
@@ -36,12 +36,16 @@ import {
   MessageCircle,
   Share2,
   Wallet,
+  Star,
 } from 'lucide-react';
 import { BrandCampaignDetails } from '@/lib/supabase/advertiser';
 import { updateCampaignStatusAction } from '@/app/actions/advertiser';
 import { EditCampaignModal } from '@/components/campaign/EditCampaignModal';
 import { DeleteCampaignModal } from '@/components/campaign/DeleteCampaignModal';
 import { formatCompactNumber } from '@/lib/utils/format';
+import { CampaignReviewModal } from '@/components/reviews/CampaignReviewModal';
+import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
+import { getCampaignReviewStatusAction, getCampaignReviewsSummaryAction, CampaignReviewsSummary } from '@/app/actions/reviews';
 
 interface AdvertiserCampaignDetailsViewProps {
   data: BrandCampaignDetails;
@@ -52,7 +56,9 @@ export default function AdvertiserCampaignDetailsView({
   data,
   campaignId,
 }: AdvertiserCampaignDetailsViewProps) {
+  const { campaign, creatives, submissions, metrics } = data;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'overview' | 'submissions' | 'creatives' | 'leaderboard'>('overview');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -62,13 +68,40 @@ export default function AdvertiserCampaignDetailsView({
   const [auditPage, setAuditPage] = useState(1);
   const auditPageSize = 8;
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [existingReview, setExistingReview] = useState<any>(null);
+  const [reviewsSummary, setReviewsSummary] = useState<CampaignReviewsSummary | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
   }, []);
 
-  const { campaign, creatives, submissions, metrics } = data;
+  useEffect(() => {
+    async function checkReview() {
+      try {
+        const res = await getCampaignReviewStatusAction(campaignId);
+        if (res.reviewed) {
+          setHasReviewed(true);
+          setExistingReview(res.review);
+        }
+      } catch (err) {
+        console.error('Failed to fetch review status', err);
+      }
+    }
+    checkReview();
+
+    const targetId = campaign?.id || campaignId;
+    if (targetId) {
+      getCampaignReviewsSummaryAction(targetId).then((res) => {
+        setReviewsSummary(res);
+      }).catch((err) => console.error('Failed to load reviews summary', err));
+    }
+
+    if (searchParams?.get('review') === 'true') {
+      setShowReviewModal(true);
+    }
+  }, [campaignId, campaign?.id, searchParams]);
 
   if (!campaign) {
     return (
@@ -416,6 +449,50 @@ export default function AdvertiserCampaignDetailsView({
         </div>
 
       </div>
+
+      {/* ─────────────────────────────────────────────────────
+         CAMPAIGN COMPLETION REVIEW BANNER
+      ───────────────────────────────────────────────────── */}
+      {isCompleted && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-purple-500/10 border border-emerald-500/20 dark:border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+              <Star className="size-5 fill-current" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-base text-slate-950 dark:text-white flex items-center gap-2">
+                <span>{hasReviewed ? 'Your Platform Review has been Recorded' : 'How was your campaign experience on Kpugi?'}</span>
+                {hasReviewed && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                    {existingReview?.rating}★ Verified
+                  </span>
+                )}
+              </h3>
+              <p className="font-sans text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                {hasReviewed
+                  ? `You rated this campaign experience "${existingReview?.sentiment_id}". Thank you for helping improve Kpugi!`
+                  : 'Rate view delivery velocity, creator authenticity, and automated protection in 20 seconds.'}
+              </p>
+            </div>
+          </div>
+
+          {!hasReviewed ? (
+            <button
+              type="button"
+              onClick={() => setShowReviewModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#12141A] hover:bg-slate-50 dark:hover:bg-white/10 text-kpugi-ink dark:text-white border border-slate-200 dark:border-white/15 font-display font-bold text-xs shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <Sparkles className="size-3.5 text-emerald-500" />
+              <span>Rate Campaign ⭐</span>
+            </button>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-xs font-bold shrink-0">
+              <CheckCircle2 className="size-4 text-emerald-500" />
+              <span>Review Recorded</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs Bar */}
       <div className="flex items-center gap-2 border-b border-kpugi-border dark:border-white/10 pb-2 overflow-x-auto">
@@ -801,6 +878,18 @@ export default function AdvertiserCampaignDetailsView({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+              ⭐ CREATOR REVIEWS & SENTIMENT FEED
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          {reviewsSummary && (
+            <CampaignReviewsDisplay
+              summary={reviewsSummary}
+              variant="all"
+              title="Creator Reviews & Sentiment"
+              subtitle="Verified feedback from participating creators on your campaign brief, asset clarity, and communication."
+            />
           )}
         </div>
       )}
@@ -1298,6 +1387,21 @@ export default function AdvertiserCampaignDetailsView({
         </div>,
         document.body
       )}
+
+      {/* ─────────────────────────────────────────────────────
+         CAMPAIGN REVIEW MODAL (FOR BRANDS/ADVERTISERS)
+      ───────────────────────────────────────────────────── */}
+      <CampaignReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        campaignId={campaignId}
+        campaignTitle={campaign.title}
+        role="advertiser"
+        metricsHighlight={`${metrics.totalViews.toLocaleString()} views delivered`}
+        onSubmitted={() => {
+          setHasReviewed(true);
+        }}
+      />
     </div>
   );
 }

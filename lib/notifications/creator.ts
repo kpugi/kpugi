@@ -486,7 +486,7 @@ export async function notifyJoinedCreatorsCampaignCompleted({
 
     if (!profiles || profiles.length === 0) return;
 
-    const actionUrl = `/c/dashboard`;
+    const actionUrl = campaignId ? `/c/campaigns/${campaignId}?review=true` : `/c/dashboard`;
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
     const seenEmails = new Set<string>();
 
@@ -516,15 +516,15 @@ export async function notifyJoinedCreatorsCampaignCompleted({
         const html = renderReusableEmailTemplate({
           to: profile.email,
           subject: `Campaign Wrapped 🏁 Drop Complete!`,
-          previewText: `The campaign "${campaignTitle}" has officially wrapped up.`,
+          previewText: `The campaign "${campaignTitle}" has officially wrapped up. Leave a quick review!`,
           headline: 'Campaign Wrapped 🏁',
-          subtitle: `Yooo ${cleanName}! The "${campaignTitle}" campaign drop has officially wrapped up. Big shoutout for bringing the heat! Any remaining view tracking will finish automatically.`,
+          subtitle: `Yooo ${cleanName}! The "${campaignTitle}" campaign drop has officially wrapped up. Big shoutout for bringing the heat! How was your experience working with this brand? Leave a quick 20-second review to strengthen creator transparency.`,
           details: [
             { label: 'CAMPAIGN', value: campaignTitle },
           ],
           noticeText: 'If you have already posted and submitted your live link, view tracking and automatic settlements will continue until your 24h grace period finishes.',
           cta: {
-            label: 'Open Creator Dashboard',
+            label: 'Rate Experience & Leave Review ⭐',
             url: `${appUrl}${actionUrl}`,
           },
         });

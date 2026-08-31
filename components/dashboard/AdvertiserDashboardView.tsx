@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { AdvertiserDashboardData } from '@/lib/supabase/advertiser';
 import { formatCompactNumber, formatCompactCurrency } from '@/lib/utils/format';
+import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo';
 
 interface AdvertiserDashboardProps {
   companyName: string;
@@ -37,6 +38,10 @@ const ITEMS_PER_PAGE = 3;
 export default function AdvertiserDashboardView({ companyName, data }: AdvertiserDashboardProps) {
   const [filterTab, setFilterTab] = useState<'active' | 'all'>('active');
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const draftCampaigns = (data.campaigns || []).filter(
+    (c) => c.status === 'draft' || c.status === 'funding_pending'
+  );
 
   // Filter campaigns based on tab
   const activeCampaignsList = (data.campaigns || []).filter(
@@ -132,7 +137,18 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
       </div>
 
       {/* ─────────────────────────────────────────────
-          2. OPERATIONAL ACTION QUEUE / HEALTH BAR
+          2. ACTION CENTER (TO-DO WIDGET)
+      ───────────────────────────────────────────── */}
+      <DashboardActionTodo
+        role="advertiser"
+        unreviewedCampaigns={data.unreviewedCompletedCampaigns}
+        draftCampaigns={draftCampaigns}
+        walletBalance={data.walletBalance}
+        activeCampaignsCount={data.activeCampaigns}
+      />
+
+      {/* ─────────────────────────────────────────────
+          3. OPERATIONAL ACTION QUEUE / HEALTH BAR
       ───────────────────────────────────────────── */}
       {nearExhaustionCampaigns.length > 0 ? (
         <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
