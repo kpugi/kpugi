@@ -89,13 +89,13 @@ export default function RootLayout({
             href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           />
         </head>
-        <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden transition-colors duration-200">
+        <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden">
           <AnalyticsProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="system"
               enableSystem
-              disableTransitionOnChange={false}
+              disableTransitionOnChange
             >
               <NetworkStatusBanner />
               <KnockProviderWrapper>

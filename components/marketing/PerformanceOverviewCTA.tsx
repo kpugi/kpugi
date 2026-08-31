@@ -16,7 +16,7 @@ export interface PerformanceOverviewProps {
 export function PerformanceOverview({
   title = 'Turn Views into Direct',
   accentWord = 'Cash',
-  subtitle = "Nigeria's #1 automated performance ad network. Earn per 1,000 verified views or launch high-yield campaign drops with guaranteed escrow protection.",
+  subtitle = "Nigeria's #1 automated performance ad network. Earn per 1,000 verified views or launch high-yield campaign drops with guaranteed Friday direct bank payouts.",
   ctaLabel = 'Get Started Now',
   onCtaClick,
 }: PerformanceOverviewProps) {
@@ -31,7 +31,7 @@ export function PerformanceOverview({
   };
 
   return (
-    <section className="relative w-full overflow-hidden bg-[#F8F9FD] dark:bg-[#08090D] text-slate-900 dark:text-white py-16 sm:py-24 transition-colors duration-300">
+    <section className="relative w-full overflow-hidden bg-transparent text-slate-900 dark:text-white py-16 sm:py-24">
       
       {/* ─── AMBIENT GLOWING RADIAL HIGHLIGHTS ──────────────────────────────── */}
       <div
