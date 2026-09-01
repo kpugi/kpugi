@@ -57,13 +57,11 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
   // Fetch creator profile for total_earned & kyc_status
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
-    .select('id, total_earned, kyc_status')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .select('profile_id, total_earned, kyc_status')
+    .eq('profile_id', profileId)
     .maybeSingle();
 
-  const creatorProfileId = creatorProfile?.id;
-  const creatorIds = [profileId, creatorProfileId].filter(Boolean) as string[];
-  const creatorOrFilter = creatorIds.map((id) => `creator_id.eq.${id}`).join(',');
+  const creatorOrFilter = `creator_id.eq.${profileId}`;
 
   // Fetch wallet balance, submissions, notifications, and audits concurrently
   const [walletRes, rawSubmissionsRes, notificationsRes, auditsRes] = await Promise.all([

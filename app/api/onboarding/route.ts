@@ -32,6 +32,66 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      // Pre-provision role profile and wallet immediately
+      if (role === 'creator' || role === 'both') {
+        await supabase
+          .from('creator_profiles')
+          .upsert(
+            {
+              profile_id: profileId,
+              display_name: userProfile.profile.full_name || 'Creator',
+            },
+            { onConflict: 'profile_id' }
+          );
+
+        const { data: existingW } = await supabase
+          .from('wallets')
+          .select('id')
+          .eq('profile_id', profileId)
+          .eq('wallet_type', 'creator_earnings')
+          .maybeSingle();
+
+        if (!existingW) {
+          await supabase
+            .from('wallets')
+            .insert({
+              profile_id: profileId,
+              wallet_type: 'creator_earnings',
+              balance: 0,
+            });
+        }
+      }
+
+      if (role === 'advertiser' || role === 'both') {
+        await supabase
+          .from('advertiser_profiles')
+          .upsert(
+            {
+              profile_id: profileId,
+              company_name: userProfile.profile.full_name || 'Advertiser Brand',
+              billing_email: userProfile.profile.email,
+            },
+            { onConflict: 'profile_id' }
+          );
+
+        const { data: existingW } = await supabase
+          .from('wallets')
+          .select('id')
+          .eq('profile_id', profileId)
+          .eq('wallet_type', 'advertiser_budget')
+          .maybeSingle();
+
+        if (!existingW) {
+          await supabase
+            .from('wallets')
+            .insert({
+              profile_id: profileId,
+              wallet_type: 'advertiser_budget',
+              balance: 0,
+            });
+        }
+      }
+
       return NextResponse.json({ success: true, role });
     }
 
@@ -71,20 +131,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: advError.message }, { status: 500 });
       }
 
-      // Initialize wallet row if wallets table exists
-      try {
+      // Initialize advertiser wallet if missing
+      const { data: existingAdvW } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('profile_id', profileId)
+        .eq('wallet_type', 'advertiser_budget')
+        .maybeSingle();
+
+      if (!existingAdvW) {
         await supabase
           .from('wallets')
-          .upsert(
-            {
-              owner_id: profileId,
-              owner_type: 'advertiser',
-              balance: 0,
-            },
-            { onConflict: 'owner_id,owner_type' }
-          );
-      } catch (e) {
-        // Safe fallback if wallets table is created in later phase
+          .insert({
+            profile_id: profileId,
+            wallet_type: 'advertiser_budget',
+            balance: 0,
+          });
       }
 
       // Trigger Advertiser Welcome Notifications
@@ -125,20 +187,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: creatorError.message }, { status: 500 });
       }
 
-      // Initialize wallet row if wallets table exists
-      try {
+      // Initialize creator wallet if missing
+      const { data: existingCpW } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('profile_id', profileId)
+        .eq('wallet_type', 'creator_earnings')
+        .maybeSingle();
+
+      if (!existingCpW) {
         await supabase
           .from('wallets')
-          .upsert(
-            {
-              owner_id: profileId,
-              owner_type: 'creator',
-              balance: 0,
-            },
-            { onConflict: 'owner_id,owner_type' }
-          );
-      } catch (e) {
-        // Safe fallback if wallets table is created in later phase
+          .insert({
+            profile_id: profileId,
+            wallet_type: 'creator_earnings',
+            balance: 0,
+          });
       }
 
       // Trigger async vector embedding sync for creator matching

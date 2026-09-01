@@ -425,10 +425,10 @@ export async function notifyCreatorWithdrawalCompleted({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: 'Cashout Complete 💸 Bag In Direct Deposit!',
+    subject: 'Yoo! You got paid💸',
     previewText: `Your withdrawal of ${formattedAmount} is on its way.`,
     headline: 'Cashout Complete 💸',
-    subtitle: `Yooo! ${formattedAmount} is heading straight to your bank account right now. Hard work pays off—go enjoy your gains! 🔥`,
+    subtitle: `Yooo! that bag is on its way to your account right now. Hard work pays off—go enjoy your gains! 🔥`,
     details: [
       { label: 'DESTINATION BANK', value: bankName },
       { label: 'ACCOUNT NUMBER', value: accountMasked, isMonospace: true },
@@ -443,7 +443,7 @@ export async function notifyCreatorWithdrawalCompleted({
 
   await sendEmail({
     to: email,
-    subject: 'Cashout Complete 💸 Bag In Direct Deposit!',
+    subject: 'Yoo! you got paid 💸!',
     html,
   });
 }

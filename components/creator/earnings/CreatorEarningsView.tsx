@@ -303,7 +303,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
   // Real transactions from database with enriched clearance & audit data
   const displayTransactions = (data.transactions || []).map((tx: any) => {
-    const isCredit = tx.type === 'credit' || tx.type === 'payout' || tx.type === 'payout_release' || tx.transaction_type === 'payout';
+    const isWithdrawal = Boolean(tx.is_withdrawal || tx.type === 'withdrawal' || tx.transaction_type === 'withdrawal' || Number(tx.amount || 0) < 0);
+    const isCredit = !isWithdrawal && (tx.type === 'credit' || tx.type === 'payout' || tx.type === 'payout_release' || tx.transaction_type === 'payout');
     const isClearing = Boolean(tx.is_clearing);
 
     let statusLabel = 'Completed';
@@ -317,11 +318,15 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       id: tx.id,
       date: new Date(tx.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       time: new Date(tx.created_at || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      title: tx.title || (tx.type === 'withdrawal' || tx.transaction_type === 'withdrawal' ? 'Bank Withdrawal' : 'Campaign Earnings'),
-      sub: tx.campaign_title || 'Campaign Payout',
+      title: tx.title || (isWithdrawal ? 'Direct Bank Withdrawal' : 'Campaign Earnings'),
+      sub: tx.campaign_title || (isWithdrawal ? 'Bank Transfer' : 'Campaign Payout'),
       reference: tx.reference || `TX-${tx.id.slice(0, 8).toUpperCase()}`,
-      amount: Number(tx.amount || 0),
+      amount: Math.abs(Number(tx.amount || 0)),
       isCredit,
+      isWithdrawal,
+      bankName: tx.bank_name || null,
+      accountNumber: tx.account_number || null,
+      accountName: tx.account_name || null,
       status: statusLabel,
       isClearing,
       clearanceAt: tx.clearance_at,
@@ -329,7 +334,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       viewsScraped: tx.views_scraped,
       viewsDelta: tx.views_delta,
       cpmRate: tx.cpm_rate,
-      settlementMethod: tx.settlement_method || 'Advertiser Verification',
+      settlementMethod: tx.settlement_method || (isWithdrawal ? 'Direct Bank Settlement (NUBAN)' : 'Advertiser Verification'),
     };
   });
 
@@ -408,34 +413,27 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
               </div>
               <div className="flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
                 <span className="font-medium">{formatClearanceDate(data.nextClearanceDate)}</span>
-                <span className="font-mono font-bold text-[11px] bg-white/80 dark:bg-white/10 px-2 py-0.5 rounded border border-amber-200 dark:border-white/10 text-amber-900 dark:text-amber-200">
-                  {formatHoursRemaining(data.nextClearanceDate)}
-                </span>
               </div>
-              <p className="text-[10px] text-amber-700/90 dark:text-amber-400/90 leading-tight pt-1 border-t border-amber-200/60 dark:border-amber-500/20">
-                Automatic wallet settlement unlocks upon 24-hour verification maturity.
-              </p>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#0D111D] border border-kpugi-border dark:border-white/10 space-y-1.5 text-left">
-              <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> All Cleared
-              </span>
-              <p className="text-[11px] text-kpugi-slate dark:text-slate-400 leading-relaxed">
-                Funds are automatically cleared into your wallet 24 hours after daily verification maturity.
-              </p>
-            </div>
+            <p className="text-xs text-kpugi-slate dark:text-slate-400 leading-relaxed">
+              Earnings from newly audited views clear daily into your withdrawable balance.
+            </p>
           )}
         </div>
       </div>
 
-      {/* Today's In-Cycle Accrual (00:01 - 23:59) */}
-      {Number(data.todayAccrual || 0) > 0 && (
-        <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-blue-50/90 via-indigo-50/40 to-blue-50/80 border border-blue-200/80 shadow-xs flex flex-col items-center text-center space-y-3">
-          {/* Subtle Cycle Indicator */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-100/70 border border-blue-200/50 text-[11px] font-medium text-slate-600">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Today&apos;s Earnings</span>
+      {/* ─────────────────────────────────────────────────────
+         MIDDLE ROW: COMPACT TODAY'S PROGRESS STRIP
+      ───────────────────────────────────────────────────── */}
+      {Boolean(data.todayViews && data.todayViews > 0) && (
+        <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
+          {/* Header Label with Pulsing Live Dot */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Today's Live Accrual
+            </span>
           </div>
 
           {/* Centered Huge Earning Amount */}
@@ -443,23 +441,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             <div className="font-mono font-black text-3xl sm:text-4xl lg:text-5xl text-kpugi-blue tracking-tight">
               +₦{Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
-
-            {/* Corresponding Views Collation */}
-            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
-              <Eye className="w-3.5 h-3.5 text-slate-400" />
-              <span><strong className="text-slate-800 font-bold font-mono">{Number(data.todayViews || 0).toLocaleString()}</strong> views today</span>
-            </div>
           </div>
-
-          {/* Timer Centered Below (Smaller than Amount) */}
-          <div className="pt-1">
-            <DailyCycleCountdown />
-          </div>
-
-          {/* Subtle Explanation Subtext */}
-          <p className="text-[11px] text-slate-400 max-w-md pt-0.5 leading-relaxed">
-            Views close at midnight into a single 24-hour pending daily earnings before moving to available balance.
-          </p>
         </div>
       )}
 
@@ -471,16 +453,6 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
         <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Transaction History</h3>
-            <div className="flex items-center gap-2.5">
-              <button className="px-3.5 py-1.5 rounded-xl border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white font-sans text-xs font-bold flex items-center gap-1.5 transition-colors bg-white dark:bg-white/5">
-                <Filter className="w-3.5 h-3.5" />
-                <span>Filter</span>
-              </button>
-              <button className="px-3.5 py-1.5 rounded-xl border border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white font-sans text-xs font-bold flex items-center gap-1.5 transition-colors bg-white dark:bg-white/5">
-                <Download className="w-3.5 h-3.5" />
-                <span>Export</span>
-              </button>
-            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -512,15 +484,13 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           <td className="py-4 px-4 whitespace-nowrap">
                             <div className="font-bold text-kpugi-ink dark:text-white">{tx.title}</div>
                             <div className="text-[11px] text-kpugi-slate dark:text-slate-400 flex items-center gap-1.5">
-
                               <span>{tx.sub}</span>
-
                               <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{tx.reference}</span>
                             </div>
                           </td>
                           <td className="py-4 px-4 font-mono font-bold whitespace-nowrap text-sm">
                             <span className={tx.isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}>
-                              {tx.isCredit ? '+' : '-'}₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {tx.isCredit ? '+₦' : '-₦'}{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </span>
                           </td>
                           <td className="py-4 px-4 whitespace-nowrap">
@@ -533,6 +503,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 Cleared
+                              </span>
+                            ) : tx.status === 'Processing' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+                                <Clock className="w-3 h-3 text-blue-600 dark:text-blue-400 animate-pulse" />
+                                Processing
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10">
@@ -553,85 +528,154 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                           <tr className="bg-slate-50/50 dark:bg-black/20">
                             <td colSpan={5} className="p-3 sm:p-5 pt-0">
                               <div className="rounded-2xl bg-white dark:bg-[#0D111D] border border-slate-200/80 dark:border-white/10 p-5 space-y-4 shadow-xs">
-                                {/* Header / Countdown Ticker Bar */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.isClearing
-                                            ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
-                                            : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400'
-                                          }`}
-                                      >
-                                        {tx.isClearing ? (
-                                          <></>
-                                        ) : (
-                                          <>
-                                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                            Settled & Cleared to Wallet
-                                          </>
-                                        )}
-                                      </span>
+                                {tx.isWithdrawal ? (
+                                  <>
+                                    {/* Withdrawal Header / Status Bar */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300">
+                                            <Building2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                            Direct Bank Withdrawal
+                                          </span>
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                                            {tx.status}
+                                          </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                          {tx.status === 'Completed' || tx.status === 'Cleared' || tx.status === 'Success'
+                                            ? `Disbursed to ${tx.bankName || 'bank account'} (${tx.accountNumber ? '****' + tx.accountNumber.slice(-4) : 'NUBAN'}) via direct settlement.`
+                                            : `Disbursement request of ₦${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} has been submitted and queued for bank settlement.`}
+                                        </p>
+                                      </div>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                      {tx.isClearing
-                                        ? 'Views have been validated by anti-fraud audit. Payout is undergoing 24-hour verification maturity before release.'
-                                        : 'Payout has successfully cleared and is available in your balance for instant withdrawal.'}
-                                    </p>
-                                  </div>
 
-                                  {tx.isClearing && tx.clearanceAt && (
-                                    <div className="shrink-0">
-                                      <LiveClearanceTicker targetDate={tx.clearanceAt} />
-                                    </div>
-                                  )}
-                                </div>
+                                    {/* Withdrawal Metric Cards */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                      {/* Box 1: Destination Account */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <Building2 className="w-3 h-3 text-slate-400" /> Destination Account
+                                        </span>
+                                        <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                                          {tx.bankName || 'Direct Bank'}
+                                        </div>
+                                        <div className="font-mono text-xs text-slate-600 dark:text-slate-300">
+                                          {tx.accountNumber ? `****${tx.accountNumber.slice(-4)}` : 'NUBAN Direct'}
+                                          {tx.accountName ? ` • ${tx.accountName}` : ''}
+                                        </div>
+                                      </div>
 
-                                {/* Audit Metric Cards */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                                  {/* Box 1: Verified Traffic */}
-                                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                      <Eye className="w-3 h-3 text-slate-400" /> Verified Traffic
-                                    </span>
-                                    <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
-                                      {(tx.viewsScraped || tx.viewsCount || 0).toLocaleString()}{' '}
-                                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400">views</span>
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                      Audited batch: {(tx.viewsDelta || tx.viewsScraped || tx.viewsCount || 0).toLocaleString()} views
-                                    </div>
-                                  </div>
+                                      {/* Box 2: Payout Breakdown */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <CreditCard className="w-3 h-3 text-slate-400" /> Amount & Fee
+                                        </span>
+                                        <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
+                                          ₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </div>
+                                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                                          Transfer Fee: ₦0.00 (Zero Fee)
+                                        </div>
+                                      </div>
 
-                                  {/* Box 2: Campaign CPM Rate */}
-                                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                      <TrendingUp className="w-3 h-3 text-slate-400" /> Campaign CPM
-                                    </span>
-                                    <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
-                                      ₦{(tx.cpmRate || 0).toLocaleString()}{' '}
-                                      <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/ 1k views</span>
+                                      {/* Box 3: Audit Reference */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <Hash className="w-3 h-3 text-slate-400" /> Reference & Timestamp
+                                        </span>
+                                        <div className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                          {tx.reference}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                          {tx.date} at {tx.time}
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                      Payout: (Views ÷ 1,000) × CPM
-                                    </div>
-                                  </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {/* Campaign Earnings Header / Countdown Ticker Bar */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <span
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.isClearing
+                                                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                                                : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400'
+                                              }`}
+                                          >
+                                            {tx.isClearing ? (
+                                              <></>
+                                            ) : (
+                                              <>
+                                                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                                Settled & Cleared to Wallet
+                                              </>
+                                            )}
+                                          </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                          {tx.isClearing
+                                            ? 'Views have been validated by anti-fraud audit. Payout is undergoing 24-hour verification maturity before release.'
+                                            : 'Payout has successfully cleared and is available in your balance for instant withdrawal.'}
+                                        </p>
+                                      </div>
 
-                                  {/* Box 3: Verification Audit Trail */}
-                                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                      <Hash className="w-3 h-3 text-slate-400" /> Audit Trail & Clearance
-                                    </span>
-                                    <div className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
-                                      {tx.reference}
+                                      {tx.isClearing && tx.clearanceAt && (
+                                        <div className="shrink-0">
+                                          <LiveClearanceTicker targetDate={tx.clearanceAt} />
+                                        </div>
+                                      )}
                                     </div>
-                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                      {tx.isClearing && tx.clearanceAt
-                                        ? `Unlocks: ${formatClearanceDate(tx.clearanceAt)}`
-                                        : `Settled via: ${tx.settlementMethod}`}
+
+                                    {/* Audit Metric Cards */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                      {/* Box 1: Verified Traffic */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <Eye className="w-3 h-3 text-slate-400" /> Verified Traffic
+                                        </span>
+                                        <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
+                                          {(tx.viewsScraped || tx.viewsCount || 0).toLocaleString()}{' '}
+                                          <span className="text-xs font-normal text-slate-500 dark:text-slate-400">views</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                          Audited batch: {(tx.viewsDelta || tx.viewsScraped || tx.viewsCount || 0).toLocaleString()} views
+                                        </div>
+                                      </div>
+
+                                      {/* Box 2: Campaign CPM Rate */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <TrendingUp className="w-3 h-3 text-slate-400" /> Campaign CPM
+                                        </span>
+                                        <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
+                                          ₦{(tx.cpmRate || 0).toLocaleString()}{' '}
+                                          <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/ 1k views</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                          Payout: (Views ÷ 1,000) × CPM
+                                        </div>
+                                      </div>
+
+                                      {/* Box 3: Verification Audit Trail */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <Hash className="w-3 h-3 text-slate-400" /> Audit Trail & Clearance
+                                        </span>
+                                        <div className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                          {tx.reference}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                          {tx.isClearing && tx.clearanceAt
+                                            ? `Unlocks: ${formatClearanceDate(tx.clearanceAt)}`
+                                            : `Settled via: ${tx.settlementMethod}`}
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -850,6 +894,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             {errorMsg && <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-500/30">{errorMsg}</p>}
 
             <form onSubmit={handlePayoutSubmit} className="space-y-4 font-sans text-xs">
+              <input type="hidden" name="bankAccountId" value={selectedWithdrawBankId || defaultBankId} />
               <div>
                 <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1 uppercase tracking-wider">
                   Amount (₦)

@@ -119,13 +119,11 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   }
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
-    .select('id, total_earned, kyc_status')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
+    .select('profile_id, total_earned, kyc_status')
+    .eq('profile_id', profileId)
     .maybeSingle();
 
-  const creatorProfileId = creatorProfile?.id;
-  const creatorIds = [profileId, creatorProfileId].filter(Boolean) as string[];
-  const creatorOrFilter = creatorIds.map((id) => `creator_id.eq.${id}`).join(',');
+  const creatorOrFilter = `creator_id.eq.${profileId}`;
 
   // 2. Concurrently fetch wallet, submissions, notifications, and submission_audits
   const [walletRes, rawSubmissionsRes, notificationsRes, auditsRes] = await Promise.all([
@@ -357,17 +355,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
 
 export async function getCreatorCampaigns(profileId: string, filter?: string): Promise<CreatorCampaignItem[]> {
   const supabase = createAdminClient();
-
-  const { data: creatorProfile } = await supabase
-    .from('creator_profiles')
-    .select('id')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
-    .maybeSingle();
-
-  const creatorProfileId = creatorProfile?.id;
-  const creatorFilter = creatorProfileId
-    ? `creator_id.eq.${profileId},creator_id.eq.${creatorProfileId}`
-    : `creator_id.eq.${profileId}`;
+  const creatorFilter = `creator_id.eq.${profileId}`;
 
   const { data: rawData } = await supabase
     .from('submissions')
@@ -453,17 +441,7 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
 
 export async function getCreatorCampaignDetails(profileId: string, submissionOrCampaignId: string) {
   const supabase = createAdminClient();
-
-  const { data: creatorProfile } = await supabase
-    .from('creator_profiles')
-    .select('id')
-    .or(`profile_id.eq.${profileId},id.eq.${profileId}`)
-    .maybeSingle();
-
-  const creatorProfileId = creatorProfile?.id;
-  const creatorFilter = creatorProfileId
-    ? `creator_id.eq.${profileId},creator_id.eq.${creatorProfileId}`
-    : `creator_id.eq.${profileId}`;
+  const creatorFilter = `creator_id.eq.${profileId}`;
 
   const { data: submission } = await supabase
     .from('submissions')
@@ -587,11 +565,32 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   const rawSubmissions = rawSubmissionsRes.data || [];
   const dbBankAccounts = dbBankAccountsRes.data || [];
 
-  const totalWithdrawn = payoutRequests
-    .filter((p) => p.status === 'success' || p.status === 'completed')
-    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  // 1. Compute Total Withdrawn & Last Withdrawal Date (including processing/queued withdrawals)
+  const validPayoutRequests = payoutRequests.filter(
+    (p: any) => p.status !== 'failed' && p.status !== 'rejected' && p.status !== 'cancelled'
+  );
 
-  const lastWithdrawalDate = payoutRequests.length > 0 ? payoutRequests[0].created_at : null;
+  const payoutRequestsWithdrawn = validPayoutRequests.reduce(
+    (sum: number, p: any) => sum + Math.abs(Number(p.amount) || 0),
+    0
+  );
+
+  const walletWithdrawals = rawTransactions.filter(
+    (tx: any) => (tx.type === 'withdrawal' || Number(tx.amount || 0) < 0) && tx.status !== 'failed'
+  );
+
+  const allWithdrawalDates: string[] = [
+    ...validPayoutRequests.map((p: any) => p.created_at),
+    ...walletWithdrawals.map((w: any) => w.created_at),
+  ].filter(Boolean);
+
+  allWithdrawalDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  const lastWithdrawalDate = allWithdrawalDates.length > 0 ? allWithdrawalDates[0] : null;
+
+  const totalWithdrawn = Math.max(
+    payoutRequestsWithdrawn,
+    walletWithdrawals.reduce((sum: number, w: any) => sum + Math.abs(Number(w.amount) || 0), 0)
+  );
 
   // 2. Compute Today's In-Cycle Accrual & Views (Only new views collected today)
   let todayAccrual = 0;
@@ -640,58 +639,89 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   );
 
   // 4. Construct Clean, Non-Duplicative Transaction History
-  const formattedTransactions: any[] = [];
+  const rawFormatted: any[] = [];
+  const primaryBank = dbBankAccounts.find((b: any) => b.is_primary) || dbBankAccounts[0];
 
-  // A. Format wallet_transactions (Daily Batches, completed payouts, reversals)
+  // A. Format wallet_transactions (Daily Batches, completed payouts, withdrawals)
   rawTransactions.forEach((tx: any) => {
+    const isWithdrawal = tx.type === 'withdrawal' || Number(tx.amount || 0) < 0;
     const isClearing = tx.status === 'clearing';
-    const campTitle = tx.campaigns?.title || 'Daily Settlement Batch';
+    const bName = primaryBank?.bank_name || 'Direct Bank';
+    const accNum = primaryBank?.account_number || '';
+    const accName = primaryBank?.account_name || 'Creator';
+
+    const campTitle = isWithdrawal ? `Direct Bank Withdrawal` : (tx.campaigns?.title || 'Daily Settlement Batch');
+    const campaignSubtitle = isWithdrawal ? 'Bank Transfer' : (isClearing ? '24h Verification Escrow' : 'Settled to Available Balance');
     const subObj = tx.submissions;
     const viewsSettled = subObj ? Number(subObj.last_paid_view_count || subObj.final_view_count || 0) : 0;
     const cpmRate = Number(tx.campaigns?.cpm_rate || 0);
     const clearanceTime = tx.clears_at || new Date(new Date(tx.created_at).getTime() + 24 * 3600 * 1000).toISOString();
+    const ref = tx.paystack_reference || `KP-TX-${tx.id.slice(0, 8).toUpperCase()}`;
 
-    formattedTransactions.push({
+    rawFormatted.push({
       id: tx.id,
       title: campTitle,
-      campaign_title: isClearing ? '24h Verification Escrow' : 'Settled to Available Balance',
-      reference: tx.paystack_reference || `KP-TX-${tx.id.slice(0, 8).toUpperCase()}`,
-      amount: Number(tx.amount || 0),
+      campaign_title: campaignSubtitle,
+      reference: ref,
+      amount: isWithdrawal ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),
       views_count: viewsSettled,
       views_scraped: viewsSettled,
       views_delta: viewsSettled,
       cpm_rate: cpmRate,
-      type: tx.type === 'withdrawal' || Number(tx.amount || 0) < 0 ? 'debit' : 'credit',
+      type: isWithdrawal ? 'debit' : 'credit',
       transaction_type: tx.type,
-      status: isClearing ? 'clearing' : tx.status,
+      is_withdrawal: isWithdrawal,
+      bank_name: isWithdrawal ? bName : null,
+      account_number: isWithdrawal ? accNum : null,
+      account_name: isWithdrawal ? accName : null,
+      status: isClearing ? 'clearing' : (tx.status || 'completed'),
       created_at: tx.created_at,
       settled_at: tx.created_at,
       clearance_at: clearanceTime,
       is_clearing: isClearing,
-      settlement_method: isClearing ? '24h EOD Verification Escrow' : 'Settled to Available Balance',
+      settlement_method: isWithdrawal ? `Direct Bank Settlement (${bName})` : (isClearing ? '24h EOD Verification Escrow' : 'Settled to Available Balance'),
     });
   });
 
   // B. Format payout_requests (Bank withdrawals)
   payoutRequests.forEach((p: any) => {
-    formattedTransactions.push({
+    const ref = p.reference || p.paystack_transfer_code || `KP-WDR-${p.id.slice(0, 8).toUpperCase()}`;
+    const matchedBank = dbBankAccounts.find((b: any) => b.account_number === p.account_number) || primaryBank;
+    const bName = p.bank_name || matchedBank?.bank_name || 'Direct Bank';
+    const accNum = p.account_number || matchedBank?.account_number || '';
+    const accName = p.account_name || matchedBank?.account_name || 'Creator';
+
+    rawFormatted.push({
       id: `payout-req-${p.id}`,
-      title: `Bank Withdrawal (${p.bank_name || 'NUBAN'})`,
+      title: `Direct Bank Withdrawal`,
       campaign_title: 'Bank Transfer',
-      reference: p.paystack_transfer_code || p.reference || `KP-WDR-${p.id.slice(0, 8).toUpperCase()}`,
-      amount: -Number(p.amount || 0),
+      reference: ref,
+      amount: -Math.abs(Number(p.amount || 0)),
       type: 'debit',
       transaction_type: 'withdrawal',
-      status: p.status === 'success' || p.status === 'completed' ? 'completed' : p.status,
+      is_withdrawal: true,
+      bank_name: bName,
+      account_number: accNum,
+      account_name: accName,
+      status: p.status === 'success' || p.status === 'completed' ? 'completed' : (p.status || 'processing'),
       created_at: p.created_at,
       settled_at: p.created_at,
-      settlement_method: 'Direct Bank Settlement (NUBAN)',
+      settlement_method: `Direct Bank Settlement (${bName})`,
     });
   });
 
-  formattedTransactions.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  // Deduplicate transactions by reference
+  const seenRefs = new Set<string>();
+  const formattedTransactions: any[] = [];
+  rawFormatted
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .forEach((item) => {
+      const refKey = (item.reference || item.id || '').toUpperCase();
+      if (!seenRefs.has(refKey)) {
+        seenRefs.add(refKey);
+        formattedTransactions.push(item);
+      }
+    });
 
   const bankAccounts: BankAccountItem[] = (dbBankAccounts || []).map((b: any, idx: number) => ({
     id: b.id,
@@ -719,7 +749,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     } catch {}
   }
 
-  const primaryBank = bankAccounts.length > 0 ? bankAccounts[0] : null;
+  const defaultBank = bankAccounts.length > 0 ? bankAccounts[0] : null;
 
   return {
     availableBalance: Number(availableBalance || 0),
@@ -729,7 +759,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     totalEarned: Number(totalEarned || 0),
     totalWithdrawn: Number(totalWithdrawn || 0),
     lastWithdrawalDate,
-    bankDetails: primaryBank,
+    bankDetails: defaultBank,
     bankAccounts,
     transactions: formattedTransactions,
     nextClearanceDate: soonestClearanceTime ? new Date(soonestClearanceTime).toISOString() : null,
@@ -1210,24 +1240,10 @@ export async function getCreatorSubmissionsData(
     campaignCode: formatCampaignCode(c.id, c.campaign_code),
   }));
 
-  // Resolve all candidate IDs for the creator (profile_id and creator_profiles.id)
+  // Resolve all candidate IDs for the creator
   const candidateIds = Array.from(
     new Set([creatorProfileId, secondaryProfileId].filter(Boolean))
   );
-
-  if (candidateIds.length > 0) {
-    const { data: cp } = await supabase
-      .from('creator_profiles')
-      .select('id, profile_id')
-      .or(`id.in.(${candidateIds.join(',')}),profile_id.in.(${candidateIds.join(',')})`)
-      .maybeSingle();
-
-    if (cp) {
-      if (cp.id) candidateIds.push(cp.id);
-      if (cp.profile_id) candidateIds.push(cp.profile_id);
-    }
-  }
-
   const uniqueIds = Array.from(new Set(candidateIds));
 
   // 2. Fetch submissions from database tables where post_url is non-null

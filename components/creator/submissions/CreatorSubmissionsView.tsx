@@ -291,9 +291,7 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                 ? `${(data.totalVerifiedViews / 1000000).toFixed(1)}M`
                 : data.totalVerifiedViews.toLocaleString()}
             </span>
-            <span className="text-[11px] font-bold text-kpugi-slate dark:text-slate-400">
-              Verified Viewport
-            </span>
+         
           </div>
         </div>
       </div>

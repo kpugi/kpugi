@@ -6,6 +6,11 @@ import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { saveSocialAccount } from '@/lib/supabase/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
+import {
+  generateKpugiPayoutReference,
+  createPaystackRecipient,
+  initiatePaystackTransfer,
+} from '@/lib/paystack/payout';
 import { notifyCreatorWithdrawalCompleted, notifyCreatorJoinedCampaign } from '@/lib/notifications/creator';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 
@@ -265,7 +270,7 @@ export async function requestPayoutAction(formData: FormData) {
   // 1. Fetch creator profile & KYC status
   const { data: creator } = await supabase
     .from('creator_profiles')
-    .select('profile_id, bank_account_number, bank_code, bank_name, kyc_status')
+    .select('profile_id, kyc_status, paystack_recipient_code')
     .eq('profile_id', userProfile.profile.id)
     .maybeSingle();
 
@@ -277,25 +282,80 @@ export async function requestPayoutAction(formData: FormData) {
     };
   }
 
-  // Resolve specific destination account if requested
-  let targetBankName = creator?.bank_name || 'Bank';
-  let targetAccountNumber = creator?.bank_account_number || '';
+  // 2. Resolve destination bank account
+  let targetBank: {
+    id?: string;
+    bank_name: string;
+    account_number: string;
+    bank_code: string;
+    account_name?: string;
+    recipient_code?: string | null;
+  } | null = null;
 
-  if (requestedBankAccountId) {
+  if (requestedBankAccountId && requestedBankAccountId !== 'primary-legacy') {
+    // 1. Match by bank_accounts.id
     const { data: specificBank } = await supabase
       .from('bank_accounts')
-      .select('bank_name, account_number, bank_code')
+      .select('id, bank_name, account_number, bank_code, account_name, recipient_code')
       .eq('id', requestedBankAccountId)
       .eq('profile_id', userProfile.profile.id)
       .maybeSingle();
 
     if (specificBank) {
-      targetBankName = specificBank.bank_name;
-      targetAccountNumber = specificBank.account_number;
+      targetBank = specificBank;
+    } else {
+      // 2. Match by account_number
+      const { data: bankByNum } = await supabase
+        .from('bank_accounts')
+        .select('id, bank_name, account_number, bank_code, account_name, recipient_code')
+        .eq('account_number', requestedBankAccountId)
+        .eq('profile_id', userProfile.profile.id)
+        .maybeSingle();
+
+      if (bankByNum) {
+        targetBank = bankByNum;
+      }
     }
   }
 
-  // 2. Fetch creator wallet balance
+  if (!targetBank) {
+    const { data: primaryBank } = await supabase
+      .from('bank_accounts')
+      .select('id, bank_name, account_number, bank_code, account_name, recipient_code')
+      .eq('profile_id', userProfile.profile.id)
+      .order('is_primary', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (primaryBank) {
+      targetBank = primaryBank;
+    }
+  }
+
+  // Fallback if bank_accounts record missing but JSON exists in creator_profiles
+  if (!targetBank && creator?.paystack_recipient_code) {
+    try {
+      const parsed = JSON.parse(creator.paystack_recipient_code);
+      if (parsed.account_number && parsed.bank_code) {
+        targetBank = {
+          bank_name: parsed.bank_name || parsed.bankName || 'Bank',
+          account_number: parsed.account_number || parsed.accountNumber,
+          bank_code: parsed.bank_code || parsed.bankCode,
+          account_name: parsed.account_name || parsed.accountName || userProfile.profile.full_name || 'Creator',
+        };
+      }
+    } catch {}
+  }
+
+  if (!targetBank) {
+    return {
+      success: false,
+      error: 'No payout bank account linked. Please add your Nigerian bank account in Settings before requesting withdrawal.',
+    };
+  }
+
+  // 3. Fetch creator wallet balance
   const { data: wallet } = await supabase
     .from('wallets')
     .select('id, balance')
@@ -308,9 +368,39 @@ export async function requestPayoutAction(formData: FormData) {
     return { success: false, error: "Bag ain't deep enough yet 💼... Insufficient wallet balance for this withdrawal." };
   }
 
+  // 4. Generate branded reference code (e.g. KPG-#KPUG1)
+  const refCode = generateKpugiPayoutReference();
+
+  // 5. Ensure Paystack Recipient Code
+  let recipientCode = targetBank.recipient_code;
+  if (!recipientCode) {
+    const recipientRes = await createPaystackRecipient({
+      name: targetBank.account_name || userProfile.profile.full_name || 'Creator',
+      accountNumber: targetBank.account_number,
+      bankCode: targetBank.bank_code,
+    });
+
+    if (!recipientRes.success || !recipientRes.recipientCode) {
+      return {
+        success: false,
+        error: recipientRes.error || 'Failed to setup bank transfer recipient with Paystack.',
+      };
+    }
+
+    recipientCode = recipientRes.recipientCode;
+
+    // Persist recipient code on bank_accounts table if id exists
+    if (targetBank.id) {
+      await supabase
+        .from('bank_accounts')
+        .update({ recipient_code: recipientCode })
+        .eq('id', targetBank.id);
+    }
+  }
+
   const newBalance = currentBalance - amount;
 
-  // 3. Atomic Wallet Update: ensure balance >= amount in DB to prevent double-spend race conditions
+  // 6. Atomic Wallet Update: ensure balance >= amount in DB to prevent double-spend race conditions
   const { error: walletError } = await supabase
     .from('wallets')
     .update({ balance: newBalance })
@@ -321,29 +411,71 @@ export async function requestPayoutAction(formData: FormData) {
     return { success: false, error: 'Failed to update wallet balance. Please try again.' };
   }
 
-  // 4. Record transaction in wallet_transactions table
-  const refCode = `KP-WTR-${Date.now().toString().slice(-6)}`;
-  await supabase.from('wallet_transactions').insert({
-    profile_id: userProfile.profile.id,
-    creator_id: creator?.profile_id || userProfile.profile.id,
-    wallet_type: 'creator_earnings',
-    transaction_type: 'withdrawal',
-    amount: amount,
-    status: 'processing',
+  // 7. Initiate Live Transfer via Paystack
+  const transferRes = await initiatePaystackTransfer({
+    recipientCode,
+    amountInKobo: Math.round(amount * 100),
     reference: refCode,
+    reason: `Kpugi Creator Earnings Withdrawal - ${refCode}`,
+  });
+
+  // Handle Paystack starter tier restriction or automated queueing gracefully
+  const isStarterTierRestriction =
+    !transferRes.success &&
+    (transferRes.error?.toLowerCase().includes('starter business') ||
+      transferRes.error?.toLowerCase().includes('third party payout') ||
+      transferRes.error?.toLowerCase().includes('cannot initiate') ||
+      transferRes.error?.toLowerCase().includes('starter'));
+
+  if (!transferRes.success && !isStarterTierRestriction) {
+    // Rollback wallet balance if transfer was rejected due to other technical errors
+    await supabase
+      .from('wallets')
+      .update({ balance: currentBalance })
+      .eq('id', wallet!.id);
+
+    return {
+      success: false,
+      error: `Paystack Transfer Failed: ${transferRes.error || 'Could not process transfer.'}`,
+    };
+  }
+
+  const finalStatus = transferRes.success
+    ? (transferRes.status || 'success')
+    : 'processing';
+
+  // 8. Record transaction in wallet_transactions table
+  await supabase.from('wallet_transactions').insert({
+    wallet_id: wallet!.id,
+    type: 'withdrawal',
+    amount: -amount,
+    paystack_reference: refCode,
     created_at: new Date().toISOString(),
   });
 
-  // 5. Fire Withdrawal Notification (Knock feed + Resend email)
-  const maskedAcc = targetAccountNumber
-    ? `****${targetAccountNumber.slice(-4)}`
+  // 9. Record transaction in payout_requests table
+  await supabase.from('payout_requests').insert({
+    profile_id: userProfile.profile.id,
+    amount: amount,
+    status: finalStatus,
+    bank_name: targetBank.bank_name,
+    account_number: targetBank.account_number,
+    account_name: targetBank.account_name || 'Creator',
+    reference: refCode,
+    paystack_transfer_code: transferRes.transferCode || null,
+    created_at: new Date().toISOString(),
+  });
+
+  // 10. Fire Withdrawal Notification (Knock in-app feed + Resend branded email)
+  const maskedAcc = targetBank.account_number
+    ? `****${targetBank.account_number.slice(-4)}`
     : '****Bank';
 
   notifyCreatorWithdrawalCompleted({
     clerkId: userProfile.profile.clerk_id,
     email: userProfile.profile.email,
     amount,
-    bankName: targetBankName,
+    bankName: targetBank.bank_name,
     accountMasked: maskedAcc,
     reference: refCode,
     profileId: userProfile.profile.id,

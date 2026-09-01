@@ -25,6 +25,11 @@ import {
   ChevronRight,
   Star,
   Sparkles,
+  Receipt,
+  Printer,
+  ArrowUpRight,
+  ShieldCheck,
+  Building2,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { submitCampaignVideoAction, unjoinCampaignAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
@@ -71,8 +76,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
     if (searchParams?.get('review') === 'true') {
       setShowReviewModal(true);
     }
+    if (searchParams?.get('receipt') === 'true') {
+      setShowReceiptModal(true);
+    }
   }, [campaignId, searchParams]);
 
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isUnjoining, setIsUnjoining] = useState(false);
@@ -245,6 +254,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const earnedAmount = maxCreatorPoolCap > 0 ? Math.min(rawEarned, maxCreatorPoolCap) : rawEarned;
   const isCapReached = maxCreatorPoolCap > 0 && rawEarned >= maxCreatorPoolCap;
 
+  // Gross & Net 10% Platform Fee Calculations
+  const grossCampaignValue = isReserveMet ? Math.floor((totalViews / 1000) * campaign.cpm_rate) : 0;
+  const cappedGross = maxCreatorPoolCap > 0 ? Math.min(grossCampaignValue, maxCreatorPoolCap) : grossCampaignValue;
+  const platformFee = Math.round(cappedGross * 0.10);
+  const netTakeHome = cappedGross - platformFee;
+
   const docUrl = campaign.requirements?.google_doc_url || campaign.requirements?.brand_guide_url || campaign.requirements?.doc_url;
   const driveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.asset_pack_url || campaign.requirements?.drive_url;
 
@@ -329,10 +344,13 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           </button>
 
           {isCompleted ? (
-            <div className="h-9 px-3.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-kpugi-border dark:border-white/10 font-bold text-xs flex items-center gap-1.5 cursor-not-allowed">
-              <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              <span>Settlement Concluded</span>
-            </div>
+            <button
+              onClick={() => setShowReceiptModal(true)}
+              className="h-9 px-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+            >
+              <Receipt className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Earnings Receipt</span>
+            </button>
           ) : hasSubmittedLink ? (
             <div className="flex items-center gap-2">
               <div
@@ -380,6 +398,45 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
       </div>
 
+      {/* ─────────────────────────────────────────────────────
+         COMPLETED CAMPAIGN SETTLEMENT RECEIPT BANNER
+      ───────────────────────────────────────────────────── */}
+      {isCompleted && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-purple-50 via-indigo-50/40 to-blue-50/30 dark:from-[#1A1426] dark:via-[#131728] dark:to-[#0D111D] border border-purple-200/80 dark:border-purple-500/30 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40">
+                <CheckCircle2 className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                Campaign Concluded & Settled
+              </span>
+              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                10% Platform Fee Applied
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              This campaign has concluded. Your final verified views have been reconciled, Kpugi&apos;s 10% facilitation fee accounted for, and your net take-home earnings credited to your available wallet balance.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <button
+              onClick={() => setShowReceiptModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+            >
+              <Receipt className="w-4 h-4" />
+              <span>View Settlement Receipt</span>
+            </button>
+            <Link
+              href="/c/wallet"
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-50 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>Wallet</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {msg && (
         <div className={`p-4 rounded-2xl text-xs font-bold ${msg.startsWith('Error') ? 'bg-red-50 dark:bg-rose-950/40 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-500/30' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'}`}>
           {msg}
@@ -407,14 +464,20 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         {/* 2. Earned Payout */}
         <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">Earned Payout</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
+              {isCompleted ? 'Net Payout' : 'Earned Payout'}
+            </span>
             <span className="font-mono font-black text-xs text-emerald-600 dark:text-emerald-400 leading-none">₦</span>
           </div>
           <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
-            {formatCompactCurrency(earnedAmount)}
+            {formatCompactCurrency(isCompleted ? netTakeHome : earnedAmount)}
           </p>
-          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium block">
-            {isReserveMet ? 'Verified Run Settled' : `₦${baseReserve.toLocaleString()} Reserved`}
+          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium block truncate">
+            {isCompleted
+              ? `Net (10% fee: ₦${platformFee.toLocaleString()})`
+              : isReserveMet
+              ? 'Verified Run Settled'
+              : `₦${baseReserve.toLocaleString()} Reserved`}
           </span>
         </div>
 
@@ -985,6 +1048,156 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           setHasReviewed(true);
         }}
       />
+
+      {/* ─────────────────────────────────────────────────────
+         CAMPAIGN SETTLEMENT & EARNINGS RECEIPT MODAL
+      ───────────────────────────────────────────────────── */}
+      {showReceiptModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#12141A] rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden relative text-kpugi-ink dark:text-white my-8">
+            {/* Header Pattern */}
+            <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 text-white p-6 sm:p-7 relative">
+              <button
+                onClick={() => setShowReceiptModal(false)}
+                className="absolute top-5 right-5 text-white/80 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider font-mono">
+                  Official Settlement Receipt
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 text-[10px] font-bold font-mono">
+                  Concluded
+                </span>
+              </div>
+
+              <h3 className="font-display font-extrabold text-2xl tracking-tight">
+                Campaign Earnings Receipt
+              </h3>
+              <p className="text-xs text-white/80 mt-1 font-mono">
+                {campaign.campaign_code || `KPG-${campaign.id.slice(0, 8).toUpperCase()}`} • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
+            </div>
+
+            <div className="p-6 sm:p-7 space-y-6">
+              {/* Campaign Meta Card */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Campaign
+                  </span>
+                  <span className="text-xs font-bold text-kpugi-ink dark:text-white truncate max-w-[200px]">
+                    {campaign.title}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Brand Partner
+                  </span>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    {campaign.company_name || 'Brand Partner'}
+                  </span>
+                </div>
+                {matchingAccount && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Connected Profile
+                    </span>
+                    <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
+                      @{matchingAccount.handle} ({matchingAccount.platform})
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Itemized Financial Breakdown Table */}
+              <div className="space-y-3">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                  Financial Breakdown
+                </span>
+
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden divide-y divide-slate-100 dark:divide-white/5 font-sans text-xs">
+                  <div className="p-3.5 flex items-center justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Total Verified Views Delivered</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">
+                      {totalViews.toLocaleString()} views
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 flex items-center justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Campaign CPM Rate</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">
+                      ₦{campaign.cpm_rate.toLocaleString()} / 1k views
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Gross Campaign Value</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">
+                      ₦{cappedGross.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 flex items-center justify-between bg-purple-50/40 dark:bg-purple-950/20 text-purple-900 dark:text-purple-300">
+                    <div className="space-y-0.5">
+                      <span className="font-medium block">Kpugi Platform Facilitation Fee (10%)</span>
+                      <span className="text-[10px] text-purple-700 dark:text-purple-400 block">Performance facilitation & anti-fraud audit</span>
+                    </div>
+                    <span className="font-mono font-bold">
+                      -₦{platformFee.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <div className="p-4 flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 font-bold border-t border-emerald-200 dark:border-emerald-500/20">
+                    <div className="space-y-0.5">
+                      <span className="text-xs uppercase tracking-wider block">Net Creator Pay</span>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-normal block">90% Creator Net Share</span>
+                    </div>
+                    <span className="font-mono text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+                      ₦{netTakeHome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Settlement Notice */}
+              <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/20 flex items-start gap-3 text-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 text-slate-600 dark:text-slate-300">
+                  <span className="font-bold text-emerald-900 dark:text-emerald-300 block">
+                    Settled to Available Wallet Balance
+                  </span>
+                  <p className="text-[11px] leading-relaxed">
+                    Net funds have concluded settlement and are available in your wallet for instant NUBAN bank transfer withdrawal.
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Receipt</span>
+                </button>
+                <Link
+                  href="/c/wallet"
+                  className="w-1/2 py-3 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-kpugi-blue/20 text-center"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span>Go to Wallet</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

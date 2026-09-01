@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Megaphone, ArrowRight, LayoutGrid, List, Eye, ShieldCheck, ChevronRight, Video } from 'lucide-react';
+import { Search, Megaphone, ArrowRight, LayoutGrid, List, Eye, ShieldCheck, ChevronRight, Video, Receipt } from 'lucide-react';
 import { CreatorCampaignItem } from '@/lib/supabase/creator';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 
@@ -302,13 +302,23 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
 
                       {/* Action */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
-                        <Link
-                          href={`/c/campaigns/${item.campaignId || item.id}`}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-kpugi-blue text-slate-700 dark:text-slate-200 hover:text-white font-bold text-xs transition-all shadow-2xs group-hover:bg-kpugi-blue group-hover:text-white"
-                        >
-                          <span>Workspace</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
+                        {isCompleted ? (
+                          <Link
+                            href={`/c/campaigns/${item.campaignId || item.id}?receipt=true`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-600 dark:hover:bg-purple-600 text-purple-700 dark:text-purple-300 hover:text-white dark:hover:text-white font-bold text-xs transition-all border border-purple-200 dark:border-purple-500/30 shadow-2xs"
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                            <span>Receipt</span>
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/c/campaigns/${item.campaignId || item.id}`}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-kpugi-blue text-slate-700 dark:text-slate-200 hover:text-white font-bold text-xs transition-all shadow-2xs group-hover:bg-kpugi-blue group-hover:text-white"
+                          >
+                            <span>Workspace</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );
