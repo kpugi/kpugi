@@ -1,9 +1,67 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/server';
+
+function verifyClerkWebhook(
+  rawBody: string,
+  headers: Headers,
+  secret: string
+): boolean {
+  const svixId = headers.get('svix-id');
+  const svixTimestamp = headers.get('svix-timestamp');
+  const svixSignature = headers.get('svix-signature');
+
+  if (!svixId || !svixTimestamp || !svixSignature || !secret) {
+    return false;
+  }
+
+  // Prevent replay attacks by checking timestamp drift (5 minutes)
+  const now = Math.floor(Date.now() / 1000);
+  const timestamp = parseInt(svixTimestamp, 10);
+  if (isNaN(timestamp) || Math.abs(now - timestamp) > 300) {
+    return false;
+  }
+
+  const key = secret.startsWith('whsec_')
+    ? Buffer.from(secret.slice(6), 'base64')
+    : Buffer.from(secret, 'utf8');
+
+  const toSign = `${svixId}.${svixTimestamp}.${rawBody}`;
+  const computedSignature = crypto
+    .createHmac('sha256', key)
+    .update(toSign)
+    .digest('base64');
+
+  const signatures = svixSignature.split(' ').map((sig) => sig.replace(/^v1,/, ''));
+
+  return signatures.some((sig) => {
+    try {
+      const sigBuffer = Buffer.from(sig, 'base64');
+      const compBuffer = Buffer.from(computedSignature, 'base64');
+      return sigBuffer.length === compBuffer.length && crypto.timingSafeEqual(sigBuffer, compBuffer);
+    } catch {
+      return false;
+    }
+  });
+}
 
 export async function POST(req: Request) {
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+    const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('[Clerk Webhook] CLERK_WEBHOOK_SECRET is not configured');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const isValid = verifyClerkWebhook(rawBody, req.headers, webhookSecret);
+    if (!isValid) {
+      console.warn('[Clerk Webhook] Invalid or missing signature');
+      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+    }
+
+    const payload = JSON.parse(rawBody);
     const eventType = payload?.type;
 
     if (eventType === 'user.created' || eventType === 'user.updated') {

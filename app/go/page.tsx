@@ -23,7 +23,12 @@ function PrelanderContent() {
     try {
       const decoded = decodeURIComponent(rawUrl);
       const parsed = new URL(decoded);
-      setDestinationUrl(decoded);
+      // Strictly enforce http and https protocols to prevent javascript: or malicious scheme execution
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        router.replace('/browse');
+        return;
+      }
+      setDestinationUrl(parsed.toString());
       setHostname(parsed.hostname);
     } catch (e) {
       router.replace('/browse');

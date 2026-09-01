@@ -271,9 +271,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                 )}
               </div>
 
-              <p className="text-slate-400 text-xs mt-1.5">
-                {creatorHandle ? `@${creatorHandle}` : profile.email} • Control center for public profile, payouts, accounts & identity verification
-              </p>
+            
             </div>
           </div>
         </div>

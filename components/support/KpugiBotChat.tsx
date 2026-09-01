@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 
 interface KpugiBotChatProps {
   isOpen: boolean;
@@ -23,7 +22,6 @@ function FormattedMarkdown({ content }: { content: string }) {
     <div className="text-slate-800 dark:text-slate-200 space-y-1 font-sans break-words min-w-0 max-w-full overflow-hidden">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
         components={{
           h1: ({ children }) => <h1 className="text-sm font-bold text-slate-900 dark:text-white mt-2 mb-1 break-words">{children}</h1>,
           h2: ({ children }) => <h2 className="text-xs font-bold text-slate-900 dark:text-white mt-2 mb-1 break-words">{children}</h2>,

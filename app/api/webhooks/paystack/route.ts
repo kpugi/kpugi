@@ -1,10 +1,38 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/server';
 import { notifyAdvertiserWalletFunded } from '@/lib/notifications/advertiser';
 
 export async function POST(req: Request) {
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-paystack-signature');
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+
+    if (!paystackSecret) {
+      console.error('[Paystack Webhook] PAYSTACK_SECRET_KEY is not configured');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing signature header' }, { status: 401 });
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha512', paystackSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    // Constant-time comparison to prevent timing attacks
+    const signatureBuffer = Buffer.from(signature, 'utf8');
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+
+    if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+      console.warn('[Paystack Webhook] Invalid signature received');
+      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+    }
+
+    const payload = JSON.parse(rawBody);
     const event = payload?.event;
     const data = payload?.data;
     const reference = data?.reference;

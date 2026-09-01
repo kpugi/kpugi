@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { generateTextEmbedding, constructCampaignEmbeddingText } from '@/lib/ai/embeddings';
 import { getRedisCache, setRedisCache, deleteRedisCache } from '@/lib/redis/client';
 
@@ -206,10 +207,45 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createAdminClient();
-    const body = await request.json();
+    const userProfile = await getOrCreateUserProfile();
+    if (!userProfile || !userProfile.profile) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const { title, description, channels, ad_format } = body;
+    const advertiserId = userProfile.profile.id;
+    const userRole = userProfile.profile.role;
+
+    if (userRole !== 'advertiser' && userRole !== 'both') {
+      return NextResponse.json({ error: 'Only advertisers can create campaigns' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const {
+      title,
+      description,
+      ad_format,
+      cpm_rate,
+      total_budget,
+      min_view_threshold,
+      required_live_duration_hours,
+      verification_grace_hours,
+      cover_image_url,
+      channels,
+      requirements,
+    } = body;
+
+    if (!title || !description || !ad_format || !total_budget) {
+      return NextResponse.json(
+        { error: 'Missing required campaign fields (title, description, ad_format, total_budget)' },
+        { status: 400 }
+      );
+    }
+
+    if (Number(total_budget) <= 0 || Number(cpm_rate || 2000) <= 0) {
+      return NextResponse.json({ error: 'Budget and CPM must be positive amounts' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
 
     // Generate Gemini Embedding for new campaign if provided
     let embedding: number[] | null = null;
@@ -218,12 +254,28 @@ export async function POST(request: Request) {
       embedding = await generateTextEmbedding(embeddingText);
     }
 
+    const campaignPayload = {
+      advertiser_id: advertiserId,
+      title: String(title).trim(),
+      description: String(description).trim(),
+      ad_format: ['text', 'image', 'video'].includes(ad_format) ? ad_format : 'video',
+      cpm_rate: Number(cpm_rate) || 2000,
+      total_budget: Number(total_budget),
+      reserved_budget: 0,
+      spent_budget: 0,
+      min_view_threshold: Number(min_view_threshold) || 1000,
+      required_live_duration_hours: Number(required_live_duration_hours) || 72,
+      verification_grace_hours: Number(verification_grace_hours) || 24,
+      cover_image_url: cover_image_url || null,
+      channels: Array.isArray(channels) ? channels : [],
+      requirements: requirements && typeof requirements === 'object' ? requirements : {},
+      status: 'funding_pending',
+      embedding: embedding ? (embedding as any) : null,
+    };
+
     const { data: newCampaign, error } = await supabase
       .from('campaigns')
-      .insert({
-        ...body,
-        embedding: embedding ? (embedding as any) : null,
-      })
+      .insert(campaignPayload)
       .select('*')
       .single();
 
@@ -234,29 +286,6 @@ export async function POST(request: Request) {
 
     // Invalidate Redis Public Campaigns Cache on new campaign creation
     await deleteRedisCache('campaigns:public');
-
-    // Trigger Campaign Live Notification if status is live
-    if (newCampaign && newCampaign.status === 'live' && newCampaign.advertiser_id) {
-      const { notifyAdvertiserCampaignLive } = await import('@/lib/notifications/advertiser');
-      supabase
-        .from('profiles')
-        .select('clerk_id, email')
-        .eq('id', newCampaign.advertiser_id)
-        .maybeSingle()
-        .then(({ data: advProfile }) => {
-          if (advProfile) {
-            notifyAdvertiserCampaignLive({
-              clerkId: advProfile.clerk_id,
-              email: advProfile.email,
-              campaignTitle: newCampaign.title,
-              totalBudget: Number(newCampaign.total_budget) || 0,
-              cpmRate: Number(newCampaign.cpm_rate) || 2000,
-              campaignId: newCampaign.id,
-              profileId: newCampaign.advertiser_id,
-            }).catch(err => console.error('[Campaigns API] Campaign live notification error:', err));
-          }
-        });
-    }
 
     return NextResponse.json({ campaign: newCampaign });
   } catch (err) {
