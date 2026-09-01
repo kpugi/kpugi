@@ -14,7 +14,7 @@ export async function generateAICampaignPolishAction(
 ) {
   try {
     const nvidiaKey = process.env.NVIDIA_API_KEY;
-    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.3-70b-instruct';
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
 
     if (!nvidiaKey) {
       return { success: false, error: 'NVIDIA API Key missing. Please add NVIDIA_API_KEY to .env.local.' };
@@ -1237,7 +1237,7 @@ export async function generateAIAnalyticsInsightsAction(
     }
 
     const nvidiaKey = process.env.NVIDIA_API_KEY;
-    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.3-70b-instruct';
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
 
     const totalViews = campaignsPayload.reduce((sum, c) => sum + c.views, 0);
     const totalSpent = campaignsPayload.reduce((sum, c) => sum + c.spent, 0);

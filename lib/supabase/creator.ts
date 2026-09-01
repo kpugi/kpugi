@@ -64,6 +64,8 @@ export interface CreatorCampaignItem {
   minThreshold?: number;
   reservedAmount?: number;
   status: string;
+  submissionStatus?: string;
+  campaignStatus?: string;
   postUrl?: string;
   viewsCount?: number;
   earnedAmount?: number;
@@ -377,6 +379,7 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
       reserved_amount,
       final_view_count,
       payout_amount,
+      pending_payout_amount,
       campaign:campaigns (
         id,
         title,
@@ -385,6 +388,7 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
         total_budget,
         min_view_threshold,
         cover_image_url,
+        status,
         requirements,
         advertiser:advertiser_profiles (
           company_name,
@@ -421,6 +425,10 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
     const fallbackReserve = Math.round((targetThreshold / 1000) * (campaign?.cpm_rate || 0));
     const reservedAmount = Number(sub.reserved_amount) || fallbackReserve;
 
+    const campaignStatus = campaign?.status || 'live';
+    const isCompleted = campaignStatus === 'completed' || campaignStatus === 'cancelled' || sub.status === 'paid' || sub.status === 'completed';
+    const effectiveStatus = isCompleted ? 'completed' : sub.status;
+
     return {
       id: sub.id,
       campaignId: campaign?.id || sub.id,
@@ -432,7 +440,9 @@ export async function getCreatorCampaigns(profileId: string, filter?: string): P
       ratePer1k: campaign?.cpm_rate || 0,
       minThreshold: targetThreshold,
       reservedAmount: reservedAmount,
-      status: sub.status,
+      status: effectiveStatus,
+      submissionStatus: sub.status,
+      campaignStatus: campaignStatus,
       postUrl: sub.post_url,
       viewsCount: sub.final_view_count || 0,
       earnedAmount: earnedAmount,
@@ -1051,6 +1061,8 @@ export interface DetailedSubmissionItem {
   cpmRate: number;
   earnedAmount: number;
   status: 'approved' | 'auditing' | 'pending' | 'rejected';
+  rawStatus?: string;
+  campaignStatus?: string;
   submittedAt: string;
   verifiedAt?: string | null;
   rejectionReason?: string | null;
@@ -1079,10 +1091,15 @@ function extractPlatformFromUrl(url: string = ''): string {
   return 'tiktok';
 }
 
-function normalizeSubmissionStatus(status: string = ''): 'approved' | 'auditing' | 'pending' | 'rejected' {
+function normalizeSubmissionStatus(status: string = '', campaignStatus: string = ''): 'approved' | 'auditing' | 'pending' | 'rejected' {
   const s = status.toLowerCase();
-  if (s === 'approved' || s === 'cleared') return 'approved';
-  if (s === 'rejected' || s === 'failed') return 'rejected';
+  const cs = campaignStatus.toLowerCase();
+  if (s === 'approved' || s === 'cleared' || s === 'paid' || s === 'completed' || s === 'verified_pass' || cs === 'completed') {
+    return 'approved';
+  }
+  if (s === 'rejected' || s === 'failed' || s === 'verified_fail' || s === 'forfeited' || cs === 'cancelled') {
+    return 'rejected';
+  }
   return 'auditing';
 }
 
@@ -1251,6 +1268,7 @@ export async function getCreatorSubmissionsData(
   if (rawSubmissions.length > 0) {
     submissions = rawSubmissions.map((sub: any) => {
       const campaign = sub.campaign || sub.campaigns || {};
+      const campaignStatus = campaign.status || 'live';
       const platform = (campaign.channels?.[0] || extractPlatformFromUrl(sub.post_url) || 'tiktok').toLowerCase();
       const views = sub.final_view_count || 0;
       const cpmRate = campaign.cpm_rate || 3500;
@@ -1269,7 +1287,9 @@ export async function getCreatorSubmissionsData(
         engagementRate: sub.engagement_rate || (views > 0 ? 8.5 : 0),
         cpmRate,
         earnedAmount: earned,
-        status: normalizeSubmissionStatus(sub.status),
+        status: normalizeSubmissionStatus(sub.status, campaignStatus),
+        rawStatus: sub.status,
+        campaignStatus: campaignStatus,
         submittedAt: sub.submitted_at || sub.created_at || new Date().toISOString(),
         verifiedAt: sub.verified_at,
         rejectionReason: sub.failure_reason,

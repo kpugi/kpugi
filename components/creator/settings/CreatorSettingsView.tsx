@@ -141,10 +141,19 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
 
     window.addEventListener('message', handleMessageEvent);
 
-    // 2. Real-time Status Poller while verification status is pending
+    // 2. Real-time Status Poller while verification status is pending (capped at 5 attempts)
     let pollInterval: NodeJS.Timeout | null = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+
     if (kycStatus === 'pending') {
       pollInterval = setInterval(async () => {
+        attempts++;
+        if (attempts >= MAX_ATTEMPTS) {
+          if (pollInterval) clearInterval(pollInterval);
+          return;
+        }
+
         try {
           const res = await fetch('/api/kyc/status');
           const data = await res.json();
@@ -157,7 +166,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
         } catch (err) {
           console.error('[KYC Status Poll Error]:', err);
         }
-      }, 3000);
+      }, 5000);
     }
 
     return () => {

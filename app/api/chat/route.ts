@@ -96,17 +96,20 @@ export async function POST(req: Request) {
     // Role-specific context enrichment
     const contextPrompt = `${SYSTEM_PROMPT}\n\nCURRENT USER ROLE CONTEXT: The user interacting with you is currently using Kpugi as a **${userRole || 'creator or advertiser'}**. Focus tailored help for this role while remaining knowledgeable about both sides.`;
 
-    // Select provider: NVIDIA NIM if configured, otherwise Google Gemini
+    // Select provider: Google Gemini if configured, otherwise NVIDIA NIM
     let selectedModel;
-    if (hasNvidia) {
+    if (hasGoogle) {
+      const googleModelName = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+      selectedModel = google(googleModelName);
+    } else if (hasNvidia) {
       const nvidia = createOpenAI({
         baseURL: 'https://integrate.api.nvidia.com/v1',
         apiKey: nvidiaKey,
       });
-      const nvidiaModelName = process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-super-120b-a12b';
+      const nvidiaModelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
       selectedModel = nvidia.chat(nvidiaModelName);
     } else {
-      const googleModelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+      const googleModelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
       selectedModel = google(googleModelName);
     }
 

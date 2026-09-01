@@ -26,21 +26,39 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
     localStorage.setItem('creator_campaigns_view_mode', mode);
   };
 
+  const isCompletedCampaign = (c: CreatorCampaignItem) => {
+    const s = (c.status || c.submissionStatus || '').toLowerCase();
+    const cs = (c.campaignStatus || '').toLowerCase();
+    return s === 'paid' || s === 'completed' || s === 'approved' || s === 'forfeited' || s === 'verified_fail' || cs === 'completed' || cs === 'cancelled';
+  };
+
+  const isActiveCampaign = (c: CreatorCampaignItem) => {
+    return !isCompletedCampaign(c);
+  };
+
   const filteredCampaigns = campaigns.filter((c) => {
-    if (activeTab === 'auditing') return c.status === 'pending' || c.status === 'auditing' || c.status === 'under_review' || c.status === 'reserved';
-    if (activeTab === 'completed') return c.status === 'paid' || c.status === 'completed' || c.status === 'approved';
+    if (activeTab === 'auditing') return isActiveCampaign(c);
+    if (activeTab === 'completed') return isCompletedCampaign(c);
     return true;
   });
 
-  const getStatusBadge = (status: string) => {
-    const s = (status || '').toLowerCase();
-    if (s === 'paid' || s === 'completed' || s === 'approved') {
-      return { label: 'Completed', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+  const getStatusBadge = (item: CreatorCampaignItem) => {
+    const s = (item.status || item.submissionStatus || '').toLowerCase();
+    const cs = (item.campaignStatus || '').toLowerCase();
+
+    if (cs === 'completed' || cs === 'cancelled' || s === 'completed' || s === 'paid' || s === 'approved') {
+      return { label: 'Completed', bg: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30' };
+    }
+    if (s === 'verified_pass') {
+      return { label: 'Audit Passed', bg: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/30' };
+    }
+    if (s === 'verified_fail' || s === 'forfeited') {
+      return { label: 'Audit Failed', bg: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30' };
     }
     if (s === 'auditing' || s === 'under_review' || s === 'pending') {
-      return { label: 'Auditing', bg: 'bg-amber-50 text-amber-700 border-amber-200' };
+      return { label: 'Auditing', bg: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' };
     }
-    return { label: 'Slot Reserved', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
+    return { label: 'Slot Reserved', bg: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30' };
   };
 
   return (
@@ -77,7 +95,7 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
               activeTab === 'auditing' ? 'bg-kpugi-blue/10 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400' : 'text-kpugi-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
             }`}
           >
-            Active / Auditing ({campaigns.filter((c) => c.status === 'pending' || c.status === 'auditing' || c.status === 'under_review' || c.status === 'reserved').length})
+            Active / Auditing ({campaigns.filter(isActiveCampaign).length})
           </button>
           <button
             onClick={() => setActiveTab('completed')}
@@ -85,7 +103,7 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
               activeTab === 'completed' ? 'bg-kpugi-blue/10 dark:bg-blue-900/30 text-kpugi-blue dark:text-blue-400' : 'text-kpugi-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
             }`}
           >
-            Completed / Paid ({campaigns.filter((c) => c.status === 'paid' || c.status === 'completed' || c.status === 'approved').length})
+            Completed / Paid ({campaigns.filter(isCompletedCampaign).length})
           </button>
         </div>
 
@@ -140,8 +158,9 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
         /* GRID VIEW */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredCampaigns.map((item) => {
-            const badge = getStatusBadge(item.status);
-            const isOnlyReserved = item.status === 'joined' || item.status === 'reserved' || !item.postUrl || (item.earnedAmount || 0) === 0;
+            const badge = getStatusBadge(item);
+            const isCompleted = item.status === 'completed' || item.status === 'paid' || item.campaignStatus === 'completed';
+            const isOnlyReserved = !isCompleted && (item.status === 'joined' || item.status === 'reserved' || !item.postUrl || (item.earnedAmount || 0) === 0);
 
             return (
               <Link
@@ -214,8 +233,9 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                 {filteredCampaigns.map((item) => {
-                  const badge = getStatusBadge(item.status);
-                  const isOnlyReserved = item.status === 'joined' || item.status === 'reserved' || !item.postUrl || (item.earnedAmount || 0) === 0;
+                  const badge = getStatusBadge(item);
+                  const isCompleted = item.status === 'completed' || item.status === 'paid' || item.campaignStatus === 'completed';
+                  const isOnlyReserved = !isCompleted && (item.status === 'joined' || item.status === 'reserved' || !item.postUrl || (item.earnedAmount || 0) === 0);
 
                   return (
                     <tr
