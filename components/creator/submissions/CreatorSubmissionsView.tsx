@@ -64,6 +64,19 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (!submitting) setShowSubmitModal(false);
+        setRejectionModalItem(null);
+      }
+    };
+    if (showSubmitModal || rejectionModalItem) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showSubmitModal, rejectionModalItem, submitting]);
+
+  useEffect(() => {
     setSubmissionsList(data.submissions);
   }, [data.submissions]);
 
@@ -555,7 +568,12 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
          MODAL 1: SUBMIT NEW POST LINK (PORTALED TO BODY)
       ───────────────────────────────────────────────────── */}
       {showSubmitModal && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !submitting) setShowSubmitModal(false);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Submit Campaign Post</h3>
@@ -663,7 +681,12 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
          MODAL 2: REJECTION REASON DETAILS (PORTALED TO BODY)
       ───────────────────────────────────────────────────── */}
       {rejectionModalItem && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRejectionModalItem(null);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
               <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-500/30 flex items-center justify-center shrink-0">

@@ -84,6 +84,19 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowReceiptModal(false);
+        if (!loading) setShowSubmitModal(false);
+      }
+    };
+    if (showReceiptModal || showSubmitModal) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showReceiptModal, showSubmitModal, loading]);
   const [isUnjoining, setIsUnjoining] = useState(false);
   const [isDeletingLink, setIsDeletingLink] = useState(false);
   const [showDeleteLinkConfirm, setShowDeleteLinkConfirm] = useState(false);
@@ -944,7 +957,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
 
       {/* SUBMIT POST LINK MODAL (PORTALED WITH BLUR BACKDROP) */}
       {showSubmitModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !loading) setShowSubmitModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-slate-100 dark:border-white/10 relative text-kpugi-ink dark:text-white">
             <button
               onClick={() => setShowSubmitModal(false)}
@@ -1053,7 +1071,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
          CAMPAIGN SETTLEMENT & EARNINGS RECEIPT MODAL
       ───────────────────────────────────────────────────── */}
       {showReceiptModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowReceiptModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden relative text-kpugi-ink dark:text-white my-8">
             {/* Header Pattern */}
             <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 text-white p-6 sm:p-7 relative">
@@ -1170,7 +1193,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     Settled to Available Wallet Balance
                   </span>
                   <p className="text-[11px] leading-relaxed">
-                    Net funds have concluded settlement and are available in your wallet for instant NUBAN bank transfer withdrawal.
+                    Net funds have concluded settlement and are available in your wallet.
                   </p>
                 </div>
               </div>

@@ -74,18 +74,18 @@ function ClearanceCountdown({ targetDate }: { targetDate: string }) {
 
   if (timeLeft.isExpired) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold font-mono">
-        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-bold font-mono">
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
         Grace Window Complete (Ready)
       </span>
     );
   }
 
   return (
-    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 font-mono text-xs font-bold shadow-2xs">
-      <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-      <span>Unlocks in:</span>
-      <span className="text-amber-800 font-extrabold tracking-wide">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-100/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-300/60 dark:border-amber-500/30 font-mono text-[11px] font-bold shadow-2xs">
+      <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
+      <span className="text-[10px] font-sans font-medium text-amber-700 dark:text-amber-400">Unlocks in:</span>
+      <span className="text-amber-900 dark:text-amber-100 font-extrabold tracking-wide">
         {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
       </span>
     </div>
@@ -120,11 +120,11 @@ function DailyCycleCountdown() {
   }, []);
 
   return (
-    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 text-slate-700 border border-blue-200/80 shadow-2xs font-mono text-xs font-semibold whitespace-nowrap shrink-0 tabular-nums">
-      <Clock className="w-3.5 h-3.5 text-kpugi-blue animate-pulse shrink-0" />
-      <span className="text-[11px] font-sans font-medium text-slate-500">Closes in:</span>
-      <span className="text-kpugi-blue font-bold tracking-tight">
-        {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/10 shadow-2xs font-mono text-[11px] font-semibold whitespace-nowrap shrink-0 tabular-nums">
+      <Clock className="w-3 h-3 text-kpugi-blue dark:text-blue-400 animate-pulse shrink-0" />
+      <span className="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400">Clears in:</span>
+      <span className="text-kpugi-blue dark:text-blue-400 font-bold tracking-tight">
+        {String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s
       </span>
     </div>
   );
@@ -174,6 +174,19 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       }
     }
   }, [data.bankAccounts]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (!loading) setShowPayoutModal(false);
+        if (!loading) setShowBankModal(false);
+      }
+    };
+    if (showPayoutModal || showBankModal) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showPayoutModal, showBankModal, loading]);
 
   // Real creator balances from Supabase
   const availableBalance = data.availableBalance || 0;
@@ -388,10 +401,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
         {/* Right Pending Clearance Card (30% width) */}
         <div className="lg:col-span-4 p-6 sm:p-8 rounded-3xl bg-slate-50 dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-5 text-center sm:text-left">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="font-sans text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               Pending Clearance
             </span>
+            <DailyCycleCountdown />
           </div>
 
           <div>
@@ -401,7 +415,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
           </div>
 
           {data.nextClearanceDate && pendingEscrow > 0 ? (
-            <div className="p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-500/30 space-y-2 text-left">
+            <div className="p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-500/30 space-y-2.5 text-left">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
@@ -411,14 +425,21 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                   ₦{(data.nextClearanceAmount || pendingEscrow).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
-                <span className="font-medium">{formatClearanceDate(data.nextClearanceDate)}</span>
+              <div className="flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-300 flex-wrap">
+                <span className="font-medium text-[11px] text-slate-600 dark:text-slate-400">{formatClearanceDate(data.nextClearanceDate)}</span>
+                <ClearanceCountdown targetDate={data.nextClearanceDate} />
               </div>
             </div>
           ) : (
-            <p className="text-xs text-kpugi-slate dark:text-slate-400 leading-relaxed">
-              Earnings from newly audited views clear daily into your withdrawable balance.
-            </p>
+            <div className="space-y-2 text-left">
+              <p className="text-xs text-kpugi-slate dark:text-slate-400 leading-relaxed">
+                Earnings from newly audited views clear daily into your withdrawable balance.
+              </p>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-white/5 text-[11px] text-kpugi-slate dark:text-slate-400">
+                <span>Auto-Clearance Cycle:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300 font-mono">Every 24h</span>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -427,20 +448,25 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
          MIDDLE ROW: COMPACT TODAY'S PROGRESS STRIP
       ───────────────────────────────────────────────────── */}
       {Boolean(data.todayViews && data.todayViews > 0) && (
-        <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
+        <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-center sm:text-left">
           {/* Header Label with Pulsing Live Dot */}
-          <div className="flex items-center justify-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Today's Live Accrual
-            </span>
-          </div>
-
-          {/* Centered Huge Earning Amount */}
           <div className="space-y-1">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Today's Live Accrual
+              </span>
+            </div>
+
+            {/* Centered Huge Earning Amount */}
             <div className="font-mono font-black text-3xl sm:text-4xl lg:text-5xl text-kpugi-blue tracking-tight">
               +₦{Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
+          </div>
+
+          <div className="flex flex-col sm:items-end justify-center gap-1">
+            <DailyCycleCountdown />
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Auto-settles at cycle reset</span>
           </div>
         </div>
       )}
@@ -624,7 +650,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
                                       {tx.isClearing && tx.clearanceAt && (
                                         <div className="shrink-0">
-                                          <LiveClearanceTicker targetDate={tx.clearanceAt} />
+                                          <ClearanceCountdown targetDate={tx.clearanceAt} />
                                         </div>
                                       )}
                                     </div>
@@ -865,7 +891,12 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
          MODAL 1: REQUEST WITHDRAWAL MODAL
       ───────────────────────────────────────────────────── */}
       {showPayoutModal && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !loading) setShowPayoutModal(false);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Request Withdrawal</h3>
@@ -986,7 +1017,12 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
          MODAL 2: ADD BANK ACCOUNT (PAYSTACK NUBAN RESOLUTION)
       ───────────────────────────────────────────────────── */}
       {showBankModal && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !loading && !isResolving) setShowBankModal(false);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             <div>
               <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">Link Bank Account</h3>

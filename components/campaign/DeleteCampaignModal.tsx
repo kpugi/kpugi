@@ -40,6 +40,14 @@ export function DeleteCampaignModal({
     return () => setMounted(false);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isProcessing) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isProcessing, onClose]);
+
   // Determine mode: if not explicitly passed, determine from campaign status
   const currentMode: CampaignModalMode =
     mode || (campaign?.status === 'archived' ? 'delete' : 'archive');
@@ -76,7 +84,12 @@ export function DeleteCampaignModal({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isProcessing) onClose();
+      }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
+    >
       <div className="w-full max-w-md bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden text-kpugi-ink dark:text-white">
         {/* Header */}
         {currentMode === 'archive' ? (

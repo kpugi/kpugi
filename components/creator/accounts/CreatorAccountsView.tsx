@@ -163,6 +163,20 @@ export default function CreatorAccountsView({
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (!startLoading) setShowConnectModal(false);
+        setInfoGuidePlatform(null);
+        if (!checkLoading) setDeleteConfirmAccount(null);
+      }
+    };
+    if (showConnectModal || infoGuidePlatform || deleteConfirmAccount) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showConnectModal, infoGuidePlatform, deleteConfirmAccount, startLoading, checkLoading]);
+
+  useEffect(() => {
     if (initialGroupedAccounts) {
       setAccountsGrouped(initialGroupedAccounts);
     }
@@ -657,7 +671,12 @@ export default function CreatorAccountsView({
          MODAL 1: CONNECT & VERIFY MODAL (DIRECT PLATFORM)
       ───────────────────────────────────────────────────── */}
       {showConnectModal && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !startLoading && !checkLoading) setShowConnectModal(false);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
             
             {/* Modal Header */}
@@ -825,7 +844,12 @@ export default function CreatorAccountsView({
          MODAL 2: INSTRUCTION / TOOLTIP GUIDE MODAL
       ───────────────────────────────────────────────────── */}
       {infoGuidePlatform && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setInfoGuidePlatform(null);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 max-h-[90vh] overflow-y-auto text-kpugi-ink dark:text-white">
             <div className="flex items-center justify-between border-b border-kpugi-border dark:border-white/10 pb-4">
               <div className="flex items-center gap-3">
@@ -892,7 +916,12 @@ export default function CreatorAccountsView({
          MODAL 3: CUSTOM DISCONNECT CONFIRMATION MODAL
       ───────────────────────────────────────────────────── */}
       {deleteConfirmAccount && mounted && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !checkLoading) setDeleteConfirmAccount(null);
+          }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-sm w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-center text-kpugi-ink dark:text-white">
             <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-500/30 flex items-center justify-center mx-auto text-red-600 dark:text-red-400">
               <Trash2 className="w-6 h-6" />

@@ -127,8 +127,21 @@ function CreatorMatrixModal({
   totalEarned: number;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+    >
       <div className="bg-white dark:bg-[#0D111D] rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl border border-kpugi-border dark:border-white/10 max-h-[90vh] overflow-y-auto font-sans text-kpugi-ink dark:text-white">
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-kpugi-border dark:border-white/10 pb-4">

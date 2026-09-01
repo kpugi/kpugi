@@ -69,6 +69,18 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        setShowDepositModal(false);
+      }
+    };
+    if (showDepositModal) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showDepositModal, isSubmitting]);
+
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
 
@@ -935,7 +947,12 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
 
       {/* Paystack Checkout Deposit Modal (+ Add Funds) */}
       {showDepositModal && mounted && createPortal(
-        <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) setShowDepositModal(false);
+          }}
+          className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto"
+        >
           <div className="w-full max-w-md bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 p-6 space-y-5 animate-in fade-in zoom-in-95 my-auto text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
               <div className="flex items-center gap-2">

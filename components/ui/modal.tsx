@@ -21,10 +21,24 @@ export function Modal({
     return () => setMounted(false);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fadeIn">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fadeIn"
+    >
       <div className="bg-white dark:bg-[#12141A] rounded-2xl max-w-lg w-full p-6 border border-kpugi-border dark:border-white/10 shadow-2xl relative text-kpugi-ink dark:text-white">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">{title}</h3>

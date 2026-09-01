@@ -56,13 +56,25 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTitle, setReportTitle] = useState('Cross-Campaign ROI Analytics Report');
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
   // AI Insights State
   const [aiInsights, setAiInsights] = useState<{ optimizationTip: string; benchmarkComparison: string } | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isAiLoading) {
+        setIsReportModalOpen(false);
+      }
+    };
+    if (isReportModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isReportModalOpen, isAiLoading]);
 
   const allSupportedPlatforms = ['TikTok', 'Instagram', 'YouTube', 'Twitter', 'Facebook', 'LinkedIn'];
 
@@ -944,7 +956,12 @@ export default function AdvertiserAnalyticsView({ data }: AdvertiserAnalyticsVie
 
       {/* Styled Institutional Report Modal */}
       {isReportModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isAiLoading) setIsReportModalOpen(false);
+          }}
+          className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 min-h-screen w-screen overflow-y-auto"
+        >
           <div className="w-full max-w-2xl bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 my-auto text-kpugi-ink dark:text-white">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/10">
               <div className="flex items-center gap-2">

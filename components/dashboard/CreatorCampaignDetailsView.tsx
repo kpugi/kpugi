@@ -54,6 +54,18 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isJoining) {
+        setIsJoinModalOpen(false);
+      }
+    };
+    if (isJoinModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isJoinModalOpen, isJoining]);
+
   if (!campaign) {
     return (
       <div className="min-h-screen bg-[#0B1026] text-white flex flex-col items-center justify-center p-6">
@@ -1558,7 +1570,12 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
       ───────────────────────────────────────────────────── */}
       {isJoinModalOpen && (() => {
         const modalContent = (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-md transition-all overflow-y-auto min-h-screen w-screen">
+          <div
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isJoining) setIsJoinModalOpen(false);
+            }}
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-md transition-all overflow-y-auto min-h-screen w-screen"
+          >
             <div className="bg-white dark:bg-[#0B1026] border border-slate-200 dark:border-white/10 rounded-3xl p-6 w-full max-w-md space-y-6 shadow-2xl relative my-auto text-slate-900 dark:text-white">
               
               <button

@@ -59,6 +59,14 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
     return () => setMounted(false);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSubmitting, onClose]);
+
   const allPlatforms = ['TikTok', 'Instagram', 'YouTube', 'X/Twitter', 'Facebook'];
 
   const toggleChannel = (ch: string) => {
@@ -164,7 +172,12 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
   const isLive = campaign.status === 'live';
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
+    >
       <div className="w-full max-w-2xl bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden flex flex-col max-h-[90vh] text-kpugi-ink dark:text-white">
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-slate-900 dark:bg-[#161820] text-white shrink-0">

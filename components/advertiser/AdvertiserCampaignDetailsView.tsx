@@ -78,6 +78,18 @@ export default function AdvertiserCampaignDetailsView({
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        setStatusConfirm(null);
+      }
+    };
+    if (statusConfirm) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [statusConfirm, isSubmitting]);
+
+  useEffect(() => {
     async function checkReview() {
       try {
         const res = await getCampaignReviewStatusAction(campaignId);
@@ -1265,7 +1277,12 @@ export default function AdvertiserCampaignDetailsView({
 
       {/* Status Confirmation Modal (Pause, Resume, Complete) */}
       {statusConfirm && mounted && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) setStatusConfirm(null);
+          }}
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
+        >
           <div className="w-full max-w-md bg-white dark:bg-[#12141A] rounded-3xl shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden text-kpugi-ink dark:text-white">
             
             {/* Modal Header & Icon */}
