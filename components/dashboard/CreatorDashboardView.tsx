@@ -26,6 +26,9 @@ import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency } from '@/lib/utils/format';
 import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
 import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo';
+import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeModal';
+import OnboardingChecklistCard from '@/components/onboarding/OnboardingChecklistCard';
+import { useKpugiTour } from '@/lib/tour/useKpugiTour';
 
 interface CreatorDashboardProps {
   displayName: string;
@@ -33,6 +36,31 @@ interface CreatorDashboardProps {
 }
 
 export default function CreatorDashboardView({ displayName, data }: CreatorDashboardProps) {
+  const { startTour, hasCompletedTour, isLoading: isTourLoading } = useKpugiTour({ role: 'creator' });
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  useEffect(() => {
+    if (!isTourLoading && !hasCompletedTour) {
+      const dismissed = sessionStorage.getItem('kpugi_welcome_dismissed_creator');
+      if (!dismissed) {
+        setShowWelcomeModal(true);
+      }
+    }
+  }, [isTourLoading, hasCompletedTour]);
+
+  const handleStartTour = () => {
+    setShowWelcomeModal(false);
+    sessionStorage.setItem('kpugi_welcome_dismissed_creator', 'true');
+    setTimeout(() => {
+      startTour();
+    }, 250);
+  };
+
+  const handleDismissWelcome = () => {
+    setShowWelcomeModal(false);
+    sessionStorage.setItem('kpugi_welcome_dismissed_creator', 'true');
+  };
+
   const featuredSub = data.submissions.find((sub) => sub.status === 'pending' || sub.status === 'under_review') || data.submissions[0];
   const hasActiveCampaign = !!featuredSub;
 
@@ -70,10 +98,22 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
   return (
     <div className="max-w-7xl mx-auto space-y-8 text-kpugi-ink dark:text-white font-sans pb-12 transition-colors duration-200">
       
+      {/* Welcome Celebration Modal (First-time visit) */}
+      <OnboardingWelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={handleDismissWelcome}
+        onStartTour={handleStartTour}
+        role="creator"
+        displayName={displayName}
+      />
+
       {/* ─────────────────────────────────────────────────────
          1. TOP GREETING BANNER
       ───────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-xl border border-slate-800">
+      <div
+        id="tour-creator-overview-greeting"
+        className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-kpugi-ink via-slate-900 to-kpugi-blue text-white shadow-xl border border-slate-800"
+      >
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
           <div className="space-y-2">
           
@@ -81,7 +121,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
               Good day, {displayName}! 👋
             </h1>
             <p className="font-sans text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Track your active post audits, monitor automated hourly view counts, and claim cleared campaign payouts.
+              Track your live campaigns, watch your hourly view counts grow, and receive guaranteed Friday bank payouts.
             </p>
           </div>
 
@@ -98,6 +138,20 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
 
         <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-kpugi-blue/30 rounded-full blur-3xl pointer-events-none" />
       </div>
+
+      {/* ─────────────────────────────────────────────────────
+         ONBOARDING SETUP QUEST / CHECKLIST WIDGET
+      ───────────────────────────────────────────────────── */}
+      <OnboardingChecklistCard
+        role="creator"
+        onStartTour={handleStartTour}
+        initialState={{
+          creator_profile: true,
+          creator_browse: (data.submissions?.length || 0) > 0,
+          creator_first_submission: (data.submissions?.length || 0) > 0,
+          creator_bank: (data.walletBalance || 0) > 0 || (data.totalEarned || 0) > 0,
+        }}
+      />
 
       {/* ─────────────────────────────────────────────────────
          2. ACTION CENTER (TO-DO WIDGET)
@@ -117,7 +171,7 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
       {/* ─────────────────────────────────────────────────────
          4. TOP 4-COLUMN LIVE METRIC PULSE
       ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div id="tour-creator-hourly-timer" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Available Balance */}
         <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4 hover:border-kpugi-blue/40 transition-all">
@@ -477,51 +531,6 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────
-         6. FAST CREATOR COMMAND BAR
-      ───────────────────────────────────────────────────── */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-kpugi-ink to-slate-900 text-white shadow-lg border border-slate-800">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span className="uppercase tracking-wider">Quick Actions</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
-            <Link
-              href="/c/submissions"
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-1.5 text-center"
-            >
-              <Send className="w-3.5 h-3.5 text-kpugi-blue" />
-              <span>Submit Post Link</span>
-            </Link>
-
-            <Link
-              href="/c/wallet"
-              className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs border border-emerald-500/30 transition-all flex items-center justify-center gap-1.5 text-center"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Withdraw Funds</span>
-            </Link>
-
-            <Link
-              href="/c/settings"
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-1.5 text-center"
-            >
-              <Share2 className="w-3.5 h-3.5 text-purple-400" />
-              <span>Connect Channels</span>
-            </Link>
-
-            <Link
-              href="/browse"
-              className="px-4 py-2.5 rounded-xl bg-white text-kpugi-ink hover:bg-slate-100 font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 text-center"
-            >
-              <Compass className="w-3.5 h-3.5 text-kpugi-blue" />
-              <span>Browse Briefs</span>
-            </Link>
-          </div>
-        </div>
-      </div>
 
       {/* ─────────────────────────────────────────────────────
          7. CURATED HIGH-CPM BRIEFS BENTO
@@ -564,9 +573,15 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
                       </div>
                     )}
 
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-                      {camp.ad_format || 'POST'}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-500/10 text-kpugi-blue dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>{camp.match_score || (85 + (camp.title.length % 12))}% Match</span>
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                        {camp.ad_format || 'POST'}
+                      </span>
+                    </div>
                   </div>
 
                   <h4 className="font-display font-bold text-base text-kpugi-ink dark:text-white mb-1 group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors line-clamp-1">

@@ -74,6 +74,19 @@ const SLIDES: CreatorSlide[] = [
     textDark: '#ecfdf5',
     shape: 'triangle',
   },
+  {
+    id: 4,
+    num: '05',
+    label: 'AI Vector Matching',
+    title: 'Smart AI\nCompatibility Sync',
+    description: 'Our vector engine analyzes your creative style and matches you directly with high-paying brand campaigns tailored to your audience demographic.',
+    accent: '#3B82F6', // Blue
+    bgLight: '#0f172a',
+    bgDark: '#080d1a',
+    textLight: '#ffffff',
+    textDark: '#ffffff',
+    shape: 'circle',
+  },
 ];
 
 // Larger, taller dimensions for immersive viewing

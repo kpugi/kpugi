@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import './globals.css';
+import '@/styles/kpugi-tour.css';
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
 

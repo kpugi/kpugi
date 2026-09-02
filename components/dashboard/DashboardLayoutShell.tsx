@@ -23,6 +23,7 @@ import {
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import KpugiBotChat from '../support/KpugiBotChat';
+import { useKpugiTour } from '@/lib/tour/useKpugiTour';
 
 interface DashboardLayoutShellProps {
   children: React.ReactNode;
@@ -39,39 +40,46 @@ export default function DashboardLayoutShell({
   const [open, setOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const { startTour } = useKpugiTour({ role });
 
   const creatorNavItems: SidebarLinkItem[] = [
     {
+      id: 'tour-creator-overview-nav',
       label: 'Overview',
       href: '/c/dashboard',
       icon: <IconLayoutDashboard className="w-5 h-5 shrink-0" />,
       active: pathname === '/c/dashboard',
     },
     {
+      id: 'tour-creator-campaigns-nav',
       label: 'Campaigns',
       href: '/c/campaigns',
       icon: <IconSpeakerphone className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/c/campaigns'),
     },
     {
+      id: 'tour-creator-wallet-nav',
       label: 'Wallet & Earnings',
       href: '/c/wallet',
       icon: <IconWallet className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/c/wallet'),
     },
     {
+      id: 'tour-creator-submissions-nav',
       label: 'Audits & Submissions',
       href: '/c/submissions',
       icon: <IconFileCheck className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/c/submissions'),
     },
     {
+      id: 'tour-creator-accounts-nav',
       label: 'Connected Accounts',
       href: '/c/accounts',
       icon: <IconLink className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/c/accounts'),
     },
     {
+      id: 'tour-creator-settings-nav',
       label: 'Settings',
       href: '/c/settings',
       icon: <IconSettings className="w-5 h-5 shrink-0" />,
@@ -81,18 +89,21 @@ export default function DashboardLayoutShell({
 
   const advertiserNavItems: SidebarLinkItem[] = [
     {
+      id: 'tour-brand-overview-nav',
       label: 'Overview',
       href: '/b/dashboard',
       icon: <IconLayoutDashboard className="w-5 h-5 shrink-0" />,
       active: pathname === '/b/dashboard',
     },
     {
+      id: 'tour-brand-campaigns-nav',
       label: 'Campaigns',
       href: '/b/campaigns',
       icon: <IconSpeakerphone className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/b/campaigns'),
     },
     {
+      id: 'tour-brand-creators-nav',
       label: 'Creators Directory',
       href: '/b/creators',
       icon: <IconUsers className="w-5 h-5 shrink-0" />,
@@ -101,18 +112,21 @@ export default function DashboardLayoutShell({
       badge: 'Soon',
     },
     {
+      id: 'tour-brand-analytics-nav',
       label: 'ROI Analytics',
       href: '/b/analytics',
       icon: <IconChartBar className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/b/analytics'),
     },
     {
+      id: 'tour-brand-wallet-nav',
       label: 'Wallet & Escrow',
       href: '/b/wallet',
       icon: <IconWallet className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/b/wallet'),
     },
     {
+      id: 'tour-brand-settings-nav',
       label: 'Settings',
       href: '/b/settings',
       icon: <IconSettings className="w-5 h-5 shrink-0" />,
@@ -224,6 +238,8 @@ export default function DashboardLayoutShell({
             title={title}
             role={role}
             onMobileMenuToggle={() => setIsMobileOpen(!isMobileOpen)}
+            onStartTour={startTour}
+            onOpenChat={() => setIsChatOpen(true)}
           />
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
           <DashboardFooter />

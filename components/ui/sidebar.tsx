@@ -6,6 +6,7 @@ import { IconMenu2, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 
 export interface SidebarLinkItem {
+  id?: string;
   label: string;
   href: string;
   icon: React.JSX.Element | React.ReactNode;
@@ -175,6 +176,7 @@ export const SidebarLink = ({
   if (link.disabled) {
     return (
       <div
+        id={link.id}
         className={cn(
           "flex items-center justify-start gap-3.5 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate dark:text-slate-500",
           className
@@ -202,6 +204,7 @@ export const SidebarLink = ({
 
   return (
     <Link
+      id={link.id}
       href={link.href}
       onClick={() => {
         if (link.onClick) link.onClick();

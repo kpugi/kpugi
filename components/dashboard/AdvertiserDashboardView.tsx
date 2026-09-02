@@ -27,6 +27,9 @@ import {
 import { AdvertiserDashboardData } from '@/lib/supabase/advertiser';
 import { formatCompactNumber, formatCompactCurrency } from '@/lib/utils/format';
 import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo';
+import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeModal';
+import OnboardingChecklistCard from '@/components/onboarding/OnboardingChecklistCard';
+import { useKpugiTour } from '@/lib/tour/useKpugiTour';
 
 interface AdvertiserDashboardProps {
   companyName: string;
@@ -38,6 +41,30 @@ const ITEMS_PER_PAGE = 3;
 export default function AdvertiserDashboardView({ companyName, data }: AdvertiserDashboardProps) {
   const [filterTab, setFilterTab] = useState<'active' | 'all'>('active');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const { startTour, hasCompletedTour, isLoading: isTourLoading } = useKpugiTour({ role: 'advertiser' });
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  React.useEffect(() => {
+    if (!isTourLoading && !hasCompletedTour) {
+      const dismissed = sessionStorage.getItem('kpugi_welcome_dismissed_advertiser');
+      if (!dismissed) {
+        setShowWelcomeModal(true);
+      }
+    }
+  }, [isTourLoading, hasCompletedTour]);
+
+  const handleStartTour = () => {
+    setShowWelcomeModal(false);
+    sessionStorage.setItem('kpugi_welcome_dismissed_advertiser', 'true');
+    setTimeout(() => {
+      startTour();
+    }, 250);
+  };
+
+  const handleDismissWelcome = () => {
+    setShowWelcomeModal(false);
+    sessionStorage.setItem('kpugi_welcome_dismissed_advertiser', 'true');
+  };
 
   const draftCampaigns = (data.campaigns || []).filter(
     (c) => c.status === 'draft' || c.status === 'funding_pending'
@@ -90,10 +117,22 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
   return (
     <div className="max-w-6xl mx-auto space-y-8 font-sans text-kpugi-ink dark:text-white transition-colors duration-200">
       
+      {/* Welcome Celebration Modal (First-time visit) */}
+      <OnboardingWelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={handleDismissWelcome}
+        onStartTour={handleStartTour}
+        role="advertiser"
+        displayName={companyName}
+      />
+
       {/* ─────────────────────────────────────────────
           1. EXECUTIVE COMMAND HERO
       ───────────────────────────────────────────── */}
-      <div className="relative rounded-3xl bg-slate-900 text-white p-6 sm:p-10 overflow-hidden shadow-xl border border-slate-800">
+      <div
+        id="tour-brand-overview-greeting"
+        className="relative rounded-3xl bg-slate-900 text-white p-6 sm:p-10 overflow-hidden shadow-xl border border-slate-800"
+      >
         {/* Ambient background glows */}
         <div className="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-kpugi-blue/20 blur-3xl pointer-events-none" />
         <div className="absolute right-1/3 -bottom-20 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
@@ -105,13 +144,14 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
             </h1>
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-lg">
-              Track real-time creator throughput, verify audience view velocity, and manage performance escrow across active briefs.
+              Connect with top verified Nigerian creators, launch high-impact campaigns, and monitor live audience reach in real time.
             </p>
           </div>
 
           {/* Action CTAs */}
           <div className="flex flex-row items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0 sm:self-end">
             <Link
+              id="tour-brand-create-btn"
               href="/campaigns/new"
               title="Create Campaign"
               className="group relative inline-flex items-center justify-center h-10 sm:h-11 px-3 sm:px-3.5 rounded-2xl bg-kpugi-blue hover:bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-kpugi-blue/30 hover:shadow-lg transition-all duration-300 ease-in-out flex-1 sm:flex-initial"
@@ -135,6 +175,21 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
           </div>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────
+          ONBOARDING LAUNCH QUEST / CHECKLIST WIDGET
+      ───────────────────────────────────────────── */}
+      <OnboardingChecklistCard
+        role="advertiser"
+        onStartTour={handleStartTour}
+        initialState={{
+          advertiser_profile: true,
+          advertiser_settings: true,
+          advertiser_wallet: (data.walletBalance || 0) > 0 || (data.totalSpent || 0) > 0,
+          advertiser_create_campaign: (data.campaigns?.length || 0) > 0,
+          advertiser_review_posts: (data.pendingSubmissions || 0) > 0 || (data.campaigns?.length || 0) > 0,
+        }}
+      />
 
       {/* ─────────────────────────────────────────────
           2. ACTION CENTER (TO-DO WIDGET)

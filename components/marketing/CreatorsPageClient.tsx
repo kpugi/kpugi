@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Hero9, type Hero9Avatar } from '@/components/watermelon-ui/hero-9';
 import { SlideDeck } from '@/components/watermelon-ui/slide-deck';
+import { AiMatchingShowcase } from '@/components/marketing/AiMatchingShowcase';
 import { Integrations5 } from '@/components/watermelon-ui/integrations-5';
 import { Features1 } from '@/components/watermelon-ui/features-1';
 import { StickerWall } from '@/components/watermelon-ui/sticker-wall';
@@ -362,6 +363,11 @@ export function CreatorsPageClient({
           title="Engineered for Creators. Zero Friction."
           description="Swipe through how Kpugi transforms short-form video views into predictable weekly earnings."
         />
+      </div>
+
+      {/* ─── AI-POWERED SYNC / VECTOR MATCHING ENGINE ───────────────────────── */}
+      <div id="ai-matching">
+        <AiMatchingShowcase />
       </div>
 
       {/* ─── NETWORKS & ECOSYSTEM MOSAIC (INTEGRATIONS5) ───────────────────── */}

@@ -1,0 +1,223 @@
+/* =========================================================
+   KPUGI PRODUCT TOUR & SPOTLIGHT STYLING (Driver.js Theme)
+   Clean, Minimal, Modern SaaS Design — Zero Gradient Slop
+   ========================================================= */
+
+@import "driver.js/dist/driver.css";
+
+/* Backdrop Overlay */
+.driver-overlay {
+  background-color: rgba(9, 10, 15, 0.72) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.25s ease !important;
+}
+
+/* Active Highlighted Element Cutout (Crisp Blue Accent Ring) */
+.driver-active-element {
+  outline: 2px solid #2F49E8 !important;
+  outline-offset: 3px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 4px rgba(47, 73, 232, 0.18) !important;
+  transition: outline 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Main Popover Container (Light Mode Default) */
+.driver-popover.kpugi-tour-popover {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 16px !important;
+  padding: 18px 20px !important;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.12),
+              0 0 0 1px rgba(15, 23, 42, 0.04) !important;
+  max-width: 350px !important;
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  animation: kpugiPopoverEntrance 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 10000000 !important;
+}
+
+/* Dark Mode Overrides */
+html.dark .driver-popover.kpugi-tour-popover {
+  background: #11141D !important;
+  color: #F8FAFC !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6),
+              0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Popover Arrow */
+.driver-popover.kpugi-tour-popover .driver-popover-arrow {
+  border-color: #FFFFFF !important;
+}
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-arrow {
+  border-color: #11141D !important;
+}
+
+/* Popover Title (Clean, Sharp, Unsquished) */
+.driver-popover.kpugi-tour-popover .driver-popover-title {
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+  color: #0F172A !important;
+  margin-bottom: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  line-height: 1.35 !important;
+  padding-right: 20px !important;
+}
+
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-title {
+  color: #FFFFFF !important;
+}
+
+/* Popover Description */
+.driver-popover.kpugi-tour-popover .driver-popover-description {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: #475569 !important;
+  margin-bottom: 16px !important;
+  font-weight: 400 !important;
+}
+
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-description {
+  color: #94A3B8 !important;
+}
+
+/* Close Button (X) */
+.driver-popover.kpugi-tour-popover .driver-popover-close-btn {
+  color: #94A3B8 !important;
+  top: 14px !important;
+  right: 14px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+}
+
+.driver-popover.kpugi-tour-popover .driver-popover-close-btn:hover {
+  color: #0F172A !important;
+  background: #F1F5F9 !important;
+}
+
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-close-btn {
+  color: #64748B !important;
+}
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-close-btn:hover {
+  color: #F8FAFC !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Footer Section */
+.driver-popover.kpugi-tour-popover .driver-popover-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-top: 12px !important;
+  border-top: 1px solid #F1F5F9 !important;
+  margin-top: 0 !important;
+}
+
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Step Progress Indicator (Clean Neutral Pill) */
+.driver-popover.kpugi-tour-popover .driver-popover-progress-text {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  background: #F1F5F9 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid #E2E8F0 !important;
+  letter-spacing: 0.02em !important;
+}
+
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-progress-text {
+  color: #94A3B8 !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Navigation Buttons Container */
+.driver-popover.kpugi-tour-popover .driver-popover-navigation-btns {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Prev Button (Clean Secondary) */
+.driver-popover.kpugi-tour-popover .driver-popover-prev-btn {
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+}
+
+.driver-popover.kpugi-tour-popover .driver-popover-prev-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-prev-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #94A3B8 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .driver-popover.kpugi-tour-popover .driver-popover-prev-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+}
+
+/* Next / Finish Button (Solid Kpugi Blue — Zero Gradient) */
+.driver-popover.kpugi-tour-popover .driver-popover-next-btn {
+  background: #2F49E8 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #2F49E8 !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  box-shadow: 0 1px 2px rgba(47, 73, 232, 0.2) !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+}
+
+.driver-popover.kpugi-tour-popover .driver-popover-next-btn:hover {
+  background: #2339C7 !important;
+  border-color: #2339C7 !important;
+}
+
+.driver-popover.kpugi-tour-popover .driver-popover-next-btn:active {
+  background: #1C2FA7 !important;
+}
+
+/* Keyframes */
+@keyframes kpugiPopoverEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
