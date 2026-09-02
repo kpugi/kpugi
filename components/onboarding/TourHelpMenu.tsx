@@ -11,7 +11,9 @@ import {
   ExternalLink,
   ChevronRight,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
+import { openCrispChat } from '@/lib/support/crisp';
 
 interface TourHelpMenuProps {
   role: 'creator' | 'advertiser';
@@ -32,6 +34,15 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleOpenSupport = () => {
+    setIsOpen(false);
+    if (onOpenChat) {
+      onOpenChat();
+    } else {
+      openCrispChat();
+    }
+  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -79,29 +90,24 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
               <ChevronRight className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-kpugi-blue" />
             </button>
 
-            {/* AI Assistant */}
-            {onOpenChat && (
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  onOpenChat();
-                }}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 group transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <div>
-                    <p className="text-xs font-bold text-kpugi-ink dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                      Ask Kpugi AI Bot
-                    </p>
-                    <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
-                      Instant answers about payouts & rules
-                    </p>
-                  </div>
+            {/* Crisp Live Support & AI Assistant */}
+            <button
+              onClick={handleOpenSupport}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 group transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div>
+                  <p className="text-xs font-bold text-kpugi-ink dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                    Live Support & AI Assistant
+                  </p>
+                  <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
+                    Get instant help or chat with our team
+                  </p>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-emerald-600" />
-              </button>
-            )}
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-emerald-600" />
+            </button>
 
             {/* Documentation / Guidelines */}
             <Link
