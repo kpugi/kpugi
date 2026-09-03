@@ -120,10 +120,10 @@ export function CampaignReviewsDisplay({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-display font-bold text-base text-kpugi-ink dark:text-white">
-                  Your Verified Review
+                  Your Review
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                  {rating}.0 ★ Verified
+                  {rating}.0 ★
                 </span>
               </div>
               <span className="text-xs text-kpugi-slate dark:text-slate-400">

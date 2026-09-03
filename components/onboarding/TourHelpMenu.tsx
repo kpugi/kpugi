@@ -12,16 +12,18 @@ import {
   ChevronRight,
   Sparkles,
   MessageSquare,
+  Users,
+  BookOpen,
+  LifeBuoy,
 } from 'lucide-react';
-import { openCrispChat } from '@/lib/support/crisp';
+import { openFreshdeskWidget, FRESHDESK_LINKS } from '@/lib/support/freshdesk';
 
 interface TourHelpMenuProps {
   role: 'creator' | 'advertiser';
   onStartTour: () => void;
-  onOpenChat?: () => void;
 }
 
-export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelpMenuProps) {
+export default function TourHelpMenu({ role, onStartTour }: TourHelpMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -35,15 +37,6 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleOpenSupport = () => {
-    setIsOpen(false);
-    if (onOpenChat) {
-      onOpenChat();
-    } else {
-      openCrispChat();
-    }
-  };
-
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -56,10 +49,9 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#0D1017] border border-kpugi-border dark:border-white/10 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3 py-2 border-b border-kpugi-border dark:border-white/10 mb-1">
+        <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-[#11141D] border border-kpugi-border dark:border-white/10 shadow-2xl p-3 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
+          <div className="px-3 py-2 border-b border-kpugi-border dark:border-white/10 mb-2">
             <p className="text-xs font-bold text-kpugi-ink dark:text-white flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-kpugi-blue" />
               <span>Help & Resources</span>
             </p>
             <p className="text-[11px] text-kpugi-slate dark:text-slate-400">
@@ -80,7 +72,7 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
                 <PlayCircle className="w-4 h-4 text-kpugi-blue dark:text-[#7B96FF]" />
                 <div>
                   <p className="text-xs font-bold text-kpugi-ink dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-[#7B96FF]">
-                    Replay Product Tour
+                    Replay Tour
                   </p>
                   <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
                     Interactive 60-second walkthrough
@@ -90,28 +82,77 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
               <ChevronRight className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-kpugi-blue" />
             </button>
 
-            {/* Crisp Live Support & AI Assistant */}
+            {/* Freshdesk AI & Live Support */}
             <button
-              onClick={handleOpenSupport}
+              onClick={() => {
+                setIsOpen(false);
+                openFreshdeskWidget();
+              }}
               className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 group transition-colors"
             >
               <div className="flex items-center gap-2.5">
-                <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <LifeBuoy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <div>
                   <p className="text-xs font-bold text-kpugi-ink dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                    Live Support & AI Assistant
+                    Live Chat
                   </p>
                   <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
-                    Get instant help or chat with our team
+                    Chat with KpugiBot or human staff
                   </p>
                 </div>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-emerald-600" />
             </button>
 
-            {/* Documentation / Guidelines */}
-            <Link
+            {/* Knowledge Base */}
+            <a
+              href={FRESHDESK_LINKS.knowledgeBase}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-white/5 group transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <BookOpen className="w-4 h-4 text-kpugi-blue dark:text-[#7B96FF]" />
+                <div>
+                  <p className="text-xs font-bold text-kpugi-ink dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-[#7B96FF]">
+                    Knowledge Base
+                  </p>
+                  <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
+                    Explore tutorials, Guides & FAQs
+                  </p>
+                </div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-kpugi-blue" />
+            </a>
+
+            {/* Community Forums */}
+            <a
+              href={FRESHDESK_LINKS.communityForums}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-white/5 group transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <div>
+                  <p className="text-xs font-bold text-kpugi-ink dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                    Community
+                  </p>
+                  <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
+                    Connect with other Kpugi Creators
+                  </p>
+                </div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate group-hover:text-purple-600" />
+            </a>
+
+            {/* Platform Rules */}
+            <a
               href="/rules"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setIsOpen(false)}
               className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-white/5 group transition-colors"
             >
@@ -119,15 +160,15 @@ export default function TourHelpMenu({ role, onStartTour, onOpenChat }: TourHelp
                 <FileText className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <div>
                   <p className="text-xs font-bold text-kpugi-ink dark:text-white">
-                    Platform Guidelines & FAQs
+                    Platform Rules & Guidelines
                   </p>
                   <p className="text-[10px] text-kpugi-slate dark:text-slate-400">
-                    Payment policies and guidelines
+                    Payment policies and verification rules
                   </p>
                 </div>
               </div>
               <ExternalLink className="w-3.5 h-3.5 text-kpugi-slate" />
-            </Link>
+            </a>
           </div>
         </div>
       )}

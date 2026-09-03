@@ -71,6 +71,8 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
         </div>
         <Link
           href="/browse"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-kpugi-blue-dark transition-colors shadow-sm"
         >
           <Search className="w-4 h-4" />
@@ -148,6 +150,8 @@ export default function CreatorCampaignsView({ campaigns }: CreatorCampaignsView
           </p>
           <Link
             href="/browse"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-kpugi-ink dark:bg-white text-white dark:text-slate-900 font-sans text-xs font-bold hover:bg-black dark:hover:bg-slate-100 transition-colors"
           >
             <span>Explore Campaigns</span>

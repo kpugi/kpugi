@@ -416,6 +416,9 @@ export default function OnboardingChecklistCard({
                   <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                     <Link
                       href={task.actionUrl}
+                      {...((!task.actionUrl.startsWith('/c/') && !task.actionUrl.startsWith('/b/'))
+                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                        : {})}
                       onClick={() => {
                         if (!done) toggleTask(task.id);
                       }}

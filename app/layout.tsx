@@ -4,7 +4,7 @@ import KnockProviderWrapper from '@/components/providers/KnockProviderWrapper';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
-import { CrispSupportProvider } from '@/components/support/CrispSupportProvider';
+import { FreshdeskSupportProvider } from '@/components/support/FreshdeskSupportProvider';
 import './globals.css';
 import '@/styles/kpugi-tour.css';
 import Script from 'next/script';
@@ -124,9 +124,9 @@ export default function RootLayout({
             >
               <NetworkStatusBanner />
               <KnockProviderWrapper>
-                <CrispSupportProvider>
+                <FreshdeskSupportProvider>
                   {children}
-                </CrispSupportProvider>
+                </FreshdeskSupportProvider>
               </KnockProviderWrapper>
             </ThemeProvider>
           </AnalyticsProvider>

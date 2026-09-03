@@ -879,6 +879,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             </button>
             <a
               href="/browse"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full sm:w-auto lg:w-full px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-sans text-sm font-bold backdrop-blur-md transition-all text-center border border-white/10"
             >
               Browse Active Campaigns

@@ -22,7 +22,7 @@ import {
 } from '@tabler/icons-react';
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
-import KpugiBotChat from '../support/KpugiBotChat';
+import { openFreshdeskWidget } from '@/lib/support/freshdesk';
 import { useKpugiTour } from '@/lib/tour/useKpugiTour';
 
 interface DashboardLayoutShellProps {
@@ -39,7 +39,6 @@ export default function DashboardLayoutShell({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const { startTour } = useKpugiTour({ role });
 
   const creatorNavItems: SidebarLinkItem[] = [
@@ -179,24 +178,24 @@ export default function DashboardLayoutShell({
               </div>
             </div>
 
-            {/* Bottom Section: KpugiBot AI Support Card / Trigger */}
+            {/* Bottom Section: Support & AI Chat Trigger */}
             <div className="pt-3 border-t border-kpugi-border/70 dark:border-white/10 shrink-0">
               {open ? (
                 <button
                   type="button"
-                  onClick={() => setIsChatOpen(true)}
+                  onClick={() => openFreshdeskWidget()}
                   className="w-full text-left p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-900/20 transition-all border border-slate-700/60 group relative overflow-hidden"
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-sans font-bold text-xs text-white flex items-center gap-2">
                       <Image
                         src="/kpugi_bot_avatar.png"
-                        alt="KpugiBot"
+                        alt="Support AI"
                         width={22}
                         height={22}
                         className="w-5.5 h-5.5 rounded-md object-contain shrink-0"
                       />
-                      <span>KpugiBot</span>
+                      <span>Kpugi Support & AI</span>
                     </span>
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   </div>
@@ -213,13 +212,13 @@ export default function DashboardLayoutShell({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setIsChatOpen(true)}
+                  onClick={() => openFreshdeskWidget()}
                   className="w-11 h-11 mx-auto rounded-xl bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-white shadow-sm shadow-kpugi-blue/20 transition-all group overflow-hidden border border-slate-700/60 p-1"
-                  title="Open KpugiBot AI Support"
+                  title="Open Support & AI Chat"
                 >
                   <Image
                     src="/kpugi_bot_avatar.png"
-                    alt="KpugiBot"
+                    alt="Support AI"
                     width={28}
                     height={28}
                     className="w-7 h-7 rounded-lg object-contain group-hover:scale-110 transition-transform shrink-0"
@@ -239,7 +238,6 @@ export default function DashboardLayoutShell({
             role={role}
             onMobileMenuToggle={() => setIsMobileOpen(!isMobileOpen)}
             onStartTour={startTour}
-            onOpenChat={() => setIsChatOpen(true)}
           />
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
           <DashboardFooter />
@@ -345,25 +343,25 @@ export default function DashboardLayoutShell({
                 </div>
               </div>
 
-              {/* Mobile KpugiBot Trigger */}
+              {/* Mobile Support & AI Trigger */}
               <div className="pt-4 mt-4 border-t border-kpugi-border dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => {
                     setIsMobileOpen(false);
-                    setIsChatOpen(true);
+                    openFreshdeskWidget();
                   }}
                   className="w-full p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between text-xs font-bold shadow-sm"
                 >
                   <div className="flex items-center gap-2">
                     <Image
                       src="/kpugi_bot_avatar.png"
-                      alt="KpugiBot"
+                      alt="Support AI"
                       width={20}
                       height={20}
                       className="w-5 h-5 rounded-md object-contain shrink-0"
                     />
-                    <span>KpugiBot AI Support</span>
+                    <span>Kpugi Support & AI</span>
                   </div>
                   <span className="text-[11px] text-kpugi-blue font-semibold">Chat →</span>
                 </button>
@@ -371,13 +369,6 @@ export default function DashboardLayoutShell({
             </div>
           </div>
         )}
-
-        {/* KpugiBot AI Support Chat Drawer */}
-        <KpugiBotChat
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          role={role}
-        />
       </div>
     </SidebarProvider>
   );

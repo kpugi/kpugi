@@ -18,7 +18,6 @@ interface DashboardHeaderProps {
   role: 'creator' | 'advertiser';
   onMobileMenuToggle?: () => void;
   onStartTour?: () => void;
-  onOpenChat?: () => void;
 }
 
 function getHeaderTitle(pathname: string, passedTitle?: string, role: string = 'creator'): string {
@@ -171,7 +170,6 @@ export default function DashboardHeader({
   role,
   onMobileMenuToggle,
   onStartTour,
-  onOpenChat,
 }: DashboardHeaderProps) {
   const pathname = usePathname() || '';
   const displayTitle = getHeaderTitle(pathname, title, role);
@@ -223,7 +221,6 @@ export default function DashboardHeader({
           <TourHelpMenu
             role={role}
             onStartTour={onStartTour || (() => {})}
-            onOpenChat={onOpenChat}
           />
 
           <div className="h-5 w-px bg-kpugi-border dark:bg-white/10 hidden sm:block" />
