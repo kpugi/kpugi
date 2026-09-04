@@ -1,37 +1,138 @@
 import React from 'react';
+import { Metadata } from 'next';
+import { createAdminClient } from '@/lib/supabase/server';
+import AboutPageClient from '@/components/marketing/AboutPageClient';
 
-export const metadata = {
-  title: 'About Us | Kpugi Performance Ad Network',
-  description: 'Learn about Kpugi — Nigeria’s automated performance ad network connecting advertisers with verified creators.',
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: 'About Us — Nigeria’s Verified Creator Performance Network | Kpugi',
+  description:
+    'Discover Kpugi — the automated creator performance ad network and escrow protocol connecting Nigerian brands with verified creators on guaranteed CPM.',
+  keywords: [
+    'About Kpugi',
+    'performance ad network Nigeria',
+    'creator marketplace Nigeria',
+    'influencer marketing escrow Nigeria',
+    'verified view advertising',
+    'CPM creator payouts Nigeria',
+    'creator economy Africa',
+    'pay per view Nigeria',
+  ],
+  alternates: {
+    canonical: '/about',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_NG',
+    url: `${siteUrl}/about`,
+    siteName: 'Kpugi',
+    title: 'About Us — Nigeria’s Verified Creator Performance Network | Kpugi',
+    description:
+      'Where verified reach meets guaranteed payouts. Learn how Kpugi connects Nigerian brands and creators with automated Paystack escrow, audited view verification, and guaranteed Friday payouts.',
+    images: [
+      {
+        url: '/kpugi_logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'About Kpugi — Verified Creator Performance Network',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@kpugi_hq',
+    creator: '@kpugi_hq',
+    title: 'About Us — Nigeria’s Verified Creator Performance Network | Kpugi',
+    description:
+      'Where verified reach meets guaranteed payouts. The automated creator performance ad network and escrow protocol for Nigeria.',
+    images: ['/kpugi_logo.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
-export default function AboutPage() {
-  return (
-    <div className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full text-slate-900 dark:text-white">
-      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-6">
-        <span>About Kpugi</span>
-      </div>
-      <h1 className="text-4xl sm:text-6xl font-extrabold font-display leading-tight mb-6">
-        Connecting Brands & Creators with Automated Precision.
-      </h1>
-      <p className="text-slate-600 dark:text-slate-400 text-lg sm:text-xl leading-relaxed max-w-3xl mb-12">
-        Kpugi is Nigeria’s premiere automated creator ad network. We eliminate manual gatekeeping, transparently track verified views, and deliver instant payouts to creators.
-      </p>
+export const revalidate = 60; // Revalidate every 60 seconds
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-slate-200 dark:border-white/10">
-        <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
-          <h3 className="text-3xl font-mono font-bold text-blue-600 dark:text-blue-400 mb-2">₦48.5M+</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Paid to Creators</p>
-        </div>
-        <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
-          <h3 className="text-3xl font-mono font-bold text-emerald-600 dark:text-emerald-400 mb-2">12.4K+</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Verified Creators</p>
-        </div>
-        <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
-          <h3 className="text-3xl font-mono font-bold text-purple-600 dark:text-purple-400 mb-2">100%</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Escrow Protected</p>
-        </div>
-      </div>
-    </div>
+async function getAboutPageData() {
+  try {
+    const supabase = createAdminClient();
+
+    // Query genuine counts and metrics
+    const [creatorsRes, campaignsRes, submissionsRes] = await Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'creator'),
+      supabase.from('campaigns').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('submissions').select('final_view_count, payout_amount'),
+    ]);
+
+    const totalViews = (submissionsRes.data || []).reduce(
+      (acc, s) => acc + (Number(s.final_view_count) || 0),
+      0
+    );
+
+    const totalEarnings = (submissionsRes.data || []).reduce(
+      (acc, s) => acc + (Number(s.payout_amount) || 0),
+      0
+    );
+
+    return {
+      activeCreators: creatorsRes.count || 0,
+      activeCampaigns: campaignsRes.count || 0,
+      totalViews,
+      totalEarnings,
+    };
+  } catch (err) {
+    console.error('Error fetching about page telemetry:', err);
+    return {
+      activeCreators: 0,
+      activeCampaigns: 0,
+      totalViews: 0,
+      totalEarnings: 0,
+    };
+  }
+}
+
+export default async function AboutPage() {
+  const realStats = await getAboutPageData();
+
+  // JSON-LD structured data for search engines
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: 'About Kpugi',
+    url: `${siteUrl}/about`,
+    description:
+      'Kpugi is Nigeria’s premiere automated creator performance ad network connecting advertisers with verified creators with automated escrow and guaranteed Friday payouts.',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Kpugi Inc.',
+      url: siteUrl,
+      logo: `${siteUrl}/kpugi_logo.png`,
+      foundingLocation: {
+        '@type': 'Place',
+        name: 'Bonny Island, Rivers State, Nigeria',
+      },
+      sameAs: [
+        'https://x.com/kpugi_hq',
+        'https://instagram.com/kpugi_hq',
+        'https://facebook.com/kpugi_hq',
+        'https://linkedin.com/company/kpugi_hq',
+        'https://youtube.com/@kpugi_hq',
+        'https://blog.kpugi.com',
+      ],
+    },
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <AboutPageClient realStats={realStats} />
+    </>
   );
 }

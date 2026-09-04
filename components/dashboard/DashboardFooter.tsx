@@ -18,7 +18,7 @@ export default function DashboardFooter() {
 
         {/* Copyright */}
         <div>
-          © {new Date().getFullYear()} Kpugi Technologies. Nigeria-first performance ad platform.
+          © {new Date().getFullYear()} Kpugi Technologies.
         </div>
 
         {/* Links */}
@@ -47,11 +47,11 @@ export default function DashboardFooter() {
             rel="noopener noreferrer"
             className="hover:text-kpugi-blue dark:hover:text-white transition-colors"
           >
-            Platform Rules
+            Rules
           </a>
           <span>·</span>
           <a
-            href={FRESHDESK_LINKS.submitTicket}
+            href={FRESHDESK_LINKS.myTickets}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-kpugi-blue dark:hover:text-white transition-colors"
