@@ -39,7 +39,11 @@ export default function DashboardLayoutShell({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { startTour } = useKpugiTour({ role });
+  const { startTour, isTourActive } = useKpugiTour({
+    role,
+    onOpenMobileMenu: () => setIsMobileOpen(true),
+    onCloseMobileMenu: () => setIsMobileOpen(false),
+  });
 
   const creatorNavItems: SidebarLinkItem[] = [
     {
@@ -246,72 +250,56 @@ export default function DashboardLayoutShell({
         {/* ─────────────────────────────────────────────────────
            MOBILE SIDEBAR SLIDE-OVER
         ───────────────────────────────────────────────────── */}
-        {isMobileOpen && (
+        <div
+          id="tour-mobile-drawer-backdrop"
+          className={`fixed inset-0 bg-kpugi-ink/40 backdrop-blur-sm md:hidden transition-opacity duration-300 ${
+            isTourActive ? 'z-[100001]' : 'z-50'
+          } ${
+            isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setIsMobileOpen(false)}
+        >
           <div
-            className="fixed inset-0 z-50 bg-kpugi-ink/40 backdrop-blur-sm md:hidden"
-            onClick={() => setIsMobileOpen(false)}
+            id="tour-mobile-drawer-panel"
+            className={`w-[280px] h-full bg-white dark:bg-[#0D111D] p-5 flex flex-col justify-between shadow-2xl border-r border-kpugi-border dark:border-white/10 overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+              isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="w-[280px] h-full bg-white dark:bg-[#0D111D] p-5 flex flex-col justify-between shadow-2xl border-r border-kpugi-border dark:border-white/10 overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-5">
-                {/* Mobile Header */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-kpugi-border dark:border-white/10">
-                  <Link href="/" className="flex items-center">
-                    <Image
-                      src="/kpugi_logo.png"
-                      alt="Kpugi"
-                      width={90}
-                      height={28}
-                      className="h-7 w-auto object-contain"
-                    />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileOpen(false)}
-                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
+            <div className="space-y-5">
+              {/* Mobile Header */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-kpugi-border dark:border-white/10">
+                <Link href="/" className="flex items-center">
+                  <Image
+                    src="/kpugi_logo.png"
+                    alt="Kpugi"
+                    width={90}
+                    height={28}
+                    className="h-7 w-auto object-contain"
+                  />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
 
-                {/* Mobile Nav Links (Explicit with full text labels) */}
-                <div className="flex flex-col gap-1">
-                  {navItems.map((item, idx) => {
-                    if (item.disabled) {
-                      return (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate dark:text-slate-500"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="shrink-0">{item.icon}</span>
-                            <span className="truncate">{item.label}</span>
-                          </div>
-                          {item.badge && (
-                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
-                              {item.badge}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    }
+              {/* Mobile Nav Links (Explicit with full text labels & mobile IDs) */}
+              <div className="flex flex-col gap-1">
+                {navItems.map((item, idx) => {
+                  const mobileId = item.id ? `mobile-${item.id}` : undefined;
+                  if (item.disabled) {
                     return (
-                      <Link
+                      <div
                         key={idx}
-                        href={item.href}
-                        onClick={() => setIsMobileOpen(false)}
-                        className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold transition-colors ${
-                          item.active
-                            ? 'bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25 font-bold'
-                            : 'text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5'
-                        }`}
+                        id={mobileId}
+                        className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold select-none opacity-40 cursor-not-allowed text-kpugi-slate dark:text-slate-500"
                       >
                         <div className="flex items-center gap-3">
-                          <span className={`shrink-0 ${item.active ? 'text-white' : 'text-kpugi-slate dark:text-slate-400'}`}>
-                            {item.icon}
-                          </span>
+                          <span className="shrink-0">{item.icon}</span>
                           <span className="truncate">{item.label}</span>
                         </div>
                         {item.badge && (
@@ -319,10 +307,36 @@ export default function DashboardLayoutShell({
                             {item.badge}
                           </span>
                         )}
-                      </Link>
+                      </div>
                     );
-                  })}
-                </div>
+                  }
+                  return (
+                    <Link
+                      key={idx}
+                      id={mobileId}
+                      href={item.href}
+                      onClick={() => setIsMobileOpen(false)}
+                      className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-semibold transition-colors ${
+                        item.active
+                          ? 'bg-kpugi-blue text-white shadow-sm shadow-kpugi-blue/25 font-bold'
+                          : 'text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`shrink-0 ${item.active ? 'text-white' : 'text-kpugi-slate dark:text-slate-400'}`}>
+                          {item.icon}
+                        </span>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
 
                 {/* Mobile Promo Banner Card (Mobile Only) */}
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white relative overflow-hidden shadow-xs">
@@ -365,10 +379,9 @@ export default function DashboardLayoutShell({
                   </div>
                   <span className="text-[11px] text-kpugi-blue font-semibold">Chat →</span>
                 </button>
-              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </SidebarProvider>
   );

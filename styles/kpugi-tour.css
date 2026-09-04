@@ -221,3 +221,56 @@ html.dark .driver-popover.kpugi-tour-popover .driver-popover-prev-btn:hover {
     transform: scale(1) translateY(0);
   }
 }
+
+/* =========================================================
+   MOBILE RESPONSIVENESS (< 768px)
+   Fluid full-width cards, no clipped text, touch-friendly buttons
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .driver-popover.kpugi-tour-popover {
+    max-width: calc(100vw - 28px) !important;
+    width: calc(100vw - 28px) !important;
+    left: 14px !important;
+    right: 14px !important;
+    margin: 0 auto !important;
+    padding: 16px 18px !important;
+    border-radius: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide popover arrow on mobile to prevent edge misalignment */
+  .driver-popover.kpugi-tour-popover .driver-popover-arrow {
+    display: none !important;
+  }
+
+  .driver-popover.kpugi-tour-popover .driver-popover-title {
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.3 !important;
+    padding-right: 22px !important;
+  }
+
+  .driver-popover.kpugi-tour-popover .driver-popover-description {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    margin-bottom: 14px !important;
+  }
+
+  .driver-popover.kpugi-tour-popover .driver-popover-footer {
+    padding-top: 10px !important;
+    gap: 8px !important;
+  }
+
+  .driver-popover.kpugi-tour-popover .driver-popover-progress-text {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+  }
+
+  .driver-popover.kpugi-tour-popover .driver-popover-prev-btn,
+  .driver-popover.kpugi-tour-popover .driver-popover-next-btn {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+  }
+}
+

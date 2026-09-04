@@ -308,7 +308,7 @@ export default function OnboardingChecklistCard({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-display font-bold text-base sm:text-lg text-kpugi-ink dark:text-white">
-                {isCreator ? 'Creator Setup Quest' : 'Brand Launch Quest'}
+                {isCreator ? 'Setup Quest' : 'Launch Quest'}
               </h3>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-white/10 text-kpugi-blue dark:text-blue-400">
                 {completedCount}/{tasks.length} Completed

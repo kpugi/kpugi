@@ -150,7 +150,7 @@ export default function TourHelpMenu({ role, onStartTour }: TourHelpMenuProps) {
 
             {/* Platform Rules */}
             <a
-              href="/rules"
+              href={FRESHDESK_LINKS.rules}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsOpen(false)}

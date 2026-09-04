@@ -182,8 +182,10 @@ export default function DashboardHeader({
         {/* Left: Mobile menu + Dynamic Header Title */}
         <div className="flex items-center gap-2.5 min-w-0">
           <button
+            id="tour-mobile-menu-btn"
             onClick={onMobileMenuToggle}
             className="lg:hidden p-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink dark:text-slate-300 dark:hover:text-white hover:bg-kpugi-paper dark:hover:bg-white/5 transition-colors shrink-0"
+            aria-label="Open mobile navigation"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />

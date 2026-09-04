@@ -1,41 +1,106 @@
 KPUGI PLATFORM MASTER KNOWLEDGE BASE & OPERATIONS MANUAL
+Document Version: 2.4 (September 2026)
+Governing Portal: https://support.kpugi.com
 
-1. PLATFORM OVERVIEW
-Kpugi is Nigeria's performance-based creator ad placement marketplace. We connect brands and advertisers with short-form content creators across TikTok, Instagram, YouTube, X (Twitter), Facebook, and LinkedIn. 
+1. PLATFORM OVERVIEW & VALUE PROPOSITION
+Kpugi is Nigeria's premier performance-based creator ad placement marketplace. We connect brands and advertisers directly with short-form content creators across TikTok, Instagram Reels, YouTube Shorts, X (Twitter), Facebook, and LinkedIn. 
+Operating on an automated Cost-Per-Mille (CPM) model, Kpugi eliminates traditional influencer marketing guesswork. Advertisers only pay for verified, authentic human views, and creators are compensated directly for the real attention they generate.
 
-2. CREATOR EARNINGS & WEEKLY FRIDAY PAYOUTS
-- Payout Schedule: Settlements are processed automatically every Friday afternoon.
-- Payout Method: Direct bank transfer to any licensed Nigerian bank account (OPay, Kuda Bank, GTBank, Zenith Bank, Access Bank, First Bank, UBA, PalmPay, Moniepoint, etc.) via our payment gateway partner, Paystack.
-- Creator Fees: Zero (₦0) withdrawal fees. Creators receive 90% of gross campaign earnings; Kpugi retains a 10% platform facilitation fee.
-- Bank Account Setup: Creators add their 10-digit NUBAN account number and select their bank under "Wallet & Earnings" (/c/wallet). The account holder name is verified automatically via NIBSS/Paystack.
-- Paystack Clarification: Paystack is our payment gateway/processor, not a bank. Creators do not need a Paystack account; funds go directly to their regular Nigerian bank account.
+2. CREATOR EARNINGS, FEE STRUCTURE & WEEKLY FRIDAY PAYOUTS
+- Payout Schedule: Settlements are automatically processed every Friday afternoon between 12:00 PM and 6:00 PM West Africa Time (WAT).
+- Payout Method: Direct electronic bank transfer via Paystack and NIBSS Instant Payment (NIP) to any licensed Nigerian commercial bank or licensed fintech (OPay, Kuda Bank, PalmPay, Moniepoint, GTBank, Zenith, Access, First Bank, UBA, etc.).
+- Platform Fee & Creator Split: Creators receive 90% of gross campaign earnings. Kpugi retains a 10% platform facilitation fee to cover payment gateway charges, automated view scraping infrastructure, and platform security.
+- Zero (₦0) Withdrawal Fees: Creators incur ₦0 withdrawal fees. The 10% platform fee already covers all NIP transfer fees and Paystack processing surcharges.
+- Bank Account Setup: Creators add their 10-digit NUBAN account number and select their bank under "Wallet & Earnings" (/c/wallet). The account holder name is validated in real time via NIBSS.
+- Paystack Clarification: Paystack is Kpugi's payment gateway partner, not a bank. Creators do not need a Paystack account; payouts go directly into their regular Nigerian bank account.
 
-3. THE 1,000-VIEW MINIMUM THRESHOLD (HARD CLIFF)
-- Follower Requirement: Zero (0) followers minimum. Any creator who can generate views can participate and earn.
-- Milestone Requirement: A submitted post MUST hit at least 1,000 verified organic views before the campaign closes to unlock payout.
-- Payout Formula: Gross Payout = (Verified Views / 1,000) * Campaign CPM Rate. Net Take-Home = Gross Payout * 0.90.
-- Example: If a campaign pays ₦5,000 CPM, 10,000 views = ₦50,000 gross = ₦45,000 take-home pay.
-- What if under 1,000 views: If a post finishes with under 1,000 views, the payout is ₦0. The reserved budget returns to the advertiser's active pool.
+3. THE 1,000-VIEW MINIMUM THRESHOLD (THE HARD CLIFF RULE)
+- Follower Requirement: Zero (0) followers minimum. Kpugi has democratised creator monetisation. Any creator who can produce engaging content and generate views can participate and earn.
+- The 1,000-View Qualification Cliff: A submitted post MUST reach at least 1,000 verified organic views before the campaign closes to qualify for earnings.
+- Under 1,000 Views: If a post finishes with 999 views or fewer, earnings are strictly ₦0.00. No prorated compensation is paid for sub-1,000 performance. Unearned budget returns automatically to the advertiser's campaign pool.
+- Payout Formula:
+  Gross Payout = (Verified Views / 1,000) * Campaign CPM Rate
+  Kpugi Fee = Gross Payout * 10%
+  Net Take-Home = Gross Payout * 90%
+- Example 1: 5,000 verified views at ₦5,000 CPM = ₦25,000 gross = ₦22,500 net take-home pay.
+- Example 2: 50,000 verified views at ₦6,000 CPM = ₦300,000 gross = ₦270,000 net take-home pay.
+- Example 3: 850 views at ₦5,000 CPM = ₦0.00 (below 1,000-view minimum threshold).
+- Individual View Caps: If an individual drop specifies a creator view cap (e.g. 20,000 views), views beyond 20,000 are not compensated.
 
-4. AUTOMATED VIEW AUDITING & QUALITY CONTROL
-- Hourly Automated Audits: Once a creator submits a live post URL, our automated scraping and audit engine checks the post every 60 minutes.
-- Supported Content Formats: TikTok videos, Instagram Reels & feed videos, YouTube Shorts, X (Twitter) posts and video posts, Facebook posts and reels.
-- Public Requirement: Submitted posts must remain public and live. Archiving, privating, or deleting a post voids all pending earnings.
-- Anti-Fraud & Authenticity Policy: Fake views, bot farms, loop auto-refreshers, or SMM click panels result in instant disqualification and permanent account termination.
+4. AUTOMATED VIEW AUDITING ENGINE & THE 72-HOUR RULE
+- Hourly Automated Audits: Once a creator pastes their live post URL into Kpugi, our automated engine scans the post every 60 minutes until campaign close.
+- What the Audit Scraper Checks: Live post status, view count velocity, like/comment engagement ratios, caption tags, and audio availability.
+- Supported Content Formats: TikTok videos, Instagram Reels & feed videos, YouTube Shorts, X (Twitter) video posts, Facebook Reels & posts.
+- The 72-Hour Public Retention Mandate: Submitted posts must remain public, active, and live for at least seventy-two (72) consecutive hours or the remaining duration of the campaign, whichever is longer.
+- Archiving, Privating, or Deleting: Removing, privating, or archiving a video within this period results in immediate forfeiture of all pending earnings and a Level 2 compliance strike.
+- Post Alterations: Removing brand tags or hashtags after submission freezes the submission for compliance inspection.
 
-5. BRAND CAMPAIGNS & 100% ESCROW PROTECTION
-- Upfront Deposit: Advertisers fund 100% of their campaign budget upfront in Naira via Paystack into protected platform escrow before the campaign goes live.
-- Pay-Per-View Guarantee: Advertisers only pay for verified, authentic views delivered by creators.
-- Automatic Unspent Refunds: If a campaign closes without exhausting its full view goal, any unspent or unreserved budget is automatically refunded to the brand's wallet balance.
-- Open Briefs: No manual creator approval bottleneck. Campaigns are open to all creators who meet the brief requirements.
+5. ZERO-TOLERANCE ANTI-FRAUD & BOT POLICY
+- Prohibited Practices: Bot farms, automated scripts (Puppeteer, Selenium), loop auto-refreshers, paid SMM vendor panels, click farms, WhatsApp engagement pods, view-for-view rings, and incentivised traffic (airtime/cash giveaways for views).
+- Detection Heuristics: Velocity spikes (instant thousands of views without trajectory), non-Nigerian geographic traffic anomalies on local drops, zero-engagement ghost views (10,000 views with 0 comments/likes), and device fingerprint clustering.
+- Disciplinary Penalties:
+  * Level 1: Immediate drop disqualification and ₦0 payout.
+  * Level 2: Complete forfeiture of unwithdrawn wallet balances.
+  * Level 3: Permanent account ban, blacklisting of phone, NIN, and bank account across partner networks, and potential reporting under the Cybercrimes Act 2015.
 
-6. CONNECTED ACCOUNTS & IDENTITY VERIFICATION (KYC)
-- Social Account Verification (Code-in-Bio): We do NOT use OAuth or ask for social media logins. Creators connect accounts using our fast Bio Code verification:
-  1. Enter your social handle on "Connected Accounts" (/c/accounts) for TikTok, Instagram, X (Twitter), or Facebook.
-  2. Kpugi generates a unique temporary verification code (e.g. kpugi-a1b2c3d4e5).
-  3. Go to your social profile → Edit Profile → paste the code anywhere into your bio → Save.
-  4. Return to Kpugi and click "Verify Account". Our scraper checks your bio publicly and marks your account verified instantly. Once verified, you can remove the code from your bio.
-- Identity KYC: Handled securely via Didit KYC. Acceptable IDs include National Identification Number (NIN), Nigerian International Passport, Driver's License, or INEC Voter's Card. KYC ensures the creator's legal name matches their bank account.
+6. MANDATORY TAGS, AD DISCLOSURES & AUDIO LICENSING
+- Brand Tagging: Every submitted post must tag the sponsor account specified in the brief in the caption (e.g. @BrandNigeria).
+- Campaign Hashtags: Must include all mandatory hashtags specified in the brief (e.g. #KpugiDrop).
+- ARCON & Consumer Ad Disclosures: In compliance with the Advertising Regulatory Council of Nigeria (ARCON) Code of Advertising Practice, every sponsored post must prominently feature #ad, #sponsored, or #paidpartnership in the first three lines of the caption, and enable the platform's native Branded Content toggle.
+- Commercial Audio Only: Creators must use music from commercial/royalty-free libraries. If a post is muted or removed for copyright infringement, all earnings are voided (₦0.00).
 
-7. SUPPORT & HUMAN ESCALATION
-- If a user has a specific account problem (missing Friday transfer, disputed audit view count, or KYC name change), KpugiBot collects their full name, email, and issue details and creates a support ticket for human staff triage.
+7. BRAND CAMPAIGNS, 100% ESCROW PROTECTION & CPM PRICING
+- 100% Upfront Escrow Deposit: Advertisers fund 100% of their campaign budget into protected automated escrow via Paystack (card, bank transfer) or pre-funded Brand Wallet before the campaign goes live.
+- Zero Speculative Spend: Brands only pay for verified, authentic organic views that cross the 1,000-view minimum.
+- Pricing Floors: Minimum CPM is ₦2,000 per 1,000 verified views (₦2.00/view). Recommended tiers: ₦2,000, ₦2,500, ₦3,500, ₦5,000, ₦7,500, ₦10,000+.
+- Hard Budget Caps: Campaigns auto-pause the instant total verified views meet the campaign budget. Advertisers are never charged for runaway views.
+- Unspent Escrow Guarantee: Unspent escrow is 100% the property of the advertiser. Incomplete or expired budgets instantly unlock and credit back to the Brand Wallet.
+- Bank Refund Processing: Advertisers may request cash withdrawal of unspent Brand Wallet balances back to their registered corporate bank account via Paystack in 3–5 business days.
+
+8. BRAND CAMPAIGN BRIEFS & THE "FREEZE RULE"
+- The Brief as a Binding Contract: The brief outlines the campaign objective, 2–4 mandatory talking points, specific Do's & Don'ts, required hashtags, and cloud asset links (Google Drive/Dropbox).
+- The Freeze Rule (No Retroactive Changes): Once a creator claims a slot and submits a post URL, the brand cannot alter requirements or add new mandatory tags for that submission. Changes only apply to future slot claims.
+- AI Brief Polish: Brands can utilize Kpugi's NVIDIA NIM AI assistant to craft high-converting briefings and structured Do's & Don'ts.
+
+9. PROHIBITED & REGULATED ADVERTISING CATEGORIES
+- Strictly Prohibited (Immediate Ban & Escrow Forfeiture):
+  * Ponzi schemes, MLM pyramid programs, crypto pump-and-dump coins, unregistered Forex bots, HYIP scams.
+  * Predatory digital loan apps violating FCCPC regulations (contact list shaming, illegal interest rates).
+  * Unlicensed sports betting, casino, or lottery platforms lacking NLRC permits.
+  * Counterfeit goods, cracked software, pirated media, academic essay mills.
+  * Unregistered herbal mixtures, dangerous aphrodisiacs/enhancers, narcotics, tobacco, and vaping.
+  * Pornography, escort services, adult webcam platforms.
+- Regulated / Conditional (Compliance Proof Required Prior to Launch):
+  * FinTech, microfinance banks, payment services: CBN/SEC/NDIC license verification required.
+  * Packaged food, cosmetics, wellness supplements: NAFDAC registration number required.
+  * Alcoholic beverages: Strictly 18+ age gating, responsible drinking disclaimer, ARCON vetting required.
+  * Political & advocacy campaigns: Formal ARCON vetting certificate required.
+
+10. BRAND INTELLECTUAL PROPERTY & CONTENT LICENSING
+- Advertiser Asset Indemnity: Advertisers warrant full commercial ownership or license for all logos, music, trademarks, and scripts provided in briefs.
+- Creator Content Rights: Creators retain copyright in their likeness and performance.
+- Organic Distribution License: Standard CPM covers public organic hosting on the creator's channel for a minimum of 72 hours (and perpetually thereafter, subject to creator profile management).
+- Paid Media Whitelisting (Spark Ads / Meta Partnership Ads): Standard CPM covers organic reach only. Amplifying creator posts as dark/boosted ads requires express creator authorization and whitelisting codes.
+
+11. BRAND DISPUTE RESOLUTION & 48-HOUR ARBITRATION
+- Valid Brand Dispute Grounds: Missing mandatory ad disclosure (#Ad, #Sponsored), missing brand handle tag (@Brand), promoting competitors, violating explicit Do's and Don'ts, audio removal, or deleting video before 72 hours.
+- Invalid Brand Dispute Grounds: Subjective creative dissatisfaction (facial expression, editing style) where explicit brief instructions were satisfied; or demanding unstated conditions.
+- 48-Hour Arbitration: Brands submit disputes via dashboard/support with screenshot evidence within 48h. Upheld disputes disqualify the creator and refund escrow to the Brand Wallet.
+
+12. CONNECTED ACCOUNTS & IDENTITY VERIFICATION (KYC/KYB)
+- Creator Social Verification (Code-in-Bio): Temporary verification token placed into profile bio. Scraped and verified with zero password sharing.
+- Creator eKYC: Handled via Didit KYC (NIN, Passport, Driver's License, Voter's Card). Legal name must strictly match NUBAN bank account.
+- Advertiser KYB: Registered company name, corporate email, TIN/CAC registration number, and designated campaign manager contact info.
+
+13. VIOLATION STRIKE SYSTEM
+- Creators: Strike 1 (Warning), Strike 2 (Disqualification & 14-day suspension), Strike 3 (Permanent termination & blacklisting).
+- Advertisers: Tier 1 (Brief revision notice), Tier 2 (Dispute privileges suspended for 14 days), Tier 3 (Immediate campaign suspension & review), Tier 4 (Permanent account ban, escrow forfeiture, and regulatory referral to FCCPC/EFCC).
+
+14. OFFICIAL SUPPORT DIRECTORY
+- Official Support & Knowledge Base: https://support.kpugi.com/support/solutions
+- Creator Compliance Master Document: https://support.kpugi.com/support/solutions/articles/68000035676-kpugi-creator-compliance-quality-standards-operating-rules
+- Brand Operating Rules & Escrow Standards: https://support.kpugi.com/support/solutions/articles/brand-advertiser-rules-compliance
+- Submit a Support Ticket: https://support.kpugi.com/support/tickets/new
+- Support Portal Home: https://support.kpugi.com/support/home
+- Live AI Assistant: KpugiBot (available 24/7 on dashboard)
+

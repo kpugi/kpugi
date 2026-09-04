@@ -32,19 +32,8 @@ declare global {
   }
 }
 
-export const FRESHDESK_PORTAL_URL =
-  process.env.NEXT_PUBLIC_FRESHDESK_PORTAL_URL || 'https://support.kpugi.com';
-
-/**
- * Direct links to Freshdesk hosted portals on custom domain
- */
-export const FRESHDESK_LINKS = {
-  home: `${FRESHDESK_PORTAL_URL}/support/home`,
-  knowledgeBase: `${FRESHDESK_PORTAL_URL}/support/solutions`,
-  communityForums: `${FRESHDESK_PORTAL_URL}/support/discussions`,
-  submitTicket: `${FRESHDESK_PORTAL_URL}/support/tickets/new`,
-  myTickets: `${FRESHDESK_PORTAL_URL}/support/tickets`,
-};
+import { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS } from './freshdesk-constants';
+export { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS };
 
 /**
  * Opens the Freshdesk / Freshchat AI widget programmatically.

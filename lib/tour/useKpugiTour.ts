@@ -3,14 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { driver, Driver } from 'driver.js';
 import confetti from 'canvas-confetti';
-import { CREATOR_TOUR_STEPS, ADVERTISER_TOUR_STEPS } from './tour-config';
+import { getTourSteps, isDrawerStep } from './tour-config';
 
 interface UseKpugiTourOptions {
   role: 'creator' | 'advertiser';
   autoStart?: boolean;
+  onOpenMobileMenu?: () => void;
+  onCloseMobileMenu?: () => void;
 }
 
-export function useKpugiTour({ role, autoStart = false }: UseKpugiTourOptions) {
+export function useKpugiTour({
+  role,
+  autoStart = false,
+  onOpenMobileMenu,
+  onCloseMobileMenu,
+}: UseKpugiTourOptions) {
   const driverRef = useRef<Driver | null>(null);
   const [isTourActive, setIsTourActive] = useState(false);
   const [hasCompletedTour, setHasCompletedTour] = useState(true);
@@ -92,7 +99,8 @@ export function useKpugiTour({ role, autoStart = false }: UseKpugiTourOptions) {
       driverRef.current = null;
     }
     setIsTourActive(false);
-  }, []);
+    onCloseMobileMenu?.();
+  }, [onCloseMobileMenu]);
 
   // Start Tour Handler
   const startTour = useCallback(() => {
@@ -102,12 +110,23 @@ export function useKpugiTour({ role, autoStart = false }: UseKpugiTourOptions) {
       driverRef.current = null;
     }
 
-    const steps = role === 'creator' ? CREATOR_TOUR_STEPS : ADVERTISER_TOUR_STEPS;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const steps = getTourSteps(role, isMobile);
 
     // Filter steps to only those elements that currently exist in the DOM
     const validSteps = steps.filter((step) => {
       if (typeof step.element === 'string') {
-        return !!document.querySelector(step.element);
+        const el = document.querySelector(step.element);
+        if (!el) return false;
+        // On desktop, filter out elements that are hidden with display: none
+        if (!isMobile) {
+          const rect = el.getBoundingClientRect();
+          const style = window.getComputedStyle(el);
+          if (style.display === 'none' || (rect.width === 0 && rect.height === 0)) {
+            return false;
+          }
+        }
+        return true;
       }
       return true;
     });
@@ -122,24 +141,48 @@ export function useKpugiTour({ role, autoStart = false }: UseKpugiTourOptions) {
       animate: true,
       allowClose: true,
       overlayColor: 'rgba(9, 10, 15, 0.82)',
-      stagePadding: 10,
-      stageRadius: 16,
+      stagePadding: isMobile ? 6 : 10,
+      stageRadius: 14,
       steps: validSteps,
       nextBtnText: 'Next →',
       prevBtnText: '← Back',
       doneBtnText: 'Finish Tour 🎉',
+      onHighlightStarted: (element, step, { driver: d }) => {
+        if (isMobile) {
+          const inDrawer = isDrawerStep(step?.element);
+          if (inDrawer) {
+            onOpenMobileMenu?.();
+            // Allow CSS transition to slide the drawer out, then reposition spotlight
+            setTimeout(() => {
+              try {
+                d.refresh();
+              } catch {}
+            }, 320);
+          } else {
+            onCloseMobileMenu?.();
+            setTimeout(() => {
+              try {
+                d.refresh();
+              } catch {}
+            }, 320);
+          }
+        }
+      },
       onCloseClick: () => {
         setIsTourActive(false);
+        if (isMobile) onCloseMobileMenu?.();
         driverObj.destroy();
       },
       onDestroyStarted: () => {
         setIsTourActive(false);
+        if (isMobile) onCloseMobileMenu?.();
         if (!driverObj.hasNextStep()) {
           markTourCompleted();
         }
       },
       onDestroyed: () => {
         setIsTourActive(false);
+        if (isMobile) onCloseMobileMenu?.();
         driverRef.current = null;
       },
     });
@@ -147,7 +190,7 @@ export function useKpugiTour({ role, autoStart = false }: UseKpugiTourOptions) {
     driverRef.current = driverObj;
     setIsTourActive(true);
     driverObj.drive();
-  }, [role, markTourCompleted]);
+  }, [role, markTourCompleted, onOpenMobileMenu, onCloseMobileMenu]);
 
   // Handle auto-start if applicable and not previously completed
   useEffect(() => {

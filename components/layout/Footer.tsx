@@ -14,10 +14,12 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
+import { FRESHDESK_LINKS } from '@/lib/support/freshdesk';
 
 export interface FooterLink {
   label: string;
   href: string;
+  isExternal?: boolean;
 }
 
 export interface FooterLinkGroup {
@@ -126,7 +128,8 @@ export function Footer2({
       links: [
         { label: 'Terms of Service', href: '/terms' },
         { label: 'Privacy Policy', href: '/privacy' },
-        { label: 'Platform Rules', href: '/rules' },
+        { label: 'Creator Rules', href: FRESHDESK_LINKS.rules, isExternal: true },
+        { label: 'Brand & Advertiser Rules', href: FRESHDESK_LINKS.brandRules, isExternal: true },
         { label: 'Cookie Policy', href: '/cookies' },
         { label: 'Escrow Policy', href: '/escrow-policy' },
       ],
@@ -231,16 +234,33 @@ export function Footer2({
               <div key={idx} className="space-y-4">
                 <h3 className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm tracking-tight uppercase tracking-wider">{group.title}</h3>
                 <ul className="space-y-3">
-                  {group.links.map((link, lIdx) => (
-                    <li key={lIdx}>
-                      <Link
-                        href={link.href}
-                        className="text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-xs sm:text-sm font-bold transition-colors block"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
+                  {group.links.map((link, lIdx) => {
+                    const isExternal = link.isExternal || link.href.startsWith('http');
+                    if (isExternal) {
+                      return (
+                        <li key={lIdx}>
+                          <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-xs sm:text-sm font-bold transition-colors block"
+                          >
+                            {link.label}
+                          </a>
+                        </li>
+                      );
+                    }
+                    return (
+                      <li key={lIdx}>
+                        <Link
+                          href={link.href}
+                          className="text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-xs sm:text-sm font-bold transition-colors block"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}

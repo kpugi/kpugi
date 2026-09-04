@@ -42,7 +42,7 @@ export default function DashboardFooter() {
           </a>
           <span>·</span>
           <a
-            href="/rules"
+            href={FRESHDESK_LINKS.rules}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-kpugi-blue dark:hover:text-white transition-colors"
