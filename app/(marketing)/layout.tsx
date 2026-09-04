@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import BackToTop from '@/components/common/BackToTop';
 import SplashCursor from '@/components/ui/SplashCursor';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <div className="flex-1">{children}</div>
       <Footer />
       <BackToTop />
+      <Toaster />
     </div>
   );
 }
