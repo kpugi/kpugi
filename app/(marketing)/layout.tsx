@@ -2,7 +2,7 @@ import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import BackToTop from '@/components/common/BackToTop';
-import SplashCursor from '@/components/ui/SplashCursor';
+// import SplashCursor from '@/components/ui/SplashCursor';
 import { Toaster } from '@/components/ui/toaster';
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +14,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       >
         Skip to main content
       </a>
-      <SplashCursor />
+      {/* <SplashCursor /> */}
       <Navbar />
       <main id="main-content" className="flex-1 w-full">
         {children}

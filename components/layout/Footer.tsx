@@ -102,7 +102,7 @@ export function Footer2({
       links: [
         { label: 'For Brands', href: '/brands' },
         { label: 'For Creators', href: '/creators' },
-        { label: 'Browse Campaigns', href: '/browse' },
+        { label: 'Browse', href: '/browse' },
         { label: 'How It Works', href: '/how-it-works' },
       ],
     },
@@ -111,7 +111,6 @@ export function Footer2({
       links: [
         { label: 'CPM Calculator', href: '/calculator' },
         { label: 'ROI Estimator', href: '/roiestimator' },
-        { label: 'Ad Specifications', href: '/advertise#ad-specs' },
         { label: 'Help & Support', href: 'https://support.kpugi.com' },
       ],
     },
@@ -130,7 +129,7 @@ export function Footer2({
         { label: 'Terms of Service', href: '/terms' },
         { label: 'Privacy Policy', href: '/privacy' },
         { label: 'Creator Rules', href: FRESHDESK_LINKS.rules, isExternal: true },
-        { label: 'Brand & Advertiser Rules', href: FRESHDESK_LINKS.brandRules, isExternal: true },
+        { label: 'Brand Rules', href: FRESHDESK_LINKS.brandRules, isExternal: true },
         { label: 'Cookie Policy', href: '/cookies' },
         { label: 'Escrow Policy', href: '/escrow-policy' },
       ],

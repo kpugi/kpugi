@@ -36,9 +36,7 @@ export default function CalculatorPageClient() {
       {/* ─── FEATURE SECTION 1: 3 WAYS TO MONETIZE ────────────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-7xl mx-auto border-t border-slate-200/80 dark:border-white/5">
         <div className="text-center mb-16">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#17A75B] mb-2 font-bold">
-            ZERO EDITING HEADACHE • FLEXIBLE DROPS
-          </p>
+      
           <h3 className="text-3xl md:text-4xl lg:text-5xl font-normal text-slate-900 dark:text-white tracking-tight">
             Three Ways to Earn on Kpugi
           </h3>
@@ -109,7 +107,7 @@ export default function CalculatorPageClient() {
             </div>
             <div className="mt-8 pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-neutral-400">Baseline Rate</span>
-              <span className="text-lg font-bold text-[#17A75B]">₦3,500 / 1k views</span>
+              <span className="text-lg font-bold text-[#17A75B]">₦2,000 / 1k views</span>
             </div>
           </div>
 
@@ -140,7 +138,7 @@ export default function CalculatorPageClient() {
             </div>
             <div className="mt-8 pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-neutral-400">Baseline Rate</span>
-              <span className="text-lg font-bold text-[#17A75B]">₦5,000+ / 1k views</span>
+              <span className="text-lg font-bold text-[#17A75B]">₦2,000 / 1k views</span>
             </div>
           </div>
         </div>
@@ -151,9 +149,6 @@ export default function CalculatorPageClient() {
         <div className="rounded-3xl p-8 md:p-14 bg-white dark:bg-gradient-to-br dark:from-[#0B1026] dark:via-[#0D111F] dark:to-[#05060A] border border-slate-200/80 dark:border-white/10 shadow-xl shadow-slate-200/30 dark:shadow-2xl relative overflow-hidden transition-colors">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#2F49E8]/10 blur-[120px] rounded-full pointer-events-none" />
           <div className="text-center mb-12 relative z-10">
-            <span className="text-xs font-mono font-bold text-[#2F49E8] uppercase tracking-widest">
-              HOW IT WORKS FOR CREATORS
-            </span>
             <h3 className="text-3xl md:text-4xl font-normal text-slate-900 dark:text-white tracking-tight mt-2">
               From Claiming a Drop to Cash in Your Bank
             </h3>
@@ -228,9 +223,6 @@ export default function CalculatorPageClient() {
       {/* ─── FEATURE SECTION 4: TRANSPARENCY COMPARISON ────────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#2F49E8] mb-2 font-bold">
-            TRANSPARENCY BENCHMARK
-          </p>
           <h3 className="text-3xl font-normal text-slate-900 dark:text-white tracking-tight">
             How Kpugi Compares to Traditional Talent Agencies
           </h3>
@@ -354,9 +346,7 @@ export default function CalculatorPageClient() {
       {/* ─── FEATURE SECTION 6: HIGH CONVERTING CTA BANNER ─────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-5xl mx-auto">
         <div className="rounded-3xl p-8 md:p-14 bg-gradient-to-r from-[#2F49E8]/10 via-[#3B59FF]/10 to-[#17A75B]/10 dark:from-[#2F49E8]/30 dark:via-[#3B59FF]/20 dark:to-[#17A75B]/20 border border-[#2F49E8]/30 text-center space-y-6 shadow-xl relative overflow-hidden transition-colors">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F49E8]/10 dark:bg-white/10 text-[#2F49E8] dark:text-white text-xs font-semibold uppercase tracking-wider">
-            <span>START MONETIZING TODAY</span>
-          </div>
+     
           <h3 className="text-3xl md:text-5xl font-normal text-slate-900 dark:text-white tracking-tight">
             Ready to monetize every view you create?
           </h3>

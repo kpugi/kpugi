@@ -115,19 +115,19 @@ export default function BrandRoiCalculator({
                 {[
                   {
                     id: 'ready_creative',
-                    label: 'Brand Flyer & Graphic Drops (Upload & Syndicate)',
+                    label: 'Brand Flyer & Graphic',
                     cpm: 2000,
                     desc: 'Upload your ready banners, promo flyers, or announcement graphics. Creators grab & post to socials with 0 editing.',
                   },
                   {
                     id: 'video_creative',
-                    label: 'Official Brand Video Drops (Upload & Syndicate)',
+                    label: 'Official Brand Videos',
                     cpm: 3500,
                     desc: 'Upload ready commercial videos, motion reels, or product launch clips. Creators syndicate directly with 0 filming.',
                   },
                   {
                     id: 'omnichannel',
-                    label: '360° Omnichannel Campaign Syndicate',
+                    label: '360° Omnichannel',
                     cpm: 5000,
                     desc: 'Combined blitz across Instagram Reels/Stories, TikTok, and X feeds.',
                   },
@@ -184,7 +184,7 @@ export default function BrandRoiCalculator({
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 dark:text-neutral-400">
-                    Delivers 1,000 verified views per {formatPrice(baseCpm)} • 100% escrow backed
+                    Delivers 1,000 verified views per {formatPrice(baseCpm)}.
                   </span>
                 </div>
                 <div className="text-right">
@@ -215,18 +215,17 @@ export default function BrandRoiCalculator({
               <div className="mt-5 p-4 rounded-xl bg-slate-100 dark:bg-[#080B18] border border-slate-200 dark:border-white/10 space-y-2.5 transition-colors">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-[#17A75B]" />
-                    <span className="text-xs text-slate-700 dark:text-neutral-300 font-medium">Guaranteed Views Delivered:</span>
+                    <span className="text-xs text-slate-700 dark:text-neutral-300 font-medium">Guaranteed Views:</span>
                   </div>
                   <span className="text-base font-bold text-slate-900 dark:text-white">
-                    {guaranteedViews.toLocaleString()} views
+                    {guaranteedViews.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-white/5 text-xs text-slate-500 dark:text-neutral-400 flex-wrap gap-1">
                   <span>
-                    Applied Rate: <strong className="text-[#2F49E8] dark:text-[#6882FF] font-semibold">{formatPrice(baseCpm)} CPM</strong> ({formatPrice(budgetNgn)} ÷ {formatPrice(baseCpm)})
+                    Rate: ({formatPrice(budgetNgn)} ÷ {formatPrice(baseCpm)})
                   </span>
-                  <span>~{estimatedCreators} verified creators</span>
+                  <span>~{estimatedCreators} creators</span>
                 </div>
               </div>
             </div>
@@ -236,7 +235,7 @@ export default function BrandRoiCalculator({
           <div className="p-8 lg:p-12 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#050811] flex flex-col justify-between transition-colors">
             <div>
               <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">Estimated Campaign Reach Comparison</h3>
+                <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">Estimated Reach Comparison</h3>
                 <p className="text-sm text-slate-500 dark:text-neutral-400 leading-relaxed">
                   Compare the verified views and guaranteed reach delivered on Kpugi versus legacy agencies and manual outreach for your budget.
                 </p>
@@ -270,12 +269,10 @@ export default function BrandRoiCalculator({
                 <div className="rounded-2xl p-6 bg-[#2F49E8] text-white space-y-3 shadow-2xl shadow-[#2F49E8]/30 transition-transform duration-200 hover:scale-[1.01]">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-base font-semibold text-white/95">Guaranteed Views with Kpugi</span>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 text-white backdrop-blur-sm">
-                      100% Escrow Backed
-                    </span>
+
                   </div>
                   <div className="text-5xl lg:text-6xl font-extrabold tracking-tight">
-                    {guaranteedViews.toLocaleString()} <span className="text-2xl font-bold text-white/85">views</span>
+                    {guaranteedViews.toLocaleString()}
                   </div>
                   <div className="text-sm font-medium text-white/90">
                     Delivered across ~{estimatedCreators} verified creators at {formatPrice(baseCpm)} CPM for your {formatPrice(budgetNgn)} budget

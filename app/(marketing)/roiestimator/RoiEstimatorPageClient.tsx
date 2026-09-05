@@ -44,9 +44,7 @@ export default function RoiEstimatorPageClient() {
       {/* ─── FEATURE SECTION 1: HOW SYNDICATION WORKS ──────────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-7xl mx-auto border-t border-slate-200/80 dark:border-white/5">
         <div className="text-center mb-16">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#2F49E8] mb-2 font-bold">
-            THE KPUGI DROP ENGINE
-          </p>
+
           <h3 className="text-3xl md:text-4xl lg:text-5xl font-normal text-slate-900 dark:text-white tracking-tight">
             How Brand Creative Drops Work
           </h3>
@@ -104,9 +102,7 @@ export default function RoiEstimatorPageClient() {
       <section className="py-20 px-4 md:px-16 border-t border-b border-slate-200/80 dark:border-white/5 bg-slate-100/50 dark:bg-neutral-950/40 transition-colors">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <p className="font-mono text-xs uppercase tracking-widest text-[#17A75B] mb-2 font-bold">
-              ZERO-RISK ADVERTISING
-            </p>
+          
             <h3 className="text-3xl md:text-4xl font-normal text-slate-900 dark:text-white tracking-tight">
               Enterprise Safeguards Built for High-Growth Brands
             </h3>
@@ -159,9 +155,7 @@ export default function RoiEstimatorPageClient() {
       {/* ─── FEATURE SECTION 3: COST EFFICIENCY BENCHMARK ──────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#2F49E8] mb-2 font-bold">
-            BUDGET EFFICIENCY AUDIT
-          </p>
+        
           <h3 className="text-3xl font-normal text-slate-900 dark:text-white tracking-tight">
             Compare Kpugi Against Traditional Marketing Channels
           </h3>
@@ -185,7 +179,7 @@ export default function RoiEstimatorPageClient() {
                 <td className="p-4 md:p-6 text-slate-600 dark:text-neutral-400">₦4M - ₦8M+ retainers</td>
                 <td className="p-4 md:p-6 text-red-500 font-medium">Zero view guarantees</td>
                 <td className="p-4 md:p-6 text-[#17A75B] font-bold bg-[#2F49E8]/5 dark:bg-[#2F49E8]/5 border-l border-slate-200/80 dark:border-[#2F49E8]/20">
-                  Fixed ₦2,000 CPM • Guaranteed views
+                  Fixed CPM + Guaranteed views
                 </td>
               </tr>
               <tr>
@@ -193,7 +187,7 @@ export default function RoiEstimatorPageClient() {
                 <td className="p-4 md:p-6 text-slate-600 dark:text-neutral-400">50+ hours lost to negotiation</td>
                 <td className="p-4 md:p-6 text-red-500 font-medium">High ghosting & bot views</td>
                 <td className="p-4 md:p-6 text-[#17A75B] font-bold bg-[#2F49E8]/5 dark:bg-[#2F49E8]/5 border-l border-slate-200/80 dark:border-[#2F49E8]/20">
-                  100% automated • Escrow protected
+                  100% automated
                 </td>
               </tr>
               <tr>
@@ -213,9 +207,7 @@ export default function RoiEstimatorPageClient() {
       <section className="py-14 px-4 md:px-16 max-w-5xl mx-auto border-t border-slate-200/80 dark:border-white/5">
         <div className="p-8 md:p-10 rounded-3xl bg-gradient-to-br from-blue-500/5 via-emerald-500/5 to-purple-500/5 dark:from-[#0B1026] dark:via-[#0E1530] dark:to-[#0B1026] border border-blue-500/20 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="space-y-2 text-center md:text-left">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              Creative Guidelines & Ad Dimensions
-            </span>
+       
             <h4 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
               Looking for Ad Dimensions & File Specs?
             </h4>
@@ -227,8 +219,7 @@ export default function RoiEstimatorPageClient() {
             href="/advertise#ad-specs"
             className="shrink-0 px-6 py-3.5 rounded-full bg-[#2F49E8] hover:bg-blue-600 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2"
           >
-            <span>View Ad Specs on Advertise</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>View Ad Specs</span>
           </Link>
         </div>
       </section>
@@ -293,9 +284,7 @@ export default function RoiEstimatorPageClient() {
       {/* ─── FEATURE SECTION 5: HIGH CONVERTING CTA BANNER ─────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-5xl mx-auto">
         <div className="rounded-3xl p-8 md:p-14 bg-gradient-to-r from-[#2F49E8]/10 via-[#3B59FF]/10 to-[#17A75B]/10 dark:from-[#2F49E8]/30 dark:via-[#3B59FF]/20 dark:to-[#17A75B]/20 border border-[#2F49E8]/30 text-center space-y-6 shadow-xl relative overflow-hidden transition-colors">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F49E8]/10 dark:bg-white/10 text-[#2F49E8] dark:text-white text-xs font-semibold uppercase tracking-wider">
-            <span>SCALE WITH VERIFIED VIEWS</span>
-          </div>
+         
           <h3 className="text-3xl md:text-5xl font-normal text-slate-900 dark:text-white tracking-tight">
             Ready to turn influencer marketing into guaranteed ROI?
           </h3>

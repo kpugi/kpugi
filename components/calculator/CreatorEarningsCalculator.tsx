@@ -80,7 +80,7 @@ export default function CreatorEarningsCalculator({
 
     const summary = `Kpugi Creator Payout Estimate:
 • Drop Type: ${dropName}
-• Estimated Verified Views: ${(viewsK * 1000).toLocaleString()} views
+• Estimated Views: ${(viewsK * 1000).toLocaleString()} views
 -------------------------
 • With Kpugi (90% Net Payout): ${formatPrice(kpugiCreatorPayout)}
 • Typical Agency Payout (Takes 48%): ${formatPrice(agencyCreatorPayout)}
@@ -178,11 +178,11 @@ export default function CreatorEarningsCalculator({
             <div className="pt-8">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Estimated verified views:</h3>
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Estimated views:</h3>
                   <span className="text-xs text-slate-500 dark:text-neutral-400">Total reach across all your active posts</span>
                 </div>
                 <span className="text-2xl font-bold text-[#17A75B]">
-                  {(viewsK * 1000).toLocaleString()} <span className="text-xs font-normal text-slate-500 dark:text-neutral-400">views</span>
+                  {(viewsK * 1000).toLocaleString()} <span className="text-xs font-normal text-slate-500 dark:text-neutral-400"></span>
                 </span>
               </div>
               <div className="pt-2 pb-1">
