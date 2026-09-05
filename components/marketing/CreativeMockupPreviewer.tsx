@@ -105,9 +105,7 @@ export default function CreativeMockupPreviewer({
     <section className={`py-16 md:py-24 px-4 md:px-16 max-w-7xl mx-auto transition-colors duration-300 ${className}`}>
       {/* Section Header */}
       <div className="text-center mb-12 md:mb-16">
-        <p className="font-mono text-xs uppercase tracking-widest text-[#2F49E8] dark:text-[#5B75FF] mb-2 font-bold">
-          DROP SIMULATION & AD AUDIT
-        </p>
+      
         <h3 className="text-3xl md:text-4xl lg:text-5xl font-normal text-slate-900 dark:text-white tracking-tight">
           Interactive Creative Mockup Previewer
         </h3>

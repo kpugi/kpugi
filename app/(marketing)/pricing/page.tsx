@@ -302,7 +302,7 @@ export default function PricingPage() {
           <Pricing2
             title="On-Platform Display Flight Packages"
             subtitle="High-impact display banners, billboard takeovers, and email sponsorships reaching active creators and founders daily."
-            yearlyLabel="Pay Quarterly (Save 20%)"
+            yearlyLabel="Pay Quarterly"
             monthlyLabel="Pay Monthly"
             discountText="Save 20%"
             tiers={[

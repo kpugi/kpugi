@@ -118,15 +118,6 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
 
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto space-y-6">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-bold tracking-wide shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600 dark:bg-blue-400"></span>
-            </span>
-            <span>About Kpugi • Nigeria’s Verified Creator Performance Network</span>
-          </div>
-
           {/* Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display leading-[1.08] tracking-tight text-slate-900 dark:text-white">
             Where Verified Reach Meets{' '}
@@ -191,12 +182,6 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
                 Built on Transparent, Non-Negotiable Rules
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Paystack Escrow Protected
-              </span>
-            </div>
           </div>
 
           {/* Architectural Pillars */}
@@ -223,10 +208,9 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
                 <Lock className="size-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
-                100% <span className="text-base font-sans font-semibold text-slate-500 dark:text-slate-400">Escrow</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Brand budgets are locked upfront in Paystack escrow. Creators know funds exist before posting.
+                Brand budgets are locked upfront in escrow. Creators know funds exist before posting.
               </p>
             </div>
 
@@ -266,7 +250,7 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
               {realStats.activeCreators > 0 && (
                 <div>
                   <div className="text-2xl font-mono font-extrabold text-blue-600 dark:text-blue-400">
-                    {realStats.activeCreators.toLocaleString()}
+                    {realStats.activeCreators.toLocaleString()}+
                   </div>
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Active Creators</div>
                 </div>
@@ -274,7 +258,7 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
               {realStats.activeCampaigns > 0 && (
                 <div>
                   <div className="text-2xl font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {realStats.activeCampaigns.toLocaleString()}
+                    {realStats.activeCampaigns.toLocaleString()}+
                   </div>
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Active Campaigns</div>
                 </div>
@@ -282,7 +266,7 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
               {realStats.totalViews > 0 && (
                 <div>
                   <div className="text-2xl font-mono font-extrabold text-purple-600 dark:text-purple-400">
-                    {realStats.totalViews.toLocaleString()}
+                    {realStats.totalViews.toLocaleString()}+
                   </div>
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Verified Views</div>
                 </div>
@@ -290,7 +274,7 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
               {realStats.totalEarnings > 0 && (
                 <div>
                   <div className="text-2xl font-mono font-extrabold text-amber-500">
-                    ₦{realStats.totalEarnings.toLocaleString()}
+                    ₦{realStats.totalEarnings.toLocaleString()}+
                   </div>
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Creator Earnings Settled</div>
                 </div>
@@ -303,9 +287,7 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
       {/* ─── 3. THE DUAL-SIDED MARKETPLACE: COVERING BOTH SIDES OF USERS ───── */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-4">
-            <span>Two Sides. One Unified Protocol.</span>
-          </div>
+         
           <h2 className="text-3xl sm:text-5xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white">
             Designed for African Brands & Digital Creators Alike
           </h2>
@@ -641,10 +623,6 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
           <div className="absolute -bottom-24 -left-24 size-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6">
-              <Sparkles className="size-3.5 text-blue-400" />
-              <span>Our Story • The Kpugi Mission</span>
-            </div>
 
             <h2 className="text-3xl sm:text-5xl font-extrabold font-display leading-tight mb-6">
               Engineering Trust in African Digital Creator Advertising.
@@ -968,7 +946,7 @@ export default function AboutPageClient({ realStats }: AboutPageClientProps) {
                 href="/brands"
                 className="px-6 py-3.5 rounded-full bg-white text-[#2F49E8] font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all shadow-lg flex items-center gap-2"
               >
-                <span>Launch a Brand Campaign</span>
+                <span>Launch a Campaign</span>
                 <ArrowRight className="size-4" />
               </Link>
               <Link

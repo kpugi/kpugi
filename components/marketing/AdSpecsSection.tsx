@@ -133,9 +133,6 @@ export default function AdSpecsSection({
     <section className={`py-16 md:py-24 px-4 md:px-16 max-w-7xl mx-auto transition-colors duration-300 ${className}`}>
       {/* Section Header */}
       <div className="text-center mb-12 md:mb-16">
-        <p className="font-mono text-xs uppercase tracking-widest text-[#17A75B] mb-2 font-bold">
-          DESIGN & ASSET SPECIFICATIONS
-        </p>
         <h3 className="text-3xl md:text-4xl lg:text-5xl font-normal text-slate-900 dark:text-white tracking-tight">
           Ad Specs & Dimension Guidelines
         </h3>
@@ -247,21 +244,7 @@ export default function AdSpecsSection({
         ))}
       </div>
 
-      {/* Production Best Practices Banner */}
-      <div className="mt-10 p-6 rounded-2xl bg-gradient-to-r from-[#2F49E8]/5 via-[#3B59FF]/5 to-[#17A75B]/5 border border-[#2F49E8]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#17A75B]" />
-            <h5 className="text-sm font-bold text-slate-900 dark:text-white">Zero UGC Filming Guarantee</h5>
-          </div>
-          <p className="text-xs text-slate-600 dark:text-neutral-400">
-            Brands supply 100% of finished assets. Creators simply grab, syndicate, and amplify your ready creative across their networks.
-          </p>
-        </div>
-        <div className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2F49E8] text-white shrink-0">
-          Instant In-Pool Launch
-        </div>
-      </div>
+    
     </section>
   );
 }

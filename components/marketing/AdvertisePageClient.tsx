@@ -269,7 +269,6 @@ export default function AdvertisePageClient() {
           {/* Prime Verticals That Convert on Kpugi */}
           <div className="pb-16 sm:pb-24 border-t border-slate-200/60 dark:border-white/5 pt-12">
             <div className="max-w-3xl mb-8">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Target Verticals</span>
               <h3 className="text-xl sm:text-2xl font-bold font-display text-slate-900 dark:text-white mt-1">
                 Highest-Converting Categories on the Kpugi Network
               </h3>
@@ -336,7 +335,7 @@ export default function AdvertisePageClient() {
           {/* Visual Canvas (7 Columns) */}
           <div className="lg:col-span-7 bg-slate-100 dark:bg-[#07090F] border border-slate-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center min-h-[380px] shadow-inner relative overflow-hidden">
             <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-4">
-              Live Mock Simulation • {selectedPlacement.dimensions}
+              Live Preview • {selectedPlacement.dimensions}
             </div>
 
             {/* Banner Canvas Container */}
@@ -428,7 +427,7 @@ export default function AdvertisePageClient() {
         <Pricing2
           title="Placement Flight Packages"
           subtitle="Transparent pricing for display banners, takeovers, and email sponsorships. No hidden platform markups."
-          yearlyLabel="Pay Quarterly (Save 20%)"
+          yearlyLabel="Pay Quarterly"
           monthlyLabel="Pay Monthly"
           discountText="Save 20%"
           tiers={[
