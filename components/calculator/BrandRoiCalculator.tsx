@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Copy, ArrowRight, ShieldCheck, Zap, Sparkles, TrendingUp, Layers, UploadCloud } from 'lucide-react';
+import { Check, Copy, ArrowRight, TrendingUp, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { MediaPlanModal, type MediaPlanData } from '@/components/marketing/MediaPlanModal';
 
-export type BrandCampaignType = 'ready_creative' | 'bespoke_ugc' | 'omnichannel';
-export type BrandFlightSpeed = 'rush' | 'fast' | 'regular';
+export type BrandCampaignType = 'ready_creative' | 'video_creative' | 'omnichannel';
 
 interface BrandRoiCalculatorProps {
   id?: string;
@@ -23,11 +23,9 @@ export default function BrandRoiCalculator({
   // State
   const [campaignType, setCampaignType] = useState<BrandCampaignType>('ready_creative');
   const [budgetM, setBudgetM] = useState<number>(2.5); // ₦2.5 Million default
-  const [antiFraudAudit, setAntiFraudAudit] = useState<boolean>(true);
-  const [includeWhatsappNetwork, setIncludeWhatsappNetwork] = useState<boolean>(true);
-  const [flightSpeed, setFlightSpeed] = useState<BrandFlightSpeed>('regular');
   const [currency, setCurrency] = useState<'NGN' | 'USD'>('NGN');
   const [copied, setCopied] = useState<boolean>(false);
+  const [isMediaPlanOpen, setIsMediaPlanOpen] = useState<boolean>(false);
 
   // Conversion rate: ₦1,500 = $1 USD for reference
   const exchangeRate = 1500;
@@ -35,23 +33,19 @@ export default function BrandRoiCalculator({
   // Actual budget in NGN
   const budgetNgn = Math.round(budgetM * 1000000);
 
-  // Kpugi CPM benchmark (₦2,000 per 1k verified views for ready creatives)
-  const baseCpm = campaignType === 'ready_creative' ? 2000 : campaignType === 'bespoke_ugc' ? 3500 : 5000;
+  // Kpugi CPM benchmark (₦2,000 per 1k verified views for ready flyers, ₦3,500 for official videos, ₦5,000 for omnichannel)
+  const baseCpm = campaignType === 'ready_creative' ? 2000 : campaignType === 'video_creative' ? 3500 : 5000;
   
   // Guaranteed views delivered on Kpugi
   const guaranteedViews = Math.round((budgetNgn / baseCpm) * 1000);
   const estimatedCreators = Math.max(5, Math.round(budgetNgn / 65000));
 
-  // Typical Agency cost for identical reach:
-  // Agencies charge massive retainers (minimum ₦3.5M-₦6M) and 45%-60% management overhead
-  const agencyEquivalentCost = Math.round(budgetNgn * 2.5 + 1500000);
+  // Views delivered by competitors for the same budget:
+  // Typical Agency: 40%+ retainer markup, expensive overhead, delivering ~35% of the verified reach
+  const agencyEstimatedViews = Math.round((guaranteedViews * 0.35) / 1000) * 1000;
 
-  // Direct Freelancer / Manual outreach cost:
-  // Includes lost labor hours (estimated ₦800k+), creative leakage, and unverified bot views (up to 30% waste)
-  const freelancerEquivalentCost = Math.round(budgetNgn * 1.6 + 600000);
-
-  // Savings
-  const agencySavings = agencyEquivalentCost - budgetNgn;
+  // Direct Manual Outreach: creator ghosting, high bot inflation, delivering ~58% of authentic reach
+  const manualOutreachViews = Math.round((guaranteedViews * 0.58) / 1000) * 1000;
 
   const formatPrice = (amountNgn: number): string => {
     if (currency === 'USD') {
@@ -64,30 +58,21 @@ export default function BrandRoiCalculator({
   const handleCopyEstimate = () => {
     const typeLabel =
       campaignType === 'ready_creative'
-        ? 'Ready Brand Creative Drop (Upload & Syndicate)'
-        : campaignType === 'bespoke_ugc'
-        ? 'Custom Creator UGC Drops'
+        ? 'Brand Flyer & Graphic Drop (Upload & Syndicate)'
+        : campaignType === 'video_creative'
+        ? 'Official Brand Video Drops (Upload & Syndicate)'
         : 'Full 360° Omnichannel Syndicate';
 
-    const flightLabel =
-      flightSpeed === 'rush'
-        ? 'Within 7 Days (Viral Flash)'
-        : flightSpeed === 'fast'
-        ? 'Within 14 Days (Sustained Wave)'
-        : 'Regular Flexible Flight';
-
-    const summary = `Kpugi Brand Campaign ROI Estimate:
+    const summary = `Kpugi Brand Campaign Reach Comparison:
 • Drop Type: ${typeLabel}
 • Campaign Budget: ${formatPrice(budgetNgn)}
-• Guaranteed Verified Views: ${guaranteedViews.toLocaleString()} views
+• Guaranteed Verified Views with Kpugi: ${guaranteedViews.toLocaleString()} views
 • Creators Activated: ~${estimatedCreators} creators
 • Quality Safeguards: AI Bot Filtering + 100% Escrow Protection
-• Turnaround: ${flightLabel}
 -------------------------
-• Total Kpugi Investment: ${formatPrice(budgetNgn)}
-• Typical Agency Charge: ${formatPrice(agencyEquivalentCost)}
-• Direct Savings with Kpugi: +${formatPrice(agencySavings)}
-• Verification: 100% Verified Escrow`;
+• Typical Agency Delivery: ~${agencyEstimatedViews.toLocaleString()} views (Unverified)
+• Manual Outreach Delivery: ~${manualOutreachViews.toLocaleString()} views (High Bot Risk)
+• Kpugi Guaranteed Delivery: ${guaranteedViews.toLocaleString()} views (100% Escrow Backed)`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(summary);
@@ -119,29 +104,32 @@ export default function BrandRoiCalculator({
         {/* 2-Column Calculator Card Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-xl shadow-slate-200/40 dark:shadow-2xl bg-white dark:bg-[#08090D] transition-colors">
           {/* LEFT COLUMN: Calculator Form */}
-          <div className="bg-slate-50/70 dark:bg-[#0B1026] p-8 lg:p-12 divide-y divide-slate-200 dark:divide-[#1C2237] transition-colors">
+          <div className="bg-slate-50/70 dark:bg-[#0B1026] p-8 lg:p-12 divide-y divide-slate-200 dark:divide-[#1C2237] transition-colors flex flex-col justify-between">
             {/* 1. Campaign Model */}
             <div className="pb-8">
               <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">How do you want to run this campaign?</h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mb-5">
-                Bring your own ready creatives for instant syndication, or commission bespoke creator content.
+                Brands provide finished ad creatives — creators simply grab, post, and amplify.
               </p>
               <div className="space-y-3.5">
                 {[
                   {
                     id: 'ready_creative',
-                    label: 'Ready Brand Creative Drop (Upload & Syndicate)',
-                    desc: 'Upload your ready banners, promo flyers, or official clips. Creators grab & post to their WhatsApp, IG, and TikTok handles.',
+                    label: 'Brand Flyer & Graphic Drops (Upload & Syndicate)',
+                    cpm: 2000,
+                    desc: 'Upload your ready banners, promo flyers, or announcement graphics. Creators grab & post to socials with 0 editing.',
                   },
                   {
-                    id: 'bespoke_ugc',
-                    label: 'Custom Creator UGC (Native Brand Video)',
-                    desc: 'Creators produce bespoke review, unboxing, or testimonial videos based on your creative brief.',
+                    id: 'video_creative',
+                    label: 'Official Brand Video Drops (Upload & Syndicate)',
+                    cpm: 3500,
+                    desc: 'Upload ready commercial videos, motion reels, or product launch clips. Creators syndicate directly with 0 filming.',
                   },
                   {
                     id: 'omnichannel',
-                    label: '360° Omnichannel Domination',
-                    desc: 'Combined blitz across WhatsApp Status, Instagram Stories/Reels, TikTok, and X feeds.',
+                    label: '360° Omnichannel Campaign Syndicate',
+                    cpm: 5000,
+                    desc: 'Combined blitz across Instagram Reels/Stories, TikTok, and X feeds.',
                   },
                 ].map((option) => {
                   const isChecked = campaignType === option.id;
@@ -165,10 +153,19 @@ export default function BrandRoiCalculator({
                         {isChecked && <div className="w-2 h-2 rounded-full bg-[#2F49E8]" />}
                       </div>
                       <div className="flex-1">
-                        <div className={`text-sm font-medium ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-neutral-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                          {option.label}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className={`text-sm font-medium ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-neutral-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                            {option.label}
+                          </span>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-md shrink-0 ${
+                            isChecked
+                              ? 'bg-[#2F49E8] text-white'
+                              : 'bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-neutral-300'
+                          }`}>
+                            {formatPrice(option.cpm)} CPM
+                          </span>
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 leading-relaxed">{option.desc}</div>
+                        <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">{option.desc}</div>
                       </div>
                     </label>
                   );
@@ -177,16 +174,26 @@ export default function BrandRoiCalculator({
             </div>
 
             {/* 2. Campaign Budget (Slider) */}
-            <div className="py-8">
-              <div className="flex items-center justify-between mb-4">
+            <div className="pt-8">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white">Select campaign budget:</h3>
-                  <span className="text-xs text-slate-500 dark:text-neutral-400">Locked in automated escrow until views are verified</span>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white">Select campaign budget:</h3>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#2F49E8]/10 text-[#2F49E8] dark:text-[#6882FF] border border-[#2F49E8]/20">
+                      {formatPrice(baseCpm)} CPM
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-neutral-400">
+                    Delivers 1,000 verified views per {formatPrice(baseCpm)} • 100% escrow backed
+                  </span>
                 </div>
-                <span className="text-2xl font-bold text-[#17A75B]">
-                  {formatPrice(budgetNgn)}
-                </span>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-[#17A75B] block">
+                    {formatPrice(budgetNgn)}
+                  </span>
+                </div>
               </div>
+
               <div className="pt-2 pb-1">
                 <Slider
                   min={0.25}
@@ -204,134 +211,34 @@ export default function BrandRoiCalculator({
                 <span>{currency === 'USD' ? '$6,700+' : '₦10,000,000+'}</span>
               </div>
 
-              {/* Dynamic View Delivery Badge */}
-              <div className="mt-5 p-3.5 rounded-xl bg-slate-100 dark:bg-gradient-to-r dark:from-[#2F49E8]/10 dark:to-[#17A75B]/10 border border-slate-200 dark:border-[#2F49E8]/20 flex items-center justify-between transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <TrendingUp className="w-4 h-4 text-[#17A75B]" />
-                  <span className="text-xs text-slate-600 dark:text-neutral-300">Guaranteed Verified Views:</span>
+              {/* Dynamic View Delivery & CPM Breakdown */}
+              <div className="mt-5 p-4 rounded-xl bg-slate-100 dark:bg-[#080B18] border border-slate-200 dark:border-white/10 space-y-2.5 transition-colors">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-[#17A75B]" />
+                    <span className="text-xs text-slate-700 dark:text-neutral-300 font-medium">Guaranteed Views Delivered:</span>
+                  </div>
+                  <span className="text-base font-bold text-slate-900 dark:text-white">
+                    {guaranteedViews.toLocaleString()} views
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-slate-900 dark:text-white">
-                  {guaranteedViews.toLocaleString()} views <span className="text-xs font-normal text-slate-500 dark:text-neutral-400">(~{estimatedCreators} creators)</span>
-                </span>
-              </div>
-            </div>
-
-            {/* 3. Quality Safeguards & Channels */}
-            <div className="py-8">
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Included safeguards & channel boosts:</h3>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mb-5">
-                Every drop is protected by automated verification and fraud detection.
-              </p>
-              <div className="space-y-4">
-                {/* Safeguard 1 */}
-                <label
-                  onClick={() => setAntiFraudAudit(!antiFraudAudit)}
-                  className={`flex items-center justify-between cursor-pointer group select-none p-3 rounded-xl border transition-all ${
-                    antiFraudAudit
-                      ? 'border-[#2F49E8]/40 bg-[#2F49E8]/5 dark:bg-[#2F49E8]/10'
-                      : 'border-slate-200 dark:border-white/5 bg-white dark:bg-neutral-900/30 hover:border-slate-300 dark:hover:border-white/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors duration-200 ${
-                        antiFraudAudit
-                          ? 'border-[#2F49E8] bg-[#2F49E8]'
-                          : 'border-slate-300 dark:border-neutral-600 group-hover:border-[#2F49E8] bg-transparent'
-                      }`}
-                    >
-                      {antiFraudAudit && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                    </div>
-                    <div>
-                      <span className={`text-sm font-medium ${antiFraudAudit ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-neutral-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                        AI Bot Detection & Anti-Fraud View Filtering
-                      </span>
-                      <span className="block text-xs text-slate-500 dark:text-neutral-400">Purges invalid bot clicks and suspicious spikes</span>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-[#17A75B] px-2.5 py-1 rounded-md bg-[#17A75B]/10 border border-[#17A75B]/20 shrink-0 whitespace-nowrap ml-4">
-                    INCLUDED
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-white/5 text-xs text-slate-500 dark:text-neutral-400 flex-wrap gap-1">
+                  <span>
+                    Applied Rate: <strong className="text-[#2F49E8] dark:text-[#6882FF] font-semibold">{formatPrice(baseCpm)} CPM</strong> ({formatPrice(budgetNgn)} ÷ {formatPrice(baseCpm)})
                   </span>
-                </label>
-
-                {/* Safeguard 2 */}
-                <label
-                  onClick={() => setIncludeWhatsappNetwork(!includeWhatsappNetwork)}
-                  className={`flex items-center justify-between cursor-pointer group select-none p-3 rounded-xl border transition-all ${
-                    includeWhatsappNetwork
-                      ? 'border-[#2F49E8]/40 bg-[#2F49E8]/5 dark:bg-[#2F49E8]/10'
-                      : 'border-slate-200 dark:border-white/5 bg-white dark:bg-neutral-900/30 hover:border-slate-300 dark:hover:border-white/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors duration-200 ${
-                        includeWhatsappNetwork
-                          ? 'border-[#2F49E8] bg-[#2F49E8]'
-                          : 'border-slate-300 dark:border-neutral-600 group-hover:border-[#2F49E8] bg-transparent'
-                      }`}
-                    >
-                      {includeWhatsappNetwork && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                    </div>
-                    <div>
-                      <span className={`text-sm font-medium ${includeWhatsappNetwork ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-neutral-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                        Syndicate across High-Converting WhatsApp Status Network
-                      </span>
-                      <span className="block text-xs text-slate-500 dark:text-neutral-400">Private messaging feeds with 8x higher CTR</span>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-[#17A75B] px-2.5 py-1 rounded-md bg-[#17A75B]/10 border border-[#17A75B]/20 shrink-0 whitespace-nowrap ml-4">
-                    INCLUDED
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {/* 4. Flight Speed */}
-            <div className="pt-8">
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-5">How fast do you want your campaign completed?</h3>
-              <div className="space-y-3.5">
-                {[
-                  { id: 'rush', label: 'Within 7 Days (Viral Flash Sprint)', fee: '0% rush surcharge' },
-                  { id: 'fast', label: 'Within 14 Days (Sustained Growth Wave)', fee: '0% rush surcharge' },
-                  { id: 'regular', label: 'Regular Speed (Flexible 30-Day Window)', fee: 'Default' },
-                ].map((option) => {
-                  const isChecked = flightSpeed === option.id;
-                  return (
-                    <label
-                      key={option.id}
-                      onClick={() => setFlightSpeed(option.id as BrandFlightSpeed)}
-                      className="flex items-center justify-between cursor-pointer group select-none"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${
-                            isChecked
-                              ? 'border-[#2F49E8]'
-                              : 'border-slate-300 dark:border-neutral-600 group-hover:border-[#2F49E8] bg-transparent'
-                          }`}
-                        >
-                          {isChecked && <div className="w-2 h-2 rounded-full bg-[#2F49E8]" />}
-                        </div>
-                        <span className={`text-sm font-normal ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-neutral-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                          {option.label}
-                        </span>
-                      </div>
-                      <span className="text-xs font-medium text-[#17A75B]">{option.fee}</span>
-                    </label>
-                  );
-                })}
+                  <span>~{estimatedCreators} verified creators</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Cost & ROI Comparison */}
-          <div className="p-8 lg:p-12 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#050811] flex flex-col justify-between min-h-[717.98px] transition-colors">
+          {/* RIGHT COLUMN: Views & Reach Comparison */}
+          <div className="p-8 lg:p-12 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#050811] flex flex-col justify-between transition-colors">
             <div>
               <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">Estimated Campaign Cost</h3>
+                <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">Estimated Campaign Reach Comparison</h3>
                 <p className="text-sm text-slate-500 dark:text-neutral-400 leading-relaxed">
-                  Compare your total investment across traditional agencies, direct influencer outreach, and Kpugi's verified platform.
+                  Compare the verified views and guaranteed reach delivered on Kpugi versus legacy agencies and manual outreach for your budget.
                 </p>
               </div>
 
@@ -339,62 +246,62 @@ export default function BrandRoiCalculator({
               <div className="space-y-4">
                 {/* Traditional Agency Card */}
                 <div className="rounded-2xl p-6 bg-slate-50 dark:bg-[#0D111F] border border-slate-200/80 dark:border-white/5 space-y-2.5 transition-all">
-                  <div className="text-sm text-slate-500 dark:text-neutral-400 font-normal">Typical Ad Agency charges minimum</div>
+                  <div className="text-sm text-slate-500 dark:text-neutral-400 font-normal">Typical Ad Agency delivers only</div>
                   <div className="text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    {formatPrice(agencyEquivalentCost)}
+                    ~{agencyEstimatedViews.toLocaleString()} <span className="text-xl font-medium text-slate-500 dark:text-neutral-400">views</span>
                   </div>
                   <div className="text-xs text-slate-400 dark:text-neutral-500 font-medium">
-                    + Too much extra time, 40% retainer markup & zero view guarantee
+                    + 40% retainer markup, zero view guarantee & slow 4-week execution
                   </div>
                 </div>
 
                 {/* Freelancer / Manual Outreach Card */}
                 <div className="rounded-2xl p-6 bg-slate-50 dark:bg-[#0D111F] border border-slate-200/80 dark:border-white/5 space-y-2.5 transition-all">
-                  <div className="text-sm text-slate-500 dark:text-neutral-400 font-normal">Direct Manual Outreach costs</div>
+                  <div className="text-sm text-slate-500 dark:text-neutral-400 font-normal">Direct Manual Outreach delivers</div>
                   <div className="text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    {formatPrice(freelancerEquivalentCost)}
+                    ~{manualOutreachViews.toLocaleString()} <span className="text-xl font-medium text-slate-500 dark:text-neutral-400">views</span>
                   </div>
                   <div className="text-xs text-slate-400 dark:text-neutral-500 font-medium">
-                    + Too much headache, creator ghosting & unverified bot views
+                    + Creator ghosting, high bot inflation & zero escrow protection
                   </div>
                 </div>
 
-                {/* With Kpugi (Vibrant Brand Gradient: Kpugi Blue to Emerald) */}
-                <div className="rounded-2xl p-6 bg-gradient-to-r from-[#2F49E8] via-indigo-600 to-[#17A75B] text-white space-y-3 shadow-2xl shadow-[#2F49E8]/30 transition-transform duration-200 hover:scale-[1.01]">
-                  <div className="text-base font-semibold text-white/95">With Kpugi Brand Suite</div>
+                {/* With Kpugi (Solid Brand Blue) - Primary Element is VIEWS */}
+                <div className="rounded-2xl p-6 bg-[#2F49E8] text-white space-y-3 shadow-2xl shadow-[#2F49E8]/30 transition-transform duration-200 hover:scale-[1.01]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-base font-semibold text-white/95">Guaranteed Views with Kpugi</span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 text-white backdrop-blur-sm">
+                      100% Escrow Backed
+                    </span>
+                  </div>
                   <div className="text-5xl lg:text-6xl font-extrabold tracking-tight">
-                    {formatPrice(budgetNgn)}
+                    {guaranteedViews.toLocaleString()} <span className="text-2xl font-bold text-white/85">views</span>
                   </div>
                   <div className="text-sm font-medium text-white/90">
-                    Save your money, time & headache • 100% verified views escrow
+                    Delivered across ~{estimatedCreators} verified creators at {formatPrice(baseCpm)} CPM for your {formatPrice(budgetNgn)} budget
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-8 mt-6 border-t border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <button
-                type="button"
-                onClick={handleCopyEstimate}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-300 dark:border-white/20 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-white text-sm font-medium transition-all"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 text-[#17A75B]" />
-                    <span>Copied Breakdown</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 text-slate-500 dark:text-neutral-400" />
-                    <span>Copy Estimate</span>
-                  </>
-                )}
-              </button>
+            <div className="pt-8 mt-6 border-t border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsMediaPlanOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[#2F49E8]/30 bg-[#2F49E8]/10 hover:bg-[#2F49E8]/20 text-[#2F49E8] dark:text-[#6882FF] text-xs font-bold transition-all shadow-sm"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Executive Media Plan (PDF)</span>
+                </button>
+
+                
+              </div>
 
               <Link
                 href="/brands"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 text-sm font-semibold transition-all shadow-md"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 text-xs font-semibold transition-all shadow-md"
               >
                 <span>Launch Brand Campaign</span>
                 <ArrowRight className="w-4 h-4" />
@@ -403,6 +310,33 @@ export default function BrandRoiCalculator({
           </div>
         </div>
       </div>
+
+      {/* Executive Media Plan Modal with @react-pdf/renderer Generator */}
+      <MediaPlanModal
+        isOpen={isMediaPlanOpen}
+        onClose={() => setIsMediaPlanOpen(false)}
+        data={{
+          planRef: `KP-MP-${budgetNgn.toString().slice(0, 3)}-${baseCpm}`,
+          issuedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          validUntil: new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          campaignType,
+          campaignTypeName:
+            campaignType === 'ready_creative'
+              ? 'Brand Flyer & Graphic Drops (Upload & Syndicate)'
+              : campaignType === 'video_creative'
+              ? 'Official Brand Video Drops (Upload & Syndicate)'
+              : '360° Omnichannel Campaign Syndicate',
+          budgetNgn,
+          budgetFormatted: formatPrice(budgetNgn),
+          guaranteedViews,
+          baseCpm,
+          baseCpmFormatted: formatPrice(baseCpm),
+          estimatedCreators,
+          agencyViews: agencyEstimatedViews,
+          manualViews: manualOutreachViews,
+          currency,
+        }}
+      />
     </section>
   );
 }

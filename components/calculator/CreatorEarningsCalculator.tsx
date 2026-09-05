@@ -3,11 +3,10 @@
 import React, { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Copy, ArrowRight, ShieldCheck, Zap, Sparkles, Share2, Layers } from 'lucide-react';
+import { Check, Copy, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-export type CreatorDropType = 'ready_creative' | 'custom_ugc' | 'omnichannel';
-export type CreatorPayoutSpeed = 'instant' | 'weekly' | 'monthly';
+export type CreatorDropType = 'ready_creative' | 'video_creative' | 'omnichannel';
 
 interface CreatorEarningsCalculatorProps {
   id?: string;
@@ -23,7 +22,6 @@ export default function CreatorEarningsCalculator({
   // State
   const [dropType, setDropType] = useState<CreatorDropType>('ready_creative');
   const [viewsK, setViewsK] = useState<number>(60); // 60,000 views default
-  const [payoutSpeed, setPayoutSpeed] = useState<CreatorPayoutSpeed>('instant');
   const [currency, setCurrency] = useState<'NGN' | 'USD'>('NGN');
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -34,10 +32,10 @@ export default function CreatorEarningsCalculator({
   const getBaseCpm = (): number => {
     switch (dropType) {
       case 'ready_creative':
-        // Ready Brand Creatives (Grab & Post: flyers, banners, official brand clips)
+        // Ready Brand Graphic (Grab & Post: flyers, banners, status graphics)
         return 2000;
-      case 'custom_ugc':
-        // Custom Creator UGC (Bespoke video/review)
+      case 'video_creative':
+        // Official Brand Video (Grab & Post: promo clips, motion reels)
         return 3500;
       case 'omnichannel':
         // Multi-Platform Syndicate (WhatsApp + IG + TikTok + X)
@@ -75,19 +73,19 @@ export default function CreatorEarningsCalculator({
   const handleCopyEstimate = () => {
     const dropName =
       dropType === 'ready_creative'
-        ? 'Ready Brand Creative (Grab & Post)'
-        : dropType === 'custom_ugc'
-        ? 'Custom Creator UGC (Bespoke Content)'
-        : 'Omnichannel Syndicate (WhatsApp + Feed + Stories)';
+        ? 'Brand Flyer & Graphic (Grab & Post)'
+        : dropType === 'video_creative'
+        ? 'Official Brand Video (Grab & Post)'
+        : 'Omnichannel Multi-Platform Syndicate';
 
     const summary = `Kpugi Creator Payout Estimate:
 • Drop Type: ${dropName}
-• Monthly Verified Views: ${(viewsK * 1000).toLocaleString()} views
+• Estimated Verified Views: ${(viewsK * 1000).toLocaleString()} views
 -------------------------
 • With Kpugi (90% Net Payout): ${formatPrice(kpugiCreatorPayout)}
 • Typical Agency Payout (Takes 48%): ${formatPrice(agencyCreatorPayout)}
 • Extra Earnings with Kpugi: +${formatPrice(extraCashWithKpugi)}
-• Settlement: Instant via Bank Transfer`;
+• Settlement: Weekly Friday Bank Transfer`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(summary);
@@ -112,7 +110,7 @@ export default function CreatorEarningsCalculator({
             Get paid what you actually deserve for your views
           </h2>
           <p className="text-sm md:text-base text-slate-600 dark:text-neutral-400 mt-3 max-w-2xl mx-auto">
-            Grab ready brand graphics, banners, and clips — or post custom UGC. Monetize your audience on WhatsApp, Instagram, TikTok, and X.
+            Grab ready brand graphics, banners, and official video clips. Amplify brand campaigns to your audience on WhatsApp, Instagram, TikTok, and X.
           </p>
         </div>
 
@@ -124,24 +122,24 @@ export default function CreatorEarningsCalculator({
             <div className="pb-8">
               <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">What kind of brand drop are you picking up?</h3>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mb-5">
-                Brands upload ready creatives or request native UGC for you to syndicate.
+                Brands provide finished ad creatives and briefs — you simply grab, post, and amplify.
               </p>
               <div className="space-y-3.5">
                 {[
                   {
                     id: 'ready_creative',
-                    label: 'Ready Brand Creative (Grab & Post)',
-                    desc: 'Advertiser provides ready flyers, promo graphics, or official clips. Grab & post to socials with 0 editing.',
+                    label: 'Brand Flyer & Graphic Drops (Grab & Post)',
+                    desc: 'Advertiser provides flyers, banners, or status graphics. Grab & post to socials with 0 editing.',
                   },
                   {
-                    id: 'custom_ugc',
-                    label: 'Custom Creator UGC (Native Content)',
-                    desc: 'You shoot original testimonial, unboxing, or product demo video featuring the brand.',
+                    id: 'video_creative',
+                    label: 'Official Brand Video Drops (Grab & Post)',
+                    desc: 'Advertiser supplies ready promo videos, reels, or motion clips. Post to TikTok, Reels & Shorts with 0 editing.',
                   },
                   {
                     id: 'omnichannel',
                     label: 'Omnichannel Multi-Platform Syndicate',
-                    desc: 'Cross-post ready assets & custom story across WhatsApp Status + Instagram + TikTok + X.',
+                    desc: 'Amplify the campaign simultaneously across WhatsApp Status, Instagram, TikTok, and X.',
                   },
                 ].map((option) => {
                   const isChecked = dropType === option.id;
@@ -176,8 +174,8 @@ export default function CreatorEarningsCalculator({
               </div>
             </div>
 
-            {/* 2. Number of Views (Slider) */}
-            <div className="py-8">
+            {/* 2. Number of Views (Slider) - The final element on the left card */}
+            <div className="pt-8">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-medium text-slate-900 dark:text-white">Estimated verified views:</h3>
@@ -204,47 +202,10 @@ export default function CreatorEarningsCalculator({
                 <span>500,000 views</span>
               </div>
             </div>
-
-            {/* 3. Settlement Frequency */}
-            <div className="pt-8">
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-5">How fast do you want your payout?</h3>
-              <div className="space-y-3.5">
-                {[
-                  { id: 'instant', label: 'Instant Automated Escrow (Upon View Verification)', fee: '0% fee • 24h bank credit' },
-                  { id: 'weekly', label: 'Weekly Friday Direct Deposit (Automated Batch)', fee: '0% fee' },
-                  { id: 'monthly', label: 'Monthly Consolidated Bank Wire', fee: '0% fee' },
-                ].map((option) => {
-                  const isChecked = payoutSpeed === option.id;
-                  return (
-                    <label
-                      key={option.id}
-                      onClick={() => setPayoutSpeed(option.id as CreatorPayoutSpeed)}
-                      className="flex items-center justify-between cursor-pointer group select-none"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${
-                            isChecked
-                              ? 'border-[#2F49E8]'
-                              : 'border-slate-300 dark:border-neutral-600 group-hover:border-[#2F49E8] bg-transparent'
-                          }`}
-                        >
-                          {isChecked && <div className="w-2 h-2 rounded-full bg-[#2F49E8]" />}
-                        </div>
-                        <span className={`text-sm font-normal ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-neutral-300 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                          {option.label}
-                        </span>
-                      </div>
-                      <span className="text-xs font-medium text-[#17A75B]">{option.fee}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
           {/* RIGHT COLUMN: Cost & Payout Comparison */}
-          <div className="p-8 lg:p-12 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#050811] flex flex-col justify-between min-h-[717.98px] transition-colors">
+          <div className="p-8 lg:p-12 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#050811] flex flex-col justify-between transition-colors">
             <div>
               <div className="mb-8">
                 <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">Estimated Net Creator Payout</h3>
@@ -284,7 +245,7 @@ export default function CreatorEarningsCalculator({
                     {formatPrice(kpugiCreatorPayout)}
                   </div>
                   <div className="text-sm font-medium text-white/90">
-                    Keep 90% of your earnings • Direct bank transfer within 24h
+                    Keep 90% of your earnings • Weekly Friday bank settlement directly to your account
                   </div>
                 </div>
               </div>

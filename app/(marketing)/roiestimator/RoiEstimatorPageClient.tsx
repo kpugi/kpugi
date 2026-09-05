@@ -5,18 +5,17 @@ import BrandRoiCalculator from '@/components/calculator/BrandRoiCalculator';
 import { 
   ShieldCheck, 
   Zap, 
-  TrendingUp, 
   Sparkles, 
   CheckCircle2, 
-  ArrowRight,
-  UploadCloud,
-  Layers,
-  ChevronDown,
-  Target,
-  BarChart3,
-  Flame,
-  Users,
-  Check,
+  ArrowRight, 
+  UploadCloud, 
+  Layers, 
+  ChevronDown, 
+  Target, 
+  BarChart3, 
+  Flame, 
+  Users, 
+  Check, 
   Lock
 } from 'lucide-react';
 import {
@@ -24,7 +23,6 @@ import {
   FaTiktok,
   FaYoutube,
   FaXTwitter,
-  FaWhatsapp,
   FaFacebook,
 } from 'react-icons/fa6';
 import Link from 'next/link';
@@ -38,16 +36,10 @@ export default function RoiEstimatorPageClient() {
 
   return (
     <div className="w-full bg-[#F8F9FD] dark:bg-[#05060A] text-slate-900 dark:text-white min-h-screen transition-colors duration-300">
-      {/* Top Tag */}
-      <div className="pt-10 px-4 max-w-7xl mx-auto flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#17A75B]/10 border border-[#17A75B]/20 text-[#17A75B] text-xs font-semibold uppercase tracking-wider">
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>Brand Campaign ROI & Syndication Calculator</span>
-        </div>
+      {/* Main Brand Calculator (No Badges in Hero) */}
+      <div className="pt-8 md:pt-12">
+        <BrandRoiCalculator />
       </div>
-
-      {/* Main Brand Calculator */}
-      <BrandRoiCalculator />
 
       {/* ─── FEATURE SECTION 1: HOW SYNDICATION WORKS ──────────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-7xl mx-auto border-t border-slate-200/80 dark:border-white/5">
@@ -85,7 +77,7 @@ export default function RoiEstimatorPageClient() {
             </div>
             <h4 className="text-xl font-semibold text-slate-900 dark:text-white">Creators Grab & Syndicate</h4>
             <p className="text-sm text-slate-600 dark:text-neutral-300 leading-relaxed">
-              Hundreds of verified micro and nano creators claim your drop. They grab the assets and post simultaneously across WhatsApp Status, Instagram, TikTok, and X.
+              Hundreds of verified micro and nano creators claim your drop. They grab the assets and post simultaneously across Instagram Reels, TikTok, and X.
             </p>
             <div className="pt-3 border-t border-slate-100 dark:border-white/5 text-xs text-slate-500 dark:text-neutral-400">
               <span className="text-[#17A75B] font-semibold">Massive Multiplier:</span> Organic algorithmic amplification across multiple social clusters.
@@ -143,11 +135,11 @@ export default function RoiEstimatorPageClient() {
 
             <div className="p-6 rounded-2xl bg-white dark:bg-[#0B1026] border border-slate-200/80 dark:border-white/5 shadow-sm space-y-3 transition-colors">
               <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                <FaWhatsapp className="w-6 h-6" />
+                <FaTiktok className="w-6 h-6" />
               </div>
-              <h5 className="text-base font-semibold text-slate-900 dark:text-white">WhatsApp Status Syndication</h5>
+              <h5 className="text-base font-semibold text-slate-900 dark:text-white">Viral Reels & TikTok Feeds</h5>
               <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
-                Reach African consumers inside their most intimate social circle. WhatsApp Status boasts an 8x higher click-through rate than traditional social feeds.
+                Syndicate video drops and promo flyers natively across Instagram Reels, TikTok, and X feeds with verified organic algorithmic reach.
               </p>
             </div>
 
@@ -157,7 +149,7 @@ export default function RoiEstimatorPageClient() {
               </div>
               <h5 className="text-base font-semibold text-slate-900 dark:text-white">Pre-Screening & Brand Safety</h5>
               <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">
-                Maintain complete brand control. Configure requirements to review creator handles or approve custom UGC drafts before they are published.
+                Maintain complete brand control. Configure demographic criteria or review creator profiles before campaign drop activation.
               </p>
             </div>
           </div>
@@ -217,6 +209,30 @@ export default function RoiEstimatorPageClient() {
         </div>
       </section>
 
+      {/* ─── READY TO DESIGN ASSETS? LINK TO AD SPECS ON ADVERTISE PAGE ────── */}
+      <section className="py-14 px-4 md:px-16 max-w-5xl mx-auto border-t border-slate-200/80 dark:border-white/5">
+        <div className="p-8 md:p-10 rounded-3xl bg-gradient-to-br from-blue-500/5 via-emerald-500/5 to-purple-500/5 dark:from-[#0B1026] dark:via-[#0E1530] dark:to-[#0B1026] border border-blue-500/20 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+          <div className="space-y-2 text-center md:text-left">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+              Creative Guidelines & Ad Dimensions
+            </span>
+            <h4 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+              Looking for Ad Dimensions & File Specs?
+            </h4>
+            <p className="text-sm text-slate-600 dark:text-slate-300 max-w-xl">
+              Check out all creative resolutions, safe zones, size limits, and interactive device mockups on our official Advertise page.
+            </p>
+          </div>
+          <Link
+            href="/advertise#ad-specs"
+            className="shrink-0 px-6 py-3.5 rounded-full bg-[#2F49E8] hover:bg-blue-600 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2"
+          >
+            <span>View Ad Specs on Advertise</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
       {/* ─── FEATURE SECTION 4: BRAND FAQS (ACCORDION) ────────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-4xl mx-auto border-t border-slate-200/80 dark:border-white/5">
         <div className="text-center mb-12">
@@ -243,8 +259,8 @@ export default function RoiEstimatorPageClient() {
               a: 'Every video and status submission undergoes automated algorithmic audit. We analyze audience geolocation, view velocity, completion rate, and comment authenticity to purge invalid bot traffic before views are credited.',
             },
             {
-              q: 'Can we approve creator content before it goes live?',
-              a: 'Yes. For custom UGC drops, you can configure mandatory pre-screening. Creators submit draft links for your team to review, request revisions, and approve before publishing.',
+              q: 'Can we review and pre-screen creators before our drop is assigned?',
+              a: 'Yes. You can configure audience criteria, minimum follower thresholds, and demographic filters, or choose to review creator handles and historical delivery metrics before assigning your campaign drop.',
             },
             {
               q: 'What is the minimum budget required to launch a campaign drop?',

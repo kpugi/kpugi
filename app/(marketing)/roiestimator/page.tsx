@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     'brand campaign budget estimator',
     'guaranteed views calculator',
     'syndicate brand creatives',
-    'WhatsApp advertising Nigeria',
+    'social media ad drop Nigeria',
     'influencer CPM rates Nigeria',
     'cost per thousand views TikTok',
     'Instagram ad ROI estimator',

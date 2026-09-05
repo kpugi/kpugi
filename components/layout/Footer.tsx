@@ -111,6 +111,7 @@ export function Footer2({
       links: [
         { label: 'CPM Calculator', href: '/calculator' },
         { label: 'ROI Estimator', href: '/roiestimator' },
+        { label: 'Ad Specifications', href: '/advertise#ad-specs' },
         { label: 'Help & Support', href: 'https://support.kpugi.com' },
       ],
     },

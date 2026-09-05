@@ -3,29 +3,18 @@
 import React, { useState } from 'react';
 import CreatorEarningsCalculator from '@/components/calculator/CreatorEarningsCalculator';
 import { 
-  Coins, 
-  ShieldCheck, 
-  Zap, 
-  TrendingUp, 
-  Sparkles, 
-  HelpCircle, 
-  CheckCircle2, 
   ArrowRight,
-  Share2,
   UploadCloud,
   Check,
   ChevronDown,
   Layers,
-  Smartphone,
   Video,
-  DollarSign
 } from 'lucide-react';
 import {
   FaInstagram,
   FaTiktok,
   FaYoutube,
   FaXTwitter,
-  FaWhatsapp,
   FaFacebook,
 } from 'react-icons/fa6';
 import Link from 'next/link';
@@ -39,16 +28,10 @@ export default function CalculatorPageClient() {
 
   return (
     <div className="w-full bg-[#F8F9FD] dark:bg-[#05060A] text-slate-900 dark:text-white min-h-screen transition-colors duration-300">
-      {/* Top Breadcrumb & Tag */}
-      <div className="pt-10 px-4 max-w-7xl mx-auto flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2F49E8]/10 border border-[#2F49E8]/20 text-[#2F49E8] text-xs font-semibold uppercase tracking-wider">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Creator Payout & Sponsorship Calculator</span>
-        </div>
+      {/* Main Creator Calculator (No Badges in Hero) */}
+      <div className="pt-8 md:pt-12">
+        <CreatorEarningsCalculator />
       </div>
-
-      {/* Main Creator Calculator */}
-      <CreatorEarningsCalculator />
 
       {/* ─── FEATURE SECTION 1: 3 WAYS TO MONETIZE ────────────────────────── */}
       <section className="py-20 px-4 md:px-16 max-w-7xl mx-auto border-t border-slate-200/80 dark:border-white/5">
@@ -60,12 +43,12 @@ export default function CalculatorPageClient() {
             Three Ways to Earn on Kpugi
           </h3>
           <p className="text-sm md:text-base text-slate-600 dark:text-neutral-400 mt-3 max-w-2xl mx-auto">
-            You don't need a professional camera or hours of video editing. Grab ready-made advertiser creatives or post native content.
+            You don't need a camera or video editing skills. Brands provide 100% of the ad creatives — you simply grab, post, and amplify to your audience.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Card 1: Ready Brand Creative */}
+          {/* Card 1: Brand Flyer & Graphic Drops */}
           <div className="relative rounded-3xl p-8 bg-white dark:bg-gradient-to-b dark:from-[#0D111F] dark:to-[#08090D] border border-slate-200/80 dark:border-[#2F49E8]/30 shadow-xl shadow-slate-200/40 dark:shadow-xl flex flex-col justify-between group hover:border-[#2F49E8]/60 transition-all duration-300">
             <div className="absolute -top-3.5 left-8 px-3.5 py-1 rounded-full bg-[#2F49E8] text-white text-xs font-bold uppercase tracking-wider shadow-md">
               Most Popular • Instant
@@ -74,9 +57,9 @@ export default function CalculatorPageClient() {
               <div className="w-14 h-14 rounded-2xl bg-[#2F49E8]/10 border border-[#2F49E8]/20 flex items-center justify-center text-[#2F49E8] mb-6 group-hover:scale-110 transition-transform">
                 <UploadCloud className="w-7 h-7" />
               </div>
-              <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Ready Brand Creative Drops</h4>
+              <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Brand Flyer & Graphic Drops</h4>
               <p className="text-sm text-slate-600 dark:text-neutral-300 leading-relaxed mb-6">
-                Brands upload high-converting flyers, promo banners, and official launch clips. Simply download the asset, copy the caption, and post to your story or status.
+                Brands upload high-converting flyers, promo banners, and official announcement graphics. Simply download the asset, copy the caption, and post to your story or status.
               </p>
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-white/5">
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
@@ -85,7 +68,7 @@ export default function CalculatorPageClient() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Perfect for WhatsApp Status & Stories</span>
+                  <span>Perfect for Stories & Feed Posts</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
@@ -99,28 +82,28 @@ export default function CalculatorPageClient() {
             </div>
           </div>
 
-          {/* Card 2: Custom Creator UGC */}
+          {/* Card 2: Official Brand Video Drops */}
           <div className="relative rounded-3xl p-8 bg-white dark:bg-gradient-to-b dark:from-[#0D111F] dark:to-[#08090D] border border-slate-200/80 dark:border-white/10 shadow-xl shadow-slate-200/40 dark:shadow-xl flex flex-col justify-between group hover:border-[#17A75B]/50 transition-all duration-300">
             <div>
               <div className="w-14 h-14 rounded-2xl bg-[#17A75B]/10 border border-[#17A75B]/20 flex items-center justify-center text-[#17A75B] mb-6 group-hover:scale-110 transition-transform">
                 <Video className="w-7 h-7" />
               </div>
-              <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Custom Creator UGC Drops</h4>
+              <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Official Brand Video Drops</h4>
               <p className="text-sm text-slate-600 dark:text-neutral-300 leading-relaxed mb-6">
-                Shoot authentic product reviews, unboxing reactions, comedic skits, or app walkthroughs featuring the brand in your signature creator style.
+                Brands provide finished promo clips, commercial reels, and motion product videos. You simply syndicate directly to TikTok, Reels, or Shorts with 0 filming.
               </p>
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-white/5">
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Full creative freedom to match your tone</span>
+                  <span>100% Brand-Supplied Videos</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Tailored for TikTok, Reels & Shorts</span>
+                  <span>Optimized for TikTok, Reels & Shorts</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Direct brand product gifting & seeding</span>
+                  <span>Higher CPM than static graphics</span>
                 </div>
               </div>
             </div>
@@ -138,20 +121,20 @@ export default function CalculatorPageClient() {
               </div>
               <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Omnichannel Syndicate</h4>
               <p className="text-sm text-slate-600 dark:text-neutral-300 leading-relaxed mb-6">
-                Aggregate your audience power. Cross-post ready brand assets on WhatsApp Status + custom video on TikTok + tweet on X simultaneously.
+                Amplify campaign reach across multiple profiles. Cross-post brand flyers on Instagram Stories/Feed + official video clips on TikTok & Reels + post on X simultaneously.
               </p>
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-white/5">
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Multiply views across 3+ platforms</span>
+                  <span>Multiply views across 2+ platforms</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Priority access to top-budget brand drops</span>
+                  <span>Unlocks higher campaign payout caps</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-neutral-300">
                   <Check className="w-4 h-4 text-[#17A75B]" />
-                  <span>Highest total payout potential</span>
+                  <span>Highest total earnings potential</span>
                 </div>
               </div>
             </div>
@@ -183,7 +166,7 @@ export default function CalculatorPageClient() {
               </div>
               <h5 className="text-lg font-semibold text-slate-900 dark:text-white">Claim Active Brand Drops</h5>
               <p className="text-xs text-slate-600 dark:text-neutral-300 leading-relaxed">
-                Log into Kpugi and browse drops in your niche. View brand guidelines, download ready graphics, or check the video prompt. Claim in 1 click.
+                Log into Kpugi and browse drops in your niche. View brand guidelines, download ready graphics, or grab the official promo clip. Claim in 1 click.
               </p>
             </div>
 
@@ -193,7 +176,7 @@ export default function CalculatorPageClient() {
               </div>
               <h5 className="text-lg font-semibold text-slate-900 dark:text-white">Post to Your Channels</h5>
               <p className="text-xs text-slate-600 dark:text-neutral-300 leading-relaxed">
-                Post the brand creative or your UGC on WhatsApp Status, Instagram, TikTok, or X. Include the provided tracking link or campaign hashtags.
+                Post the brand's ready graphic flyer or official video on Instagram, TikTok, X, or YouTube Shorts. Include the provided tracking link or campaign hashtags.
               </p>
             </div>
 
@@ -203,7 +186,7 @@ export default function CalculatorPageClient() {
               </div>
               <h5 className="text-lg font-semibold text-slate-900 dark:text-white">Auto-Verify & Get Paid</h5>
               <p className="text-xs text-slate-600 dark:text-neutral-300 leading-relaxed">
-                Our verification engine audits your impressions. Escrow funds unlock automatically — withdraw straight to your local Nigerian bank or crypto wallet.
+                Our automated scrapers audit your verified view count every 60 minutes. Cleared funds settle into your Available Balance for weekly Friday bank payouts.
               </p>
             </div>
           </div>
@@ -218,9 +201,8 @@ export default function CalculatorPageClient() {
               SUPPORTED NETWORKS & DISTRIBUTION PLATFORMS
             </h4>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {[
-              { name: 'WhatsApp Status', icon: FaWhatsapp, color: 'text-emerald-500', badge: 'High Conversion' },
               { name: 'Instagram Reels', icon: FaInstagram, color: 'text-pink-500', badge: 'High Reach' },
               { name: 'TikTok', icon: FaTiktok, color: 'text-slate-900 dark:text-neutral-200', badge: 'Viral Potential' },
               { name: 'X / Twitter', icon: FaXTwitter, color: 'text-slate-900 dark:text-white', badge: 'Fast Drops' },
@@ -280,7 +262,7 @@ export default function CalculatorPageClient() {
                 <td className="p-4 md:p-6 text-slate-600 dark:text-neutral-400">Net-60 or Net-90 days</td>
                 <td className="p-4 md:p-6 text-slate-600 dark:text-neutral-400">14-30 day hold period</td>
                 <td className="p-4 md:p-6 text-[#17A75B] font-bold bg-[#2F49E8]/5 dark:bg-[#2F49E8]/5 border-l border-slate-200/80 dark:border-[#2F49E8]/20">
-                  Instant escrow (within 24 hours)
+                  Weekly Friday settlements (direct to NUBAN bank)
                 </td>
               </tr>
               <tr>
@@ -296,7 +278,7 @@ export default function CalculatorPageClient() {
                 <td className="p-4 md:p-6 text-slate-600 dark:text-neutral-400">Must produce elaborate video</td>
                 <td className="p-4 md:p-6 text-slate-600 dark:text-neutral-400">Must film custom video</td>
                 <td className="p-4 md:p-6 text-[#17A75B] font-bold bg-[#2F49E8]/5 dark:bg-[#2F49E8]/5 border-l border-slate-200/80 dark:border-[#2F49E8]/20">
-                  Ready brand graphics OR custom UGC
+                  100% Brand-supplied creatives (0 filming or editing)
                 </td>
               </tr>
               <tr>
@@ -326,16 +308,16 @@ export default function CalculatorPageClient() {
         <div className="space-y-4">
           {[
             {
-              q: 'Do I have to film and edit videos, or can I post ready brand creatives?',
-              a: 'You can do both! Many of our highest-earning creators focus on Ready Brand Creative drops. Advertisers upload high-resolution flyers, promotional banners, and official videos. You simply grab the asset, copy the caption, post it to your WhatsApp Status, Instagram Story, or X feed, and get paid for verified views without editing a single second.',
+              q: 'Do I have to film or edit videos to earn on Kpugi?',
+              a: 'No! Kpugi does not require creators to shoot UGC, unboxing videos, or testimonials. Brands supply 100% of the ad creatives — including ready-made flyers, banners, and official promo video clips. All you do is grab the asset, copy the caption, post it to your social media, and get paid for verified views.',
             },
             {
               q: 'How does Kpugi track and verify views?',
-              a: 'Kpugi uses proprietary AI view-auditing and screenshot/link verification. When you submit your published post proof or connect your social account, our engine verifies genuine reach, audience engagement, and view counts while filtering out bots.',
+              a: 'Kpugi uses automated scrapers that audit view counts every 60 minutes. Once you clock in your live post link, our engine verifies genuine reach, audience engagement, and view milestones while filtering out bots.',
             },
             {
-              q: 'Can I monetize my WhatsApp Status on Kpugi?',
-              a: 'Yes! WhatsApp Status is one of Africa’s highest-converting advertising channels. Creators with active contacts can claim ready brand flyers, post them to their status, submit view count screenshots at the 24-hour mark, and get paid directly per verified view.',
+              q: 'Which social platforms can I monetize on Kpugi?',
+              a: 'You can monetize across Instagram Reels & Stories, TikTok videos, X (Twitter) posts, and YouTube Shorts. As long as your post adheres to brand guidelines and delivers verified organic reach, you get paid directly per 1,000 views.',
             },
             {
               q: 'How much does Kpugi take from my earnings?',
@@ -343,7 +325,7 @@ export default function CalculatorPageClient() {
             },
             {
               q: 'When and how do I withdraw my earnings?',
-              a: 'Once your views are verified, funds in automated escrow unlock immediately. You can withdraw directly to your local Nigerian bank account via instant bank transfer, or cash out in crypto.',
+              a: 'Once your views cross the 1,000-view milestone and pass pending clearance, funds settle into your Available Balance. You can place a withdrawal request anytime, and all requests are processed and disbursed directly to your Nigerian bank account (NUBAN) every Friday.',
             },
           ].map((faq, idx) => (
             <div
@@ -379,7 +361,7 @@ export default function CalculatorPageClient() {
             Ready to monetize every view you create?
           </h3>
           <p className="text-sm md:text-base text-slate-600 dark:text-neutral-300 max-w-xl mx-auto">
-            Join thousands of creators turning their WhatsApp Status, Instagram, and TikTok feeds into predictable weekly income with zero follower minimums.
+            Join thousands of creators turning their Instagram, TikTok, and X feeds into predictable weekly income with zero follower minimums.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link

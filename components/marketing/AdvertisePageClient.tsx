@@ -31,6 +31,8 @@ import {
 import { submitBannerAdInquiryAction, BannerAdInquiryInput } from '@/app/actions/advertise';
 import { Pricing2, type PricingTier } from '@/components/marketing/PricingTable';
 import Features1 from '@/components/marketing/Features1';
+import CreativeMockupPreviewer from '@/components/marketing/CreativeMockupPreviewer';
+import AdSpecsSection from '@/components/marketing/AdSpecsSection';
 
 interface AdPlacementSpec {
   id: string;
@@ -231,6 +233,20 @@ export default function AdvertisePageClient() {
               <IoDesktop className="size-4" />
               <span>Explore Ad Placements</span>
               <IoArrowForward className="size-4 group-hover:translate-x-0.5 transition-transform" />
+            </a>
+
+            <a
+              href="#ad-specs"
+              className="px-6 py-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-bold text-sm border border-slate-200 dark:border-white/10 transition-all flex items-center gap-2"
+            >
+              <span>View Ad Specs</span>
+            </a>
+
+            <a
+              href="#mockup"
+              className="px-6 py-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-bold text-sm border border-slate-200 dark:border-white/10 transition-all flex items-center gap-2"
+            >
+              <span>Creative Mockup</span>
             </a>
 
             <a
@@ -505,6 +521,16 @@ export default function AdvertisePageClient() {
             },
           ]}
         />
+      </div>
+
+      {/* ─── AD SPECIFICATIONS CHEAT SHEET ──────────────────────────────────── */}
+      <div id="ad-specs" className="scroll-mt-24 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+        <AdSpecsSection />
+      </div>
+
+      {/* ─── CREATIVE MOCKUP PREVIEWER ──────────────────────────────────────── */}
+      <div id="mockup" className="scroll-mt-24 border-t border-slate-200/80 dark:border-white/10">
+        <CreativeMockupPreviewer />
       </div>
 
       {/* ─── 5. DIRECT BOOKING & PLACEMENT INQUIRY FORM (USER'S 5-COL LAYOUT) ─ */}

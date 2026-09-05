@@ -10,11 +10,10 @@ export const metadata: Metadata = {
     absolute: 'Creator Payout & CPM Calculator | Kpugi',
   },
   description:
-    'Calculate your creator earnings per 1,000 verified views on WhatsApp Status, Instagram, TikTok, and X. Grab ready brand creatives, post to socials, and get paid 90% direct bank payouts.',
+    'Calculate your creator earnings per 1,000 verified views on Instagram Reels, TikTok, and X. Grab ready brand creatives, post to socials, and get paid 90% direct bank payouts.',
   keywords: [
     'creator earnings calculator',
     'CPM calculator Nigeria',
-    'WhatsApp status monetization Nigeria',
     'TikTok payout calculator',
     'Instagram Reels earnings estimator',
     'brand drops for creators',
@@ -35,7 +34,7 @@ export const metadata: Metadata = {
     siteName: 'Kpugi',
     title: 'Creator Payout & CPM Calculator | Kpugi',
     description:
-      'Calculate your creator earnings per 1,000 verified views on WhatsApp Status, Instagram, TikTok, and X. Grab ready brand creatives, post to socials, and get paid 90% direct bank payouts.',
+      'Calculate your creator earnings per 1,000 verified views on Instagram Reels, TikTok, and X. Grab ready brand creatives, post to socials, and get paid 90% direct bank payouts.',
     images: [
       {
         url: '/kpugi_logo.png',
@@ -49,7 +48,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Creator Payout & CPM Calculator | Kpugi',
     description:
-      'Calculate your creator earnings per 1,000 verified views on WhatsApp Status, Instagram, TikTok, and X. Transparent 10% platform fee.',
+      'Calculate your creator earnings per 1,000 verified views on Instagram Reels, TikTok, and X. Transparent 10% platform fee.',
     images: ['/kpugi_logo.png'],
     creator: '@kpugi_hq',
   },
@@ -73,7 +72,7 @@ export default function CalculatorPage() {
     name: 'Kpugi Creator Earnings & CPM Calculator',
     url: `${siteUrl}/calculator`,
     description:
-      'Free interactive calculator to estimate creator earnings across WhatsApp Status, Instagram, TikTok, and X based on verified views and ready brand creative drops.',
+      'Free interactive calculator to estimate creator earnings across Instagram Reels, TikTok, and X based on verified views and ready brand creative drops.',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'All',
     offers: {
@@ -94,10 +93,10 @@ export default function CalculatorPage() {
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'Do I have to film and edit videos, or can I post ready brand creatives?',
+        name: 'Do I have to film or edit videos to earn on Kpugi?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'You can do both! Advertisers upload high-resolution flyers, promotional banners, and official videos. You simply grab the asset, copy the caption, post it to your WhatsApp Status, Instagram Story, or X feed, and get paid for verified views without editing a single second.',
+          text: 'No! Brands supply 100% of the ad creatives — including ready flyers, banners, and official promo clips. You simply grab the asset, copy the caption, post it to your Instagram Reels, TikTok, or X feed, and get paid for verified views without filming or editing.',
         },
       },
       {
@@ -105,7 +104,7 @@ export default function CalculatorPage() {
         name: 'How does Kpugi calculate creator CPM payouts?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Creator payouts are calculated based on verified views delivered. Default ready creative CPM starts at ₦2,000 per 1,000 verified views, with niche boosts and custom UGC scaling up to ₦5,000+ CPM.',
+          text: 'Creator payouts are calculated based on verified views delivered. Default ready creative CPM starts at ₦2,000 per 1,000 verified views, with official video clips at ₦3,500 and multi-platform omnichannel campaigns scaling up to ₦5,000+ CPM.',
         },
       },
       {
@@ -113,7 +112,7 @@ export default function CalculatorPage() {
         name: 'What is Kpugi’s platform commission?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Kpugi charges a transparent 10% platform fee on paid campaign drops. Creators retain 90% of gross funds directly into their designated bank account or crypto wallet.',
+          text: 'Kpugi charges a transparent 10% platform fee on campaign drops. Creators retain 90% of gross funds directly into their verified Nigerian bank account (NUBAN).',
         },
       },
       {
@@ -121,7 +120,7 @@ export default function CalculatorPage() {
         name: 'When do I get paid for my verified views?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Payments are settled directly through automated escrow. Once your submission meets campaign verification criteria, funds are unlocked instantly for withdrawal.',
+          text: 'Views are audited hourly (every 60 minutes). Once verified views pass pending clearance and enter your Available Balance, you can place a withdrawal request to be paid into your Nigerian bank account every Friday.',
         },
       },
     ],
