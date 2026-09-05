@@ -59,7 +59,7 @@ export function Footer2({
   newsletterSubtitle = 'The future of performance ads is here.',
   newsletterPlaceholder = 'Enter email address',
   newsletterButtonText = 'Subscribe',
-  copyright = `© ${new Date().getFullYear()} Kpugi Inc. All rights reserved.`,
+  copyright = `© ${new Date().getFullYear()} Kpugi Technologies. All rights reserved.`,
   floatingIcon,
 }: Footer2Props) {
   const [email, setEmail] = useState('');
