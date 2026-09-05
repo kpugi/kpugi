@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     'verified creators Nigeria',
     'TikTok creator network Nigeria',
     'Instagram influencer marketing Nigeria',
-    'WhatsApp status monetization Nigeria',
+    'YouTube Shorts advertising Nigeria',
     'CPM advertising Nigeria',
     'brand creator collaboration',
   ],

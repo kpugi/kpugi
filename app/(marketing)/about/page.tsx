@@ -124,6 +124,23 @@ export default async function AboutPage() {
         'https://blog.kpugi.com',
       ],
     },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: siteUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'About Us',
+          item: `${siteUrl}/about`,
+        },
+      ],
+    },
   };
 
   return (

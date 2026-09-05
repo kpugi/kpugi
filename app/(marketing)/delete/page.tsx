@@ -1,14 +1,53 @@
 import React from 'react';
 import Link from 'next/link';
+import { Metadata } from 'next';
 
-export const metadata = {
-  title: 'User Data Deletion Instructions',
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: 'User Data Deletion Instructions — Privacy & Account Control | Kpugi',
   description: 'Step-by-step instructions on how users can delete their data and disconnect social media accounts from Kpugi.',
+  alternates: {
+    canonical: '/delete',
+  },
 };
 
 export default function UserDataDeletionPage() {
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': `${siteUrl}/delete#webpage`,
+      url: `${siteUrl}/delete`,
+      name: 'User Data Deletion Instructions | Kpugi',
+      description: 'Instructions on deleting user data and disconnecting social accounts from Kpugi.',
+      breadcrumb: {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: siteUrl,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'User Data Deletion',
+            item: `${siteUrl}/delete`,
+          },
+        ],
+      },
+    },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-16 text-slate-800 font-sans leading-relaxed">
+    <div className="max-w-3xl mx-auto px-4 py-16 text-slate-800 dark:text-slate-200 font-sans leading-relaxed">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="border-b border-slate-200 pb-6 mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">User Data Deletion Instructions</h1>
         <p className="text-sm text-slate-500 mt-2">Compliance with Meta Platform & General Data Deletion Requirements</p>
