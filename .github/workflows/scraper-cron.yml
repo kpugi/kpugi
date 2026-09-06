@@ -1,9 +1,9 @@
 name: Automated Social Metric Scraper & View Auditor
 
 on:
-  # 1. Scheduled cron: Runs every 60 minutes (hourly) 24/7
+  # 1. Scheduled cron: Runs every 30 minutes 24/7 to check for due post audits
   schedule:
-    - cron: '0 * * * *'
+    - cron: '*/30 * * * *'
 
   # 2. Manual trigger from GitHub Actions tab
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
   audit-submissions:
     name: Scrape & Audit Submissions
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repository

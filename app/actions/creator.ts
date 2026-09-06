@@ -238,10 +238,8 @@ export async function submitCampaignVideoAction(formData: FormData) {
     profileId: userProfile.profile.id,
   }).catch((err) => console.error('[notifyCreatorJoinedCampaign] Error:', err));
 
-  // Trigger scraper audit
-  import('@/lib/scraper/trigger')
-    .then(({ triggerScraperRun }) => triggerScraperRun())
-    .catch((err) => console.warn('[triggerScraperRun] Warning:', err));
+  // Note: New video submissions enter a 60-minute organic growth incubation window.
+  // The automated auditing engine evaluates the post once submitted_at reaches 60 minutes.
 
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath('/campaigns');
@@ -1242,6 +1240,7 @@ export async function resyncSubmissionScraperAction(submissionId: string) {
     .update({
       status: 'pending',
       verified_at: new Date().toISOString(),
+      last_scraped_at: null, // Clear last_scraped_at so manual resync immediately qualifies under get_due_submissions
     })
     .eq('id', submissionId)
     .or(`creator_id.eq.${userProfile.profile.id},creator_id.eq.${userProfile.creatorProfile.id}`);

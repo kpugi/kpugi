@@ -3,7 +3,7 @@ import logging
 import urllib.request
 import urllib.parse
 import urllib.error
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 try:
     from .config import (
@@ -81,25 +81,81 @@ class DatabaseClient:
 
     def fetch_active_submissions(self) -> List[Dict[str, Any]]:
         """
-        Fetches submissions that need metric auditing:
-        - status IN ('pending', 'auditing', 'verified_pass')
-        - post_url IS NOT NULL
+        Fetches submissions that are currently DUE for metric auditing:
+        - 1st audit: submitted_at <= (NOW - 60 minutes) when last_scraped_at is null
+        - Recurring audits: last_scraped_at <= (NOW - 60 minutes) and submitted_at > (NOW - 72 hours)
+        - Final audit: submitted_at <= (NOW - 72 hours) and has not had a post-72h settlement audit yet
         """
-        url = f"{self.rest_url}/submissions"
-        params = {
-            "select": "id,creator_id,campaign_id,social_account_id,post_url,status,final_view_count,last_paid_view_count,max_verified_views,pending_payout_amount,payout_amount,submitted_at,last_scraped_at",
-            "post_url": "not.is.null",
-            "status": "in.(pending,auditing,verified_pass)",
-            "order": "last_scraped_at.asc.nullsfirst,submitted_at.desc",
-            "limit": str(BATCH_SIZE),
-        }
+        submissions = None
 
-        resp = self._http_request("GET", url, params=params)
-        if resp["status_code"] != 200:
-            logger.error(f"Error fetching submissions (HTTP {resp['status_code']}): {resp['error']}")
-            return []
+        # 1. Attempt server-side Postgres RPC
+        rpc_url = f"{self.rest_url}/rpc/get_due_submissions"
+        rpc_resp = self._http_request("POST", rpc_url, data={"batch_limit": BATCH_SIZE})
+        if rpc_resp["status_code"] == 200 and isinstance(rpc_resp["data"], list):
+            submissions = rpc_resp["data"]
+            logger.info(f"Retrieved {len(submissions)} due submission(s) via database RPC.")
 
-        submissions = resp["data"] or []
+        # 2. Fallback to REST endpoint with Python-side cooldown validation
+        if submissions is None:
+            url = f"{self.rest_url}/submissions"
+            params = {
+                "select": "id,creator_id,campaign_id,social_account_id,post_url,status,final_view_count,last_paid_view_count,max_verified_views,pending_payout_amount,payout_amount,submitted_at,last_scraped_at",
+                "post_url": "not.is.null",
+                "status": "in.(pending,verified_pass)",
+                "order": "last_scraped_at.asc.nullsfirst,submitted_at.desc",
+                "limit": str(BATCH_SIZE * 2),
+            }
+
+            resp = self._http_request("GET", url, params=params)
+            if resp["status_code"] != 200:
+                logger.error(f"Error fetching submissions (HTTP {resp['status_code']}): {resp['error']}")
+                return []
+
+            raw_subs = resp["data"] or []
+            now = datetime.now(timezone.utc)
+            submissions = []
+
+            for s in raw_subs:
+                sub_at_raw = s.get('submitted_at')
+                if not sub_at_raw:
+                    continue
+                try:
+                    sub_at = datetime.fromisoformat(sub_at_raw.replace('Z', '+00:00'))
+                except Exception:
+                    continue
+
+                last_scrape_raw = s.get('last_scraped_at')
+                age = now - sub_at
+
+                # Check 72-hour lifecycle
+                if age >= timedelta(hours=72):
+                    if last_scrape_raw:
+                        try:
+                            last_scrape = datetime.fromisoformat(last_scrape_raw.replace('Z', '+00:00'))
+                            if last_scrape >= (sub_at + timedelta(hours=72)):
+                                continue # Already completed post-72h settlement audit
+                        except Exception:
+                            pass
+                    submissions.append(s)
+                    continue
+
+                # Brand new submission cooldown: 60 minutes
+                if not last_scrape_raw:
+                    if age >= timedelta(minutes=60):
+                        submissions.append(s)
+                    continue
+
+                # Recurring audit cooldown: 60 minutes
+                try:
+                    last_scrape = datetime.fromisoformat(last_scrape_raw.replace('Z', '+00:00'))
+                    if (now - last_scrape) >= timedelta(minutes=60):
+                        submissions.append(s)
+                except Exception:
+                    submissions.append(s)
+
+                if len(submissions) >= BATCH_SIZE:
+                    break
+
         if not submissions:
             return []
 
@@ -111,13 +167,21 @@ class DatabaseClient:
         social_ids = list(set([s['social_account_id'] for s in submissions if s.get('social_account_id')]))
         social_map = self._fetch_social_accounts_by_ids(social_ids)
 
+        active_submissions = []
         for sub in submissions:
-            sub['campaign'] = campaigns_map.get(sub.get('campaign_id'), {})
+            camp = campaigns_map.get(sub.get('campaign_id'), {})
+            camp_status = (camp.get('status') or '').lower()
+            if camp_status != 'live':
+                logger.info(f"Skipping sub {sub['id'][:8]}: Campaign '{camp.get('title', 'Unknown')}' is '{camp_status}', not 'live'.")
+                continue
+
+            sub['campaign'] = camp
             social_acc = social_map.get(sub.get('social_account_id'), {})
             sub['social_account_handle'] = social_acc.get('handle')
             sub['social_account_platform'] = social_acc.get('platform')
+            active_submissions.append(sub)
 
-        return submissions
+        return active_submissions
 
     def _fetch_campaigns_by_ids(self, campaign_ids: List[str]) -> Dict[str, Dict[str, Any]]:
         if not campaign_ids:
@@ -227,8 +291,23 @@ class DatabaseClient:
 
     def update_campaign_budget(self, campaign_id: str, spent_increment: float, reserved_decrement: float, new_status: Optional[str] = None) -> bool:
         """
-        Updates the campaign spent_budget, reserved_budget, and status in real-time.
+        Updates the campaign spent_budget, reserved_budget, and status.
+        Uses atomic Postgres RPC with row-level locking to eliminate race conditions.
+        Falls back to direct REST PATCH if RPC is unavailable.
         """
+        # 1. Attempt atomic Postgres RPC with row-level locking
+        rpc_url = f"{self.rest_url}/rpc/atomic_update_campaign_budget"
+        rpc_payload = {
+            "p_campaign_id": campaign_id,
+            "p_spent_increment": spent_increment,
+            "p_reserved_decrement": reserved_decrement,
+            "p_new_status": new_status,
+        }
+        rpc_resp = self._http_request("POST", rpc_url, data=rpc_payload)
+        if rpc_resp["status_code"] == 200:
+            return True
+
+        # 2. Fallback to direct REST PATCH
         url = f"{self.rest_url}/campaigns"
         params = {"id": f"eq.{campaign_id}"}
         

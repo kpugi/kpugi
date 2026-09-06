@@ -64,12 +64,24 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     # 3. Handle unreachable / deleted posts
     if not result.reachable:
         logger.warning(f"Submission {sub_id[:8]} post is unreachable: {result.error_message}")
+        prev_pending = float(sub.get('pending_payout_amount') or 0.0)
         updates = {
             "last_scraped_at": now_iso,
+            "pending_payout_amount": 0,
+            "auto_approve_at": None,
             "status": "verified_fail",
-            "failure_reason": result.error_message or "Post is private, unreachable, or deleted.",
+            "failure_reason": result.error_message or "Post is private, unreachable, or deleted within the 72-hour audit window.",
         }
         db.update_submission(sub_id, updates)
+
+        # Reverse campaign spent/reserved budget if payout was pending
+        if prev_pending > 0 and campaign.get('id'):
+            db.update_campaign_budget(
+                campaign_id=campaign['id'],
+                spent_increment=-prev_pending,
+                reserved_decrement=-prev_pending
+            )
+
         return {
             "id": sub_id[:8],
             "platform": result.platform,
@@ -112,12 +124,8 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
 
             # Only evaluate mismatch if we have text usernames (avoid false positives on raw numeric IDs)
             if text_candidates:
-                matched = any(
-                    norm_handle == clean_handle(c) or
-                    (len(norm_handle) >= 3 and norm_handle in clean_handle(c)) or
-                    (len(clean_handle(c)) >= 3 and clean_handle(c) in norm_handle)
-                    for c in text_candidates
-                )
+                # Strict normalized equality (handles case, spaces, dots, underscores, but prevents substring spoofing)
+                matched = any(norm_handle == clean_handle(c) for c in text_candidates)
 
                 if not matched:
                     primary_author = text_candidates[0]
@@ -165,8 +173,37 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     if result.duration is not None:
         updates["watch_time_seconds"] = int(result.duration)
 
+    # Check 72-Hour Lifecycle Cap
+    submitted_raw = sub.get('submitted_at')
+    is_past_72h = False
+    if submitted_raw:
+        try:
+            sub_at = datetime.fromisoformat(submitted_raw.replace('Z', '+00:00'))
+            if (now_utc - sub_at) >= timedelta(hours=72):
+                is_past_72h = True
+        except Exception:
+            pass
+
     # Check minimum threshold
     if final_views < min_view_threshold:
+        if is_past_72h:
+            logger.info(f"Submission {sub_id[:8]} reached 72h window with {final_views} views (< {min_view_threshold}). Marking verified_fail.")
+            updates.update({
+                "pending_payout_amount": 0,
+                "auto_approve_at": None,
+                "status": "verified_fail",
+                "failure_reason": f"Video did not reach the required {min_view_threshold:,} views threshold within the 72-hour window.",
+            })
+            db.update_submission(sub_id, updates)
+            return {
+                "id": sub_id[:8],
+                "platform": result.platform,
+                "reachable": True,
+                "views": final_views,
+                "status": "verified_fail (72h expired)",
+                "payout": 0,
+            }
+
         logger.info(f"Submission {sub_id[:8]} views ({final_views}) < threshold ({min_view_threshold}). Keeping in pending.")
         updates.update({
             "pending_payout_amount": 0,
@@ -198,10 +235,14 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     else:
         incremental_payout = min(raw_payout, int(max_allowable))
 
-    # Surge Protection: Surge >= 50k views gets 24h grace window, else 1h
-    is_surge = new_views >= SURGE_VIEW_THRESHOLD
-    grace_hours = SURGE_AUTO_APPROVE_HOURS if is_surge else DEFAULT_AUTO_APPROVE_HOURS
-    auto_approve_at = (now_utc + timedelta(hours=grace_hours)).isoformat()
+    # Surge Protection & 72-Hour Lifecycle auto-approval
+    if is_past_72h:
+        # At 72 hours, final audit immediately unlocks approval for settlement
+        auto_approve_at = now_utc.isoformat()
+    else:
+        is_surge = new_views >= SURGE_VIEW_THRESHOLD
+        grace_hours = SURGE_AUTO_APPROVE_HOURS if is_surge else DEFAULT_AUTO_APPROVE_HOURS
+        auto_approve_at = (now_utc + timedelta(hours=grace_hours)).isoformat()
 
     updates.update({
         "pending_payout_amount": incremental_payout,
@@ -211,7 +252,8 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     })
 
     db.update_submission(sub_id, updates)
-    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Accruing Payout Today: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: verified_pass")
+    status_note = "verified_pass (72h final)" if is_past_72h else "verified_pass"
+    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Accruing Payout Today: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: {status_note}")
 
     # Real-time Campaign Budget Deduction
     delta_payout = incremental_payout - float(sub.get('pending_payout_amount') or 0.0)
@@ -253,13 +295,22 @@ def main():
         logger.info("No active submissions require auditing at this time. Exiting cleanly.")
         return
 
+    import concurrent.futures
+
     summary_records = []
-    for sub in submissions:
-        try:
-            record = process_submission(db, sub)
-            summary_records.append(record)
-        except Exception as e:
-            logger.error(f"Error processing submission {sub.get('id')}: {e}")
+    max_workers = min(6, max(1, len(submissions)))
+    logger.info(f"Auditing {len(submissions)} submission(s) concurrently with {max_workers} worker thread(s)...")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_sub = {executor.submit(process_submission, db, sub): sub for sub in submissions}
+        for future in concurrent.futures.as_completed(future_to_sub):
+            sub = future_to_sub[future]
+            try:
+                record = future.result()
+                if record:
+                    summary_records.append(record)
+            except Exception as e:
+                logger.error(f"Unhandled error auditing submission {sub.get('id')}: {e}")
 
     # Output Summary Table
     print("\n" + "=" * 78)

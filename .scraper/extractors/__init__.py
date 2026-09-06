@@ -21,40 +21,99 @@ except (ImportError, ValueError):
         extract_opengraph_fallback,
     )
 
+import urllib.parse
+from typing import Optional, Tuple
+
 logger = logging.getLogger(__name__)
+
+ALLOWED_DOMAINS = {
+    'youtube': ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'],
+    'tiktok': ['tiktok.com', 'www.tiktok.com', 'm.tiktok.com', 'vm.tiktok.com'],
+    'x': ['twitter.com', 'www.twitter.com', 'x.com', 'www.x.com', 'mobile.twitter.com'],
+    'instagram': ['instagram.com', 'www.instagram.com', 'm.instagram.com'],
+    'facebook': ['facebook.com', 'www.facebook.com', 'm.facebook.com', 'fb.watch', 'fb.com'],
+    'threads': ['threads.net', 'www.threads.net'],
+    'linkedin': ['linkedin.com', 'www.linkedin.com'],
+}
+
+def canonicalize_url(url: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Validates URL protocol and hostname against authorized social networks (blocking SSRF).
+    Strips tracking query parameters (utm_*, s, t, ref, feature, fbclid, igsh).
+    Returns (canonical_url, platform) or (None, None) if invalid/unauthorized.
+    """
+    if not url or not isinstance(url, str):
+        return None, None
+
+    try:
+        parsed = urllib.parse.urlparse(url.strip())
+    except Exception:
+        return None, None
+
+    # Enforce strictly HTTP/HTTPS
+    if parsed.scheme.lower() not in ('http', 'https'):
+        return None, None
+
+    hostname = (parsed.hostname or '').lower()
+    if not hostname:
+        return None, None
+
+    # Block private IP ranges, localhosts, and cloud metadata endpoints (SSRF guard)
+    if (
+        hostname in ('localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254', '::1')
+        or hostname.startswith('10.')
+        or hostname.startswith('192.168.')
+        or hostname.startswith('172.')
+    ):
+        return None, None
+
+    matched_platform = None
+    for plat, domains in ALLOWED_DOMAINS.items():
+        if any(hostname == d or hostname.endswith('.' + d) for d in domains):
+            matched_platform = plat
+            break
+
+    if not matched_platform:
+        return None, None
+
+    # Strip tracking query parameters
+    TRACKING_PARAMS = {'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 's', 't', 'ref', 'ref_src', 'feature', 'fbclid', 'igsh'}
+    query_dict = urllib.parse.parse_qs(parsed.query, keep_blank_values=False)
+    filtered_query = {k: v for k, v in query_dict.items() if k.lower() not in TRACKING_PARAMS}
+
+    clean_query = urllib.parse.urlencode(filtered_query, doseq=True)
+    clean_path = parsed.path.rstrip('/') if len(parsed.path) > 1 else parsed.path
+    canonical = urllib.parse.urlunparse((
+        parsed.scheme.lower(),
+        hostname,
+        clean_path,
+        '',
+        clean_query,
+        ''
+    ))
+    return canonical, matched_platform
+
 
 def detect_platform(url: str) -> str:
     """Identifies the social platform from a post URL."""
-    url_lower = url.lower()
-    if any(domain in url_lower for domain in ['youtube.com', 'youtu.be']):
-        return 'youtube'
-    if 'tiktok.com' in url_lower:
-        return 'tiktok'
-    if any(domain in url_lower for domain in ['twitter.com', 'x.com']):
-        return 'x'
-    if 'instagram.com' in url_lower:
-        return 'instagram'
-    if any(domain in url_lower for domain in ['facebook.com', 'fb.watch', 'fb.com']):
-        return 'facebook'
-    if 'threads.net' in url_lower:
-        return 'threads'
-    if 'linkedin.com' in url_lower:
-        return 'linkedin'
-    return 'generic'
+    _, platform = canonicalize_url(url)
+    return platform or 'generic'
 
 
 def extract_post_metrics(url: str) -> ScrapeResult:
     """
     Extracts metrics from any supported social URL using dedicated high-fidelity extractors
-    with multi-layer fallbacks.
+    with multi-layer fallbacks. Enforces strict URL sanitization and SSRF blocking.
     """
-    if not url or not url.startswith(('http://', 'https://')):
+    canonical_url, platform = canonicalize_url(url)
+    if not canonical_url or not platform:
         return ScrapeResult(
             reachable=False,
-            error_message="Invalid URL format."
+            error_message="Invalid or unsupported social platform URL."
         )
 
-    platform = detect_platform(url)
+    # Use canonical URL for extraction
+    url = canonical_url
 
     # 1. Non-video platforms go straight to lightweight OpenGraph extraction
     if platform in ('threads', 'linkedin', 'generic'):

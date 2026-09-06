@@ -61,35 +61,56 @@ def extract_twitter_syndication(url: str) -> Optional[ScrapeResult]:
     # 1. FixTweet Public API (Returns exact views, likes, retweets, replies, video duration)
     fx_url = f"https://api.fxtwitter.com/status/{tweet_id}"
     fx_data = _http_get_json(fx_url)
-    if fx_data and fx_data.get('code') == 200 and 'tweet' in fx_data:
-        tweet = fx_data['tweet']
-        author = tweet.get('author', {})
-        views = tweet.get('views')
-        likes = tweet.get('likes')
-        retweets = tweet.get('retweets')
-        replies = tweet.get('replies')
-        bookmarks = tweet.get('bookmarks')
+    if fx_data:
+        code = fx_data.get('code')
+        msg = str(fx_data.get('message', '')).lower()
+        if code in (401, 403, 404) or any(w in msg for w in ['suspended', 'deleted', 'not found', 'protected', 'tombstone']):
+            return ScrapeResult(
+                reachable=False,
+                platform="x",
+                extractor="twitter_fxtweet_api",
+                error_message=f"Tweet or author account is unavailable on X: {fx_data.get('message', 'Unavailable / Suspended')}"
+            )
 
-        return ScrapeResult(
-            reachable=True,
-            view_count=int(views) if views is not None else None,
-            like_count=int(likes) if likes is not None else None,
-            comment_count=int(replies) if replies is not None else None,
-            share_count=int(retweets) if retweets is not None else None,
-            uploader=author.get('screen_name'),
-            title=f"Tweet by @{author.get('screen_name')}",
-            description=tweet.get('text'),
-            platform="x",
-            extractor="twitter_fxtweet_api",
-            raw=tweet
-        )
+        if code == 200 and 'tweet' in fx_data:
+            tweet = fx_data['tweet']
+            author = tweet.get('author', {})
+            views = tweet.get('views')
+            likes = tweet.get('likes')
+            retweets = tweet.get('retweets')
+            replies = tweet.get('replies')
+            bookmarks = tweet.get('bookmarks')
+
+            return ScrapeResult(
+                reachable=True,
+                view_count=int(views) if views is not None else None,
+                like_count=int(likes) if likes is not None else None,
+                comment_count=int(replies) if replies is not None else None,
+                share_count=int(retweets) if retweets is not None else None,
+                uploader=author.get('screen_name'),
+                title=f"Tweet by @{author.get('screen_name')}",
+                description=tweet.get('text'),
+                platform="x",
+                extractor="twitter_fxtweet_api",
+                raw=tweet
+            )
 
     # 2. Twitter Syndication API Fallback
     token = ((int(tweet_id) / 1e15) * 3.141592653589793 * 1.5).hex() if hasattr(float, 'hex') else "x"
     api_url = f"https://cdn.syndication.twimg.com/tweet-result?id={tweet_id}&lang=en&token={token}"
 
     data = _http_get_json(api_url)
-    if data and data.get('__typename') != 'TweetTombstone':
+    if data:
+        if data.get('__typename') in ('TweetTombstone', 'TweetUnavailable'):
+            tombstone_info = data.get('tombstone', {}).get('text', {})
+            tombstone_text = tombstone_info.get('text', 'Tweet is unavailable or account suspended') if isinstance(tombstone_info, dict) else 'Tweet is unavailable'
+            return ScrapeResult(
+                reachable=False,
+                platform="x",
+                extractor="twitter_syndication",
+                error_message=f"Tweet unavailable on X: {tombstone_text}"
+            )
+
         user_data = data.get('user', {})
         views = None
         if 'views' in data and isinstance(data['views'], dict):
@@ -208,23 +229,24 @@ def extract_youtube_fallback(url: str) -> Optional[ScrapeResult]:
         },
         'videoId': video_id
     }
-    
-    player_data = _http_get_json(
-        player_url,
-        headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
-    )
-    if not player_data:
-        # Retry with direct post request if _http_get_json didn't send body
-        try:
-            req = urllib.request.Request(
-                player_url,
-                data=json.dumps(payload).encode('utf-8'),
-                headers={'Content-Type': 'application/json', 'User-Agent': DEFAULT_USER_AGENT}
-            )
-            with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+
+    player_data = None
+    try:
+        req = urllib.request.Request(
+            player_url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': DEFAULT_USER_AGENT,
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            if resp.getcode() == 200:
                 player_data = json.loads(resp.read().decode('utf-8', errors='ignore'))
-        except Exception as e:
-            logger.debug(f"Innertube player request failed: {e}")
+    except Exception as e:
+        logger.debug(f"Innertube player request failed: {e}")
 
     if player_data:
         vdetails = player_data.get('videoDetails', {})
@@ -334,6 +356,32 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
         
         title = title_match.group(1) if title_match else None
         desc = desc_match.group(1) if desc_match else None
+
+        # Check for account suspension, post deletion, or tombstone patterns
+        combined_text = f"{title or ''} {desc or ''}".lower()
+        SUSPENSION_PATTERNS = [
+            'suspended account',
+            'account has been suspended',
+            'account suspended',
+            'tweet is unavailable',
+            'post is unavailable',
+            'page not found',
+            'post has been deleted',
+            'video has been removed',
+            'video is private',
+            'this content is not available',
+            'user not found',
+            'something went wrong',
+            "sorry, this page isn't available",
+        ]
+        for pattern in SUSPENSION_PATTERNS:
+            if pattern in combined_text:
+                return ScrapeResult(
+                    reachable=False,
+                    platform=platform,
+                    extractor="opengraph_fallback",
+                    error_message=f"Post or account is unavailable/suspended: {desc or title or pattern}"
+                )
 
         view_count = None
         if desc:

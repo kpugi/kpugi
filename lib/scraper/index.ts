@@ -1,15 +1,16 @@
+/**
+ * Social Metric Scraper Dispatch & Types
+ * Production metric extraction runs via the Python engine in .scraper/
+ */
+
+export * from './trigger';
+
 export interface ScrapeResult {
   postReachable: boolean;
   viewCount: number | null;
+  likeCount?: number | null;
+  commentCount?: number | null;
+  shareCount?: number | null;
   rawPayload?: Record<string, unknown>;
   notes?: string;
-}
-
-export async function scrapePost(url: string, platform: 'instagram' | 'tiktok' | 'x'): Promise<ScrapeResult> {
-  // Scraper platform dispatch
-  return {
-    postReachable: true,
-    viewCount: 1500,
-    notes: `Scraped ${platform} post URL: ${url}`,
-  };
 }
