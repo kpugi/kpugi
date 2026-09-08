@@ -194,6 +194,25 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
     .order('cpm_rate', { ascending: false })
     .limit(6);
 
+  // Fetch bulk AI match scores for the creator if logged in
+  const matchScoreMap: Record<string, number> = {};
+  if (profileId) {
+    try {
+      const { data: bulkScores } = await supabase.rpc('get_creator_campaign_match_scores', {
+        p_creator_id: profileId,
+      });
+      if (Array.isArray(bulkScores)) {
+        for (const item of bulkScores) {
+          if (item.campaign_id && typeof item.match_score === 'number') {
+            matchScoreMap[item.campaign_id] = item.match_score;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[getCreatorDashboardData] Bulk match score fetch error:', e);
+    }
+  }
+
   const recommendedCampaigns = (rawRecs || [])
     .filter((c: any) => !joinedCampaignIds.includes(c.id))
     .slice(0, 3)
@@ -203,8 +222,10 @@ export async function getCreatorDashboardData(profileId: string): Promise<Creato
         ...c,
         company_name: adv?.company_name || 'Brand Partner',
         company_logo: c.cover_image_url || adv?.profile?.avatar_url || null,
+        match_score: matchScoreMap[c.id] ?? 75,
       };
     });
+
 
   const recentSettlements = rawAudits.map((a: any) => {
     const camp = Array.isArray(a.campaign) ? a.campaign[0] : a.campaign;
@@ -841,7 +862,7 @@ export async function getCampaignDetailsForCreator(
     (submission?.post_url?.includes('instagram.com') ? 'instagram' : null);
 
   // 7. Fetch personalized AI match score for creator
-  let matchScore = 94;
+  let matchScore = 75;
   if (creatorProfileId && realCampaignId) {
     try {
       const { data: score } = await supabase.rpc('get_campaign_match_score', {

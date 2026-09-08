@@ -122,7 +122,7 @@ export async function GET(request: Request) {
 
     // Attach AI match scores, ranking badges (Trending 24h, Hot 7d, Popular 30d), and sanitize cover images
     const enrichedCampaigns = (campaigns || []).map((camp) => {
-      const matchScore = matchScoreMap[camp.id] ?? (effectiveCreatorId ? 75 : 94);
+      const matchScore = matchScoreMap[camp.id] ?? 75;
 
       // Sanitize cover_image_url if it's an oversized base64 data URI (> 50KB) to prevent JSON API bloat
       let safeCoverUrl = camp.cover_image_url || null;

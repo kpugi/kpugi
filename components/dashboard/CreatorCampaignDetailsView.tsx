@@ -13,6 +13,13 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
 import { getCampaignReviewsSummaryAction, CampaignReviewsSummary } from '@/app/actions/reviews';
 
+const ADVERT_BANNERS = [
+  '/images/advertise_banner.jpg',
+  '/images/your_ad_here_banner.jpg',
+  '/images/place_your_ad_banner.jpg',
+  '/images/promote_with_us_banner.jpg',
+];
+
 interface CreatorCampaignDetailsViewProps {
   data: CampaignDetailsForCreator;
   campaignId: string;
@@ -53,6 +60,13 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const [showUnjoinConfirm, setShowUnjoinConfirm] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  const [bannerIndex, setBannerIndex] = useState<number>(0);
+
+  useEffect(() => {
+    // Pick a random advert banner on each page load / refresh
+    const randomIdx = Math.floor(Math.random() * ADVERT_BANNERS.length);
+    setBannerIndex(randomIdx);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -469,15 +483,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                 </Link>
               ) : (
                 <div className={`flex items-center gap-2.5 bg-[#0B1026] px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md border ${
-                  (campaign.match_score ?? 85) >= 80
+                  (campaign.match_score ?? 75) >= 80
                     ? 'border-emerald-500/40 text-emerald-400'
-                    : (campaign.match_score ?? 85) >= 65
+                    : (campaign.match_score ?? 75) >= 65
                     ? 'border-blue-500/40 text-blue-400'
                     : 'border-slate-500/40 text-slate-300'
                 }`}>
                   <div className="flex flex-col">
                     <span className="font-mono text-xs font-extrabold">
-                      {campaign.match_score ?? 85}% Match Score
+                      {campaign.match_score ?? 75}% Match Score
                     </span>
                   </div>
                 </div>
@@ -677,7 +691,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
                 {/* ⚡ AI-POWERED SYNC CARD (Only for creators & guests, hidden for advertisers) */}
                 {userRole !== 'advertiser' && (() => {
-                  const dbMatchScore = campaign.match_score ?? 85;
+                  const dbMatchScore = campaign.match_score ?? 75;
 
                   return (
                     <div className="mt-8 bg-white dark:bg-[#12141A] border border-blue-500/20 dark:border-blue-500/30 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
@@ -1545,18 +1559,15 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
             </div>
 
-            {/* Sticky Advertise With Us Banner (Desktop Only) */}
+            {/* Sticky Advert Banner Space (Desktop Only - Rotates on page load / refresh) */}
             <div className="hidden lg:block sticky top-24 pt-1">
-              <Link
-                href="/brands"
-                className="block rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl border border-slate-200/80 dark:border-white/10 group transition-all duration-300 hover:scale-[1.01]"
-              >
+              <div className="block rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 dark:border-white/10 group transition-all duration-300">
                 <img
-                  src="/images/advertise_banner.jpg"
-                  alt="Advertise With Us — Kpugi"
+                  src={ADVERT_BANNERS[bannerIndex]}
+                  alt="Sponsored Banner Space"
                   className="w-full h-auto object-cover rounded-3xl block"
                 />
-              </Link>
+              </div>
             </div>
 
           </div>

@@ -755,7 +755,7 @@ export default function BrowseCampaignsClientView() {
           return `${Math.floor(diff / 86400)}d`;
         })(),
         is_featured: !!c.is_featured,
-        matchScore: c.match_score || 94,
+        matchScore: c.match_score ?? 75,
         status: c.status || 'live',
         rankBadges: (c.rank_badges || []) as RankTier[],
         activityScores: c.activity_scores || {
