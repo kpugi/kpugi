@@ -14,7 +14,7 @@ export async function generateAICampaignPolishAction(
 ) {
   try {
     const nvidiaKey = process.env.NVIDIA_API_KEY;
-    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct';
 
     if (!nvidiaKey) {
       return { success: false, error: 'NVIDIA API Key missing. Please add NVIDIA_API_KEY to .env.local.' };
@@ -1237,21 +1237,23 @@ export async function generateAIAnalyticsInsightsAction(
     }
 
     const nvidiaKey = process.env.NVIDIA_API_KEY;
-    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct';
 
     const totalViews = campaignsPayload.reduce((sum, c) => sum + c.views, 0);
     const totalSpent = campaignsPayload.reduce((sum, c) => sum + c.spent, 0);
     const cpv = totalViews > 0 ? totalSpent / totalViews : 0;
     const avgCpm = totalViews > 0 ? (totalSpent / totalViews) * 1000 : 0;
 
+    const fallbackInsights = {
+      optimizationTip: `Based on ${campaignsPayload.length} live campaign placement(s), your current effective Cost-Per-View is ₦${cpv.toFixed(2)}. Allocating budget toward higher-throughput channel formats will maximize overall view delivery.`,
+      benchmarkComparison: `Your brand's blended CPM of ₦${Math.round(avgCpm).toLocaleString()} is being evaluated against standard Nigeria ad-network benchmarks (₦1,500 - ₦2,000 / 1k views).`,
+    };
+
     if (!nvidiaKey) {
       return {
         success: true,
         hasData: true,
-        insights: {
-          optimizationTip: `Based on ${campaignsPayload.length} live campaign placement(s), your current effective Cost-Per-View is ₦${cpv.toFixed(2)}. Allocating budget toward higher-throughput channel formats will maximize overall view delivery.`,
-          benchmarkComparison: `Your brand's blended CPM of ₦${Math.round(avgCpm).toLocaleString()} is being evaluated against standard Nigeria ad-network benchmarks (₦1,500 - ₦2,000 / 1k views).`,
-        },
+        insights: fallbackInsights,
       };
     }
 
@@ -1279,7 +1281,13 @@ Return ONLY a valid JSON object in the exact format: {"optimizationTip": "...", 
     });
 
     if (!res.ok) {
-      throw new Error('NVIDIA AI request failed');
+      const errText = await res.text().catch(() => '');
+      console.warn('[AI Analytics Insights] NVIDIA AI HTTP error:', res.status, errText);
+      return {
+        success: true,
+        hasData: true,
+        insights: fallbackInsights,
+      };
     }
 
     const jsonRes = await res.json();

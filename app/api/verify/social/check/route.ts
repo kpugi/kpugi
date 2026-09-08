@@ -14,6 +14,8 @@ import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { scrapeProfile } from '@/lib/verification/scraper';
 import { notifyCreatorSocialConnected } from '@/lib/notifications/creator';
 
+import { randomBytes } from 'crypto';
+
 export async function POST(request: Request) {
   try {
     const { platform, handle } = await request.json();
@@ -31,33 +33,117 @@ export async function POST(request: Request) {
     const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
     const cleanHandle = handle.replace(/^@/, '').toLowerCase();
 
-    // Load the pending social account
-    const { data: account } = await supabase
+    // Load the pending social account matching this specific handle
+    let query = supabase
       .from('social_accounts')
-      .select('id, verification_code, verification_code_expires_at, verification_status')
+      .select('id, platform_user_id, verification_code, verification_code_expires_at, verification_status')
       .eq('creator_id', userProfile.profile.id)
-      .eq('platform', platformKey)
-      .maybeSingle();
+      .eq('platform', platformKey);
+
+    if (cleanHandle) {
+      query = query.ilike('platform_user_id', `%${cleanHandle}%`);
+    }
+
+    const { data: matchingAccounts } = await query;
+    let account = matchingAccounts?.[0];
+
+    if (!account) {
+      const { data: fallbackAccount } = await supabase
+        .from('social_accounts')
+        .select('id, platform_user_id, verification_code, verification_code_expires_at, verification_status')
+        .eq('creator_id', userProfile.profile.id)
+        .eq('platform', platformKey)
+        .maybeSingle();
+      account = fallbackAccount || undefined;
+    }
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
     if (account.verification_status === 'verified') {
-      return NextResponse.json({ verified: true, message: 'Already verified' });
+      // Re-sync stats on demand for already verified accounts
+      let scrapedProfile;
+      try {
+        scrapedProfile = await scrapeProfile(platformKey, cleanHandle);
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: `Could not fetch live stats: ${err?.message || 'Profile lookup failed'}` },
+          { status: 422 }
+        );
+      }
+
+      const updateData: Record<string, any> = {
+        last_synced_at: new Date().toISOString(),
+      };
+      if (scrapedProfile.followerCount !== null && scrapedProfile.followerCount !== undefined) {
+        updateData.follower_count = scrapedProfile.followerCount;
+      }
+      if (scrapedProfile.avatarUrl) {
+        updateData.avatar_url = scrapedProfile.avatarUrl;
+      }
+      if (scrapedProfile.displayName) {
+        updateData.display_name = scrapedProfile.displayName;
+      }
+      if (scrapedProfile.bio) {
+        updateData.bio = scrapedProfile.bio;
+      }
+
+      await supabase
+        .from('social_accounts')
+        .update(updateData)
+        .eq('id', account.id);
+
+      return NextResponse.json({
+        verified: true,
+        message: 'Stats re-synced successfully',
+        stats: {
+          followerCount: scrapedProfile.followerCount,
+          avatarUrl: scrapedProfile.avatarUrl,
+          displayName: scrapedProfile.displayName,
+          bio: scrapedProfile.bio,
+        },
+      });
     }
 
+    // Auto-generate code if missing
     if (!account.verification_code) {
-      return NextResponse.json({ error: 'No verification code found. Start verification first.' }, { status: 400 });
+      const newCode = `kpugi-${randomBytes(5).toString('hex')}`;
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      await supabase
+        .from('social_accounts')
+        .update({
+          verification_code: newCode,
+          verification_code_expires_at: expiresAt,
+          verification_status: 'pending',
+        })
+        .eq('id', account.id);
+
+      return NextResponse.json({
+        error: `Verification code was missing. We generated code "${newCode}". Add it to your bio or publish a verification post.`,
+        code: newCode,
+        needsBioUpdate: true,
+      }, { status: 400 });
     }
 
     // Check expiry
     if (account.verification_code_expires_at && new Date(account.verification_code_expires_at) < new Date()) {
+      const refreshedCode = `kpugi-${randomBytes(5).toString('hex')}`;
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       await supabase
         .from('social_accounts')
-        .update({ verification_status: 'failed', verification_code: null })
+        .update({
+          verification_code: refreshedCode,
+          verification_code_expires_at: expiresAt,
+          verification_status: 'pending',
+        })
         .eq('id', account.id);
-      return NextResponse.json({ error: 'Verification code expired. Please start again.' }, { status: 410 });
+
+      return NextResponse.json({
+        error: `Verification code expired. We generated a new code "${refreshedCode}". Please update your bio.`,
+        code: refreshedCode,
+        needsBioUpdate: true,
+      }, { status: 410 });
     }
 
     // Read the public profile

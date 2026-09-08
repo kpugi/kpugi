@@ -136,9 +136,9 @@ export async function notifyCreatorJoinedCampaign({
   if (email && !email.includes('clerk_user_') && !email.endsWith('@example.com')) {
     const html = renderReusableEmailTemplate({
       to: email,
-      subject: 'Slot Secured 🔒 Let\'s Cook!',
+      subject: 'Slot Secured, Let\'s Cook!',
       previewText: `Your budget slot for "${campaignTitle}" is locked in escrow.`,
-      headline: 'Slot Secured 🔒 Let\'s Cook!',
+      headline: 'Campaign Slot Secured, Let\'s Cook!',
       subtitle: `Major W! You just snagged a slot for "${campaignTitle}". Your payout budget of ₦${reservedAmount.toLocaleString()} is safely locked in escrow waiting for your views to pop off.`,
       details: [
         { label: 'CAMPAIGN', value: campaignTitle },
@@ -153,7 +153,7 @@ export async function notifyCreatorJoinedCampaign({
 
     await sendEmail({
       to: email,
-      subject: 'Slot Secured 🔒 Let\'s Cook!',
+      subject: 'Slot Secured, Let\'s Cook!',
       html,
     });
   }

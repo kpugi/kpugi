@@ -215,11 +215,11 @@ export function parseSocialPostUrl(rawUrl: string): ParsedSocialUrl {
 
   // ─── 5. Facebook ─────────────────────────────────────────────────────────────
   if (hostname === 'facebook.com' || hostname.endsWith('.facebook.com') || hostname === 'fb.watch' || hostname === 'fb.com') {
-    // Pattern: /username/posts/123 or /username/videos/123
-    const userMatch = pathname.match(/^\/([a-zA-Z0-9_.-]{1,50})\/(?:posts|videos|reel)\/(\d+)/i);
+    // Pattern: /username/posts/123, /username/videos/123, /username/photos/123
+    const userMatch = pathname.match(/^\/([a-zA-Z0-9_.-]{1,50})\/(?:posts|videos|reel|reels|photos)\/(\d+)/i);
     if (userMatch) {
       const handle = userMatch[1].toLowerCase();
-      if (!['watch', 'reel', 'share', 'story', 'groups', 'events'].includes(handle)) {
+      if (!['watch', 'reel', 'reels', 'share', 'story', 'groups', 'events', 'photos'].includes(handle)) {
         return {
           platform: 'facebook',
           extractedHandle: handle,
@@ -239,9 +239,13 @@ export function parseSocialPostUrl(rawUrl: string): ParsedSocialUrl {
 
   // ─── 6. LinkedIn ─────────────────────────────────────────────────────────────
   if (hostname === 'linkedin.com' || hostname.endsWith('.linkedin.com')) {
+    // Pattern: /posts/vanity-handle_post-title-activity-12345
+    const vanityMatch = pathname.match(/^\/posts\/([a-zA-Z0-9_-]+?)_/i);
+    const extractedHandle = vanityMatch ? vanityMatch[1].toLowerCase() : null;
+
     return {
       platform: 'linkedin',
-      extractedHandle: null,
+      extractedHandle,
       isValidFormat: true,
       normalizedUrl: cleanUrl,
     };

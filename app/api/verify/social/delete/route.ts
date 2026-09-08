@@ -30,7 +30,7 @@ export async function DELETE(request: Request) {
     } else if (platform && handle) {
       const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
       const cleanHandle = handle.trim().replace(/^@/, '').toLowerCase();
-      query = query.eq('platform', platformKey).ilike('handle', cleanHandle);
+      query = query.eq('platform', platformKey).or(`handle.ilike.%${cleanHandle}%,platform_user_id.ilike.%${cleanHandle}%`);
     } else {
       return NextResponse.json({ error: 'accountId or platform & handle required' }, { status: 400 });
     }

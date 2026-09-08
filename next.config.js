@@ -23,6 +23,19 @@ const nextConfig = {
     ],
   },
 
+  async rewrites() {
+    return [
+      {
+        source: '/api/social/:path*',
+        destination: '/api/verify/social/:path*',
+      },
+      {
+        source: '/social/:path*',
+        destination: '/api/verify/social/:path*',
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

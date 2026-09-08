@@ -28,9 +28,13 @@ import {
   AlertCircle,
   X,
   Trash2,
+  LayoutGrid,
+  List,
+  Download,
 } from 'lucide-react';
 
 import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
+import CreatorAccountsListView from './CreatorAccountsListView';
 
 interface CreatorAccountsViewProps {
   groupedAccounts?: Record<string, SocialAccountDetails[]>;
@@ -148,6 +152,16 @@ export default function CreatorAccountsView({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // View mode switcher: Grid or List
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Verification method in Modal Step 2: 'bio' or 'post'
+  const [verificationTab, setVerificationTab] = useState<'bio' | 'post'>('bio');
+  const [postUrlInput, setPostUrlInput] = useState('');
+  const [postCheckLoading, setPostCheckLoading] = useState(false);
+  const [postTemplate, setPostTemplate] = useState<{ caption: string; assetUrl: string } | null>(null);
+  const [captionCopied, setCaptionCopied] = useState(false);
+
   // Modal 2: Info Guide Modal
   const [infoGuidePlatform, setInfoGuidePlatform] = useState<PlatformConfig | null>(null);
 
@@ -238,6 +252,16 @@ export default function CreatorAccountsView({
 
       setGeneratedCode(data.code);
       setCodeInstructions(data.instructions);
+      if (data.postTemplate) {
+        setPostTemplate(data.postTemplate);
+      } else {
+        setPostTemplate({
+          caption: `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${data.code}\nVerified on https://kpugi.com #Kpugi #Creator`,
+          assetUrl: '/images/kpugi_verification_badge.svg',
+        });
+      }
+      setVerificationTab('bio');
+      setPostUrlInput('');
       setModalStep(2);
 
       // Optimistically update state
@@ -272,7 +296,74 @@ export default function CreatorAccountsView({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // Trigger verification check
+  // Open verification modal directly for a pending account (shows code & verification post options)
+  async function handlePendingVerify(platformKey: string, handle: string, existingCode?: string | null) {
+    const platformConfig = ALL_SUPPORTED_PLATFORMS.find(
+      (p) => p.key === platformKey || (platformKey === 'x' && p.key === 'twitter')
+    ) || ALL_SUPPORTED_PLATFORMS[0];
+
+    setSelectedPlatform(platformConfig);
+    setHandleInput(handle);
+    setErrorMsg('');
+    setSuccessMsg('');
+    setShowConnectModal(true);
+
+    if (existingCode) {
+      setGeneratedCode(existingCode);
+      const instructions: Record<string, string> = {
+        x: `Go to your X profile → Edit Profile → add "${existingCode}" anywhere in your bio → Save → click Verify Account.`,
+        twitter: `Go to your X profile → Edit Profile → add "${existingCode}" anywhere in your bio → Save → click Verify Account.`,
+        tiktok: `Go to your TikTok profile → Edit Profile → add "${existingCode}" anywhere in your bio → Save → click Verify Account.`,
+        instagram: `Go to your Instagram profile → Edit Profile → add "${existingCode}" anywhere in your bio → Save → click Verify Account.`,
+        youtube: `Go to YouTube Studio → Customization → Basic Info → add "${existingCode}" to your channel description → Publish → click Verify Account.`,
+        facebook: `Go to your Facebook profile → Edit Details → add "${existingCode}" to your bio → Save → click Verify Account.`,
+        linkedin: `Go to your LinkedIn profile → Edit intro → add "${existingCode}" to your headline or summary → Save → click Verify Account.`,
+      };
+      setCodeInstructions(instructions[platformKey] || `Add "${existingCode}" to your bio and click Verify.`);
+      setPostTemplate({
+        caption: `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${existingCode}\nVerified on https://kpugi.com #Kpugi #Creator`,
+        assetUrl: '/images/kpugi_verification_badge.svg',
+      });
+      setVerificationTab('bio');
+      setModalStep(2);
+      return;
+    }
+
+    // If no existing code, generate one via start endpoint
+    setStartLoading(true);
+    try {
+      const res = await fetch('/api/verify/social/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: platformKey, handle }),
+      });
+      const data = await res.json();
+      setStartLoading(false);
+      if (res.ok && data.code) {
+        setGeneratedCode(data.code);
+        setCodeInstructions(data.instructions);
+        if (data.postTemplate) setPostTemplate(data.postTemplate);
+        const pKey = platformKey === 'twitter' ? 'x' : platformKey;
+        setAccountsGrouped((prev) => {
+          const list = prev[pKey] || [];
+          const updated = list.map((a) =>
+            a.handle.toLowerCase() === handle.toLowerCase() ? { ...a, verificationCode: data.code } : a
+          );
+          return { ...prev, [pKey]: updated };
+        });
+        setVerificationTab('bio');
+        setModalStep(2);
+      } else {
+        setModalStep(1);
+        setErrorMsg(data.error || 'Failed to generate verification code');
+      }
+    } catch {
+      setStartLoading(false);
+      setModalStep(1);
+    }
+  }
+
+  // Trigger verification check via bio
   async function runVerificationCheck(platformKey: string, handle: string) {
     setCheckLoading(handle);
     setErrorMsg('');
@@ -289,12 +380,15 @@ export default function CreatorAccountsView({
       setCheckLoading(null);
 
       if (!res.ok || data.error) {
+        if (data.code) {
+          handlePendingVerify(platformKey, handle, data.code);
+        }
         setErrorMsg(data.error || 'Verification check failed');
         return;
       }
 
       if (data.verified) {
-        setSuccessMsg(`Account @${handle} verified successfully!`);
+        setSuccessMsg(data.message || `Account @${handle} verified successfully!`);
         const pKey = platformKey === 'twitter' ? 'x' : platformKey;
         setAccountsGrouped((prev) => {
           const list = prev[pKey] || [];
@@ -304,7 +398,10 @@ export default function CreatorAccountsView({
                 ...a,
                 verificationStatus: 'verified' as const,
                 avatarUrl: data.stats?.avatarUrl || a.avatarUrl,
-                followerCount: data.stats?.followerCount ?? a.followerCount,
+                followerCount:
+                  data.stats?.followerCount !== undefined && data.stats?.followerCount !== null
+                    ? data.stats.followerCount
+                    : a.followerCount,
               };
             }
             return a;
@@ -321,6 +418,68 @@ export default function CreatorAccountsView({
     } catch {
       setCheckLoading(null);
       setErrorMsg('Network error while checking verification status.');
+    }
+  }
+
+  // Trigger verification check via published post
+  async function handleVerifyPost() {
+    if (!postUrlInput.trim()) {
+      setErrorMsg('Please paste the URL of your verification post.');
+      return;
+    }
+
+    setPostCheckLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const platformKey = selectedPlatform.key === 'twitter' ? 'x' : selectedPlatform.key;
+    const cleanHandle = handleInput.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+
+    try {
+      const res = await fetch('/api/verify/social/check-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: platformKey,
+          handle: cleanHandle,
+          postUrl: postUrlInput.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      setPostCheckLoading(false);
+
+      if (!res.ok || data.error) {
+        setErrorMsg(data.error || 'Verification check failed.');
+        return;
+      }
+
+      if (data.verified) {
+        setSuccessMsg(`Account @${cleanHandle} verified successfully via verification post!`);
+        setAccountsGrouped((prev) => {
+          const list = prev[platformKey] || [];
+          const newList = list.map((a) => {
+            if (a.handle.toLowerCase() === cleanHandle.toLowerCase()) {
+              return {
+                ...a,
+                verificationStatus: 'verified' as const,
+                verificationMethod: 'post',
+                avatarUrl: data.stats?.avatarUrl || a.avatarUrl,
+                followerCount: data.stats?.followerCount ?? a.followerCount,
+              };
+            }
+            return a;
+          });
+          return { ...prev, [platformKey]: newList };
+        });
+
+        setTimeout(() => setShowConnectModal(false), 1500);
+      } else {
+        setErrorMsg(data.message || 'Verification post could not be validated.');
+      }
+    } catch {
+      setPostCheckLoading(false);
+      setErrorMsg('Network error while verifying post.');
     }
   }
 
@@ -378,13 +537,43 @@ export default function CreatorAccountsView({
           </p>
         </div>
 
-        <button
-          onClick={() => openConnectModal(ALL_SUPPORTED_PLATFORMS[0])}
-          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Connect New Account</span>
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          {/* View Mode Toggle: Grid vs List */}
+          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-kpugi-border dark:border-white/10">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-white/10 text-kpugi-blue dark:text-blue-400 shadow-xs'
+                  : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden sm:inline text-[11px]">Grid</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-white/10 text-kpugi-blue dark:text-blue-400 shadow-xs'
+                  : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
+              }`}
+              title="List View"
+            >
+              <List className="w-4 h-4" />
+              <span className="hidden sm:inline text-[11px]">List</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => openConnectModal(ALL_SUPPORTED_PLATFORMS[0])}
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Connect New Account</span>
+          </button>
+        </div>
       </div>
 
       {/* Global Alerts */}
@@ -453,90 +642,111 @@ export default function CreatorAccountsView({
       </div>
 
       {/* ─────────────────────────────────────────────────────
-         GRID OF ALL SUPPORTED SOCIAL PLATFORMS
+         GRID OR LIST OF ALL SUPPORTED SOCIAL PLATFORMS
       ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ALL_SUPPORTED_PLATFORMS.map((platform) => {
-          const pKey = platform.key === 'twitter' ? 'x' : platform.key;
-          const accountsList = accountsGrouped[pKey] || accountsGrouped[platform.key] || [];
+      {viewMode === 'list' ? (
+        <CreatorAccountsListView
+          platforms={ALL_SUPPORTED_PLATFORMS}
+          accountsGrouped={accountsGrouped}
+          renderIcon={renderIcon}
+          onConnect={openConnectModal}
+          onVerify={(pKey, handle, code) => {
+            const p = pKey === 'twitter' ? 'x' : pKey;
+            const existing = (accountsGrouped[p] || []).find((a) => a.handle.toLowerCase() === handle.toLowerCase());
+            if (existing?.verificationStatus === 'verified') {
+              runVerificationCheck(pKey, handle);
+            } else {
+              handlePendingVerify(pKey, handle, code || existing?.verificationCode);
+            }
+          }}
+          onDisconnect={(pKey, handle, accountId) => setDeleteConfirmAccount({ platformKey: pKey, handle, accountId })}
+          onOpenGuide={(platform) => setInfoGuidePlatform(platform)}
+          checkLoading={checkLoading}
+          formatCompactNumber={formatCompactNumber}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {ALL_SUPPORTED_PLATFORMS.map((platform) => {
+            const pKey = platform.key === 'twitter' ? 'x' : platform.key;
+            const accountsList = accountsGrouped[pKey] || accountsGrouped[platform.key] || [];
 
-          return (
-            <div
-              key={platform.key}
-              className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-xs flex flex-col justify-between space-y-5"
-            >
-              {/* Card Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-white/5 border border-kpugi-border dark:border-white/10 flex items-center justify-center shrink-0 shadow-xs">
-                    {renderIcon(platform.key, 'w-6 h-6')}
+            return (
+              <div
+                key={platform.key}
+                className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-xs flex flex-col justify-between space-y-5"
+              >
+                {/* Card Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-white/5 border border-kpugi-border dark:border-white/10 flex items-center justify-center shrink-0 shadow-xs">
+                      {renderIcon(platform.key, 'w-6 h-6')}
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <h3 className="font-display font-bold text-base text-kpugi-ink dark:text-white leading-tight">{platform.name}</h3>
+                    </div>
                   </div>
-                  <div className="flex flex-col justify-center">
-                    <h3 className="font-display font-bold text-base text-kpugi-ink dark:text-white leading-tight">{platform.name}</h3>
-                  </div>
+
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono shrink-0 ${
+                      accountsList.some((a) => a.verificationStatus === 'verified')
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20'
+                        : accountsList.length > 0
+                        ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/20'
+                        : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10'
+                    }`}
+                  >
+                    {accountsList.some((a) => a.verificationStatus === 'verified')
+                      ? 'CONNECTED'
+                      : accountsList.length > 0
+                      ? 'PENDING'
+                      : 'NOT LINKED'}
+                  </span>
                 </div>
 
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono shrink-0 ${
-                    accountsList.some((a) => a.verificationStatus === 'verified')
-                      ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20'
-                      : accountsList.length > 0
-                      ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/20'
-                      : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10'
-                  }`}
-                >
-                  {accountsList.some((a) => a.verificationStatus === 'verified')
-                    ? 'CONNECTED'
-                    : accountsList.length > 0
-                    ? 'PENDING'
-                    : 'NOT LINKED'}
-                </span>
-              </div>
+                {/* Connected / Linked Accounts List */}
+                {accountsList.length > 0 ? (
+                  <div className="space-y-3">
+                    {accountsList.map((account, idx) => {
+                      const isVerified = account.verificationStatus === 'verified';
+                      const isPending = account.verificationStatus === 'pending' || !isVerified;
+                      const followerLabel = platform.key === 'youtube' ? 'SUBSCRIBERS' : 'FOLLOWERS';
 
-              {/* Connected / Linked Accounts List */}
-              {accountsList.length > 0 ? (
-                <div className="space-y-3">
-                  {accountsList.map((account, idx) => {
-                    const isVerified = account.verificationStatus === 'verified';
-                    const isPending = account.verificationStatus === 'pending' || !isVerified;
-                    const followerLabel = platform.key === 'youtube' ? 'SUBSCRIBERS' : 'FOLLOWERS';
-
-                    return (
-                      <div
-                        key={account.id || idx}
-                        className={`p-4 rounded-2xl border transition-all ${
-                          isVerified
-                            ? 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200/80 dark:border-emerald-500/20'
-                            : 'bg-amber-50/40 dark:bg-amber-500/10 border-amber-200/80 dark:border-amber-500/20'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            {account.avatarUrl ? (
-                              <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
-                                <img
-                                  src={account.avatarUrl}
-                                  alt={account.handle}
-                                  referrerPolicy="no-referrer"
-                                  onError={(e) => {
-                                    (e.currentTarget as HTMLElement).style.display = 'none';
-                                    const parent = (e.currentTarget as HTMLElement).parentElement;
-                                    if (parent) {
-                                      const fallback = parent.querySelector('.avatar-fallback');
-                                      if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                                    }
-                                  }}
-                                  className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10"
-                                />
-                                <div className="avatar-fallback w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hidden items-center justify-center font-bold text-xs absolute inset-0">
+                      return (
+                        <div
+                          key={account.id || idx}
+                          className={`p-4 rounded-2xl border transition-all ${
+                            isVerified
+                              ? 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200/80 dark:border-emerald-500/20'
+                              : 'bg-amber-50/40 dark:bg-amber-500/10 border-amber-200/80 dark:border-amber-500/20'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {account.avatarUrl ? (
+                                <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
+                                  <img
+                                    src={account.avatarUrl}
+                                    alt={account.handle}
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLElement).style.display = 'none';
+                                      const parent = (e.currentTarget as HTMLElement).parentElement;
+                                      if (parent) {
+                                        const fallback = parent.querySelector('.avatar-fallback');
+                                        if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                                      }
+                                    }}
+                                    className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10"
+                                  />
+                                  <div className="avatar-fallback w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hidden items-center justify-center font-bold text-xs absolute inset-0">
+                                    {account.handle.charAt(0).toUpperCase()}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700 dark:text-slate-300">
                                   {account.handle.charAt(0).toUpperCase()}
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700 dark:text-slate-300">
-                                {account.handle.charAt(0).toUpperCase()}
-                              </div>
-                            )}
+                              )}
                             <div className="min-w-0">
                               <span className="font-mono font-bold text-xs text-kpugi-blue dark:text-blue-400 block truncate">
                                 @{account.handle}
@@ -582,7 +792,7 @@ export default function CreatorAccountsView({
                         <div className="pt-2 border-t border-slate-200/60 dark:border-white/10 flex items-center gap-2">
                           {isPending ? (
                             <button
-                              onClick={() => runVerificationCheck(platform.key, account.handle)}
+                              onClick={() => handlePendingVerify(platform.key, account.handle, account.verificationCode)}
                               disabled={checkLoading === account.handle}
                               className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs"
                             >
@@ -666,6 +876,7 @@ export default function CreatorAccountsView({
           );
         })}
       </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────
          MODAL 1: CONNECT & VERIFY MODAL (DIRECT PLATFORM)
@@ -773,66 +984,200 @@ export default function CreatorAccountsView({
               </form>
             )}
 
-            {/* ──────── STEP 2: DISPLAY CODE & INSTRUCTIONS ──────── */}
+            {/* ──────── STEP 2: VERIFICATION METHODS (BIO OR POST) ──────── */}
             {modalStep === 2 && (
               <div className="space-y-4 font-sans text-xs">
-                <div className="p-4 rounded-2xl bg-slate-900 dark:bg-black/60 text-white space-y-2 border border-slate-800 dark:border-white/10">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
-                    Your Unique Verification Code
-                  </span>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-mono text-base sm:text-lg font-extrabold tracking-wider text-emerald-400 select-all">
-                      {generatedCode}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(generatedCode)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 text-white transition-all shrink-0 border border-slate-700"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-300" />}
-                      <span>{copied ? 'Copied!' : 'Copy Code'}</span>
-                    </button>
+                {/* Method Switcher Tabs */}
+                <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setVerificationTab('bio')}
+                    className={`py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                      verificationTab === 'bio'
+                        ? 'bg-white dark:bg-white/10 text-kpugi-ink dark:text-white shadow-xs'
+                        : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <span>1. Code in Bio</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVerificationTab('post')}
+                    className={`py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                      verificationTab === 'post'
+                        ? 'bg-white dark:bg-white/10 text-kpugi-ink dark:text-white shadow-xs'
+                        : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <span>2. Verification Post</span>
+                  </button>
+                </div>
+
+                {/* Option 1: Code in Bio Tab */}
+                {verificationTab === 'bio' && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-2xl bg-slate-900 dark:bg-black/60 text-white space-y-2 border border-slate-800 dark:border-white/10">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
+                        Your Unique Verification Code
+                      </span>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-mono text-base sm:text-lg font-extrabold tracking-wider text-emerald-400 select-all">
+                          {generatedCode}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(generatedCode)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 text-white transition-all shrink-0 border border-slate-700"
+                        >
+                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-300" />}
+                          <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
+                      <span className="font-bold text-kpugi-ink dark:text-white block text-xs flex items-center gap-1.5">
+                        <Info className="w-4 h-4 text-kpugi-blue" />
+                        Instructions for @{handleInput.trim().replace(/^@/, '')}:
+                      </span>
+                      <p className="text-xs text-kpugi-slate dark:text-slate-300 leading-relaxed">
+                        {codeInstructions}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => runVerificationCheck(selectedPlatform.key, handleInput.trim().replace(/^@/, ''))}
+                        disabled={!!checkLoading}
+                        className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                      >
+                        {checkLoading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Verifying Bio...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4" />
+                            <span>I've Saved It — Verify Bio</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowConnectModal(false)}
+                        className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-slate dark:text-slate-300 font-sans text-xs font-bold transition-all"
+                      >
+                        Close (Verify Later)
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
-                  <span className="font-bold text-kpugi-ink dark:text-white block text-xs flex items-center gap-1.5">
-                    <Info className="w-4 h-4 text-kpugi-blue" />
-                    Instructions for @{handleInput.trim().replace(/^@/, '')}:
-                  </span>
-                  <p className="text-xs text-kpugi-slate dark:text-slate-300 leading-relaxed">
-                    {codeInstructions}
-                  </p>
-                </div>
+                {/* Option 2: Verification Post Tab */}
+                {verificationTab === 'post' && (
+                  <div className="space-y-4">
+                    <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200/80 dark:border-blue-800/40 text-xs text-kpugi-blue dark:text-blue-300">
+                      <p className="leading-relaxed font-medium">
+                        Prefer not to edit your bio? Download our official creator badge below, publish a post on your public @{handleInput.trim().replace(/^@/, '')} profile with the pre-written caption, then paste your post URL.
+                      </p>
+                    </div>
 
-                <div className="space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => runVerificationCheck(selectedPlatform.key, handleInput.trim().replace(/^@/, ''))}
-                    disabled={!!checkLoading}
-                    className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
-                  >
-                    {checkLoading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Verifying Bio...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4" />
-                        <span>I've Saved It — Verify Now</span>
-                      </>
-                    )}
-                  </button>
+                    {/* Image Preview & Download Button */}
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src="/images/kpugi_verification_badge.svg"
+                          alt="Kpugi Verification Badge"
+                          className="w-11 h-11 rounded-xl object-cover border border-kpugi-border dark:border-white/10 shadow-xs"
+                        />
+                        <div>
+                          <span className="font-bold text-xs text-kpugi-ink dark:text-white block">Official Verification Graphic</span>
+                          <span className="text-[10px] text-kpugi-slate dark:text-slate-400 block font-mono">1080x1080 Square Asset</span>
+                        </div>
+                      </div>
+                      <a
+                        href="/images/kpugi_verification_badge.svg"
+                        download="kpugi-verified-creator-badge.svg"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-kpugi-ink dark:text-white hover:bg-slate-50 dark:hover:bg-white/20 text-xs font-bold transition-all shadow-xs shrink-0"
+                      >
+                        <Download className="w-3.5 h-3.5 text-kpugi-blue" />
+                        <span>Download</span>
+                      </a>
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowConnectModal(false)}
-                    className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-slate dark:text-slate-300 font-sans text-xs font-bold transition-all"
-                  >
-                    Close (Verify Later on Card)
-                  </button>
-                </div>
+                    {/* Pre-written Post Caption */}
+                    <div className="p-3.5 rounded-2xl bg-slate-900 dark:bg-black/60 text-white space-y-2 border border-slate-800 dark:border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+                          Ready-to-Post Caption
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cap = postTemplate?.caption || `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${generatedCode}\nVerified on https://kpugi.com #Kpugi #Creator`;
+                            navigator.clipboard.writeText(cap);
+                            setCaptionCopied(true);
+                            setTimeout(() => setCaptionCopied(false), 2000);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold flex items-center gap-1 text-white transition-all border border-slate-700"
+                        >
+                          {captionCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-300" />}
+                          <span>{captionCopied ? 'Copied!' : 'Copy Caption'}</span>
+                        </button>
+                      </div>
+                      <p className="font-mono text-xs text-slate-200 whitespace-pre-line select-all bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 leading-relaxed">
+                        {postTemplate?.caption || `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${generatedCode}\nVerified on https://kpugi.com #Kpugi #Creator`}
+                      </p>
+                    </div>
+
+                    {/* Post URL Input */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
+                        Paste Your Published Post Link
+                      </label>
+                      <input
+                        type="url"
+                        placeholder={`https://${selectedPlatform.key === 'x' ? 'x.com' : selectedPlatform.key + '.com'}/...`}
+                        value={postUrlInput}
+                        onChange={(e) => setPostUrlInput(e.target.value)}
+                        className="w-full px-3.5 py-3 rounded-xl font-mono text-xs text-slate-900 dark:text-white border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 focus:outline-none focus:border-kpugi-blue focus:ring-2 focus:ring-kpugi-blue/20 font-bold"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleVerifyPost}
+                        disabled={postCheckLoading || !postUrlInput.trim()}
+                        className="w-full py-3.5 rounded-xl bg-kpugi-blue hover:bg-blue-700 disabled:opacity-50 text-white font-sans text-xs font-bold transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2"
+                      >
+                        {postCheckLoading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Scraper Verifying Post...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Verify Published Post</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowConnectModal(false)}
+                        className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-slate dark:text-slate-300 font-sans text-xs font-bold transition-all"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

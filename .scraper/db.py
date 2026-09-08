@@ -79,23 +79,50 @@ class DatabaseClient:
                 "error": str(e),
             }
 
-    def fetch_active_submissions(self) -> List[Dict[str, Any]]:
+    def fetch_active_submissions(self, force: bool = False, submission_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Fetches submissions that are currently DUE for metric auditing:
         - 1st audit: submitted_at <= (NOW - 60 minutes) when last_scraped_at is null
         - Recurring audits: last_scraped_at <= (NOW - 60 minutes) and submitted_at > (NOW - 72 hours)
         - Final audit: submitted_at <= (NOW - 72 hours) and has not had a post-72h settlement audit yet
+        - If force=True or submission_id is set: bypasses the 60m cooldown for immediate on-demand auditing.
         """
         submissions = None
 
-        # 1. Attempt server-side Postgres RPC
-        rpc_url = f"{self.rest_url}/rpc/get_due_submissions"
-        rpc_resp = self._http_request("POST", rpc_url, data={"batch_limit": BATCH_SIZE})
-        if rpc_resp["status_code"] == 200 and isinstance(rpc_resp["data"], list):
-            submissions = rpc_resp["data"]
-            logger.info(f"Retrieved {len(submissions)} due submission(s) via database RPC.")
+        # 0. On-demand single submission lookup
+        if submission_id:
+            url = f"{self.rest_url}/submissions"
+            params = {
+                "id": f"eq.{submission_id}",
+                "select": "id,creator_id,campaign_id,social_account_id,post_url,status,final_view_count,last_paid_view_count,max_verified_views,pending_payout_amount,payout_amount,submitted_at,last_scraped_at",
+            }
+            resp = self._http_request("GET", url, params=params)
+            submissions = resp["data"] or [] if resp["status_code"] == 200 else []
+            logger.info(f"Direct lookup for submission {submission_id[:8]}: found {len(submissions)} match.")
 
-        # 2. Fallback to REST endpoint with Python-side cooldown validation
+        # 1. Force mode: audit all active submissions without 60-minute wait
+        elif force:
+            url = f"{self.rest_url}/submissions"
+            params = {
+                "select": "id,creator_id,campaign_id,social_account_id,post_url,status,final_view_count,last_paid_view_count,max_verified_views,pending_payout_amount,payout_amount,submitted_at,last_scraped_at",
+                "post_url": "not.is.null",
+                "status": "in.(pending,verified_pass)",
+                "order": "last_scraped_at.asc.nullsfirst,submitted_at.desc",
+                "limit": str(BATCH_SIZE * 2),
+            }
+            resp = self._http_request("GET", url, params=params)
+            submissions = resp["data"] or [] if resp["status_code"] == 200 else []
+            logger.info(f"Force mode: retrieved {len(submissions)} active submission(s) bypassing cooldown.")
+
+        # 2. Standard scheduled flow: server-side Postgres RPC
+        else:
+            rpc_url = f"{self.rest_url}/rpc/get_due_submissions"
+            rpc_resp = self._http_request("POST", rpc_url, data={"batch_limit": BATCH_SIZE})
+            if rpc_resp["status_code"] == 200 and isinstance(rpc_resp["data"], list):
+                submissions = rpc_resp["data"]
+                logger.info(f"Retrieved {len(submissions)} due submission(s) via database RPC.")
+
+        # 3. Fallback to REST endpoint with Python-side cooldown validation
         if submissions is None:
             url = f"{self.rest_url}/submissions"
             params = {
@@ -190,7 +217,7 @@ class DatabaseClient:
         url = f"{self.rest_url}/campaigns"
         params = {
             "id": f"in.({','.join(campaign_ids)})",
-            "select": "id,title,cpm_rate,min_view_threshold,total_budget,reserved_budget,spent_budget,status",
+            "select": "id,title,cpm_rate,min_view_threshold,total_budget,reserved_budget,spent_budget,status,requirements",
         }
 
         resp = self._http_request("GET", url, params=params)

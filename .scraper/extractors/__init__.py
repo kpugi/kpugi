@@ -11,6 +11,9 @@ try:
         extract_youtube_fallback,
         extract_opengraph_fallback,
     )
+    from .instagram import extract_instagram_post
+    from .facebook import extract_facebook_post
+    from .linkedin import extract_linkedin_post
 except (ImportError, ValueError):
     from extractors.base import ScrapeResult
     from extractors.ytdlp_extractor import extract_with_ytdlp
@@ -20,6 +23,9 @@ except (ImportError, ValueError):
         extract_youtube_fallback,
         extract_opengraph_fallback,
     )
+    from extractors.instagram import extract_instagram_post
+    from extractors.facebook import extract_facebook_post
+    from extractors.linkedin import extract_linkedin_post
 
 import urllib.parse
 from typing import Optional, Tuple
@@ -32,7 +38,6 @@ ALLOWED_DOMAINS = {
     'x': ['twitter.com', 'www.twitter.com', 'x.com', 'www.x.com', 'mobile.twitter.com'],
     'instagram': ['instagram.com', 'www.instagram.com', 'm.instagram.com'],
     'facebook': ['facebook.com', 'www.facebook.com', 'm.facebook.com', 'fb.watch', 'fb.com'],
-    'threads': ['threads.net', 'www.threads.net'],
     'linkedin': ['linkedin.com', 'www.linkedin.com'],
 }
 
@@ -115,42 +120,59 @@ def extract_post_metrics(url: str) -> ScrapeResult:
     # Use canonical URL for extraction
     url = canonical_url
 
-    # 1. Non-video platforms go straight to lightweight OpenGraph extraction
-    if platform in ('threads', 'linkedin', 'generic'):
-        return extract_opengraph_fallback(url, platform)
-    
-    # 2. YouTube High-Fidelity Dedicated Extractor (Innertube Player API + Web HTML Parser)
+    # 1. YouTube Dedicated Extractor (Innertube Player API + Web HTML Parser)
     if platform == 'youtube':
         yt_res = extract_youtube_fallback(url)
         if yt_res and yt_res.reachable and yt_res.view_count is not None:
             return yt_res
 
-    # 3. X / Twitter High-Fidelity Dedicated Extractor (FixTweet API + Syndication)
+    # 2. X / Twitter Dedicated Extractor (FixTweet API + Syndication)
     if platform == 'x':
         x_res = extract_twitter_syndication(url)
         if x_res and x_res.reachable:
             return x_res
 
-    # 4. Universal yt-dlp Engine for TikTok, Instagram, Facebook
-    result = extract_with_ytdlp(url, platform)
+    # 3. Instagram Dedicated Extractor (yt-dlp + Captioned Embed + Web Query)
+    if platform == 'instagram':
+        ig_res = extract_instagram_post(url)
+        if ig_res and ig_res.reachable:
+            return ig_res
 
-    if result.reachable and result.view_count is not None:
-        return result
+    # 4. Facebook Dedicated Extractor (yt-dlp + Mobile HTML + Video & Post Embeds)
+    if platform == 'facebook':
+        fb_res = extract_facebook_post(url)
+        if fb_res and fb_res.reachable:
+            return fb_res
 
-    # 5. Secondary Platform Fallbacks
+    # 5. LinkedIn Dedicated Extractor (yt-dlp + Public Embed + OpenGraph)
+    if platform == 'linkedin':
+        li_res = extract_linkedin_post(url)
+        if li_res and li_res.reachable:
+            return li_res
+
+    # 6. TikTok Extractor (yt-dlp + oEmbed fallback)
     if platform == 'tiktok':
-        fb_result = extract_tiktok_fallback(url)
-        if fb_result and fb_result.reachable:
+        result = extract_with_ytdlp(url, platform)
+        if result.reachable and result.view_count is not None:
+            return result
+        tt_res = extract_tiktok_fallback(url)
+        if tt_res and tt_res.reachable:
             if result.reachable:
-                result.title = result.title or fb_result.title
-                result.uploader = result.uploader or fb_result.uploader
+                result.title = result.title or tt_res.title
+                result.uploader = result.uploader or tt_res.uploader
                 return result
-            return fb_result
+            return tt_res
+        if result.reachable:
+            return result
 
-    # 6. Tertiary Generic OpenGraph / Meta Tag Scraper
-    if not result.reachable:
-        og_result = extract_opengraph_fallback(url, platform)
-        if og_result.reachable:
-            return og_result
+    # 7. Generic OpenGraph / Meta Tag Fallback
+    og_result = extract_opengraph_fallback(url, platform)
+    if og_result and og_result.reachable:
+        return og_result
 
-    return result
+    return ScrapeResult(
+        reachable=False,
+        platform=platform,
+        extractor="router_fallback",
+        error_message=f"Could not reach or extract metrics for {platform} post."
+    )

@@ -18,6 +18,15 @@ function generateVerificationCode(): string {
   return `kpugi-${randomBytes(5).toString('hex')}`;
 }
 
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    endpoint: '/api/verify/social/start',
+    method: 'POST',
+    description: 'Initiate social account verification. Send a POST request with { platform, handle }.',
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const { platform, handle } = await request.json();
@@ -112,10 +121,17 @@ export async function POST(request: Request) {
       linkedin: `Go to your LinkedIn profile → Edit intro → add "${code}" to your headline or summary → Save → click Verify Account.`,
     };
 
+    // Pre-composed caption for Verification Post option
+    const postTemplate = {
+      caption: `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${code}\nVerified on https://kpugi.com #Kpugi #Creator`,
+      assetUrl: '/images/kpugi_verification_badge.svg',
+    };
+
     return NextResponse.json({
       code,
       expiresAt,
       instructions: instructions[platformKey] || `Add "${code}" to your bio and click Verify Account.`,
+      postTemplate,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Failed to start verification' }, { status: 500 });

@@ -207,9 +207,9 @@ export async function notifyAdvertiserCreatorJoined({
 
   const html = renderReusableEmailTemplate({
     to: email,
-    subject: `Creator Picked Up The Drop! 🚀 ${cleanHandle} is in!`,
+    subject: `A Creator Picked Up The Drop! 🚀!`,
     previewText: `${cleanHandle} has joined "${campaignTitle}".`,
-    headline: 'Creator Joined Campaign! 🚀',
+    headline: 'Creator Joined Campaign!',
     subtitle: `Big motion! Creator ${cleanHandle} just grabbed a slot in "${campaignTitle}". Their budget slot is locked in escrow while they prep the post.`,
     details: [
       { label: 'CAMPAIGN', value: campaignTitle },
@@ -226,7 +226,7 @@ export async function notifyAdvertiserCreatorJoined({
 
   await sendEmail({
     to: email,
-    subject: `Creator Picked Up The Drop! 🚀 ${cleanHandle} is in!`,
+    subject: `A Creator Picked Up The Drop! 🚀!`,
     html,
   });
 }
