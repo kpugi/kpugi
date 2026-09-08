@@ -269,34 +269,14 @@ export async function scrapeYouTubeProfile(handle: string): Promise<ScrapedProfi
 export async function scrapeInstagramProfile(handle: string): Promise<ScrapedProfile> {
   const username = handle.replace(/^@/, '').trim();
 
-  // Method 1: Headless browser extractor (fetches true real-time follower_count, e.g. 1112 vs stale 424)
-  try {
-    const { execFile } = await import('child_process');
-    const { promisify } = await import('util');
-    const path = await import('path');
-    const execFileAsync = promisify(execFile);
-
-    const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
-    const { stdout } = await execFileAsync('node', [scriptPath, 'instagram_profile', username], { timeout: 25000 });
-    const data = JSON.parse(stdout.trim());
-
-    if (data && data.reachable && data.followerCount !== null && data.followerCount !== undefined) {
-      return {
-        displayName: data.displayName || username,
-        bio: data.bio || null,
-        followerCount: data.followerCount,
-        avatarUrl: data.avatarUrl || null,
-        handle: username,
-      };
-    }
-  } catch (e) {}
-
-  // Method 2: Search engine crawler SSR endpoint (Googlebot / Twitterbot)
-  // Instagram returns server-side rendered HTML with the full bio in <meta name="description">
+  // ─── Phase 1: Search engine crawler SSR endpoint (Googlebot / Twitterbot / WhatsApp)
+  // Instagram serves server-side rendered HTML with the full bio in <meta name="description"> in ~300ms
+  let crawlerProfile: ScrapedProfile | null = null;
   const crawlerUserAgents = [
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+    'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     'Twitterbot/1.0',
-    'WhatsApp/2.21.12.21 A',
   ];
 
   for (const ua of crawlerUserAgents) {
@@ -307,56 +287,59 @@ export async function scrapeInstagramProfile(handle: string): Promise<ScrapedPro
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
         },
-        signal: AbortSignal.timeout(5_000),
+        signal: AbortSignal.timeout(4_000),
       });
 
       if (res.ok) {
         const html = await res.text();
 
-        // Match meta description tag (both attribute orders)
         let rawDesc = '';
         const m1 = html.match(/<meta[^>]+content="([^"]*)"[^>]+name="description"/i);
         const m2 = html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i);
         if (m1) rawDesc = m1[1];
         else if (m2) rawDesc = m2[1];
 
-        // Decode HTML entities
         const decodedDesc = decodeHtmlEntities(rawDesc);
 
-        // Match bio inside quotes after 'on Instagram:'
         const bioQuotesMatch = decodedDesc.match(/on Instagram:\s*(?:&quot;|"|“)([\s\S]*?)(?:&quot;|"|”)/i);
         const cleanBio = bioQuotesMatch ? bioQuotesMatch[1].replace(/\\n/g, '\n').trim() : decodedDesc;
 
-        // Combined bio text so verification matches either isolated bio or full meta description
         const combinedBio = cleanBio && decodedDesc && cleanBio !== decodedDesc
           ? `${cleanBio}\n${decodedDesc}`
           : cleanBio || decodedDesc;
 
-        // Extract follower count from meta description
         const followerMatch = decodedDesc.match(/([\d.,]+[KMBkmb]?)\s*Follower/i);
         const followerCount = followerMatch ? parseFollowerCount(followerMatch[1]) : 0;
 
-        // Extract og:title and og:image
         const titleMatch = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]*)"/i);
-        const title = titleMatch ? decodeHtmlEntities(titleMatch[1]) : username;
-        const displayName = title.replace(/\s*\(@[^)]+\).*$/, '').replace(/•\s*Instagram.*$/, '').trim() || username;
+        const rawTitle = titleMatch ? decodeHtmlEntities(titleMatch[1]).replace(/&#064;/gi, '@').replace(/&#x2022;/gi, '•').replace(/&bull;/gi, '•') : username;
+        const displayName = rawTitle.replace(/\s*\(@[^)]+\).*$/, '').replace(/•\s*Instagram.*$/, '').trim() || username;
 
         const imgMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]*)"/i);
         const avatarUrl = imgMatch ? decodeHtmlEntities(imgMatch[1]) : null;
 
         if (combinedBio || html.includes(username)) {
-          return {
+          crawlerProfile = {
             displayName,
             bio: combinedBio || null,
             followerCount,
             avatarUrl,
             handle: username,
           };
+          // If crawler got the bio, return immediately for instant bio verification
+          if (combinedBio && combinedBio.trim().length > 0) {
+            return crawlerProfile;
+          }
+          break;
         }
       }
     } catch {
       // try next crawler UA
     }
+  }
+
+  if (crawlerProfile) {
+    return crawlerProfile;
   }
 
   // Method 2: Instagram Web profile info API with public Web App ID
@@ -437,29 +420,7 @@ export async function scrapeFacebookProfile(handle: string): Promise<ScrapedProf
     ? username
     : `https://www.facebook.com/${encodeURIComponent(username)}`;
 
-  // 1. Headless browser extractor (fetches true profile picture and full metrics)
-  try {
-    const { execFile } = await import('child_process');
-    const { promisify } = await import('util');
-    const path = await import('path');
-    const execFileAsync = promisify(execFile);
-
-    const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
-    const { stdout } = await execFileAsync('node', [scriptPath, 'facebook', targetUrl], { timeout: 25000 });
-    const data = JSON.parse(stdout.trim());
-
-    if (data && data.reachable) {
-      return {
-        displayName: data.author_name || data.uploader || username,
-        bio: data.description || null,
-        followerCount: data.view_count ?? null,
-        avatarUrl: data.avatarUrl || null,
-        handle: username,
-      };
-    }
-  } catch (e) {}
-
-  // 2. Mobile Facebook HTML fetch fallback
+  // Mobile Facebook HTML fetch
   try {
     const html = await fetchHtml(targetUrl, 5_000, {
       'User-Agent':

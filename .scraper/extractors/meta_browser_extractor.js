@@ -324,8 +324,39 @@ async function scrapeInstagramProfile(username) {
       displayName = rawTitle.replace(/\s*\(@[^)]+\).*$/, '').replace(/•\s*Instagram.*$/, '').trim() || username;
     }
 
-    const mDesc = html.match(/<meta[^>]+(?:name|property)="description"[^>]+content="([^"]*)"/i);
-    const bio = mDesc ? mDesc[1] : null;
+    // 4. Bio Extraction
+    let bio = null;
+    const mDesc = html.match(/<meta[^>]+(?:name|property)="description"[^>]+content="([^"]*)"/i) ||
+                  html.match(/<meta[^>]+content="([^"]*)"[^>]+(?:name|property)="description"/i);
+    if (mDesc && mDesc[1]) {
+      const bioQuotes = mDesc[1].match(/on Instagram:\s*(?:&quot;|"|“)([\s\S]*?)(?:&quot;|"|”)/i);
+      bio = bioQuotes ? bioQuotes[1].replace(/\\n/g, '\n').trim() : mDesc[1];
+    }
+
+    if (!bio) {
+      const bioJson = html.match(/"biography":\s*"([^"]*)"/i) ||
+                      html.match(/"raw_text":\s*"([^"]*)"/i);
+      if (bioJson && bioJson[1]) {
+        bio = bioJson[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+      }
+    }
+
+    if (!bio) {
+      try {
+        const domBio = await page.evaluate(() => {
+          const header = document.querySelector('header');
+          if (header) {
+            const hText = header.innerText || '';
+            if (hText) return hText;
+          }
+          const main = document.querySelector('main');
+          return main ? (main.innerText || '') : '';
+        });
+        if (domBio && domBio.trim()) {
+          bio = domBio.trim();
+        }
+      } catch (e) {}
+    }
 
     await browser.close();
 
