@@ -222,6 +222,31 @@ export function parseSocialPostUrl(rawUrl: string): ParsedSocialUrl {
       if (!['watch', 'reel', 'reels', 'share', 'story', 'groups', 'events', 'photos'].includes(handle)) {
         return {
           platform: 'facebook',
+          extractedHandle: /^\d+$/.test(handle) ? `profile.php?id=${handle}` : handle,
+          isValidFormat: true,
+          normalizedUrl: cleanUrl,
+        };
+      }
+    }
+
+    // Pattern: profile.php?id=... or permalink.php?...&id=...
+    const idParam = parsed.searchParams.get('id');
+    if (idParam) {
+      return {
+        platform: 'facebook',
+        extractedHandle: `profile.php?id=${idParam}`,
+        isValidFormat: true,
+        normalizedUrl: cleanUrl,
+      };
+    }
+
+    // Pattern: /profile.php without params or /username directly (profile URL)
+    const profileMatch = pathname.match(/^\/([a-zA-Z0-9_.-]{2,50})\/?$/i);
+    if (profileMatch) {
+      const handle = profileMatch[1].toLowerCase();
+      if (!['watch', 'reel', 'reels', 'share', 'story', 'groups', 'events', 'photos', 'home', 'messages', 'notifications', 'login'].includes(handle)) {
+        return {
+          platform: 'facebook',
           extractedHandle: handle,
           isValidFormat: true,
           normalizedUrl: cleanUrl,
@@ -321,7 +346,20 @@ export function validatePostUrlOwnership(
   // 2. Author Handle Ownership Enforcement
   if (normConnectedHandle && parsed.extractedHandle) {
     const normExtracted = normalizeHandle(parsed.extractedHandle);
-    if (normExtracted !== normConnectedHandle && !normConnectedHandle.includes(normExtracted) && !normExtracted.includes(normConnectedHandle)) {
+    const isFacebook = normConnectedPlatform === 'facebook' || parsed.platform === 'facebook';
+    const isFacebookIdMatch =
+      isFacebook &&
+      (normExtracted.includes('profilephp') ||
+        normConnectedHandle.includes('profilephp') ||
+        /^\d+$/.test(normExtracted) ||
+        /^\d+$/.test(normConnectedHandle));
+
+    if (
+      !isFacebookIdMatch &&
+      normExtracted !== normConnectedHandle &&
+      !normConnectedHandle.includes(normExtracted) &&
+      !normExtracted.includes(normConnectedHandle)
+    ) {
       const platformDisplay = parsed.platform === 'x' ? 'X (Twitter)' : parsed.platform.toUpperCase();
       return {
         isValid: false,

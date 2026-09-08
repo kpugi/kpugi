@@ -772,6 +772,7 @@ export interface SocialAccountDetails {
   id?: string;
   platform?: string;
   handle: string;
+  displayName?: string | null;
   avatarUrl?: string | null;
   followerCount?: number | null;
   followingCount?: number | null;
@@ -823,6 +824,7 @@ export async function getCreatorSocialAccountsGrouped(
           id: acc.id,
           platform: key,
           handle: acc.handle,
+          displayName: acc.display_name || null,
           avatarUrl: acc.avatar_url || null,
           followerCount: acc.follower_count ?? null,
           followingCount: acc.following_count ?? null,

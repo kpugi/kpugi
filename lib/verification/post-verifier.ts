@@ -4,6 +4,8 @@ export interface VerifiedPostDetails {
   reachable: boolean;
   platform: string;
   authorHandle: string | null;
+  authorName?: string | null;
+  authorId?: string | null;
   postText: string | null;
   title: string | null;
   avatarUrl?: string | null;
@@ -162,38 +164,66 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Facebook (Mobile HTML & OpenGraph)
+    // 5. Facebook (Headless Browser & OpenGraph Extractor)
     // ─────────────────────────────────────────────────────────────────────────
     if (platform === 'facebook') {
-      const mobileUrl = targetUrl.replace(/https?:\/\/(www\.|web\.)?facebook\.com/, 'https://m.facebook.com');
-      const res = await fetchWithTimeout(mobileUrl, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-          Accept: 'text/html',
-        },
-      });
+      try {
+        const { execFile } = await import('child_process');
+        const { promisify } = await import('util');
+        const path = await import('path');
+        const execFileAsync = promisify(execFile);
 
-      if (res.ok) {
-        const html = await res.text();
-        const authorMatch =
-          html.match(/<header[\s\S]*?<a[^>]*href="\/([a-zA-Z0-9_.-]+)[^"]*"[^>]*>([^<]+)<\/a>/i) ||
-          html.match(/<strong[^>]*><a[^>]*href="\/([a-zA-Z0-9_.-]+)[^"]*"[^>]*>([^<]+)<\/a>/i);
-        const author = authorMatch ? authorMatch[1].trim() : urlParsed.extractedHandle;
+        const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
+        const { stdout } = await execFileAsync('node', [scriptPath, 'facebook', targetUrl], { timeout: 35000 });
+        const data = JSON.parse(stdout.trim());
 
-        const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
-        const postText = descMatch ? descMatch[1] : null;
-
-        return {
-          reachable: true,
-          platform: 'facebook',
-          authorHandle: author,
-          postText: postText,
-          title: 'Facebook Post',
-        };
+        if (data && data.reachable) {
+          return {
+            reachable: true,
+            platform: 'facebook',
+            authorHandle: data.author_name || data.uploader || urlParsed.extractedHandle,
+            authorName: data.author_name || data.uploader || null,
+            authorId: data.author_id || null,
+            postText: data.description || null,
+            title: data.title || 'Facebook Post',
+            avatarUrl: data.avatarUrl || null,
+          };
+        }
+      } catch (fbErr) {
+        // Fall through to desktop OpenGraph fetch
       }
 
-      return { reachable: false, platform: 'facebook', authorHandle: urlParsed.extractedHandle, postText: null, title: null, errorMessage: 'Could not reach Facebook post.' };
+      // Fallback: fetch with Facebook crawler User-Agent
+      try {
+        const res = await fetchWithTimeout(targetUrl, {
+          headers: {
+            'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+            Accept: 'text/html,application/xhtml+xml',
+          },
+        });
+
+        if (res.ok) {
+          const html = await res.text();
+          const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
+          const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+          return {
+            reachable: true,
+            platform: 'facebook',
+            authorHandle: titleMatch ? titleMatch[1] : urlParsed.extractedHandle,
+            postText: descMatch ? descMatch[1] : null,
+            title: titleMatch ? titleMatch[1] : 'Facebook Post',
+          };
+        }
+      } catch (fallbackErr) {}
+
+      return {
+        reachable: false,
+        platform: 'facebook',
+        authorHandle: urlParsed.extractedHandle,
+        postText: null,
+        title: null,
+        errorMessage: 'Could not reach Facebook post. Make sure your post and profile are set to Public.',
+      };
     }
 
     // ─────────────────────────────────────────────────────────────────────────

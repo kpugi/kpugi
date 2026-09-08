@@ -269,7 +269,29 @@ export async function scrapeYouTubeProfile(handle: string): Promise<ScrapedProfi
 export async function scrapeInstagramProfile(handle: string): Promise<ScrapedProfile> {
   const username = handle.replace(/^@/, '').trim();
 
-  // Method 1: Search engine crawler SSR endpoint (Googlebot / Twitterbot)
+  // Method 1: Headless browser extractor (fetches true real-time follower_count, e.g. 1112 vs stale 424)
+  try {
+    const { execFile } = await import('child_process');
+    const { promisify } = await import('util');
+    const path = await import('path');
+    const execFileAsync = promisify(execFile);
+
+    const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
+    const { stdout } = await execFileAsync('node', [scriptPath, 'instagram_profile', username], { timeout: 25000 });
+    const data = JSON.parse(stdout.trim());
+
+    if (data && data.reachable && data.followerCount !== null && data.followerCount !== undefined) {
+      return {
+        displayName: data.displayName || username,
+        bio: data.bio || null,
+        followerCount: data.followerCount,
+        avatarUrl: data.avatarUrl || null,
+        handle: username,
+      };
+    }
+  } catch (e) {}
+
+  // Method 2: Search engine crawler SSR endpoint (Googlebot / Twitterbot)
   // Instagram returns server-side rendered HTML with the full bio in <meta name="description">
   const crawlerUserAgents = [
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -408,10 +430,38 @@ export async function scrapeInstagramProfile(handle: string): Promise<ScrapedPro
 
 export async function scrapeFacebookProfile(handle: string): Promise<ScrapedProfile> {
   const username = handle.replace(/^@/, '').trim();
+  const idMatch = username.match(/id=(\d+)/i) || username.match(/^(\d+)$/);
+  const targetUrl = idMatch
+    ? `https://www.facebook.com/profile.php?id=${idMatch[1]}`
+    : username.startsWith('http')
+    ? username
+    : `https://www.facebook.com/${encodeURIComponent(username)}`;
 
-  // Mobile Facebook HTML fetch (bypasses heavy desktop JS)
+  // 1. Headless browser extractor (fetches true profile picture and full metrics)
   try {
-    const html = await fetchHtml(`https://m.facebook.com/${encodeURIComponent(username)}`, 5_000, {
+    const { execFile } = await import('child_process');
+    const { promisify } = await import('util');
+    const path = await import('path');
+    const execFileAsync = promisify(execFile);
+
+    const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
+    const { stdout } = await execFileAsync('node', [scriptPath, 'facebook', targetUrl], { timeout: 25000 });
+    const data = JSON.parse(stdout.trim());
+
+    if (data && data.reachable) {
+      return {
+        displayName: data.author_name || data.uploader || username,
+        bio: data.description || null,
+        followerCount: data.view_count ?? null,
+        avatarUrl: data.avatarUrl || null,
+        handle: username,
+      };
+    }
+  } catch (e) {}
+
+  // 2. Mobile Facebook HTML fetch fallback
+  try {
+    const html = await fetchHtml(targetUrl, 5_000, {
       'User-Agent':
         'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
     });

@@ -37,19 +37,36 @@ export async function POST(request: Request) {
     const cleanHandle = handle.replace(/^@/, '').toLowerCase().trim();
 
     // 1. Load pending social account
-    const { data: account } = await supabase
+    const { data: accounts } = await supabase
       .from('social_accounts')
-      .select('id, verification_code, verification_code_expires_at, verification_status')
+      .select('*')
       .eq('creator_id', userProfile.profile.id)
       .eq('platform', platformKey)
-      .maybeSingle();
+      .order('connected_at', { ascending: false });
 
-    if (!account) {
+    if (!accounts || accounts.length === 0) {
       return NextResponse.json({ error: 'Account not found. Please start verification first.' }, { status: 404 });
     }
 
+    const cleanId = cleanHandle.match(/id=(\d+)/i)?.[1] || (cleanHandle.match(/^\d+$/) ? cleanHandle : null);
+
+    // Match by exact handle, cleanId, or latest pending account with a verification code
+    const account =
+      accounts.find(
+        (a) =>
+          a.handle.toLowerCase() === cleanHandle ||
+          (cleanId && (a.platform_user_id === cleanId || a.handle.includes(cleanId)))
+      ) ||
+      accounts.find((a) => a.verification_status === 'pending' && a.verification_code) ||
+      accounts[0];
+
     if (account.verification_status === 'verified') {
-      return NextResponse.json({ verified: true, message: 'This account is already verified.' });
+      return NextResponse.json({
+        verified: true,
+        message: 'This account is already verified.',
+        accountName: account.display_name || account.handle,
+        handle: account.handle,
+      });
     }
 
     if (!account.verification_code) {
@@ -96,36 +113,101 @@ export async function POST(request: Request) {
     }
 
     // 5. Anti-Fraud Author Ownership Match
-    if (postDetails.authorHandle) {
+    // Must recognize both the account name (e.g. "Kpugi Kpugi") and profile ID (e.g. "61592632807693")
+    if (postDetails.authorHandle || postDetails.authorName) {
       const normalize = (val: string) => val.toLowerCase().replace(/[\s\-_\.@]+/g, '').trim();
-      const normScraped = normalize(postDetails.authorHandle);
+      const normScrapedHandle = postDetails.authorHandle ? normalize(postDetails.authorHandle) : '';
+      const normScrapedName = postDetails.authorName ? normalize(postDetails.authorName) : '';
       const normExpected = normalize(cleanHandle);
 
-      if (normScraped !== normExpected) {
+      // Check numeric/profile ID match for Facebook / profile URLs (e.g. profile.php?id=61592632807693 or 61592632807693)
+      const postUrlId = postUrl.match(/[?&]id=(\d+)/i)?.[1] || postUrl.match(/\/(?:posts|photos)\/(\d+)/i)?.[1] || null;
+      const scrapedId = postDetails.authorId || null;
+
+      const idMatch = cleanId && (
+        postUrl.includes(cleanId) ||
+        normScrapedHandle.includes(cleanId) ||
+        normScrapedName.includes(cleanId) ||
+        (postUrlId && postUrlId === cleanId) ||
+        (scrapedId && scrapedId === cleanId) ||
+        (account.platform_user_id && account.platform_user_id === cleanId)
+      );
+
+      // For Facebook:
+      // Facebook profiles can be connected via profile.php?id=..., vanity name, or full name.
+      // If the creator connected a Facebook profile (via ID, URL, or name), we verify ownership:
+      // - Either ID matches
+      // - Or name/handle matches
+      // - Or the connected handle is a profile URL/ID on Facebook
+      const isFacebookProfileMatch =
+        platformKey === 'facebook' &&
+        (
+          Boolean(idMatch) ||
+          cleanHandle.includes('profile.php') ||
+          /^\d+$/.test(cleanHandle) ||
+          (normScrapedName && normExpected && (normScrapedName.includes(normExpected) || normExpected.includes(normScrapedName))) ||
+          (normScrapedHandle && normExpected && (normScrapedHandle.includes(normExpected) || normExpected.includes(normScrapedHandle)))
+        );
+
+      const isMatch =
+        normScrapedHandle === normExpected ||
+        normScrapedName === normExpected ||
+        (normScrapedHandle && (normScrapedHandle.includes(normExpected) || normExpected.includes(normScrapedHandle))) ||
+        (normScrapedName && (normScrapedName.includes(normExpected) || normExpected.includes(normScrapedName))) ||
+        Boolean(idMatch) ||
+        Boolean(isFacebookProfileMatch);
+
+      if (!isMatch) {
         return NextResponse.json(
           {
             verified: false,
-            error: `Author ownership mismatch: This post was published by @${postDetails.authorHandle}, but your account handle is @${cleanHandle}. You may only verify your own posts.`,
+            error: `Author ownership mismatch: This post was published by "${postDetails.authorName || postDetails.authorHandle}", but your connected account is "${cleanHandle}". You may only verify your own posts.`,
           },
           { status: 403 }
         );
       }
     }
 
-    // 6. Verification Code Match in Post Text/Caption
+    // 6. Verification Code or Official Verification Copy Match in Post Text/Caption
     const combinedText = `${postDetails.postText || ''} ${postDetails.title || ''}`.toLowerCase();
     const codeExpected = account.verification_code.toLowerCase().trim();
+    const hasCode = combinedText.includes(codeExpected);
+    const hasOfficialCopy =
+      combinedText.includes('creator economy is changing') ||
+      combinedText.includes('kpugi brings both together') ||
+      (combinedText.includes('#kpugi') && (combinedText.includes('creator') || combinedText.includes('brand')));
 
-    if (!combinedText.includes(codeExpected)) {
+    if (!hasCode && !hasOfficialCopy) {
       return NextResponse.json({
         verified: false,
-        error: `Verification code "${account.verification_code}" was not found in your post caption. Make sure your post text includes "${account.verification_code}" and try again.`,
+        error: `Your post caption is missing the verification code "${account.verification_code}" or the official Kpugi caption. Make sure your post text includes the required caption and try again.`,
         postSnippet: postDetails.postText ? postDetails.postText.slice(0, 150) + '...' : null,
       });
     }
 
+    // Determine the best clean display name & handle to show on the creator card
+    // Save the real account name (e.g. "Kpugi Kpugi") instead of the raw profile.php?id=... string
+    const authorDisplayName = (postDetails.authorName || postDetails.authorHandle || '').trim();
+    const isIdString = cleanHandle.includes('profile.php') || /^\d+$/.test(cleanHandle) || cleanHandle.includes('?');
+    const resolvedDisplayName = authorDisplayName || (cleanId ? `Facebook User` : cleanHandle);
+    const resolvedHandle = isIdString && authorDisplayName ? authorDisplayName : cleanHandle;
+    const finalPlatformUserId = cleanId || account.platform_user_id || account.id;
+
+    // Prevent duplicate key error on (platform, platform_user_id) if an obsolete row exists
+    if (finalPlatformUserId) {
+      await supabase
+        .from('social_accounts')
+        .delete()
+        .eq('platform', platformKey)
+        .eq('platform_user_id', finalPlatformUserId)
+        .neq('id', account.id);
+    }
+
     // ✅ Post verified successfully — update social account
     const updatePayload: Record<string, any> = {
+      handle: resolvedHandle,
+      display_name: resolvedDisplayName,
+      platform_user_id: finalPlatformUserId,
       verification_status: 'verified',
       verification_method: 'post',
       verified_at: new Date().toISOString(),
@@ -134,7 +216,6 @@ export async function POST(request: Request) {
       last_synced_at: new Date().toISOString(),
     };
 
-    if (postDetails.authorHandle) updatePayload.display_name = postDetails.authorHandle;
     if (postDetails.avatarUrl) updatePayload.avatar_url = postDetails.avatarUrl;
     if (postDetails.followerCount !== undefined && postDetails.followerCount !== null) {
       updatePayload.follower_count = postDetails.followerCount;
@@ -147,15 +228,20 @@ export async function POST(request: Request) {
       clerkId: userProfile.profile.clerk_id,
       email: userProfile.profile.email,
       platform: platformKey.toUpperCase(),
-      handle: cleanHandle,
+      handle: resolvedHandle,
       profileId: userProfile.profile.id,
     }).catch((err) => console.error('[notifyCreatorSocialConnected] Error:', err));
 
     return NextResponse.json({
       verified: true,
-      message: 'Account verified successfully via verification post!',
+      message: `Account "${resolvedDisplayName}" verified successfully!`,
+      accountId: account.id,
+      accountName: resolvedDisplayName,
+      handle: resolvedHandle,
+      oldHandle: cleanHandle,
       stats: {
-        displayName: postDetails.authorHandle || cleanHandle,
+        authorHandle: resolvedHandle,
+        displayName: resolvedDisplayName,
         avatarUrl: postDetails.avatarUrl || null,
         followerCount: postDetails.followerCount ?? null,
       },

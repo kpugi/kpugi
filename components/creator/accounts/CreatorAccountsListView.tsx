@@ -28,6 +28,22 @@ interface CreatorAccountsListViewProps {
   formatCompactNumber: (num: number | null | undefined) => string;
 }
 
+function formatDisplayHandle(handle: string, displayName?: string | null) {
+  const clean = handle.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+  if (!clean) return '';
+  const idMatch = clean.match(/id=(\d+)/i) || clean.match(/^(\d+)$/);
+  if (idMatch) {
+    return `Facebook Profile (${idMatch[1]})`;
+  }
+  if (clean.includes('?') || clean.includes('/') || clean.toLowerCase().startsWith('profile.php')) {
+    return clean;
+  }
+  if (clean.includes(' ')) {
+    return clean;
+  }
+  return `@${clean}`;
+}
+
 export default function CreatorAccountsListView({
   platforms,
   accountsGrouped,
@@ -165,13 +181,13 @@ export default function CreatorAccountsListView({
                           />
                         ) : (
                           <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700 dark:text-slate-300 mt-0.5">
-                            {account.handle.charAt(0).toUpperCase()}
+                            {(account.handle || '').replace(/^@/, '').charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-xs text-kpugi-blue dark:text-blue-400 truncate">
-                              @{account.handle}
+                            <span className="font-sans font-bold text-xs text-kpugi-blue dark:text-blue-400 truncate">
+                              {formatDisplayHandle(account.handle)}
                             </span>
                           </div>
 

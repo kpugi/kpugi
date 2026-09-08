@@ -31,6 +31,10 @@ import {
   LayoutGrid,
   List,
   Download,
+  ChevronLeft,
+  FileText,
+  Image as ImageIcon,
+  ExternalLink,
 } from 'lucide-react';
 
 import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
@@ -110,6 +114,22 @@ function formatCompactNumber(num: number | null | undefined): string {
     return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
   return num.toLocaleString();
+}
+
+function getDisplayHandle(handle: string): string {
+  const clean = handle.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+  if (!clean) return '';
+  const idMatch = clean.match(/id=(\d+)/i) || clean.match(/^(\d+)$/);
+  if (idMatch) {
+    return `Facebook Profile (${idMatch[1]})`;
+  }
+  if (clean.includes('?') || clean.includes('/') || clean.toLowerCase().startsWith('profile.php')) {
+    return clean;
+  }
+  if (clean.includes(' ')) {
+    return clean;
+  }
+  return `@${clean}`;
 }
 
 export default function CreatorAccountsView({
@@ -256,8 +276,8 @@ export default function CreatorAccountsView({
         setPostTemplate(data.postTemplate);
       } else {
         setPostTemplate({
-          caption: `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${data.code}\nVerified on https://kpugi.com #Kpugi #Creator`,
-          assetUrl: '/images/kpugi_verification_badge.svg',
+          caption: `The creator economy is changing — and I’m here for it. 👀💙\n\nCreators have the audience. Brands have the opportunities. Kpugi brings both together.\n\nMore opportunities. More connections. More room to grow. 🚀\n\nCreators × Brands. Let’s build.\n\n#Kpugi #CreatorEconomy #Creators #ContentCreator #CreatorLife\n\nID: ${data.code}`,
+          assetUrl: '/images/kpugi-creator-verification.jpg',
         });
       }
       setVerificationTab('bio');
@@ -321,8 +341,8 @@ export default function CreatorAccountsView({
       };
       setCodeInstructions(instructions[platformKey] || `Add "${existingCode}" to your bio and click Verify.`);
       setPostTemplate({
-        caption: `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${existingCode}\nVerified on https://kpugi.com #Kpugi #Creator`,
-        assetUrl: '/images/kpugi_verification_badge.svg',
+        caption: `The creator economy is changing — and I’m here for it. 👀💙\n\nCreators have the audience. Brands have the opportunities. Kpugi brings both together.\n\nMore opportunities. More connections. More room to grow. 🚀\n\nCreators × Brands. Let’s build.\n\n#Kpugi #CreatorEconomy #Creators #ContentCreator #CreatorLife\n\nID: ${existingCode}`,
+        assetUrl: '/images/kpugi-creator-verification.jpg',
       });
       setVerificationTab('bio');
       setModalStep(2);
@@ -364,7 +384,7 @@ export default function CreatorAccountsView({
   }
 
   // Trigger verification check via bio
-  async function runVerificationCheck(platformKey: string, handle: string) {
+  async function runVerificationCheck(platformKey: string, handle: string, accountId?: string) {
     setCheckLoading(handle);
     setErrorMsg('');
     setSuccessMsg('');
@@ -373,7 +393,7 @@ export default function CreatorAccountsView({
       const res = await fetch('/api/verify/social/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform: platformKey, handle }),
+        body: JSON.stringify({ platform: platformKey, handle, accountId }),
       });
 
       const data = await res.json();
@@ -388,12 +408,16 @@ export default function CreatorAccountsView({
       }
 
       if (data.verified) {
-        setSuccessMsg(data.message || `Account @${handle} verified successfully!`);
+        setSuccessMsg(data.message || `Account verified successfully!`);
         const pKey = platformKey === 'twitter' ? 'x' : platformKey;
         setAccountsGrouped((prev) => {
           const list = prev[pKey] || [];
           const newList = list.map((a) => {
-            if (a.handle.toLowerCase() === handle.toLowerCase()) {
+            if (
+              (accountId && a.id === accountId) ||
+              a.handle.toLowerCase() === handle.toLowerCase() ||
+              (a.displayName && a.displayName.toLowerCase() === handle.toLowerCase())
+            ) {
               return {
                 ...a,
                 verificationStatus: 'verified' as const,
@@ -455,13 +479,23 @@ export default function CreatorAccountsView({
       }
 
       if (data.verified) {
-        setSuccessMsg(`Account @${cleanHandle} verified successfully via verification post!`);
+        const verifiedName = data.accountName || data.handle || cleanHandle;
+        setSuccessMsg(`Account "${verifiedName}" verified successfully via verification post!`);
         setAccountsGrouped((prev) => {
           const list = prev[platformKey] || [];
           const newList = list.map((a) => {
-            if (a.handle.toLowerCase() === cleanHandle.toLowerCase()) {
+            if (
+              (data.accountId && a.id === data.accountId) ||
+              a.handle.toLowerCase() === cleanHandle.toLowerCase() ||
+              a.handle === cleanHandle ||
+              (data.oldHandle && a.handle.toLowerCase() === data.oldHandle.toLowerCase()) ||
+              (data.oldHandle && a.handle.includes(data.oldHandle)) ||
+              (cleanHandle.includes('profile.php') && a.handle.includes('profile.php'))
+            ) {
               return {
                 ...a,
+                handle: data.handle || verifiedName,
+                displayName: verifiedName,
                 verificationStatus: 'verified' as const,
                 verificationMethod: 'post',
                 avatarUrl: data.stats?.avatarUrl || a.avatarUrl,
@@ -744,12 +778,12 @@ export default function CreatorAccountsView({
                                 </div>
                               ) : (
                                 <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700 dark:text-slate-300">
-                                  {account.handle.charAt(0).toUpperCase()}
+                                  {(account.handle || '').replace(/^@/, '').charAt(0).toUpperCase()}
                                 </div>
                               )}
                             <div className="min-w-0">
-                              <span className="font-mono font-bold text-xs text-kpugi-blue dark:text-blue-400 block truncate">
-                                @{account.handle}
+                              <span className="font-sans font-bold text-xs text-kpugi-blue dark:text-blue-400 block truncate">
+                                {getDisplayHandle(account.handle)}
                               </span>
                               <span className="text-[10px] text-kpugi-slate dark:text-slate-400 block font-medium">
                                 {isVerified ? '✓ Verified Account' : '⌛ Verification Pending'}
@@ -810,7 +844,7 @@ export default function CreatorAccountsView({
                             </button>
                           ) : (
                             <button
-                              onClick={() => runVerificationCheck(platform.key, account.handle)}
+                              onClick={() => runVerificationCheck(platform.key, account.handle, account.id)}
                               disabled={checkLoading === account.handle}
                               className="flex-1 py-1.5 px-3 rounded-xl bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-kpugi-ink dark:text-white border border-slate-200 dark:border-white/10 font-sans text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
                             >
@@ -884,25 +918,46 @@ export default function CreatorAccountsView({
       {showConnectModal && mounted && createPortal(
         <div
           onClick={(e) => {
-            if (e.target === e.currentTarget && !startLoading && !checkLoading) setShowConnectModal(false);
+            if (e.target === e.currentTarget && !startLoading && !checkLoading && !postCheckLoading) {
+              setShowConnectModal(false);
+            }
           }}
-          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5"
         >
-          <div className="bg-white dark:bg-[#12141A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl border border-kpugi-border dark:border-white/10 text-kpugi-ink dark:text-white">
-            
+          <div
+            className={`bg-white dark:bg-[#11141D] rounded-3xl p-5 sm:p-7 w-full shadow-2xl border border-slate-200/80 dark:border-white/10 text-kpugi-ink dark:text-white transition-all duration-300 max-h-[92vh] flex flex-col ${
+              modalStep === 1 ? 'max-w-md' : 'max-w-3xl lg:max-w-4xl'
+            }`}
+          >
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-kpugi-border dark:border-white/10 pb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-4 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                {modalStep === 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setModalStep(1)}
+                    className="p-1.5 -ml-1 rounded-xl text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                    title="Change handle"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-white/10 dark:to-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center shadow-xs shrink-0">
                   {renderIcon(selectedPlatform.key, 'w-5 h-5')}
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-xl text-kpugi-ink dark:text-white">
-                    Connect {selectedPlatform.name}
+                  <h3 className="font-display font-extrabold text-lg sm:text-xl text-kpugi-ink dark:text-white tracking-tight">
+                    {modalStep === 1 ? `Connect ${selectedPlatform.name}` : `Verify ${selectedPlatform.name}`}
                   </h3>
-                  <span className="text-xs text-kpugi-slate dark:text-slate-400 font-mono">
-                    Step {modalStep} of 2 — {modalStep === 1 ? 'Enter Handle' : 'Copy Verification Code'}
-                  </span>
+                  <div className="text-xs text-kpugi-slate dark:text-slate-400 font-sans mt-0.5">
+                    {modalStep === 1 ? (
+                      'Enter your public handle to begin verification'
+                    ) : (
+                      <span className="flex items-center gap-1.5">
+                        Target account: <span className="font-mono font-bold text-kpugi-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/40">{getDisplayHandle(handleInput)}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
@@ -914,272 +969,366 @@ export default function CreatorAccountsView({
             </div>
 
             {errorMsg && (
-              <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/40 p-3 rounded-xl border border-red-200 dark:border-red-500/30 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-                <span>{errorMsg}</span>
-              </p>
+              <div className="mt-3 p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-500/30 text-xs font-bold text-red-600 dark:text-red-300 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{errorMsg}</span>
+                </div>
+                <button onClick={() => setErrorMsg('')} className="text-red-400 hover:text-red-600">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
 
             {successMsg && (
-              <p className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-500/10 p-3 rounded-xl border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                <span>{successMsg}</span>
-              </p>
-            )}
-
-            {/* ──────── STEP 1: ENTER HANDLE ──────── */}
-            {modalStep === 1 && (
-              <form onSubmit={handleStartVerification} className="space-y-4 font-sans text-xs">
-                <div>
-                  <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1.5 uppercase tracking-wider">
-                    Enter Public {selectedPlatform.name} Handle
-                  </label>
-
-                  {/* Clean text input with prefilled URL prefix */}
-                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden focus-within:border-kpugi-blue focus-within:ring-2 focus-within:ring-kpugi-blue/20">
-                    <span className="px-3 py-3 text-slate-500 dark:text-slate-400 font-mono text-xs font-bold bg-slate-100 dark:bg-white/10 border-r border-slate-200 dark:border-white/10 shrink-0 select-none">
-                      {selectedPlatform.baseUrl}
-                    </span>
-                    <input
-                      type="text"
-                      placeholder={selectedPlatform.placeholder}
-                      value={handleInput}
-                      onChange={(e) => setHandleInput(e.target.value)}
-                      required
-                      autoFocus
-                      className="w-full px-3 py-3 font-mono text-xs text-slate-900 dark:text-white focus:outline-none bg-white dark:bg-transparent font-bold"
-                    />
-                  </div>
-                  <span className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-2 block">
-                    Enter your public {selectedPlatform.name} handle. You can add multiple accounts.
-                  </span>
+              <div className="mt-3 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{successMsg}</span>
                 </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowConnectModal(false)}
-                    className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={startLoading}
-                    className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2"
-                  >
-                    {startLoading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Generating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Get Verification Code</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* ──────── STEP 2: VERIFICATION METHODS (BIO OR POST) ──────── */}
-            {modalStep === 2 && (
-              <div className="space-y-4 font-sans text-xs">
-                {/* Method Switcher Tabs */}
-                <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setVerificationTab('bio')}
-                    className={`py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                      verificationTab === 'bio'
-                        ? 'bg-white dark:bg-white/10 text-kpugi-ink dark:text-white shadow-xs'
-                        : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
-                    }`}
-                  >
-                    <span>1. Code in Bio</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVerificationTab('post')}
-                    className={`py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                      verificationTab === 'post'
-                        ? 'bg-white dark:bg-white/10 text-kpugi-ink dark:text-white shadow-xs'
-                        : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
-                    }`}
-                  >
-                    <span>2. Verification Post</span>
-                  </button>
-                </div>
-
-                {/* Option 1: Code in Bio Tab */}
-                {verificationTab === 'bio' && (
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-2xl bg-slate-900 dark:bg-black/60 text-white space-y-2 border border-slate-800 dark:border-white/10">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
-                        Your Unique Verification Code
-                      </span>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-mono text-base sm:text-lg font-extrabold tracking-wider text-emerald-400 select-all">
-                          {generatedCode}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(generatedCode)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 text-white transition-all shrink-0 border border-slate-700"
-                        >
-                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-300" />}
-                          <span>{copied ? 'Copied!' : 'Copy Code'}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
-                      <span className="font-bold text-kpugi-ink dark:text-white block text-xs flex items-center gap-1.5">
-                        <Info className="w-4 h-4 text-kpugi-blue" />
-                        Instructions for @{handleInput.trim().replace(/^@/, '')}:
-                      </span>
-                      <p className="text-xs text-kpugi-slate dark:text-slate-300 leading-relaxed">
-                        {codeInstructions}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => runVerificationCheck(selectedPlatform.key, handleInput.trim().replace(/^@/, ''))}
-                        disabled={!!checkLoading}
-                        className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
-                      >
-                        {checkLoading ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>Verifying Bio...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-4 h-4" />
-                            <span>I've Saved It — Verify Bio</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowConnectModal(false)}
-                        className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-slate dark:text-slate-300 font-sans text-xs font-bold transition-all"
-                      >
-                        Close (Verify Later)
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Option 2: Verification Post Tab */}
-                {verificationTab === 'post' && (
-                  <div className="space-y-4">
-                    <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200/80 dark:border-blue-800/40 text-xs text-kpugi-blue dark:text-blue-300">
-                      <p className="leading-relaxed font-medium">
-                        Prefer not to edit your bio? Download our official creator badge below, publish a post on your public @{handleInput.trim().replace(/^@/, '')} profile with the pre-written caption, then paste your post URL.
-                      </p>
-                    </div>
-
-                    {/* Image Preview & Download Button */}
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/images/kpugi_verification_badge.svg"
-                          alt="Kpugi Verification Badge"
-                          className="w-11 h-11 rounded-xl object-cover border border-kpugi-border dark:border-white/10 shadow-xs"
-                        />
-                        <div>
-                          <span className="font-bold text-xs text-kpugi-ink dark:text-white block">Official Verification Graphic</span>
-                          <span className="text-[10px] text-kpugi-slate dark:text-slate-400 block font-mono">1080x1080 Square Asset</span>
-                        </div>
-                      </div>
-                      <a
-                        href="/images/kpugi_verification_badge.svg"
-                        download="kpugi-verified-creator-badge.svg"
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-kpugi-ink dark:text-white hover:bg-slate-50 dark:hover:bg-white/20 text-xs font-bold transition-all shadow-xs shrink-0"
-                      >
-                        <Download className="w-3.5 h-3.5 text-kpugi-blue" />
-                        <span>Download</span>
-                      </a>
-                    </div>
-
-                    {/* Pre-written Post Caption */}
-                    <div className="p-3.5 rounded-2xl bg-slate-900 dark:bg-black/60 text-white space-y-2 border border-slate-800 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                          Ready-to-Post Caption
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const cap = postTemplate?.caption || `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${generatedCode}\nVerified on https://kpugi.com #Kpugi #Creator`;
-                            navigator.clipboard.writeText(cap);
-                            setCaptionCopied(true);
-                            setTimeout(() => setCaptionCopied(false), 2000);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold flex items-center gap-1 text-white transition-all border border-slate-700"
-                        >
-                          {captionCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-300" />}
-                          <span>{captionCopied ? 'Copied!' : 'Copy Caption'}</span>
-                        </button>
-                      </div>
-                      <p className="font-mono text-xs text-slate-200 whitespace-pre-line select-all bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 leading-relaxed">
-                        {postTemplate?.caption || `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${generatedCode}\nVerified on https://kpugi.com #Kpugi #Creator`}
-                      </p>
-                    </div>
-
-                    {/* Post URL Input */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
-                        Paste Your Published Post Link
-                      </label>
-                      <input
-                        type="url"
-                        placeholder={`https://${selectedPlatform.key === 'x' ? 'x.com' : selectedPlatform.key + '.com'}/...`}
-                        value={postUrlInput}
-                        onChange={(e) => setPostUrlInput(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-xl font-mono text-xs text-slate-900 dark:text-white border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 focus:outline-none focus:border-kpugi-blue focus:ring-2 focus:ring-kpugi-blue/20 font-bold"
-                      />
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleVerifyPost}
-                        disabled={postCheckLoading || !postUrlInput.trim()}
-                        className="w-full py-3.5 rounded-xl bg-kpugi-blue hover:bg-blue-700 disabled:opacity-50 text-white font-sans text-xs font-bold transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2"
-                      >
-                        {postCheckLoading ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>Scraper Verifying Post...</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="w-4 h-4" />
-                            <span>Verify Published Post</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowConnectModal(false)}
-                        className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-kpugi-slate dark:text-slate-300 font-sans text-xs font-bold transition-all"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button onClick={() => setSuccessMsg('')} className="text-emerald-400 hover:text-emerald-600">
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             )}
+
+            <div className="overflow-y-auto flex-1 mt-4 space-y-4 pr-1 -mr-1">
+              {/* ──────── STEP 1: ENTER HANDLE ──────── */}
+              {modalStep === 1 && (
+                <form onSubmit={handleStartVerification} className="space-y-4 font-sans text-xs">
+                  <div>
+                    <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                      Public {selectedPlatform.name} Handle or Profile URL
+                    </label>
+
+                    <div className="flex items-center rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden focus-within:border-kpugi-blue focus-within:ring-2 focus-within:ring-kpugi-blue/20">
+                      <span className="px-3 py-3 text-slate-500 dark:text-slate-400 font-mono text-xs font-bold bg-slate-100 dark:bg-white/10 border-r border-slate-200 dark:border-white/10 shrink-0 select-none">
+                        {selectedPlatform.baseUrl}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder={selectedPlatform.placeholder}
+                        value={handleInput}
+                        onChange={(e) => setHandleInput(e.target.value)}
+                        required
+                        autoFocus
+                        className="w-full px-3 py-3 font-mono text-xs text-slate-900 dark:text-white focus:outline-none bg-white dark:bg-transparent font-bold"
+                      />
+                    </div>
+                    <span className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-2 block">
+                      Enter your public handle without @ or your full profile link. You can add multiple accounts.
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowConnectModal(false)}
+                      className="w-1/2 py-3 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 font-sans text-xs font-bold transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={startLoading}
+                      className="w-1/2 py-3 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2"
+                    >
+                      {startLoading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Continue</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ──────── STEP 2: VERIFICATION METHODS (BIO OR POST) ──────── */}
+              {modalStep === 2 && (
+                <div className="space-y-4 font-sans text-xs">
+                  {/* Method Switcher Tabs */}
+                  <div className="p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 grid grid-cols-2 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setVerificationTab('bio')}
+                      className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                        verificationTab === 'bio'
+                          ? 'bg-white dark:bg-white/10 text-kpugi-ink dark:text-white shadow-xs'
+                          : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
+                      }`}
+                    >
+                      <FileText className="w-4 h-4 text-kpugi-slate dark:text-slate-400" />
+                      <span>1. Code in Bio</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerificationTab('post')}
+                      className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                        verificationTab === 'post'
+                          ? 'bg-white dark:bg-white/10 text-kpugi-ink dark:text-white shadow-xs'
+                          : 'text-kpugi-slate dark:text-slate-400 hover:text-kpugi-ink dark:hover:text-white'
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4 text-kpugi-blue" />
+                      <span>2. Verification Post</span>
+                      <span className="hidden sm:inline-block px-1.5 py-0.5 rounded-full text-[10px] bg-blue-100 dark:bg-blue-900/60 text-kpugi-blue dark:text-blue-300 font-bold">
+                        No bio edit
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Option 1: Code in Bio Tab */}
+                  {verificationTab === 'bio' && (
+                    <div className="space-y-4">
+                      {/* Hero Code Box */}
+                      <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white space-y-3 border border-slate-800 shadow-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                            Your Unique Verification Code
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded">Active 24h</span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/50 p-3.5 rounded-xl border border-white/10">
+                          <span className="font-mono text-xl sm:text-2xl font-extrabold tracking-wider text-emerald-400 select-all">
+                            {generatedCode}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(generatedCode)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs shrink-0 ${
+                              copied
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+                            }`}
+                          >
+                            {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4 text-slate-300" />}
+                            <span>{copied ? 'Copied Code!' : 'Copy Code'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Instructions */}
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2.5">
+                        <span className="font-bold text-kpugi-ink dark:text-white block text-xs flex items-center gap-1.5">
+                          <Info className="w-4 h-4 text-kpugi-blue" />
+                          Instructions for {getDisplayHandle(handleInput)}:
+                        </span>
+                        <p className="text-xs text-kpugi-slate dark:text-slate-300 leading-relaxed font-sans">
+                          {codeInstructions}
+                        </p>
+                        <div className="pt-2 flex items-center gap-2 text-[11px] text-kpugi-slate dark:text-slate-400 border-t border-slate-200/60 dark:border-white/5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>You can safely delete this code from your profile bio after verification.</span>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowConnectModal(false)}
+                          className="w-1/3 py-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white font-sans text-xs font-bold transition-all"
+                        >
+                          Verify Later
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => runVerificationCheck(selectedPlatform.key, handleInput.trim().replace(/^@/, ''))}
+                          disabled={!!checkLoading}
+                          className="w-2/3 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                        >
+                          {checkLoading ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Scanning Bio...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-4 h-4" />
+                              <span>I've Saved It — Verify Bio</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Option 2: Verification Post Tab */}
+                  {verificationTab === 'post' && (
+                    <div className="space-y-4">
+                      {/* Friendly Banner */}
+                      <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-900/20 border border-blue-200/80 dark:border-blue-800/40 text-xs text-kpugi-blue dark:text-blue-300 flex items-start gap-2.5">
+                        <Sparkles className="w-4 h-4 text-kpugi-blue shrink-0 mt-0.5" />
+                        <p className="leading-relaxed font-medium">
+                          Prefer not to edit your bio? Download the official verification poster, publish a quick post on your public <span className="font-bold">{getDisplayHandle(handleInput)}</span> profile with the ready-to-post caption, then paste your link below.
+                        </p>
+                      </div>
+
+                      {/* 2-Column Responsive Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                        
+                        {/* Column 1: Graphic Asset Card (md:col-span-5) */}
+                        <div className="md:col-span-5 flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-3.5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-kpugi-ink dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
+                              <ImageIcon className="w-3.5 h-3.5 text-kpugi-blue" />
+                              Official Graphic
+                            </span>
+                           
+                          </div>
+
+                          {/* Poster Mockup Preview */}
+                          <div className="relative rounded-xl overflow-hidden border border-slate-200/80 dark:border-white/10 bg-slate-900 aspect-[9/13] max-h-72 w-full flex items-center justify-center shadow-md group">
+                            <img
+                              src={postTemplate?.assetUrl || "/images/kpugi-creator-verification.jpg"}
+                              alt="Kpugi Verification Graphic"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                              <span className="text-white text-[11px] font-bold">CREATORS ARE THE NEW MEDIA</span>
+                            </div>
+                          </div>
+
+                          {/* Direct Download Button */}
+                          <a
+                            href={postTemplate?.assetUrl || "/images/kpugi-creator-verification.jpg"}
+                            download="kpugi-creator-verification.jpg"
+                            className="w-full py-2.5 px-4 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2 active:scale-95"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download Poster</span>
+                          </a>
+                          <span className="text-[10px] text-center text-kpugi-slate dark:text-slate-400 block font-sans">
+                            Attach this graphic when publishing your post.
+                          </span>
+                        </div>
+
+                        {/* Column 2: Caption & Verification Link (md:col-span-7) */}
+                        <div className="md:col-span-7 space-y-4 flex flex-col justify-between">
+                          
+                          {/* Ready to post caption card */}
+                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-4 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-kpugi-ink dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-kpugi-blue" />
+                                Caption
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const cap = postTemplate?.caption || `The creator economy is changing — and I’m here for it. 👀💙\n\nCreators have the audience. Brands have the opportunities. Kpugi brings both together.\n\nMore opportunities. More connections. More room to grow. 🚀\n\nCreators × Brands. Let’s build.\n\n#Kpugi #CreatorEconomy #Creators #ContentCreator #CreatorLife\n\nID: ${generatedCode}`;
+                                  navigator.clipboard.writeText(cap);
+                                  setCaptionCopied(true);
+                                  setTimeout(() => setCaptionCopied(false), 2000);
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs ${
+                                  captionCopied
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-kpugi-blue hover:bg-blue-600 text-white'
+                                }`}
+                              >
+                                {captionCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                <span>{captionCopied ? 'Copied!' : 'Copy'}</span>
+                              </button>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-white dark:bg-black/50 border border-slate-200/80 dark:border-white/10 text-xs text-slate-800 dark:text-slate-200 space-y-2.5 leading-relaxed font-sans max-h-48 overflow-y-auto">
+                              <p className="font-medium text-slate-900 dark:text-white">
+                                The creator economy is changing — and I’m here for it. 👀💙
+                              </p>
+                              <p>
+                                Creators have the audience. Brands have the opportunities. Kpugi brings both together.
+                              </p>
+                              <p>
+                                More opportunities. More connections. More room to grow. 🚀
+                              </p>
+                              <p className="font-semibold text-kpugi-blue dark:text-blue-400">
+                                Creators × Brands. Let’s build.
+                              </p>
+
+                              {/* Hashtag Badges */}
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                {['#Kpugi', '#CreatorEconomy', '#Creators', '#ContentCreator', '#CreatorLife'].map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-blue-950/60 text-kpugi-blue dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* Token ID */}
+                              <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                <span>Token ID:</span>
+                                <span className="font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded">
+                                  {generatedCode}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Post URL Input */}
+                          <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
+                              Post Link
+                            </label>
+                            <div className="flex items-center rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden focus-within:border-kpugi-blue focus-within:ring-2 focus-within:ring-kpugi-blue/20">
+                              <div className="pl-3.5 pr-1.5 text-kpugi-slate dark:text-slate-400 shrink-0">
+                                {renderIcon(selectedPlatform.key, 'w-4 h-4')}
+                              </div>
+                              <input
+                                type="url"
+                                placeholder={`https://${selectedPlatform.key === 'x' ? 'x.com' : selectedPlatform.key + '.com'}/...`}
+                                value={postUrlInput}
+                                onChange={(e) => setPostUrlInput(e.target.value)}
+                                className="w-full px-2 py-3 font-mono text-xs text-slate-900 dark:text-white bg-transparent focus:outline-none font-medium"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Verification Action Buttons */}
+                          <div className="flex items-center gap-3 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setShowConnectModal(false)}
+                              className="w-1/3 py-3.5 rounded-xl border border-kpugi-border dark:border-white/10 bg-white dark:bg-white/5 text-kpugi-slate dark:text-slate-300 hover:text-kpugi-ink dark:hover:text-white font-sans text-xs font-bold transition-all"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleVerifyPost}
+                              disabled={postCheckLoading || !postUrlInput.trim()}
+                              className="w-2/3 py-3.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 disabled:opacity-50 text-white font-sans text-xs font-bold transition-all shadow-md shadow-kpugi-blue/25 flex items-center justify-center gap-2"
+                            >
+                              {postCheckLoading ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  <span>Auditing Post...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ShieldCheck className="w-4 h-4" />
+                                  <span>Verify</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>,
         document.body

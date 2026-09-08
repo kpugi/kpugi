@@ -18,10 +18,10 @@ import { randomBytes } from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const { platform, handle } = await request.json();
+    const { platform, handle, accountId } = await request.json();
 
-    if (!platform || !handle) {
-      return NextResponse.json({ error: 'platform and handle are required' }, { status: 400 });
+    if (!platform || (!handle && !accountId)) {
+      return NextResponse.json({ error: 'platform and handle or accountId are required' }, { status: 400 });
     }
 
     const userProfile = await getOrCreateUserProfile();
@@ -31,41 +31,39 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
     const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
-    const cleanHandle = handle.replace(/^@/, '').toLowerCase();
+    const cleanHandle = (handle || '').replace(/^@/, '').toLowerCase();
 
-    // Load the pending social account matching this specific handle
-    let query = supabase
+    // Load the social account matching this specific handle/id
+    const { data: accounts } = await supabase
       .from('social_accounts')
-      .select('id, platform_user_id, verification_code, verification_code_expires_at, verification_status')
+      .select('*')
       .eq('creator_id', userProfile.profile.id)
-      .eq('platform', platformKey);
+      .eq('platform', platformKey)
+      .order('connected_at', { ascending: false });
 
-    if (cleanHandle) {
-      query = query.ilike('platform_user_id', `%${cleanHandle}%`);
-    }
-
-    const { data: matchingAccounts } = await query;
-    let account = matchingAccounts?.[0];
-
-    if (!account) {
-      const { data: fallbackAccount } = await supabase
-        .from('social_accounts')
-        .select('id, platform_user_id, verification_code, verification_code_expires_at, verification_status')
-        .eq('creator_id', userProfile.profile.id)
-        .eq('platform', platformKey)
-        .maybeSingle();
-      account = fallbackAccount || undefined;
-    }
-
-    if (!account) {
+    if (!accounts || accounts.length === 0) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
+    const cleanId = cleanHandle.match(/id=(\d+)/i)?.[1] || (cleanHandle.match(/^\d+$/) ? cleanHandle : null);
+
+    const account =
+      (accountId ? accounts.find((a) => a.id === accountId) : null) ||
+      accounts.find(
+        (a) =>
+          a.handle.toLowerCase() === cleanHandle ||
+          (a.display_name && a.display_name.toLowerCase() === cleanHandle) ||
+          (cleanId && (a.platform_user_id === cleanId || a.handle.includes(cleanId))) ||
+          (a.platform_user_id && a.platform_user_id.toLowerCase() === cleanHandle)
+      ) ||
+      accounts[0];
+
     if (account.verification_status === 'verified') {
       // Re-sync stats on demand for already verified accounts
+      const lookupIdentifier = account.platform_user_id || account.handle || cleanHandle;
       let scrapedProfile;
       try {
-        scrapedProfile = await scrapeProfile(platformKey, cleanHandle);
+        scrapedProfile = await scrapeProfile(platformKey, lookupIdentifier);
       } catch (err: any) {
         return NextResponse.json(
           { error: `Could not fetch live stats: ${err?.message || 'Profile lookup failed'}` },
@@ -82,7 +80,7 @@ export async function POST(request: Request) {
       if (scrapedProfile.avatarUrl) {
         updateData.avatar_url = scrapedProfile.avatarUrl;
       }
-      if (scrapedProfile.displayName) {
+      if (scrapedProfile.displayName && !account.display_name) {
         updateData.display_name = scrapedProfile.displayName;
       }
       if (scrapedProfile.bio) {
@@ -98,10 +96,10 @@ export async function POST(request: Request) {
         verified: true,
         message: 'Stats re-synced successfully',
         stats: {
-          followerCount: scrapedProfile.followerCount,
-          avatarUrl: scrapedProfile.avatarUrl,
-          displayName: scrapedProfile.displayName,
-          bio: scrapedProfile.bio,
+          followerCount: scrapedProfile.followerCount ?? account.follower_count,
+          avatarUrl: scrapedProfile.avatarUrl || account.avatar_url,
+          displayName: account.display_name || scrapedProfile.displayName,
+          bio: scrapedProfile.bio || account.bio,
         },
       });
     }

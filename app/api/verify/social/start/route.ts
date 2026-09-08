@@ -123,8 +123,8 @@ export async function POST(request: Request) {
 
     // Pre-composed caption for Verification Post option
     const postTemplate = {
-      caption: `Official Creator Channel Verification for @Kpugi_hq 🚀\nVerification ID: ${code}\nVerified on https://kpugi.com #Kpugi #Creator`,
-      assetUrl: '/images/kpugi_verification_badge.svg',
+      caption: `The creator economy is changing — and I’m here for it. 👀💙\n\nCreators have the audience. Brands have the opportunities. Kpugi brings both together.\n\nMore opportunities. More connections. More room to grow. 🚀\n\nCreators × Brands. Let’s build.\n\n#Kpugi #CreatorEconomy #Creators #ContentCreator #CreatorLife\n\nID: ${code}`,
+      assetUrl: '/images/kpugi-creator-verification.jpg',
     };
 
     return NextResponse.json({

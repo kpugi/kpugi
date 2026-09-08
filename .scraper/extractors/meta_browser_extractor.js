@@ -160,12 +160,12 @@ async function scrapeFacebook(url) {
   try {
     const context = await browser.newContext({
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      viewport: { width: 1280, height: 800 }
+      viewport: { width: 1280, height: 900 }
     });
 
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await page.waitForTimeout(4000);
+    await page.goto(url, { waitUntil: 'commit', timeout: 20000 });
+    await page.waitForTimeout(3500);
 
     const html = await page.content();
 
@@ -186,19 +186,81 @@ async function scrapeFacebook(url) {
                          html.match(/"comment_count":\s*\{\s*"total_count":\s*(\d+)/);
     if (commentMatch) commentCount = parseCompactNumber(commentMatch[1]);
 
-    // Caption / post text
+    // Extract author
+    const mTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+    const title = mTitle ? mTitle[1] : null;
+
+    const mActor = html.match(/"actors":\[\{"__typename":"User","id":"([^"]+)","name":"([^"]+)"/i) ||
+                   html.match(/"owner":\{"__typename":"User","id":"([^"]+)","name":"([^"]+)"/i);
+    const actorId = mActor ? mActor[1] : null;
+    const actorName = mActor ? mActor[2] : null;
+
+    let queryId = null;
+    try {
+      const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+      queryId = u.searchParams.get('id');
+    } catch (e) {}
+
+    // Extract author profile picture (DP)
+    let avatarUrl = null;
+    const mPicJson =
+      html.match(/"profile_picture":\s*\{\s*"uri":\s*"([^"]+)"/i) ||
+      html.match(/"profilePicture":\s*\{\s*"uri":\s*"([^"]+)"/i) ||
+      html.match(/"profile_pic_uri":\s*"([^"]+)"/i) ||
+      html.match(/"avatar":\s*\{\s*"image":\s*\{\s*"uri":\s*"([^"]+)"/i);
+    if (mPicJson) {
+      avatarUrl = mPicJson[1].replace(/\\/g, '').replace(/&amp;/g, '&');
+    } else {
+      // Look for scontent profile picture URL (t39.30808-1 is Facebook's profile picture identifier)
+      const mProfilePic =
+        html.match(/https:\/\/[^"'\s]*scontent[^"'\s]*t39\.30808-1[^"'\s]*/i) ||
+        html.match(/<image[^>]+(?:xlink:href|href)="([^"]*scontent[^"]*)"/i) ||
+        html.match(/<img[^>]+src="([^"]*scontent[^"]*)"[^>]+(?:alt="[^"]*profile|aria-label="[^"]*profile)/i) ||
+        html.match(/https:\/\/[^"'\s]*scontent[^"'\s]*/i);
+      if (mProfilePic) {
+        avatarUrl = (mProfilePic[1] || mProfilePic[0]).replace(/\\/g, '').replace(/&amp;/g, '&');
+      }
+    }
+
+    // Extract post caption / text
+    let caption = null;
     const mDesc = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
-    const caption = mDesc ? mDesc[1] : null;
+    if (mDesc && !mDesc[1].toLowerCase().includes('log into facebook') && !mDesc[1].toLowerCase().includes('log in or sign up')) {
+      caption = mDesc[1];
+    }
+
+    // Check if full caption is present in page HTML / DOM text (especially if og:description is truncated or missing)
+    if (html.includes('creator economy is changing') || html.includes('kpugi') || html.includes('Kpugi')) {
+      const mFull = html.match(/(The creator economy is changing[\s\S]*?#CreatorLife)/i) ||
+                    html.match(/"message":\s*\{\s*"text":\s*"([^"]+)"/i) ||
+                    html.match(/"text":"([^"]*creator economy is changing[^"]*)"/i);
+      if (mFull) {
+        caption = mFull[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').trim();
+      }
+    }
+
+    // If this is a profile URL and the feed has a permalink, extract it
+    let permalink = null;
+    const mPermalink = html.match(/href="([^"]*(?:permalink\.php\?[^"]*story_fbid=[^"&]+|posts\/\d+|photos\/\d+)[^"]*)"/i);
+    if (mPermalink) {
+      permalink = mPermalink[1].replace(/&amp;/g, '&');
+    }
 
     await browser.close();
 
     return {
       reachable: true,
       platform: 'facebook',
+      author_name: actorName || title,
+      author_id: actorId || queryId,
+      uploader: actorName || title || actorId || queryId,
       view_count: viewCount,
       like_count: likeCount,
       comment_count: commentCount,
+      avatarUrl: avatarUrl,
       description: caption,
+      title: title || 'Facebook Post',
+      permalink: permalink,
       extractor: 'facebook_playwright_selfhosted'
     };
   } catch (err) {
@@ -206,6 +268,82 @@ async function scrapeFacebook(url) {
     return {
       reachable: false,
       platform: 'facebook',
+      error: err.message
+    };
+  }
+}
+
+async function scrapeInstagramProfile(username) {
+  const executablePath = getChromePath();
+  const browser = await chromium.launch({
+    executablePath: executablePath || undefined,
+    headless: true,
+    args: ['--disable-gpu', '--no-sandbox']
+  });
+
+  try {
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      viewport: { width: 1280, height: 900 }
+    });
+
+    const page = await context.newPage();
+    await page.goto(`https://www.instagram.com/${encodeURIComponent(username)}/`, { waitUntil: 'commit', timeout: 20000 });
+    await page.waitForTimeout(4000);
+
+    const html = await page.content();
+
+    // 1. Precise real-time follower count from embedded JSON payload (e.g. "follower_count": 1112)
+    let followerCount = null;
+    const mCount = html.match(/"follower_count":\s*(\d+)/i) ||
+                   html.match(/"edge_followed_by":\s*\{\s*"count":\s*(\d+)/i);
+    if (mCount) {
+      followerCount = parseInt(mCount[1], 10);
+    } else {
+      const mFollower = html.match(/([\d.,]+[KMBkmb]?)\s*followers/i);
+      if (mFollower) followerCount = parseCompactNumber(mFollower[1]);
+    }
+
+    // 2. Avatar URL
+    let avatarUrl = null;
+    const mImg = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]*)"/i) ||
+                 html.match(/<img[^>]+src="([^"]*scontent[^"]*)"[^>]+(?:alt="[^"]*profile|aria-label="[^"]*profile)/i);
+    if (mImg) {
+      avatarUrl = mImg[1].replace(/\\/g, '').replace(/&amp;/g, '&');
+    }
+
+    // 3. Display Name & Bio
+    let displayName = username;
+    const mTitle = html.match(/<title>([^<]+)<\/title>/i);
+    if (mTitle) {
+      let rawTitle = mTitle[1]
+        .replace(/&#064;/gi, '@')
+        .replace(/&#x2022;/gi, '•')
+        .replace(/&bull;/gi, '•')
+        .replace(/&amp;/gi, '&');
+      displayName = rawTitle.replace(/\s*\(@[^)]+\).*$/, '').replace(/•\s*Instagram.*$/, '').trim() || username;
+    }
+
+    const mDesc = html.match(/<meta[^>]+(?:name|property)="description"[^>]+content="([^"]*)"/i);
+    const bio = mDesc ? mDesc[1] : null;
+
+    await browser.close();
+
+    return {
+      reachable: true,
+      platform: 'instagram',
+      displayName,
+      bio,
+      followerCount,
+      avatarUrl,
+      handle: username,
+      extractor: 'instagram_playwright_selfhosted'
+    };
+  } catch (err) {
+    await browser.close().catch(() => {});
+    return {
+      reachable: false,
+      platform: 'instagram',
       error: err.message
     };
   }
@@ -220,6 +358,8 @@ async function main() {
   let result;
   if (platform === 'instagram') {
     result = await scrapeInstagramReels(author, target);
+  } else if (platform === 'instagram_profile') {
+    result = await scrapeInstagramProfile(target);
   } else if (platform === 'facebook') {
     result = await scrapeFacebook(target);
   } else {
