@@ -282,6 +282,8 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const isCompleted = campaign.status === 'completed' || campaign.status === 'archived';
   const matchingAccount = socialAccounts.find(s => s.id === submissionState?.social_account_id);
 
+  const campaignCover = campaign.cover_image_url || creatives?.[0]?.file_url || campaign.company_logo;
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 text-kpugi-ink dark:text-white font-sans">
       {/* ─────────────────────────────────────────────────────
@@ -320,15 +322,15 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           </div>
 
           <div className="flex items-center gap-3">
-            {campaign.company_logo ? (
+            {campaignCover ? (
               <img
-                src={campaign.company_logo}
-                alt={campaign.company_name || campaign.title}
+                src={campaignCover}
+                alt={campaign.title}
                 className="w-10 h-10 rounded-xl object-cover border border-kpugi-border dark:border-white/10 shrink-0 shadow-xs"
               />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 text-kpugi-ink dark:text-white font-bold text-sm flex items-center justify-center uppercase shrink-0 border border-kpugi-border dark:border-white/10 shadow-xs">
-                {(campaign.company_name || campaign.title).charAt(0)}
+                {campaign.title.charAt(0)}
               </div>
             )}
             <div className="min-w-0">
@@ -475,18 +477,41 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         </div>
 
         {/* 2. Earned Payout */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+        <div className={`p-4 rounded-2xl border shadow-2xs space-y-1 transition-all ${
+          isCapReached
+            ? 'bg-amber-50/20 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-500/40 ring-1 ring-amber-400/20'
+            : 'bg-white dark:bg-[#12141A] border-kpugi-border dark:border-white/10'
+        }`}>
+          <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
               {isCompleted ? 'Net Payout' : 'Earned Payout'}
             </span>
-            <span className="font-mono font-black text-xs text-emerald-600 dark:text-emerald-400 leading-none">₦</span>
+            {isCapReached ? (
+              <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-600/40 leading-none shadow-2xs">
+                <Lock className="w-2.5 h-2.5" /> CAP REACHED
+              </span>
+            ) : (
+              <span className="font-mono font-black text-xs text-emerald-600 dark:text-emerald-400 leading-none">₦</span>
+            )}
           </div>
-          <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
-            {formatCompactCurrency(isCompleted ? netTakeHome : earnedAmount)}
-          </p>
-          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium block truncate">
-            {isCompleted
+          <div className="flex items-baseline gap-1.5">
+            <p className="font-display text-lg sm:text-xl font-black text-kpugi-ink dark:text-white">
+              {formatCompactCurrency(isCompleted ? netTakeHome : earnedAmount)}
+            </p>
+            {isCapReached && (
+              <span className="text-[10px] font-bold font-mono text-amber-600 dark:text-amber-400">
+                (MAX)
+              </span>
+            )}
+          </div>
+          <span className={`text-[9px] font-medium block truncate ${
+            isCapReached
+              ? 'text-amber-700 dark:text-amber-400 font-bold'
+              : 'text-slate-500 dark:text-slate-400'
+          }`}>
+            {isCapReached
+              ? `Max Cap Reached (₦${maxCreatorPoolCap.toLocaleString()})`
+              : isCompleted
               ? `Net (10% fee: ₦${platformFee.toLocaleString()})`
               : isReserveMet
               ? 'Verified Run Settled'
@@ -542,7 +567,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             {isCompleted ? 'Completed' : submissionState?.status || 'Active'}
           </p>
           <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium block">
-            {isCompleted ? 'Payout Released' : 'Auditing Active'}
+            {isCompleted ? 'Payout Released' : isCapReached ? 'Cap Reached (Concluded)' : 'Auditing Active'}
           </span>
         </div>
       </div>

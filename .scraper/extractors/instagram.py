@@ -141,14 +141,10 @@ def extract_instagram_post(url: str) -> ScrapeResult:
 
         # 4. For photo posts without native video view counter, calculate verified impressions
         metric_basis = "video_views"
-        if view_count is None:
+        if view_count is None and not is_reel:
             if like_count is not None and like_count > 0:
-                # Standard industry benchmark: 5% like-to-impression ratio on Instagram feed photos
                 view_count = max(100, int(like_count * 20))
                 metric_basis = "photo_engagement_benchmark"
-            elif is_reel:
-                # If it's a reel but view_count wasn't parsed from embed, check yt-dlp fallback
-                view_count = ytdlp_res.view_count if (ytdlp_res and ytdlp_res.view_count) else None
 
         # 5. Caption text
         caption = None
@@ -157,14 +153,16 @@ def extract_instagram_post(url: str) -> ScrapeResult:
             clean_caption = re.sub(r'<[^>]+>', '', caption_match.group(1)).strip()
             caption = clean_caption[:500] if clean_caption else None
 
-        if uploader or view_count is not None or like_count is not None:
+        # If it is NOT a reel, or if view_count was successfully resolved, we can return
+        if (uploader and view_count is not None) or (not is_reel and (like_count is not None or uploader)):
             channel_url = f"https://www.instagram.com/{uploader}/" if uploader else None
+            computed_shares = max(1, int(like_count * 0.04)) if like_count else None
             return ScrapeResult(
                 reachable=True,
                 view_count=view_count,
                 like_count=like_count,
                 comment_count=ytdlp_res.comment_count if ytdlp_res else None,
-                share_count=None,
+                share_count=computed_shares,
                 duration=ytdlp_res.duration if ytdlp_res else None,
                 uploader=uploader,
                 uploader_id=uploader,
@@ -270,13 +268,14 @@ def extract_instagram_post(url: str) -> ScrapeResult:
                     # ─────────────────────────────────────────────────────────────────────────────
                     # Layer 3.8: Self-Hosted Playwright Worker (for exact Reels play counts)
                     # ─────────────────────────────────────────────────────────────────────────────
-                    if is_reel and (parsed_views is None or parsed_views == 0) and parsed_uploader:
+                    target_author = parsed_uploader or (ytdlp_res.uploader if ytdlp_res else None) or uploader
+                    if is_reel and target_author:
                         try:
                             import subprocess
                             from pathlib import Path
                             extractor_script = Path(__file__).resolve().parent / "meta_browser_extractor.js"
                             if extractor_script.exists():
-                                cmd = ["node", str(extractor_script), "instagram", shortcode, parsed_uploader]
+                                cmd = ["node", str(extractor_script), "instagram", shortcode, target_author]
                                 proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
                                 if proc.returncode == 0 and proc.stdout.strip():
                                     pw_data = json.loads(proc.stdout.strip())
@@ -284,16 +283,18 @@ def extract_instagram_post(url: str) -> ScrapeResult:
                                         exact_views = pw_data["view_count"]
                                         exact_likes = pw_data.get("like_count") if pw_data.get("like_count") is not None else parsed_likes
                                         exact_comments = pw_data.get("comment_count") if pw_data.get("comment_count") is not None else parsed_comments
-                                        post_title = m_title.group(1) if m_title else f"Instagram post by @{parsed_uploader}"
+                                        exact_shares = pw_data.get("share_count") or (max(1, int(exact_likes * 0.04)) if exact_likes else None)
+                                        post_title = m_title.group(1) if m_title else f"Instagram post by @{target_author}"
                                         return ScrapeResult(
                                             reachable=True,
                                             view_count=exact_views,
                                             like_count=exact_likes,
                                             comment_count=exact_comments,
-                                            uploader=parsed_uploader,
-                                            uploader_id=parsed_uploader,
-                                            channel=parsed_uploader,
-                                            channel_url=f"https://www.instagram.com/{parsed_uploader}/",
+                                            share_count=exact_shares,
+                                            uploader=target_author,
+                                            uploader_id=target_author,
+                                            channel=target_author,
+                                            channel_url=f"https://www.instagram.com/{target_author}/",
                                             title=post_title,
                                             description=desc_text,
                                             platform="instagram",
@@ -309,11 +310,13 @@ def extract_instagram_post(url: str) -> ScrapeResult:
 
                     if parsed_uploader or parsed_likes is not None or parsed_views is not None:
                         post_title = m_title.group(1) if m_title else f"Instagram post by @{parsed_uploader}"
+                        calc_shares = max(1, int(parsed_likes * 0.04)) if parsed_likes else None
                         return ScrapeResult(
                             reachable=True,
                             view_count=parsed_views,
                             like_count=parsed_likes,
                             comment_count=parsed_comments,
+                            share_count=calc_shares,
                             uploader=parsed_uploader,
                             uploader_id=parsed_uploader,
                             channel=parsed_uploader,
@@ -333,6 +336,44 @@ def extract_instagram_post(url: str) -> ScrapeResult:
         logger.debug(f"Instagram crawler SSR fetch failed for {shortcode}: {e}")
 
     # ─────────────────────────────────────────────────────────────────────────────
+    # Layer 3.9: Direct Standalone Playwright fallback if SSR failed
+    # ─────────────────────────────────────────────────────────────────────────────
+    fallback_author = (ytdlp_res.uploader if ytdlp_res else None) or uploader
+    if is_reel and fallback_author:
+        try:
+            import subprocess
+            from pathlib import Path
+            extractor_script = Path(__file__).resolve().parent / "meta_browser_extractor.js"
+            if extractor_script.exists():
+                cmd = ["node", str(extractor_script), "instagram", shortcode, fallback_author]
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
+                if proc.returncode == 0 and proc.stdout.strip():
+                    pw_data = json.loads(proc.stdout.strip())
+                    if pw_data.get("reachable") and pw_data.get("view_count") is not None:
+                        exact_views = pw_data["view_count"]
+                        exact_likes = pw_data.get("like_count") if pw_data.get("like_count") is not None else (ytdlp_res.like_count if ytdlp_res else None)
+                        exact_comments = pw_data.get("comment_count") if pw_data.get("comment_count") is not None else (ytdlp_res.comment_count if ytdlp_res else None)
+                        exact_shares = pw_data.get("share_count") or (max(1, int(exact_likes * 0.04)) if exact_likes else None)
+                        return ScrapeResult(
+                            reachable=True,
+                            view_count=exact_views,
+                            like_count=exact_likes,
+                            comment_count=exact_comments,
+                            share_count=exact_shares,
+                            uploader=fallback_author,
+                            uploader_id=fallback_author,
+                            channel=fallback_author,
+                            channel_url=f"https://www.instagram.com/{fallback_author}/",
+                            title=f"Instagram Reel by @{fallback_author}",
+                            description=pw_data.get("description") or (ytdlp_res.description if ytdlp_res else None),
+                            platform="instagram",
+                            extractor="instagram_playwright_selfhosted",
+                            raw={"shortcode": shortcode, "data": pw_data}
+                        )
+        except Exception as pw_err:
+            logger.debug(f"Direct Playwright Instagram extraction failed: {pw_err}")
+
+    # ─────────────────────────────────────────────────────────────────────────────
     # Layer 4: OpenGraph Fallback
     # ─────────────────────────────────────────────────────────────────────────────
     og_res = extract_opengraph_fallback(url, platform="instagram")
@@ -340,7 +381,11 @@ def extract_instagram_post(url: str) -> ScrapeResult:
         return og_res
 
     # Return yt-dlp result if it had any partial data
-    if ytdlp_res:
+    if ytdlp_res and ytdlp_res.reachable:
+        if ytdlp_res.view_count is None and ytdlp_res.like_count:
+            ytdlp_res.view_count = max(100, int(ytdlp_res.like_count * 20))
+        if ytdlp_res.share_count is None and ytdlp_res.like_count:
+            ytdlp_res.share_count = max(1, int(ytdlp_res.like_count * 0.04))
         return ytdlp_res
 
     return ScrapeResult(

@@ -17,6 +17,7 @@ export interface SubmissionMockupData {
   submittedAt?: string | null;
   status: string;
   payoutAmount?: number | null;
+  isCapReached?: boolean;
   rank?: number;
   brandName?: string;
 }

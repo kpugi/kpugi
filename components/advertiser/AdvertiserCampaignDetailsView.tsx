@@ -162,6 +162,8 @@ export default function AdvertiserCampaignDetailsView({
   const progressPercent = Math.min(100, Math.round((campaign.spent_budget / campaign.total_budget) * 100));
   const minThreshold = campaign.min_view_threshold || 1000;
   const baseSlotReserve = Math.round((minThreshold / 1000) * campaign.cpm_rate);
+  const totalCampaignBudget = Number(campaign.total_budget || 0);
+  const maxCreatorPoolCap = totalCampaignBudget > 0 ? totalCampaignBudget * 0.25 : 0;
 
   // Reserves are strictly for first-joiners awaiting minimum view threshold
   const totalReservedAmount = submissions.reduce((sum, s) => {
@@ -662,6 +664,8 @@ export default function AdvertiserCampaignDetailsView({
                       const totalPaid = Number(sub.payout_amount || 0);
                       const pendingPaid = Number(sub.pending_payout_amount || 0);
                       const totalEarned = totalPaid + pendingPaid;
+                      const calculatedViewsEarned = campaign.cpm_rate ? Math.floor((verifiedViews / 1000) * Number(campaign.cpm_rate)) : 0;
+                      const isCapReached = maxCreatorPoolCap > 0 && (totalEarned >= maxCreatorPoolCap || calculatedViewsEarned >= maxCreatorPoolCap);
                       const hasPassedMin = verifiedViews >= minThreshold || totalEarned > 0;
 
                       // Reserve applies strictly to first-joiners prior to passing minimum view threshold
@@ -705,9 +709,19 @@ export default function AdvertiserCampaignDetailsView({
                           </td>
                           <td className="py-3 px-3 text-right font-mono font-bold">
                             {totalEarned > 0 ? (
-                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
-                                ₦{totalEarned.toLocaleString()}
-                              </span>
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                                  ₦{totalEarned.toLocaleString()}
+                                </span>
+                                {isCapReached && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 font-sans shrink-0 shadow-2xs leading-none"
+                                    title={`Creator has reached the 25% campaign earnings cap (₦${maxCreatorPoolCap.toLocaleString()})`}
+                                  >
+                                    <Lock className="w-2.5 h-2.5" /> Cap Reached
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-slate-500 dark:text-slate-400 font-medium">
                                 ₦0{' '}
@@ -1074,6 +1088,7 @@ export default function AdvertiserCampaignDetailsView({
                     submittedAt: sub.submitted_at,
                     status: sub.status,
                     payoutAmount: sub.payout_amount ? Number(sub.payout_amount) : (sub.pending_payout_amount ? Number(sub.pending_payout_amount) : null),
+                    isCapReached: maxCreatorPoolCap > 0 && (((sub.payout_amount ? Number(sub.payout_amount) : (sub.pending_payout_amount ? Number(sub.pending_payout_amount) : 0)) >= maxCreatorPoolCap) || (campaign.cpm_rate ? Math.floor((subViews / 1000) * Number(campaign.cpm_rate)) >= maxCreatorPoolCap : false)),
                     rank: rank,
                     brandName: campaign.company_name || 'Brand Partner',
                   };
@@ -1146,6 +1161,7 @@ export default function AdvertiserCampaignDetailsView({
                         submittedAt: sub.submitted_at,
                         status: sub.status,
                         payoutAmount: sub.payout_amount ? Number(sub.payout_amount) : (sub.pending_payout_amount ? Number(sub.pending_payout_amount) : null),
+                        isCapReached: maxCreatorPoolCap > 0 && (((sub.payout_amount ? Number(sub.payout_amount) : (sub.pending_payout_amount ? Number(sub.pending_payout_amount) : 0)) >= maxCreatorPoolCap) || (campaign.cpm_rate ? Math.floor((subViews / 1000) * Number(campaign.cpm_rate)) >= maxCreatorPoolCap : false)),
                         rank: rank,
                         brandName: campaign.company_name || 'Brand Partner',
                       };

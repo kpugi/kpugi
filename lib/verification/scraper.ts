@@ -269,14 +269,45 @@ export async function scrapeYouTubeProfile(handle: string): Promise<ScrapedProfi
 export async function scrapeInstagramProfile(handle: string): Promise<ScrapedProfile> {
   const username = handle.replace(/^@/, '').trim();
 
-  // ─── Phase 1: Search engine crawler SSR endpoint (Googlebot / Twitterbot / WhatsApp)
-  // Instagram serves server-side rendered HTML with the full bio in <meta name="description"> in ~300ms
-  let crawlerProfile: ScrapedProfile | null = null;
+  // ─── Phase 0: Self-Hosted Playwright Browser Extractor (Fetches exact live hydrated follower count, bio & avatar)
+  try {
+    const { execFile } = await import('child_process');
+    const path = await import('path');
+    const fs = await import('fs');
+    const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
+    if (fs.existsSync(scriptPath)) {
+      const pwResult = await new Promise<any>((resolve) => {
+        execFile('node', [scriptPath, 'instagram_profile', username], { timeout: 25_000 }, (err, stdout) => {
+          if (err || !stdout) return resolve(null);
+          try {
+            const data = JSON.parse(stdout.trim());
+            resolve(data);
+          } catch {
+            resolve(null);
+          }
+        });
+      });
+
+      if (pwResult && pwResult.reachable && typeof pwResult.followerCount === 'number' && pwResult.followerCount > 0) {
+        return {
+          displayName: pwResult.displayName || username,
+          bio: pwResult.bio || null,
+          followerCount: pwResult.followerCount,
+          avatarUrl: pwResult.avatarUrl || null,
+          handle: username,
+        };
+      }
+    }
+  } catch {
+    // Fall through to HTTP SSR and API fallbacks
+  }
+
+  // ─── Phase 1: Real Mobile Safari & Chrome SSR endpoint
+  // Instagram serves server-side rendered HTML with the full bio in <meta name="description"> and <meta property="og:description">
   const crawlerUserAgents = [
     'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
     'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-    'Twitterbot/1.0',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   ];
 
   for (const ua of crawlerUserAgents) {
@@ -293,53 +324,38 @@ export async function scrapeInstagramProfile(handle: string): Promise<ScrapedPro
       if (res.ok) {
         const html = await res.text();
 
-        let rawDesc = '';
-        const m1 = html.match(/<meta[^>]+content="([^"]*)"[^>]+name="description"/i);
-        const m2 = html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i);
-        if (m1) rawDesc = m1[1];
-        else if (m2) rawDesc = m2[1];
+        const rawDesc = extractMeta(html, 'description') || extractMeta(html, 'og:description') || '';
+        if (!rawDesc) continue;
 
         const decodedDesc = decodeHtmlEntities(rawDesc);
 
+        // Strictly match followers: e.g. "940 Followers, 1 Following, 9 Posts"
+        const followerMatch = decodedDesc.match(/([\d.,]+[KMBkmb]?)\s*Followers?/i);
+        const followerCount = followerMatch ? parseFollowerCount(followerMatch[1]) : null;
+
+        // Bio in quotes
         const bioQuotesMatch = decodedDesc.match(/on Instagram:\s*(?:&quot;|"|“)([\s\S]*?)(?:&quot;|"|”)/i);
-        const cleanBio = bioQuotesMatch ? bioQuotesMatch[1].replace(/\\n/g, '\n').trim() : decodedDesc;
+        const cleanBio = bioQuotesMatch ? bioQuotesMatch[1].replace(/\\n/g, '\n').trim() : null;
 
-        const combinedBio = cleanBio && decodedDesc && cleanBio !== decodedDesc
-          ? `${cleanBio}\n${decodedDesc}`
-          : cleanBio || decodedDesc;
+        const combinedBio = cleanBio || decodedDesc;
 
-        const followerMatch = decodedDesc.match(/([\d.,]+[KMBkmb]?)\s*Follower/i);
-        const followerCount = followerMatch ? parseFollowerCount(followerMatch[1]) : 0;
-
-        const titleMatch = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]*)"/i);
-        const rawTitle = titleMatch ? decodeHtmlEntities(titleMatch[1]).replace(/&#064;/gi, '@').replace(/&#x2022;/gi, '•').replace(/&bull;/gi, '•') : username;
+        const rawTitle = extractMeta(html, 'og:title') || username;
         const displayName = rawTitle.replace(/\s*\(@[^)]+\).*$/, '').replace(/•\s*Instagram.*$/, '').trim() || username;
+        const avatarUrl = extractMeta(html, 'og:image');
 
-        const imgMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]*)"/i);
-        const avatarUrl = imgMatch ? decodeHtmlEntities(imgMatch[1]) : null;
-
-        if (combinedBio || html.includes(username)) {
-          crawlerProfile = {
+        if (cleanBio || (followerCount !== null && followerCount > 0)) {
+          return {
             displayName,
             bio: combinedBio || null,
             followerCount,
             avatarUrl,
             handle: username,
           };
-          // If crawler got the bio, return immediately for instant bio verification
-          if (combinedBio && combinedBio.trim().length > 0) {
-            return crawlerProfile;
-          }
-          break;
         }
       }
     } catch {
       // try next crawler UA
     }
-  }
-
-  if (crawlerProfile) {
-    return crawlerProfile;
   }
 
   // Method 2: Instagram Web profile info API with public Web App ID

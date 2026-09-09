@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       const updateData: Record<string, any> = {
         last_synced_at: new Date().toISOString(),
       };
-      if (scrapedProfile.followerCount !== null && scrapedProfile.followerCount !== undefined) {
+      if (scrapedProfile.followerCount !== null && scrapedProfile.followerCount !== undefined && scrapedProfile.followerCount > 0) {
         updateData.follower_count = scrapedProfile.followerCount;
       }
       if (scrapedProfile.avatarUrl) {
@@ -92,11 +92,15 @@ export async function POST(request: Request) {
         .update(updateData)
         .eq('id', account.id);
 
+      const effectiveFollowers = (scrapedProfile.followerCount !== null && scrapedProfile.followerCount !== undefined && scrapedProfile.followerCount > 0)
+        ? scrapedProfile.followerCount
+        : account.follower_count;
+
       return NextResponse.json({
         verified: true,
         message: 'Stats re-synced successfully',
         stats: {
-          followerCount: scrapedProfile.followerCount ?? account.follower_count,
+          followerCount: effectiveFollowers,
           avatarUrl: scrapedProfile.avatarUrl || account.avatar_url,
           displayName: account.display_name || scrapedProfile.displayName,
           bio: scrapedProfile.bio || account.bio,

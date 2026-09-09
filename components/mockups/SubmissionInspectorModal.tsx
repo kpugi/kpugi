@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { X, ExternalLink, ShieldCheck, Eye, Heart, MessageSquare, Share2, Clock, CheckCircle2 } from 'lucide-react';
+import { X, ExternalLink, ShieldCheck, Eye, Heart, MessageSquare, Share2, Clock, CheckCircle2, Lock } from 'lucide-react';
 import { SubmissionMockupData } from './types';
 import SocialPostMockup from './SocialPostMockup';
 import { formatCompactNumber } from '@/lib/utils/format';
@@ -137,16 +137,27 @@ export default function SubmissionInspectorModal({ submission, onClose }: Props)
 
             {/* Payout & Settlement Info */}
             {submission.payoutAmount !== undefined && submission.payoutAmount !== null && (
-              <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between">
+              <div className={`mt-4 p-3.5 rounded-2xl border flex items-center justify-between ${
+                submission.isCapReached
+                  ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30'
+                  : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-500/20'
+              }`}>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-400 block">
-                    Escrow Settlement Amount
-                  </span>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-400 block">
+                      Earned
+                    </span>
+                    {submission.isCapReached && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 leading-none">
+                        <Lock className="w-2.5 h-2.5" /> Cap Reached
+                      </span>
+                    )}
+                  </div>
                   <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-300 text-base">
                     ₦{submission.payoutAmount.toLocaleString()}
                   </span>
                 </div>
-                <ShieldCheck className="w-6 h-6 text-emerald-500" />
+                <ShieldCheck className={`w-6 h-6 ${submission.isCapReached ? 'text-amber-500' : 'text-emerald-500'}`} />
               </div>
             )}
           </div>
