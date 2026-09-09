@@ -537,7 +537,7 @@ export async function POST(req: Request) {
         .from('submissions')
         .update({
           post_url: cleanPostUrl,
-          screenshot_url: screenshotUrl || 'https://via.placeholder.com/150',
+          screenshot_url: screenshotUrl || null,
           status: 'pending',
           auto_approve_at: null,
           submitted_at: now.toISOString()

@@ -216,7 +216,7 @@ export async function submitCampaignVideoAction(formData: FormData) {
       creator_id: userProfile.profile.id,
       social_account_id: socialAccountId,
       post_url: parsedUrl.toString(),
-      screenshot_url: 'https://via.placeholder.com/150',
+      screenshot_url: null,
       reserved_amount: Number(campaign.cpm_rate || 0),
       status: 'pending',
       submitted_at: new Date().toISOString(),

@@ -37,6 +37,8 @@ import {
   Share2,
   Wallet,
   Star,
+  LayoutGrid,
+  Table,
 } from 'lucide-react';
 import { BrandCampaignDetails } from '@/lib/supabase/advertiser';
 import { updateCampaignStatusAction } from '@/app/actions/advertiser';
@@ -46,6 +48,9 @@ import { formatCompactNumber } from '@/lib/utils/format';
 import { CampaignReviewModal } from '@/components/reviews/CampaignReviewModal';
 import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
 import { getCampaignReviewStatusAction, getCampaignReviewsSummaryAction, CampaignReviewsSummary } from '@/app/actions/reviews';
+import SocialPostMockup from '@/components/mockups/SocialPostMockup';
+import SubmissionInspectorModal from '@/components/mockups/SubmissionInspectorModal';
+import { SubmissionMockupData } from '@/components/mockups/types';
 
 interface AdvertiserCampaignDetailsViewProps {
   data: BrandCampaignDetails;
@@ -72,6 +77,10 @@ export default function AdvertiserCampaignDetailsView({
   const [hasReviewed, setHasReviewed] = useState(false);
   const [existingReview, setExistingReview] = useState<any>(null);
   const [reviewsSummary, setReviewsSummary] = useState<CampaignReviewsSummary | null>(null);
+  const [submissionViewMode, setSubmissionViewMode] = useState<'mockup' | 'table'>('mockup');
+  const [submissionPlatformFilter, setSubmissionPlatformFilter] = useState<string>('all');
+  const [submissionSortBy, setSubmissionSortBy] = useState<'views' | 'likes' | 'recent'>('views');
+  const [inspectingSubmission, setInspectingSubmission] = useState<SubmissionMockupData | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -906,30 +915,182 @@ export default function AdvertiserCampaignDetailsView({
         </div>
       )}
 
-      {/* Tab 2: Submissions Stream */}
+      {/* Tab 2: Submissions Stream & Mockup Show */}
       {activeTab === 'submissions' && (() => {
-        const activeSubmissions = submissions.filter(
+        let activeSubmissions = submissions.filter(
           (s) => s.post_url != null && s.status !== 'joined'
         );
 
+        // Filter by platform
+        if (submissionPlatformFilter !== 'all') {
+          activeSubmissions = activeSubmissions.filter((s) => {
+            const p = (s.social_account_platform || '').toLowerCase();
+            return p.includes(submissionPlatformFilter);
+          });
+        }
+
+        // Sort
+        activeSubmissions.sort((a, b) => {
+          if (submissionSortBy === 'views') {
+            return Number(b.final_view_count || b.views_count || 0) - Number(a.final_view_count || a.views_count || 0);
+          }
+          if (submissionSortBy === 'likes') {
+            return Number(b.likes_count || 0) - Number(a.likes_count || 0);
+          }
+          return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
+        });
+
+        const platformOptions = [
+          { id: 'all', label: 'All Networks' },
+          { id: 'tiktok', label: 'TikTok' },
+          { id: 'instagram', label: 'Instagram' },
+          { id: 'youtube', label: 'YouTube' },
+          { id: 'x', label: 'X (Twitter)' },
+          { id: 'facebook', label: 'Facebook' },
+          { id: 'linkedin', label: 'LinkedIn' },
+        ];
+
         return (
-          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white">Submissions Stream</h3>
-              <span className="text-xs text-kpugi-slate dark:text-slate-400 font-medium">
-                {activeSubmissions.length} active submission{activeSubmissions.length === 1 ? '' : 's'}
-              </span>
+          <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm space-y-6">
+            {/* Header & View Switcher Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-display font-bold text-lg text-kpugi-ink dark:text-white flex items-center gap-2">
+                  <span>Creator Submissions</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    {activeSubmissions.length} Posts
+                  </span>
+                </h3>
+                <p className="text-xs text-kpugi-slate dark:text-slate-400 mt-0.5">
+                  View how creators syndicate your brand drop across social networks with live scraped metrics.
+                </p>
+              </div>
+
+              {/* View Mode Switcher */}
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center gap-1">
+                  <button
+                    onClick={() => setSubmissionViewMode('mockup')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      submissionViewMode === 'mockup'
+                        ? 'bg-white dark:bg-[#0B1026] text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>Mockup Show</span>
+                  </button>
+                  <button
+                    onClick={() => setSubmissionViewMode('table')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      submissionViewMode === 'table'
+                        ? 'bg-white dark:bg-[#0B1026] text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Table className="w-3.5 h-3.5" />
+                    <span>Table View</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters & Sorting Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1 pb-1 border-y border-slate-100 dark:border-white/5">
+              {/* Platform Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                {platformOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSubmissionPlatformFilter(opt.id)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      submissionPlatformFilter === opt.id
+                        ? 'bg-kpugi-blue text-white font-bold shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort Selector */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-400 font-medium">Sort by:</span>
+                <select
+                  value={submissionSortBy}
+                  onChange={(e) => setSubmissionSortBy(e.target.value as any)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none"
+                >
+                  <option value="views">Most Views</option>
+                  <option value="likes">Most Likes</option>
+                  <option value="recent">Newest Submissions</option>
+                </select>
+              </div>
             </div>
 
             {activeSubmissions.length === 0 ? (
               <div className="py-12 text-center text-kpugi-slate dark:text-slate-400 space-y-2 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10">
                 <Video className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No post links submitted by creators yet.</p>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No post links matching this filter.</p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Joined creators who reserved slots are listed under <strong className="text-slate-700 dark:text-slate-300">Joined Creators</strong> in the Performance Overview tab.
+                  Creators who have joined the campaign will appear here as soon as they submit their live post URL.
                 </p>
               </div>
+            ) : submissionViewMode === 'mockup' ? (
+              /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                 📱 MOCKUP SHOW GRID
+              ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2 items-start">
+                {activeSubmissions.map((sub) => {
+                  const subViews = Number(sub.views_count || sub.final_view_count || 0);
+                  const likes = Number(sub.likes_count || 0);
+                  const comments = Number(sub.comments_count || 0);
+                  const shares = Number(sub.shares_count || 0);
+                  const rank = creatorRankMap.get(sub.creator_handle);
+
+                  const cleanMedia = (() => {
+                    const url = (sub as any).media_url || sub.screenshot_url || null;
+                    if (!url || url.includes('placeholder.com') || url.includes('example.com')) {
+                      return creatives?.[0]?.file_url || (campaign as any)?.cover_image_url || null;
+                    }
+                    return url;
+                  })();
+
+                  const mockupData: SubmissionMockupData = {
+                    id: sub.id,
+                    creatorHandle: sub.creator_handle,
+                    creatorName: (sub as any).creator_name || sub.creator_handle.replace(/^@/, ''),
+                    creatorAvatarUrl: sub.creator_avatar_url,
+                    platform: sub.social_account_platform || 'tiktok',
+                    postUrl: sub.post_url,
+                    mediaUrl: cleanMedia,
+                    caption: (sub as any).caption || null,
+                    viewsCount: subViews,
+                    likesCount: likes,
+                    commentsCount: comments,
+                    sharesCount: shares,
+                    watchTimeSeconds: (sub as any).watch_time_seconds,
+                    submittedAt: sub.submitted_at,
+                    status: sub.status,
+                    payoutAmount: sub.payout_amount ? Number(sub.payout_amount) : (sub.pending_payout_amount ? Number(sub.pending_payout_amount) : null),
+                    rank: rank,
+                    brandName: campaign.company_name || 'Brand Partner',
+                  };
+
+                  return (
+                    <SocialPostMockup
+                      key={sub.id}
+                      submission={mockupData}
+                      onInspect={() => setInspectingSubmission(mockupData)}
+                    />
+                  );
+                })}
+              </div>
             ) : (
+              /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                 📊 DATA TABLE VIEW
+              ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
@@ -941,6 +1102,7 @@ export default function AdvertiserCampaignDetailsView({
                       <th className="py-3 px-3 text-right">Likes</th>
                       <th className="py-3 px-3 text-right">Comments</th>
                       <th className="py-3 px-3 text-right">Shares</th>
+                      <th className="py-3 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -951,7 +1113,6 @@ export default function AdvertiserCampaignDetailsView({
                       const shares = Number(sub.shares_count || 0);
                       const rank = creatorRankMap.get(sub.creator_handle);
 
-                      // Calculate recent audit deltas
                       const subAudits = (data.audits || []).filter((a) => a.submission_id === sub.id);
                       const latestAudit = subAudits.length > 0 ? subAudits[0] : null;
                       const viewsDelta = latestAudit?.views_delta || (subViews > 0 ? Math.round(subViews * 0.12) : 0);
@@ -960,8 +1121,41 @@ export default function AdvertiserCampaignDetailsView({
                       const commentsDelta = Math.round(comments * viewsRatio);
                       const sharesDelta = Math.round(shares * viewsRatio);
 
+                      const cleanMedia = (() => {
+                        const url = (sub as any).media_url || sub.screenshot_url || null;
+                        if (!url || url.includes('placeholder.com') || url.includes('example.com')) {
+                          return creatives?.[0]?.file_url || (campaign as any)?.cover_image_url || null;
+                        }
+                        return url;
+                      })();
+
+                      const mockupData: SubmissionMockupData = {
+                        id: sub.id,
+                        creatorHandle: sub.creator_handle,
+                        creatorName: (sub as any).creator_name || sub.creator_handle.replace(/^@/, ''),
+                        creatorAvatarUrl: sub.creator_avatar_url,
+                        platform: sub.social_account_platform || 'tiktok',
+                        postUrl: sub.post_url,
+                        mediaUrl: cleanMedia,
+                        caption: (sub as any).caption || null,
+                        viewsCount: subViews,
+                        likesCount: likes,
+                        commentsCount: comments,
+                        sharesCount: shares,
+                        watchTimeSeconds: (sub as any).watch_time_seconds,
+                        submittedAt: sub.submitted_at,
+                        status: sub.status,
+                        payoutAmount: sub.payout_amount ? Number(sub.payout_amount) : (sub.pending_payout_amount ? Number(sub.pending_payout_amount) : null),
+                        rank: rank,
+                        brandName: campaign.company_name || 'Brand Partner',
+                      };
+
                       return (
-                        <tr key={sub.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                        <tr
+                          key={sub.id}
+                          onClick={() => setInspectingSubmission(mockupData)}
+                          className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
+                        >
                           <td className="py-3 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             {sub.creator_avatar_url ? (
                               <Image src={sub.creator_avatar_url} alt="" width={24} height={24} className="rounded-full object-cover shrink-0" />
@@ -997,6 +1191,7 @@ export default function AdvertiserCampaignDetailsView({
                                 href={sub.post_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
                                 className="text-kpugi-blue dark:text-blue-400 hover:underline font-medium flex items-center gap-1 max-w-[180px] truncate"
                               >
                                 <span>View Video</span>
@@ -1054,6 +1249,17 @@ export default function AdvertiserCampaignDetailsView({
                                 </span>
                               )}
                             </div>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInspectingSubmission(mockupData);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[11px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                            >
+                              Inspect Mockup
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1418,6 +1624,11 @@ export default function AdvertiserCampaignDetailsView({
         onSubmitted={() => {
           setHasReviewed(true);
         }}
+      />
+      {/* Submission Inspector Modal */}
+      <SubmissionInspectorModal
+        submission={inspectingSubmission}
+        onClose={() => setInspectingSubmission(null)}
       />
     </div>
   );

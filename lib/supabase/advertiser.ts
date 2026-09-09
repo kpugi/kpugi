@@ -337,10 +337,13 @@ export interface BrandCampaignDetails {
     id: string;
     creator_id: string;
     creator_handle: string;
+    creator_name?: string;
     creator_avatar_url: string | null;
     social_account_platform: string;
     post_url: string | null;
     screenshot_url: string | null;
+    media_url?: string | null;
+    caption?: string | null;
     status: string;
     reserved_amount: number;
     views_count: number;
@@ -349,6 +352,7 @@ export interface BrandCampaignDetails {
     likes_count?: number;
     comments_count?: number;
     shares_count?: number;
+    watch_time_seconds?: number;
     submitted_at: string;
     verified_at: string | null;
     failure_reason?: string | null;
@@ -502,6 +506,9 @@ export async function getBrandCampaignDetails(
           full_name,
           avatar_url
         )
+      ),
+      verification_checks:verification_checks (
+        raw_scrape
       )
     `)
     .eq('campaign_id', realCampaignId)
@@ -527,14 +534,29 @@ export async function getBrandCampaignDetails(
     else if (sub.status === 'pending' || sub.status === 'auditing') pendingAudits++;
     else if (sub.status === 'rejected' || sub.status === 'verified_fail') rejectedSubmissions++;
 
+    const checks = sub.verification_checks || [];
+    const latestCheck = Array.isArray(checks) ? checks[checks.length - 1] || checks[0] : checks;
+    const raw = latestCheck?.raw_scrape || {};
+    const caption = raw.description || raw.title || null;
+    
+    let rawMedia = raw.thumbnail || raw.thumbnail_url || raw.cover_url || raw.image || sub.screenshot_url || null;
+    if (rawMedia && (rawMedia.includes('via.placeholder.com') || rawMedia.includes('placeholder.com') || rawMedia.includes('example.com'))) {
+      rawMedia = creatives?.[0]?.file_url || (campaign as any)?.cover_image_url || null;
+    }
+    const mediaUrl = rawMedia;
+
+
     return {
       id: sub.id,
       creator_id: sub.creator_id,
       creator_handle: handle.startsWith('@') ? handle : `@${handle}`,
+      creator_name: sub.creator?.profile?.full_name || sub.creator?.display_name || handle,
       creator_avatar_url: sub.creator?.profile?.avatar_url || null,
       social_account_platform: sub.social_account?.platform || 'tiktok',
       post_url: sub.post_url,
       screenshot_url: sub.screenshot_url,
+      media_url: mediaUrl,
+      caption: caption,
       status: sub.status,
       reserved_amount: Number(sub.reserved_amount || 0),
       views_count: views,
@@ -543,6 +565,7 @@ export async function getBrandCampaignDetails(
       likes_count: Number(sub.likes_count || 0),
       comments_count: Number(sub.comments_count || 0),
       shares_count: Number(sub.shares_count || 0),
+      watch_time_seconds: sub.watch_time_seconds ? Number(sub.watch_time_seconds) : undefined,
       submitted_at: sub.submitted_at,
       verified_at: sub.verified_at,
       failure_reason: sub.failure_reason || null,
