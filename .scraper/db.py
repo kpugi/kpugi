@@ -83,8 +83,7 @@ class DatabaseClient:
         """
         Fetches submissions that are currently DUE for metric auditing:
         - 1st audit: submitted_at <= (NOW - 60 minutes) when last_scraped_at is null
-        - Recurring audits: last_scraped_at <= (NOW - 60 minutes) and submitted_at > (NOW - 72 hours)
-        - Final audit: submitted_at <= (NOW - 72 hours) and has not had a post-72h settlement audit yet
+        - Recurring audits: last_scraped_at <= (NOW - 60 minutes) as long as campaign is 'live'
         - If force=True or submission_id is set: bypasses the 60m cooldown for immediate on-demand auditing.
         """
         submissions = None
@@ -154,17 +153,7 @@ class DatabaseClient:
                 last_scrape_raw = s.get('last_scraped_at')
                 age = now - sub_at
 
-                # Check 72-hour lifecycle
-                if age >= timedelta(hours=72):
-                    if last_scrape_raw:
-                        try:
-                            last_scrape = datetime.fromisoformat(last_scrape_raw.replace('Z', '+00:00'))
-                            if last_scrape >= (sub_at + timedelta(hours=72)):
-                                continue # Already completed post-72h settlement audit
-                        except Exception:
-                            pass
-                    submissions.append(s)
-                    continue
+                # Submissions are continuously audited while the campaign is 'live' (no 72-hour cutoff)
 
                 # Brand new submission cooldown: 60 minutes
                 if not last_scrape_raw:

@@ -178,37 +178,8 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     if result.duration is not None:
         updates["watch_time_seconds"] = int(result.duration)
 
-    # Check 72-Hour Lifecycle Cap
-    submitted_raw = sub.get('submitted_at')
-    is_past_72h = False
-    if submitted_raw:
-        try:
-            sub_at = datetime.fromisoformat(submitted_raw.replace('Z', '+00:00'))
-            if (now_utc - sub_at) >= timedelta(hours=72):
-                is_past_72h = True
-        except Exception:
-            pass
-
     # Check minimum threshold
     if final_views < min_view_threshold:
-        if is_past_72h:
-            logger.info(f"Submission {sub_id[:8]} reached 72h window with {final_views} views (< {min_view_threshold}). Marking verified_fail.")
-            updates.update({
-                "pending_payout_amount": 0,
-                "auto_approve_at": None,
-                "status": "verified_fail",
-                "failure_reason": f"Video did not reach the required {min_view_threshold:,} views threshold within the 72-hour window.",
-            })
-            db.update_submission(sub_id, updates)
-            return {
-                "id": sub_id[:8],
-                "platform": result.platform,
-                "reachable": True,
-                "views": final_views,
-                "status": "verified_fail (72h expired)",
-                "payout": 0,
-            }
-
         logger.info(f"Submission {sub_id[:8]} views ({final_views}) < threshold ({min_view_threshold}). Keeping in pending.")
         updates.update({
             "pending_payout_amount": 0,
@@ -240,14 +211,10 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     else:
         incremental_payout = min(raw_payout, int(max_allowable))
 
-    # Surge Protection & 72-Hour Lifecycle auto-approval
-    if is_past_72h:
-        # At 72 hours, final audit immediately unlocks approval for settlement
-        auto_approve_at = now_utc.isoformat()
-    else:
-        is_surge = new_views >= SURGE_VIEW_THRESHOLD
-        grace_hours = SURGE_AUTO_APPROVE_HOURS if is_surge else DEFAULT_AUTO_APPROVE_HOURS
-        auto_approve_at = (now_utc + timedelta(hours=grace_hours)).isoformat()
+    # Surge Protection & Auto-approval
+    is_surge = new_views >= SURGE_VIEW_THRESHOLD
+    grace_hours = SURGE_AUTO_APPROVE_HOURS if is_surge else DEFAULT_AUTO_APPROVE_HOURS
+    auto_approve_at = (now_utc + timedelta(hours=grace_hours)).isoformat()
 
     updates.update({
         "pending_payout_amount": incremental_payout,
@@ -257,8 +224,7 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     })
 
     db.update_submission(sub_id, updates)
-    status_note = "verified_pass (72h final)" if is_past_72h else "verified_pass"
-    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Accruing Payout Today: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: {status_note}")
+    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Accruing Payout Today: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: verified_pass")
 
     # Real-time Campaign Budget Deduction
     delta_payout = incremental_payout - float(sub.get('pending_payout_amount') or 0.0)

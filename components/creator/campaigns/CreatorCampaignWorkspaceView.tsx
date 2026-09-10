@@ -488,7 +488,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </span>
             {isCapReached ? (
               <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-600/40 leading-none shadow-2xs">
-                <Lock className="w-2.5 h-2.5" /> CAP REACHED
+                 CAP
               </span>
             ) : (
               <span className="font-mono font-black text-xs text-emerald-600 dark:text-emerald-400 leading-none">₦</span>

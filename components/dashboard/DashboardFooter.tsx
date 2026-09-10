@@ -20,7 +20,7 @@ export default function DashboardFooter() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
           <span className="font-medium text-kpugi-ink dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">
-            All Verification & Escrow Systems Operational
+            All Systems Operational
           </span>
         </a>
 
