@@ -32,8 +32,8 @@ declare global {
   }
 }
 
-import { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS } from './freshdesk-constants';
-export { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS };
+import { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS, STATUS_PAGE_URL } from './freshdesk-constants';
+export { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS, STATUS_PAGE_URL };
 
 /**
  * Opens the Freshdesk / Freshchat AI widget programmatically.

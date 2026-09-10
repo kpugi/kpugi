@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
-import { FRESHDESK_LINKS } from '@/lib/support/freshdesk';
+import { FRESHDESK_LINKS, STATUS_PAGE_URL } from '@/lib/support/freshdesk';
 
 export interface FooterLink {
   label: string;
@@ -111,7 +111,8 @@ export function Footer2({
       links: [
         { label: 'CPM Calculator', href: '/calculator' },
         { label: 'ROI Estimator', href: '/roiestimator' },
-        { label: 'Help & Support', href: 'https://support.kpugi.com' },
+        { label: 'Help & Support', href: 'https://support.kpugi.com', isExternal: true },
+        { label: 'System Status', href: STATUS_PAGE_URL, isExternal: true },
       ],
     },
     {
@@ -268,9 +269,23 @@ export function Footer2({
 
           {/* Bottom Copyright & Newsletter Block */}
           <div className="relative z-10 mt-14 flex flex-col items-start justify-between gap-8 xl:flex-row xl:items-end pt-8 border-t border-slate-100 dark:border-white/10">
-            {/* Copyright */}
-            <div className="text-slate-500 dark:text-slate-400 order-2 text-xs leading-relaxed xl:order-1 font-medium">
-              {copyright}
+            {/* Copyright & Live System Status */}
+            <div className="text-slate-500 dark:text-slate-400 order-2 text-xs leading-relaxed xl:order-1 font-medium flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>{copyright}</span>
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-700">·</span>
+              <a
+                href={STATUS_PAGE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                title="View real-time platform status"
+              >
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">All Systems Operational</span>
+              </a>
             </div>
 
             {/* Newsletter Input Block */}

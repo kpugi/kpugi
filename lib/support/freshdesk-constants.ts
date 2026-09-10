@@ -1,3 +1,7 @@
+import { STATUS_PAGE_URL } from '@/lib/constants/site';
+
+export { STATUS_PAGE_URL };
+
 export const FRESHDESK_PORTAL_URL =
   process.env.NEXT_PUBLIC_FRESHDESK_PORTAL_URL || 'https://support.kpugi.com';
 
@@ -17,4 +21,6 @@ export const FRESHDESK_LINKS = {
   communityForums: `${FRESHDESK_PORTAL_URL}/support/discussions`,
   submitTicket: `${FRESHDESK_PORTAL_URL}/support/tickets/new`,
   myTickets: `${FRESHDESK_PORTAL_URL}/support/tickets`,
+  statusPage: STATUS_PAGE_URL,
 };
+
