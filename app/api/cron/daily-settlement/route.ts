@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { processDailyBatchSettlement, autoReleaseMaturedBatches } from '@/lib/supabase/settlement';
+import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,9 @@ export async function GET(request: NextRequest) {
 
     // 2. Release matured 24-hour batches into Available Wallet Balance
     const releaseResult = await autoReleaseMaturedBatches(supabase);
+
+    // Ping Better Stack Heartbeat on successful completion
+    await sendHeartbeat(process.env.BETTERSTACK_HEARTBEAT_DAILY_SETTLEMENT);
 
     return NextResponse.json({
       success: true,

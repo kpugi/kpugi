@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { triggerScraperRun } from '@/lib/scraper/trigger';
+import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,10 @@ export async function GET(request: Request) {
     }
 
     const result = await triggerScraperRun();
+
+    // Ping Better Stack Heartbeat on successful scraper dispatch
+    await sendHeartbeat(process.env.BETTERSTACK_HEARTBEAT_VERIFY_SUBMISSIONS);
+
     return NextResponse.json({
       success: true,
       message: 'Scraper audit run dispatched successfully.',

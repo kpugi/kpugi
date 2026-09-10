@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { notifyCreatorVerificationPassed } from '@/lib/notifications/creator';
 import { notifyAdvertiserSubmissionVerified } from '@/lib/notifications/advertiser';
+import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
 
 export const dynamic = 'force-dynamic';
 
@@ -238,6 +239,9 @@ export async function GET(request: Request) {
       releasedCount++;
       totalAmountReleased += pendingPayout;
     }
+
+    // Ping Better Stack Heartbeat on successful payout releases
+    await sendHeartbeat(process.env.BETTERSTACK_HEARTBEAT_RELEASE_PAYOUTS);
 
     return NextResponse.json({ success: true, releasedCount, totalAmountReleased });
   } catch (err: any) {
