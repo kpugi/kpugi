@@ -735,7 +735,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                             <Activity className="w-3.5 h-3.5" />
                           </div>
                           <span className="font-display font-bold text-xs uppercase tracking-wider text-kpugi-ink dark:text-white">
-                            Live Post Performance
+                            Live Performance
                           </span>
                         </div>
 
@@ -828,7 +828,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-xs font-bold text-kpugi-ink dark:text-white">
-                                {postEngagementRate}% Engagement Rate
+                                {postEngagementRate}% Eng. Rate
                               </span>
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
                                 {Number(postEngagementRate) >= 2.0 ? 'High Impact' : 'Active Engagement'}
@@ -871,7 +871,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     className="px-5 py-2.5 rounded-xl bg-kpugi-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Submit Post Link Now</span>
+                    <span>Submit Post Now</span>
                   </button>
                 )}
               </div>
@@ -1001,11 +1001,11 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
           <table className="w-full text-xs font-sans border-collapse">
             <thead>
               <tr className="border-b border-kpugi-border dark:border-white/10 text-kpugi-slate dark:text-slate-400 uppercase text-[10px] tracking-wider font-bold">
-                <th className="py-3 px-4 text-left">TIMESTAMP</th>
-                <th className="py-3 px-4 text-left">AUDIT CYCLE</th>
-                <th className="py-3 px-4 text-left">NET NEW VIEWS</th>
+                <th className="py-3 px-4 text-left">TIME</th>
+                <th className="py-3 px-4 text-left">CYCLE</th>
+                <th className="py-3 px-4 text-left">NEW VIEWS</th>
                 <th className="py-3 px-4 text-left">EARNED PAYOUT</th>
-                <th className="py-3 px-4 text-right">SETTLEMENT STATUS</th>
+                <th className="py-3 px-4 text-right">STATUS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
