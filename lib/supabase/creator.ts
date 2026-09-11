@@ -33,6 +33,7 @@ export interface CreatorOverviewData {
   walletBalance: number;
   todayAccrual: number;
   todayViews: number;
+  postsInAudit?: number;
   pendingEscrow?: number;
   activeSubmissions: number;
   pendingAudits: number;
@@ -126,7 +127,7 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   const creatorOrFilter = `creator_id.eq.${profileId}`;
 
   // 2. Concurrently fetch wallet, submissions, notifications, and submission_audits
-  const [walletRes, rawSubmissionsRes, notificationsRes, auditsRes] = await Promise.all([
+  const [walletRes, rawSubmissionsRes, notificationsRes, auditsRes, todayAuditsRes] = await Promise.all([
     supabase
       .from('wallets')
       .select('balance')
@@ -197,6 +198,11 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
       .or(creatorOrFilter)
       .order('created_at', { ascending: false })
       .limit(6),
+    supabase
+      .from('submission_audits')
+      .select('views_delta, views_scraped, payout_amount, created_at, settled_at')
+      .eq('creator_id', profileId)
+      .or(`created_at.gte.${todayUtcStart.toISOString()},settled_at.gte.${todayUtcStart.toISOString()}`),
   ]);
 
   const wallet = walletRes.data;
@@ -228,20 +234,36 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     };
   });
 
-  // 2. Compute Today's In-Cycle Accrual & Views
-  let todayAccrual = 0;
-  let todayViews = 0;
+  // 2. Compute Today's Daily Cycle Data (Views, Earnings, Posts in Audit)
+  let todaySettledPayout = 0;
+  let todaySettledViews = 0;
+
+  (todayAuditsRes.data || []).forEach((audit: any) => {
+    todaySettledPayout += Number(audit.payout_amount || 0);
+    todaySettledViews += Number(audit.views_delta || audit.views_scraped || 0);
+  });
+
+  let todayPendingPayout = 0;
+  let todayPendingViews = 0;
 
   (rawSubmissions || []).forEach((s: any) => {
     const pendingPayout = Number(s.pending_payout_amount || 0);
     if (pendingPayout > 0) {
-      todayAccrual += pendingPayout;
+      todayPendingPayout += pendingPayout;
       const finalViews = Number(s.final_view_count || 0);
       const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
       const deltaViews = Math.max(0, finalViews - lastPaid);
-      todayViews += deltaViews;
+      todayPendingViews += deltaViews;
     }
   });
+
+  const todayAccrual = todaySettledPayout + todayPendingPayout;
+  const todayViews = todaySettledViews + todayPendingViews;
+
+  // Actual posts submitted and actively in the audit cycle (exclude empty joined slots and failed/cancelled)
+  const postsInAudit = submissions.filter(
+    (s) => Boolean(s.post_url && s.post_url.trim().length > 0 && s.status !== 'verified_fail' && s.status !== 'cancelled')
+  ).length;
 
   const activeSubmissions = submissions.filter(
     (s) => s.status === 'pending' || s.status === 'under_review' || s.status === 'approved' || s.status === 'reserved' || s.status === 'joined' || s.status === 'verified_pass' || s.status === 'auditing'
@@ -337,7 +359,8 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
     totalEarned: liveTotalEarned,
     walletBalance: wallet?.balance || 0,
     todayAccrual,
-    todayViews: todayViews > 0 ? todayViews : totalVerifiedViews,
+    todayViews,
+    postsInAudit,
     activeSubmissions,
     pendingAudits,
     completedCampaigns,
@@ -475,10 +498,22 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   const supabase = createAdminClient();
 
   // Auto-release any matured 24h escrow batches into the available wallet balance.
-  // NOTE: processDailyBatchSettlement is intentionally NOT called here — settlement
-  // is handled exclusively by the GitHub Actions cron (/api/cron/daily-settlement).
-  // Calling it on page load caused orphaned clearing transactions and balance zeroing.
-  const { autoReleaseMaturedBatches } = await import('@/lib/supabase/settlement');
+  const { autoReleaseMaturedBatches, processDailyBatchSettlement } = await import('@/lib/supabase/settlement');
+
+  // Auto-roll any pending accruals that have already exceeded the 24h grace window
+  const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: maturedAccruals } = await supabase
+    .from('submissions')
+    .select('id')
+    .eq('creator_id', profileId)
+    .gt('pending_payout_amount', 0)
+    .lte('submitted_at', cutoff24h)
+    .limit(1);
+
+  if (maturedAccruals && maturedAccruals.length > 0) {
+    await processDailyBatchSettlement(supabase, profileId);
+  }
+
   await autoReleaseMaturedBatches(supabase, profileId);
 
   let { data: wallet } = await supabase

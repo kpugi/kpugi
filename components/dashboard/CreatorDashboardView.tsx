@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { CreatorOverviewData } from '@/lib/supabase/creator';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
-import { formatCompactCurrency } from '@/lib/utils/format';
+import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
 import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo';
 import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeModal';
@@ -200,17 +200,17 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </div>
         </div>
 
-        {/* Card 2: Active Post Audits */}
+        {/* Card 2: Posts in Audit */}
         <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4 hover:border-amber-400/40 transition-all">
           <div className="flex items-center justify-between">
-            <span className="font-sans text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">Active Post Audits</span>
+            <span className="font-sans text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">Posts in Audit</span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
               <Radio className="w-4 h-4 animate-pulse" />
             </div>
           </div>
           <div>
             <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-ink dark:text-white flex items-baseline gap-2">
-              <span>{data.activeSubmissions}</span>
+              <span>{data.postsInAudit ?? data.activeSubmissions}</span>
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-kpugi-border/60 dark:border-white/10">
               <span className="font-sans text-[11px] text-kpugi-slate dark:text-slate-400">Posts in daily cycle</span>
@@ -225,11 +225,11 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </div>
         </div>
 
-        {/* Card 3: Today's Audited Views */}
+        {/* Card 3: Today's Views */}
         <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-400/40 transition-all">
           <div className="flex items-center justify-between">
             <span className="font-sans text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
-              {Number(data.todayAccrual || 0) > 0 ? "Today's Views" : "Views"}
+              Today's Views
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <Eye className="w-4 h-4" />
@@ -237,22 +237,25 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </div>
           <div>
             <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-ink dark:text-white">
-              {(Number(data.todayViews || 0) > 0 ? Number(data.todayViews) : Number(data.totalVerifiedViews || 0)).toLocaleString()}
+              {(Number(data.todayViews || 0)).toLocaleString()}
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-kpugi-border/60 dark:border-white/10">
               <span className="font-sans text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {Number(data.todayAccrual || 0) > 0 ? "Live in today's cycle" : "Verified public reach"}
+                Verified in today's cycle
+              </span>
+              <span className="font-sans text-[11px] text-kpugi-slate dark:text-slate-400">
+                {formatCompactNumber(data.totalVerifiedViews || 0)} total
               </span>
             </div>
           </div>
         </div>
 
-        {/* Card 4: Today's Earnings / Total Earnings */}
+        {/* Card 4: Today's Earnings */}
         <div className="p-6 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-400/40 transition-all">
           <div className="flex items-center justify-between">
             <span className="font-sans text-xs font-bold text-kpugi-slate dark:text-slate-400 uppercase tracking-wider">
-              {Number(data.todayAccrual || 0) > 0 ? "Today's Earnings" : "Total Earnings"}
+              Today's Earnings
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <TrendingUp className="w-4 h-4" />
@@ -262,11 +265,11 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
             <div className="font-mono font-extrabold text-2xl sm:text-3xl text-kpugi-ink dark:text-white">
               {Number(data.todayAccrual || 0) > 0
                 ? `+₦${Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 0 })}`
-                : formatCompactCurrency(data.totalEarned || 0)}
+                : '₦0'}
             </div>
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-kpugi-border/60 dark:border-white/10">
               <span className="font-sans text-[11px] text-kpugi-slate dark:text-slate-400 truncate max-w-[150px]">
-                {Number(data.todayAccrual || 0) > 0 ? "24h escrow at midnight" : "Accumulated lifetime"}
+                Earned in today's cycle
               </span>
               <Link
                 href="/c/wallet"

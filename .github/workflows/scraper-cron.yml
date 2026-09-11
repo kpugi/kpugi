@@ -50,7 +50,7 @@ jobs:
 
       - name: Install Node Dependencies & Playwright
         run: |
-          npm install apify-client playwright-core
+          npm install apify-client playwright-core @supabase/supabase-js
           npx playwright install chromium --with-deps
 
       - name: Run Metric Scraper & View Auditor
@@ -62,4 +62,12 @@ jobs:
           SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
         run: |
           python .scraper/runner.py
+
+      - name: Process Daily Settlement Batches & Auto-Release
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node .scraper/settle.js
+
 

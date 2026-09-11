@@ -17,7 +17,7 @@ export async function processDailyBatchSettlement(
 ): Promise<{ batchesCreated: number; totalAccrualSettled: number }> {
   let query = supabaseAdmin
     .from('submissions')
-    .select('id, campaign_id, creator_id, final_view_count, last_paid_view_count, pending_payout_amount, payout_amount, campaigns!inner(title, spent_budget, total_budget, advertiser_id, status)')
+    .select('id, campaign_id, creator_id, final_view_count, last_paid_view_count, pending_payout_amount, payout_amount, submitted_at, verified_at, campaigns!inner(title, spent_budget, total_budget, advertiser_id, status)')
     .gt('pending_payout_amount', 0);
 
   if (creatorProfileId) {
@@ -76,6 +76,17 @@ export async function processDailyBatchSettlement(
 
     const ref = `KP-EOD-${Date.now().toString(36).toUpperCase()}-${campaignId.slice(0, 4).toUpperCase()}`;
 
+    // 24-hour verification hold window from when the post was submitted/verified
+    const oldestPostTime = subs.reduce((oldest: number, s: any) => {
+      const t = new Date(s.submitted_at || s.verified_at || now).getTime();
+      return isNaN(t) ? oldest : Math.min(oldest, t);
+    }, now.getTime());
+
+    const targetClearTime = oldestPostTime + 24 * 60 * 60 * 1000;
+    const batchClearsAt = targetClearTime <= now.getTime()
+      ? new Date(now.getTime() - 1000).toISOString()
+      : new Date(targetClearTime).toISOString();
+
     // 2. Insert single Daily Batch transaction in 24h Escrow (status: 'clearing')
     const { error: txErr } = await supabaseAdmin
       .from('wallet_transactions')
@@ -86,7 +97,7 @@ export async function processDailyBatchSettlement(
         campaign_id: campaignId,
         submission_id: firstSub.id,
         status: 'clearing',
-        clears_at: clearsAt,
+        clears_at: batchClearsAt,
         paystack_reference: ref,
       });
 
