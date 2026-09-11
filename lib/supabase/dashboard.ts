@@ -440,6 +440,11 @@ export interface CampaignDetailsForCreator {
     status: string;
     reserved_amount: number;
     final_view_count: number | null;
+    likes_count?: number | null;
+    comments_count?: number | null;
+    shares_count?: number | null;
+    watch_time_seconds?: number | null;
+    last_scraped_at?: string | null;
     verified_at: string | null;
     paid_at: string | null;
     payout_amount: number | null;
@@ -591,6 +596,10 @@ export async function getCampaignDetailsForCreator(
           status,
           reserved_amount,
           final_view_count,
+          likes_count,
+          comments_count,
+          shares_count,
+          watch_time_seconds,
           verified_at,
           paid_at,
           payout_amount,
@@ -598,6 +607,7 @@ export async function getCampaignDetailsForCreator(
           pending_payout_amount,
           last_paid_view_count,
           last_scraped_at,
+          submitted_at,
           social_accounts:social_accounts!left (
             platform,
             handle
@@ -915,6 +925,12 @@ export async function getCampaignDetailsForCreator(
           status: submission.status,
           reserved_amount: Number(submission.reserved_amount),
           final_view_count: submission.final_view_count,
+          likes_count: (submission as any).likes_count != null ? Number((submission as any).likes_count) : 0,
+          comments_count: (submission as any).comments_count != null ? Number((submission as any).comments_count) : 0,
+          shares_count: (submission as any).shares_count != null ? Number((submission as any).shares_count) : 0,
+          watch_time_seconds: (submission as any).watch_time_seconds != null ? Number((submission as any).watch_time_seconds) : null,
+          last_scraped_at: (submission as any).last_scraped_at || null,
+          submitted_at: (submission as any).submitted_at || null,
           verified_at: submission.verified_at,
           paid_at: submission.paid_at,
           payout_amount: submission.payout_amount ? Number(submission.payout_amount) : null,

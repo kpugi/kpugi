@@ -30,6 +30,12 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Building2,
+  Eye,
+  Heart,
+  MessageCircle,
+  Share2,
+  TrendingUp,
+  Activity,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { submitCampaignVideoAction, unjoinCampaignAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
@@ -702,6 +708,151 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     )}
                   </div>
                 </div>
+
+                {/* ─────────────────────────────────────────────
+                   POST PERFORMANCE & AUDIT METRICS BREAKDOWN
+                ───────────────────────────────────────────── */}
+                {(() => {
+                  const creatorSubFromAll = allSubmissions?.find(
+                    (s: any) => s.id === submissionState.id || s.post_url === submissionState.post_url
+                  );
+                  const postViews = Number(submissionState.final_view_count ?? creatorSubFromAll?.final_view_count ?? 0);
+                  const postLikes = Number(submissionState.likes_count ?? creatorSubFromAll?.likes_count ?? 0);
+                  const postComments = Number(submissionState.comments_count ?? creatorSubFromAll?.comments_count ?? 0);
+                  const postShares = Number(submissionState.shares_count ?? creatorSubFromAll?.shares_count ?? 0);
+                  const totalInteractions = postLikes + postComments + postShares;
+                  const postEngagementRate = postViews > 0
+                    ? ((totalInteractions / postViews) * 100).toFixed(2)
+                    : '0.00';
+                  const lastScraped = (submissionState as any).last_scraped_at;
+
+                  return (
+                    <div className="pt-2 space-y-4">
+                      {/* Section Title & Live Synced Badge */}
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-kpugi-blue dark:text-blue-400">
+                            <Activity className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="font-display font-bold text-xs uppercase tracking-wider text-kpugi-ink dark:text-white">
+                            Live Post Performance
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          <span className="text-[11px] font-mono text-kpugi-slate dark:text-slate-400">
+                            {lastScraped
+                              ? `Audited ${new Date(lastScraped).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                              : 'Awaiting initial scrape'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 4 Metric Cards Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {/* Views */}
+                        <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-white/5 border border-kpugi-border dark:border-white/10 space-y-1.5 transition-all hover:border-blue-500/30">
+                          <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
+                              Views
+                            </span>
+                            <Eye className="w-3.5 h-3.5" />
+                          </div>
+                          <p className="font-display font-black text-lg sm:text-xl text-kpugi-ink dark:text-white">
+                            {formatCompactNumber(postViews)}
+                          </p>
+                          <span className="text-[10px] text-kpugi-slate dark:text-slate-400 font-mono block truncate">
+                            {postViews.toLocaleString()} plays
+                          </span>
+                        </div>
+
+                        {/* Likes */}
+                        <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-white/5 border border-kpugi-border dark:border-white/10 space-y-1.5 transition-all hover:border-rose-500/30">
+                          <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
+                              Likes
+                            </span>
+                            <Heart className="w-3.5 h-3.5" />
+                          </div>
+                          <p className="font-display font-black text-lg sm:text-xl text-kpugi-ink dark:text-white">
+                            {formatCompactNumber(postLikes)}
+                          </p>
+                          <span className="text-[10px] text-kpugi-slate dark:text-slate-400 font-mono block truncate">
+                            {postLikes.toLocaleString()} likes
+                          </span>
+                        </div>
+
+                        {/* Comments */}
+                        <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-white/5 border border-kpugi-border dark:border-white/10 space-y-1.5 transition-all hover:border-amber-500/30">
+                          <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
+                              Comments
+                            </span>
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </div>
+                          <p className="font-display font-black text-lg sm:text-xl text-kpugi-ink dark:text-white">
+                            {formatCompactNumber(postComments)}
+                          </p>
+                          <span className="text-[10px] text-kpugi-slate dark:text-slate-400 font-mono block truncate">
+                            {postComments.toLocaleString()} replies
+                          </span>
+                        </div>
+
+                        {/* Shares */}
+                        <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-white/5 border border-kpugi-border dark:border-white/10 space-y-1.5 transition-all hover:border-purple-500/30">
+                          <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
+                              Shares
+                            </span>
+                            <Share2 className="w-3.5 h-3.5" />
+                          </div>
+                          <p className="font-display font-black text-lg sm:text-xl text-kpugi-ink dark:text-white">
+                            {formatCompactNumber(postShares)}
+                          </p>
+                          <span className="text-[10px] text-kpugi-slate dark:text-slate-400 font-mono block truncate">
+                            {postShares.toLocaleString()} reposts
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Engagement Rate & Next Cycle Banner */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-purple-50/50 dark:from-blue-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 border border-blue-100/80 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-blue-500/10 text-kpugi-blue dark:text-blue-400 shrink-0">
+                            <TrendingUp className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-kpugi-ink dark:text-white">
+                                {postEngagementRate}% Engagement Rate
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
+                                {Number(postEngagementRate) >= 2.0 ? 'High Impact' : 'Active Engagement'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-0.5">
+                              {totalInteractions.toLocaleString()} combined reactions, replies, and reposts.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-left sm:text-right shrink-0">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400 block">
+                            Next Audit Cycle
+                          </span>
+                          <span className="font-mono text-xs font-bold text-kpugi-ink dark:text-white flex items-center gap-1 sm:justify-end mt-0.5">
+                            <Clock className="w-3.5 h-3.5 text-kpugi-blue dark:text-blue-400" />
+                            {isCompleted ? 'Finalized' : formatTimer(secondsToNextAudit)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <div className="p-8 text-center border-2 border-dashed border-kpugi-border dark:border-white/10 rounded-3xl space-y-3">

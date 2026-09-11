@@ -291,7 +291,8 @@ function FeaturedHero({ items }: { items: FeaturedItem[] }) {
    CAMPAIGN CARD
 ───────────────────────────────────────────────────── */
 function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: number, userRole?: string }) {
-  const progress = c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0;
+  const isCompleted = c.status === 'completed' || c.status === 'archived';
+  const progress = isCompleted ? 100 : (c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0);
   
   // Deterministic gradient fallback if no thumbnail exists
   const gradients = [
@@ -435,8 +436,8 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
             <div className="text-[12px] font-semibold flex items-center gap-1">
               <span className="text-kpugi-ink dark:text-white font-mono">{formatCompactCurrency(c.budgetSpent)}</span>
               <span className="text-kpugi-slate dark:text-white/40 font-mono">/{formatCompactCurrency(c.budgetTotal)}</span>
-              <span className="text-[10px] font-bold text-kpugi-blue dark:text-blue-400 ml-0.5 font-mono">
-                {Math.round(progress)}%
+              <span className={`text-[10px] font-bold ml-0.5 font-mono ${isCompleted ? 'text-purple-600 dark:text-purple-400' : 'text-kpugi-blue dark:text-blue-400'}`}>
+                {isCompleted ? '100%' : `${Math.round(progress)}%`}
               </span>
             </div>
             
@@ -452,9 +453,13 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
           </div>
 
           {/* Dedicated Pool Budget Progress Slider Bar */}
-          <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden relative" title={`Budget Pool: ${Math.round(progress)}% spent`}>
+          <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden relative" title={`Budget Pool: ${isCompleted ? '100% Concluded' : `${Math.round(progress)}% spent`}`}>
             <div 
-              className="h-full bg-gradient-to-r from-[#2F49E8] via-indigo-500 to-emerald-400 rounded-full transition-all duration-500" 
+              className={`h-full rounded-full transition-all duration-500 ${
+                isCompleted
+                  ? 'bg-purple-600'
+                  : 'bg-gradient-to-r from-[#2F49E8] via-indigo-500 to-emerald-400'
+              }`} 
               style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} 
             />
           </div>
@@ -1483,23 +1488,38 @@ export default function BrowseCampaignsClientView() {
 
                           {/* Budget / Slots with Progress Slider Bar */}
                           <td className="py-4 px-4 whitespace-nowrap min-w-[150px]">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-mono text-xs font-semibold text-kpugi-ink dark:text-white block">
-                                {formatCompactCurrency(c.budgetSpent)} / {formatCompactCurrency(c.budgetTotal)}
-                              </span>
-                              <span className="text-[10px] font-bold text-kpugi-blue dark:text-blue-400 font-mono">
-                                {Math.round(c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0)}%
-                              </span>
-                            </div>
-                            <div className="w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mb-1">
-                              <div
-                                className="h-full bg-gradient-to-r from-kpugi-blue to-emerald-400 rounded-full transition-all duration-500"
-                                style={{ width: `${Math.min(100, Math.max(0, c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0))}%` }}
-                              />
-                            </div>
-                            <span className="text-[10px] text-kpugi-slate dark:text-white/40 block">
-                              {c.slotsFilled} creators joined
-                            </span>
+                            {(() => {
+                              const isCompleted = c.status === 'completed' || c.status === 'archived';
+                              const progressPercent = isCompleted
+                                ? 100
+                                : Math.round(c.budgetTotal > 0 ? (c.budgetSpent / c.budgetTotal) * 100 : 0);
+
+                              return (
+                                <>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-mono text-xs font-semibold text-kpugi-ink dark:text-white block">
+                                      {formatCompactCurrency(c.budgetSpent)} / {formatCompactCurrency(c.budgetTotal)}
+                                    </span>
+                                    <span className={`text-[10px] font-bold font-mono ${isCompleted ? 'text-purple-600 dark:text-purple-400' : 'text-kpugi-blue dark:text-blue-400'}`}>
+                                      {progressPercent}%
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mb-1">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-500 ${
+                                        isCompleted
+                                          ? 'bg-purple-600'
+                                          : 'bg-gradient-to-r from-kpugi-blue to-emerald-400'
+                                      }`}
+                                      style={{ width: `${progressPercent}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-kpugi-slate dark:text-white/40 block">
+                                    {c.slotsFilled} creators joined
+                                  </span>
+                                </>
+                              );
+                            })()}
                           </td>
 
                           {/* Action */}

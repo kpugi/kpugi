@@ -24,7 +24,7 @@ def load_env_file(path: Path):
         pass
 
 try:
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv  # type: ignore
     for env_file in [BASE_DIR / ".env", PROJECT_ROOT / ".env.local", PROJECT_ROOT / ".env"]:
         if env_file.exists():
             load_dotenv(dotenv_path=env_file, override=False)

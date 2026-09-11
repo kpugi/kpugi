@@ -57,8 +57,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          APIFY_API_TOKENS: ${{ secrets.APIFY_API_TOKENS || secrets.APIFY_API_TOKEN }}
-          APIFY_INSTAGRAM_ACTOR: ${{ vars.APIFY_INSTAGRAM_ACTOR || 'nH2AHrwxeTRJoN5hX' }}
+          APIFY_API_TOKENS: ${{ secrets.APIFY_API_TOKENS }}
+          APIFY_INSTAGRAM_ACTOR: 'nH2AHrwxeTRJoN5hX'
           SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
         run: |
           python .scraper/runner.py
