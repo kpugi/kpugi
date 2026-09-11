@@ -13,12 +13,10 @@ export function FreshdeskSupportProvider({ children }: FreshdeskSupportProviderP
   const initializedRef = useRef(false);
   const activeUserIdRef = useRef<string | null>(null);
 
-  const defaultToken =
-    process.env.NEXT_PUBLIC_FRESHDESK_TOKEN || '01M1KZVMSR6Q129HM6JJ46T1M2';
+  const defaultToken = process.env.NEXT_PUBLIC_FRESHDESK_TOKEN || '';
   const host =
     process.env.NEXT_PUBLIC_FRESHDESK_HOST || 'https://kpugi.freshdesk.com';
-  const widgetId =
-    process.env.NEXT_PUBLIC_FRESHDESK_WIDGET_ID || '01M1KZVQP766MJY5699WDYB1D8';
+  const widgetId = process.env.NEXT_PUBLIC_FRESHDESK_WIDGET_ID || '';
 
   const baseConfig = {
     host,

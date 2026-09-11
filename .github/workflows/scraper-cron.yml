@@ -1,9 +1,9 @@
 name: Automated Social Metric Scraper & View Auditor
 
 on:
-  # 1. Scheduled cron: Runs every 30 minutes 24/7 to check for due post audits
+  # 1. Scheduled cron: Runs every 1 hour 24/7 to check for due post audits
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 * * * *'
 
   # 2. Manual trigger from GitHub Actions tab
   workflow_dispatch:
@@ -48,15 +48,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r .scraper/requirements.txt
 
-      - name: Install Playwright & Headless Chromium
+      - name: Install Node Dependencies & Playwright
         run: |
-          npm install playwright-core
+          npm install apify-client playwright-core
           npx playwright install chromium --with-deps
 
       - name: Run Metric Scraper & View Auditor
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          APIFY_API_TOKENS: ${{ secrets.APIFY_API_TOKENS || secrets.APIFY_API_TOKEN }}
+          APIFY_INSTAGRAM_ACTOR: ${{ vars.APIFY_INSTAGRAM_ACTOR || 'nH2AHrwxeTRJoN5hX' }}
           SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
         run: |
           python .scraper/runner.py

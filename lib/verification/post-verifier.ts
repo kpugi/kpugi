@@ -88,6 +88,53 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
       if (!codeMatch) {
         return { reachable: false, platform: 'instagram', authorHandle: null, postText: null, title: null, errorMessage: 'Invalid Instagram post format.' };
       }
+
+      // 1. Primary: Apify Instagram Actor for 100% accurate author handle & post caption
+      const apifyTokens = (process.env.APIFY_API_TOKENS || process.env.APIFY_API_TOKEN || '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      if (apifyTokens.length > 0) {
+        try {
+          const { ApifyClient } = await import('apify-client');
+          const actorId = process.env.APIFY_INSTAGRAM_ACTOR || 'nH2AHrwxeTRJoN5hX';
+
+          for (const token of apifyTokens) {
+            try {
+              const client = new ApifyClient({ token });
+              const run = await client.actor(actorId).call({
+                username: [targetUrl],
+                resultsLimit: 1,
+                skipPinnedPosts: false,
+                dataDetailLevel: 'detailedData',
+              });
+              if (run?.defaultDatasetId) {
+                const { items } = await client.dataset(run.defaultDatasetId).listItems();
+                if (items && items.length > 0) {
+                  const item = items[0] as any;
+                  return {
+                    reachable: true,
+                    platform: 'instagram',
+                    authorHandle: item.ownerUsername || null,
+                    authorName: item.ownerFullName || null,
+                    postText: item.caption || null,
+                    title: item.caption || `Instagram post by @${item.ownerUsername || 'creator'}`,
+                    avatarUrl: item.displayUrl || null,
+                  };
+                }
+              }
+            } catch {
+              // Try next token in pool
+              continue;
+            }
+          }
+        } catch {
+          // Fall through to captioned embed fallback
+        }
+      }
+
+      // 2. Fallback: Captioned Embed & Web
       const shortcode = codeMatch[1];
       const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
       const res = await fetchWithTimeout(embedUrl, { headers: HEADERS });
@@ -168,13 +215,13 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
     // ─────────────────────────────────────────────────────────────────────────
     if (platform === 'facebook') {
       try {
-        const { execFile } = await import('child_process');
+        const cp = await import('child_process');
         const { promisify } = await import('util');
         const path = await import('path');
-        const execFileAsync = promisify(execFile);
+        const execRunner = promisify(cp['execFile']);
 
-        const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
-        const { stdout } = await execFileAsync('node', [scriptPath, 'facebook', targetUrl], { timeout: 35000 });
+        const scriptPath = path.resolve(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
+        const { stdout } = await execRunner(process.execPath, [scriptPath, 'facebook', targetUrl], { timeout: 35000 });
         const data = JSON.parse(stdout.trim());
 
         if (data && data.reachable) {

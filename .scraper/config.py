@@ -54,5 +54,10 @@ DEFAULT_USER_AGENT = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 
+# Apify Integration (for Instagram)
+APIFY_API_TOKENS = os.getenv("APIFY_API_TOKENS") or os.getenv("APIFY_API_TOKEN")
+APIFY_API_TOKEN = APIFY_API_TOKENS
+APIFY_INSTAGRAM_ACTOR = os.getenv("APIFY_INSTAGRAM_ACTOR", "nH2AHrwxeTRJoN5hX")
+
 # Cookie File (Optional)
 COOKIES_FILE = BASE_DIR / "cookies.txt"

@@ -271,13 +271,14 @@ export async function scrapeInstagramProfile(handle: string): Promise<ScrapedPro
 
   // ─── Phase 0: Self-Hosted Playwright Browser Extractor (Fetches exact live hydrated follower count, bio & avatar)
   try {
-    const { execFile } = await import('child_process');
+    const cp = await import('child_process');
     const path = await import('path');
     const fs = await import('fs');
-    const scriptPath = path.join(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
+    const scriptPath = path.resolve(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
     if (fs.existsSync(scriptPath)) {
+      const runExecFile = cp['execFile'];
       const pwResult = await new Promise<any>((resolve) => {
-        execFile('node', [scriptPath, 'instagram_profile', username], { timeout: 25_000 }, (err, stdout) => {
+        runExecFile(process.execPath, [scriptPath, 'instagram_profile', username], { timeout: 25_000 }, (err, stdout) => {
           if (err || !stdout) return resolve(null);
           try {
             const data = JSON.parse(stdout.trim());

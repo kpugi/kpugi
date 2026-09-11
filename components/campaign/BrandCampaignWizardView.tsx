@@ -337,9 +337,7 @@ export function BrandCampaignWizardView({
       return;
     }
 
-    const publicKey =
-      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_3630914972cbf0ef4986fc0ae2181d38a94f9412';
-
+    const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
     const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     const onPaymentSuccess = async (ref: string) => {

@@ -71,6 +71,45 @@ def extract_instagram_post(url: str) -> ScrapeResult:
     is_reel = "/reel" in url.lower()
 
     # ─────────────────────────────────────────────────────────────────────────────
+    # Layer 0: Apify Instagram Extractor (Actor nH2AHrwxeTRJoN5hX)
+    # ─────────────────────────────────────────────────────────────────────────────
+    try:
+        from pathlib import Path
+        import subprocess
+        apify_script = Path(__file__).resolve().parent / "apify_instagram.js"
+        if apify_script.exists():
+            cmd = ["node", str(apify_script), url]
+            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=40)
+            if proc.stdout.strip():
+                lines = [line.strip() for line in proc.stdout.strip().splitlines() if line.strip()]
+                for line in reversed(lines):
+                    if line.startswith("{") and line.endswith("}"):
+                        try:
+                            ap_data = json.loads(line)
+                            if ap_data.get("reachable"):
+                                uploader = ap_data.get("uploader")
+                                return ScrapeResult(
+                                    reachable=True,
+                                    view_count=ap_data.get("view_count"),
+                                    like_count=ap_data.get("like_count"),
+                                    comment_count=ap_data.get("comment_count"),
+                                    share_count=ap_data.get("share_count"),
+                                    uploader=uploader,
+                                    uploader_id=uploader,
+                                    channel=uploader,
+                                    channel_url=f"https://www.instagram.com/{uploader}/" if uploader else None,
+                                    title=ap_data.get("caption") or (f"Instagram post by @{uploader}" if uploader else "Instagram Post"),
+                                    description=ap_data.get("caption"),
+                                    platform="instagram",
+                                    extractor="apify_instagram",
+                                    raw={"shortcode": shortcode, "data": ap_data}
+                                )
+                        except json.JSONDecodeError:
+                            continue
+    except Exception as ap_err:
+        logger.debug(f"Apify Instagram extraction attempt failed: {ap_err}")
+
+    # ─────────────────────────────────────────────────────────────────────────────
     # Layer 1: yt-dlp Metadata Extraction (Ideal for Reels & Video Views)
     # ─────────────────────────────────────────────────────────────────────────────
     ytdlp_res: Optional[ScrapeResult] = None

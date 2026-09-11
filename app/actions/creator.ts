@@ -16,7 +16,10 @@ import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 
 export async function getNigerianBanksAction(): Promise<BankOption[]> {
   try {
-    const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_d158c402f2a980b1b327605aa39ab78083fb80a1';
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecret) {
+      return [];
+    }
     const res = await fetch('https://api.paystack.co/bank?country=nigeria', {
       headers: {
         Authorization: `Bearer ${paystackSecret}`,

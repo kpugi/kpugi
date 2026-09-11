@@ -38,7 +38,7 @@ export async function createDiditKycSession({
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const callbackUrl = redirectUrl || `${appUrl}/settings?kyc_return=true`;
-  const workflowId = process.env.DIDIT_WORKFLOW_ID || '1766b686-4047-4553-9cd4-4e2f01abbc0f';
+  const workflowId = process.env.DIDIT_WORKFLOW_ID || '';
 
   const endpoints = [
     `${DIDIT_API_BASE}/session/`,

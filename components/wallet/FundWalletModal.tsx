@@ -69,8 +69,7 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
       return;
     }
 
-    const paystackPublicKey =
-      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_3630914972cbf0ef4986fc0ae2181d38a94f9412';
+    const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
     const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     const onPaymentSuccess = async (ref: string) => {
