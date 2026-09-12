@@ -1,7 +1,12 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import AdvertiserCreatorsDirectoryView from '@/components/advertiser/AdvertiserCreatorsDirectoryView';
+
+export const metadata: Metadata = {
+  title: 'Creator Directory',
+};
 
 export default async function BrandCreatorsDirectoryPage() {
   const userProfile = await getOrCreateUserProfile();

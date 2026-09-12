@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import AdvertiserDashboardView from '@/components/dashboard/AdvertiserDashboardView';
 import { getAdvertiserDashboardData } from '@/lib/supabase/advertiser';
+
+export const metadata: Metadata = {
+  title: 'Brand Dashboard',
+};
 
 export default async function BrandDashboardPage() {
   const userProfile = await getOrCreateUserProfile();

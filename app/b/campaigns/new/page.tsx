@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { BrandCampaignWizardView } from '@/components/campaign/BrandCampaignWizardView';
+
+export const metadata: Metadata = {
+  title: 'Create Campaign',
+};
 
 interface PageProps {
   searchParams: Promise<{ draftId?: string }>;

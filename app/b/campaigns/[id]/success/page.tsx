@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { CampaignSuccessView } from '@/components/campaign/CampaignSuccessView';
+
+export const metadata: Metadata = {
+  title: 'Campaign Published Successfully',
+};
 
 interface PageProps {
   params: Promise<{ id: string }>;

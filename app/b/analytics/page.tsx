@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import AdvertiserAnalyticsView from '@/components/advertiser/AdvertiserAnalyticsView';
 import { getAdvertiserDashboardData } from '@/lib/supabase/advertiser';
+
+export const metadata: Metadata = {
+  title: 'Analytics & Insights',
+};
 
 export default async function BrandAnalyticsPage() {
   const userProfile = await getOrCreateUserProfile();

@@ -1,8 +1,24 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import CreatorCampaignWorkspaceView from '@/components/creator/campaigns/CreatorCampaignWorkspaceView';
 import { getCampaignDetailsForCreator } from '@/lib/supabase/dashboard';
+import { createAdminClient } from '@/lib/supabase/server';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createAdminClient();
+  const { data: campaign } = await supabase
+    .from('campaigns')
+    .select('title')
+    .eq('id', id)
+    .maybeSingle();
+
+  return {
+    title: campaign?.title ? `${campaign.title} — Workspace` : 'Campaign Workspace',
+  };
+}
 
 export default async function CreatorSingleCampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const userProfile = await getOrCreateUserProfile();

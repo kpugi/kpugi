@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+
+export const metadata: Metadata = {
+  title: 'Campaigns',
+  robots: { index: false, follow: false },
+};
 
 export default async function LegacyCampaignsRedirect() {
   const userProfile = await getOrCreateUserProfile();

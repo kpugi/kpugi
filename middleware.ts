@@ -61,6 +61,12 @@ export default clerkMiddleware(async (auth, req) => {
 
   const response = NextResponse.next();
   response.headers.set('ngrok-skip-browser-warning', 'true');
+
+  // Enforce non-indexable status for all authenticated dashboard & management routes
+  if (isProtectedRoute(req)) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
+
   return response;
 });
 

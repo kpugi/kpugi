@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import CreatorDashboardView from '@/components/dashboard/CreatorDashboardView';
 import { getCreatorOverviewData } from '@/lib/supabase/creator';
+
+export const metadata: Metadata = {
+  title: 'Creator Dashboard',
+};
 
 export default async function CreatorDashboardPage() {
   const userProfile = await getOrCreateUserProfile();

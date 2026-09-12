@@ -1,9 +1,14 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import AdvertiserWalletView from '@/components/advertiser/AdvertiserWalletView';
 import { getBrandWalletData } from '@/lib/supabase/advertiser';
 import { verifyPaystackDepositAction } from '@/app/actions/advertiser';
+
+export const metadata: Metadata = {
+  title: 'Billing & Escrow Wallet',
+};
 
 interface PageProps {
   searchParams: Promise<{ reference?: string; trxref?: string }>;

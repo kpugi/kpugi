@@ -1,10 +1,15 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { getBrandSettingsData } from '@/lib/supabase/advertiser';
 import AdvertiserSettingsView from '@/components/advertiser/AdvertiserSettingsView';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Brand Settings',
+};
 
 export default async function BrandSettingsPage() {
   const userProfile = await getOrCreateUserProfile();

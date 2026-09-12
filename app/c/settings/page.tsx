@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import { getCreatorProfileSettings } from '@/lib/supabase/creator';
 import CreatorSettingsView from '@/components/creator/settings/CreatorSettingsView';
+
+export const metadata: Metadata = {
+  title: 'Creator Settings',
+};
 
 export default async function CreatorSettingsPage() {
   const userProfile = await getOrCreateUserProfile();

@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import CreatorCampaignsView from '@/components/creator/campaigns/CreatorCampaignsView';
 import { getCreatorCampaigns } from '@/lib/supabase/creator';
+
+export const metadata: Metadata = {
+  title: 'My Campaigns',
+};
 
 export default async function CreatorCampaignsPage() {
   const userProfile = await getOrCreateUserProfile();
