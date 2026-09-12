@@ -16,7 +16,20 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Provide dummy WebSocket transport if native WebSocket is not present (Node < 22),
+// since this background settlement script only performs REST database operations.
+const clientOptions = {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+};
+if (typeof WebSocket === 'undefined') {
+  class NoopWebSocket {}
+  clientOptions.realtime = { transport: NoopWebSocket };
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey, clientOptions);
 
 async function runSettlement() {
   console.log('[Settlement Engine] Starting automated settlement run at', new Date().toISOString());
