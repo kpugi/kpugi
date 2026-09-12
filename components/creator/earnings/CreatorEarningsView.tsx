@@ -335,6 +335,9 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       sub: tx.campaign_title || (isWithdrawal ? 'Bank Transfer' : 'Campaign Payout'),
       reference: tx.reference || `TX-${tx.id.slice(0, 8).toUpperCase()}`,
       amount: Math.abs(Number(tx.amount || 0)),
+      grossAmount: Number(tx.gross_amount || 0),
+      feeAmount: Number(tx.fee_amount || 0),
+      netAmount: Math.abs(Number(tx.amount || 0)),
       isCredit,
       isWithdrawal,
       bankName: tx.bank_name || null,
@@ -466,7 +469,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
 
           <div className="flex flex-col sm:items-end justify-center gap-1">
             <DailyCycleCountdown />
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Auto-settles at cycle reset</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Settles to wallet on campaign completion</span>
           </div>
         </div>
       )}
@@ -667,21 +670,30 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                           <span className="text-xs font-normal text-slate-500 dark:text-slate-400">views</span>
                                         </div>
                                         <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                          Audited batch: {(tx.viewsDelta || tx.viewsScraped || tx.viewsCount || 0).toLocaleString()} views
+                                          Rate: ₦{(tx.cpmRate || 0).toLocaleString()} / 1k views
                                         </div>
                                       </div>
 
-                                      {/* Box 2: Campaign CPM Rate */}
+                                      {/* Box 2: Financial Roundup (Gross, 10% Fee, Net) */}
                                       <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                          <TrendingUp className="w-3 h-3 text-slate-400" /> Campaign CPM
+                                          <TrendingUp className="w-3 h-3 text-slate-400" /> Settlement Breakdown
                                         </span>
-                                        <div className="font-mono font-bold text-base text-slate-900 dark:text-white">
-                                          ₦{(tx.cpmRate || 0).toLocaleString()}{' '}
-                                          <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/ 1k views</span>
-                                        </div>
-                                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                          Payout: (Views ÷ 1,000) × CPM
+                                        <div className="space-y-0.5">
+                                          <div className="flex justify-between text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                                            <span>Gross Earned:</span>
+                                            <span className="font-bold text-slate-900 dark:text-white">₦{(tx.grossAmount || tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                          </div>
+                                          {Boolean(tx.feeAmount && tx.feeAmount > 0) && (
+                                            <div className="flex justify-between text-[11px] font-mono text-amber-700 dark:text-amber-400">
+                                              <span>Kpugi Fee (10%):</span>
+                                              <span>-₦{tx.feeAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                          )}
+                                          <div className="flex justify-between text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 pt-1 border-t border-slate-200/60 dark:border-white/10">
+                                            <span>Net Take-Home:</span>
+                                            <span>+₦{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                          </div>
                                         </div>
                                       </div>
 

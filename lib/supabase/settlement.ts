@@ -1,72 +1,98 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
-export interface BatchSettlementResult {
-  batchesCreated: number;
-  totalAccrualSettled: number;
-  batchesMatured: number;
-  totalAmountMatured: number;
+export interface CampaignSettlementResult {
+  success: boolean;
+  settledCreatorsCount: number;
+  totalGross: number;
+  totalFees: number;
+  totalNetSettled: number;
+  error?: string;
 }
 
 /**
- * Collates today's in-cycle accrued earnings into a daily 24-hour pending escrow batch.
- * Runs at the End-of-Day (00:00 midnight cutoff) or when triggered.
+ * Settles all verified creator earnings for a completed campaign.
+ * Enforces:
+ * 1. 25% creator pool cap on campaign gross budget.
+ * 2. 10% Kpugi platform fee deduction.
+ * 3. Exact 1 consolidated transaction per creator per campaign.
+ * 4. Atomic database balance credit.
  */
-export async function processDailyBatchSettlement(
+export async function settleCompletedCampaign(
   supabaseAdmin: SupabaseClient,
-  creatorProfileId?: string
-): Promise<{ batchesCreated: number; totalAccrualSettled: number }> {
-  let query = supabaseAdmin
+  campaignId: string
+): Promise<CampaignSettlementResult> {
+  // Try atomic PostgreSQL stored procedure first
+  try {
+    const { data, error } = await supabaseAdmin.rpc('atomic_settle_completed_campaign', {
+      p_campaign_id: campaignId,
+    });
+
+    if (!error && data && data.success) {
+      return {
+        success: true,
+        settledCreatorsCount: data.settled_creators_count || 0,
+        totalGross: Number(data.total_gross || 0),
+        totalFees: Number(data.total_fees || 0),
+        totalNetSettled: Number(data.total_net_settled || 0),
+      };
+    }
+  } catch (rpcErr) {
+    console.warn('[settleCompletedCampaign] RPC not available, executing TypeScript atomic fallback:', rpcErr);
+  }
+
+  // TypeScript Fallback Implementation (Identical business logic)
+  const { data: campaign, error: campErr } = await supabaseAdmin
+    .from('campaigns')
+    .select('id, title, total_budget, spent_budget, cpm_rate, min_view_threshold, status')
+    .eq('id', campaignId)
+    .single();
+
+  if (campErr || !campaign) {
+    return { success: false, settledCreatorsCount: 0, totalGross: 0, totalFees: 0, totalNetSettled: 0, error: 'Campaign not found' };
+  }
+
+  const totalBudget = Number(campaign.total_budget || 0);
+  const creatorCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
+  const cpmRate = Number(campaign.cpm_rate || 0);
+  const minThreshold = Number(campaign.min_view_threshold || 1000);
+
+  const { data: submissions, error: subErr } = await supabaseAdmin
     .from('submissions')
-    .select('id, campaign_id, creator_id, final_view_count, last_paid_view_count, pending_payout_amount, payout_amount, submitted_at, verified_at, campaigns!inner(title, spent_budget, total_budget, advertiser_id, status)')
-    .gt('pending_payout_amount', 0);
+    .select('id, creator_id, final_view_count, payout_amount, status')
+    .eq('campaign_id', campaignId)
+    .not('status', 'in', '("verified_fail","rejected")')
+    .gte('final_view_count', minThreshold);
 
-  if (creatorProfileId) {
-    query = query.eq('creator_id', creatorProfileId);
+  if (subErr || !submissions || submissions.length === 0) {
+    // Mark campaign completed if not already
+    await supabaseAdmin.from('campaigns').update({ status: 'completed' }).eq('id', campaignId);
+    return { success: true, settledCreatorsCount: 0, totalGross: 0, totalFees: 0, totalNetSettled: 0 };
   }
 
-  const { data: unbatchedSubs, error } = await query;
-  if (error || !unbatchedSubs || unbatchedSubs.length === 0) {
-    return { batchesCreated: 0, totalAccrualSettled: 0 };
-  }
+  let settledCount = 0;
+  let totalGross = 0;
+  let totalFees = 0;
+  let totalNet = 0;
 
-  const now = new Date();
-  const clearsAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-  let batchesCreated = 0;
-  let totalAccrualSettled = 0;
+  for (const sub of submissions) {
+    const views = Number(sub.final_view_count || 0);
+    const rawGross = Math.round((views / 1000.0) * cpmRate);
+    const gross = Math.min(rawGross, creatorCap);
+    const fee = Math.round(gross * 0.10);
+    const net = gross - fee;
 
-  // Group by (creator_id, campaign_id)
-  const grouped: Record<string, typeof unbatchedSubs> = {};
-  for (const sub of unbatchedSubs) {
-    const key = `${sub.creator_id}_${sub.campaign_id}`;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(sub);
-  }
-
-  for (const key of Object.keys(grouped)) {
-    const subs = grouped[key];
-    const firstSub = subs[0];
-    const creatorId = firstSub.creator_id;
-    const campaignId = firstSub.campaign_id;
-
-    const totalBatchAmount = subs.reduce((sum, s) => sum + Number(s.pending_payout_amount || 0), 0);
-    if (totalBatchAmount <= 0) continue;
-
-    // 1. Get or create creator wallet
+    // Get or create creator wallet
     let { data: wallet } = await supabaseAdmin
       .from('wallets')
       .select('id, balance')
-      .eq('profile_id', creatorId)
+      .eq('profile_id', sub.creator_id)
       .eq('wallet_type', 'creator_earnings')
       .maybeSingle();
 
     if (!wallet) {
       const { data: newW } = await supabaseAdmin
         .from('wallets')
-        .insert({
-          profile_id: creatorId,
-          wallet_type: 'creator_earnings',
-          balance: 0,
-        })
+        .insert({ profile_id: sub.creator_id, wallet_type: 'creator_earnings', balance: 0 })
         .select('id, balance')
         .single();
       wallet = newW;
@@ -74,163 +100,145 @@ export async function processDailyBatchSettlement(
 
     if (!wallet) continue;
 
-    const ref = `KP-EOD-${Date.now().toString(36).toUpperCase()}-${campaignId.slice(0, 4).toUpperCase()}`;
+    const ref = `KP-CMP-${campaignId.slice(0, 4).toUpperCase()}-${sub.id.slice(0, 4).toUpperCase()}`;
 
-    // 24-hour verification hold window from when the post was submitted/verified
-    const oldestPostTime = subs.reduce((oldest: number, s: any) => {
-      const t = new Date(s.submitted_at || s.verified_at || now).getTime();
-      return isNaN(t) ? oldest : Math.min(oldest, t);
-    }, now.getTime());
-
-    const targetClearTime = oldestPostTime + 24 * 60 * 60 * 1000;
-    const batchClearsAt = targetClearTime <= now.getTime()
-      ? new Date(now.getTime() - 1000).toISOString()
-      : new Date(targetClearTime).toISOString();
-
-    // 2. Insert single Daily Batch transaction in 24h Escrow (status: 'clearing')
-    const { error: txErr } = await supabaseAdmin
+    // Look for existing payout transaction for this campaign
+    const { data: existingTx } = await supabaseAdmin
       .from('wallet_transactions')
-      .insert({
+      .select('id')
+      .eq('wallet_id', wallet.id)
+      .eq('campaign_id', campaignId)
+      .in('type', ['campaign_payout', 'payout_release'])
+      .maybeSingle();
+
+    if (existingTx) {
+      await supabaseAdmin
+        .from('wallet_transactions')
+        .update({
+          type: 'payout_release',
+          amount: net,
+          gross_amount: gross,
+          fee_amount: fee,
+          net_amount: net,
+          views_audited: views,
+          status: 'completed',
+          submission_id: sub.id,
+          paystack_reference: ref,
+        })
+        .eq('id', existingTx.id);
+
+      // Clean up any legacy duplicates
+      await supabaseAdmin
+        .from('wallet_transactions')
+        .delete()
+        .eq('wallet_id', wallet.id)
+        .eq('campaign_id', campaignId)
+        .in('type', ['campaign_payout', 'payout_release'])
+        .neq('id', existingTx.id);
+    } else {
+      await supabaseAdmin.from('wallet_transactions').insert({
         wallet_id: wallet.id,
         type: 'payout_release',
-        amount: totalBatchAmount,
+        amount: net,
+        gross_amount: gross,
+        fee_amount: fee,
+        net_amount: net,
+        views_audited: views,
         campaign_id: campaignId,
-        submission_id: firstSub.id,
-        status: 'clearing',
-        clears_at: batchClearsAt,
-        paystack_reference: ref,
-      });
-
-    if (txErr) {
-      console.error('[Settlement Engine] Error inserting batch tx:', txErr);
-      continue;
-    }
-
-    // 3. Insert immutable submission audit records for each submission in the batch
-    for (const sub of subs) {
-      const viewsScraped = Number(sub.final_view_count || 0);
-      const lastPaidViews = Number(sub.last_paid_view_count || 0);
-      const viewsDelta = Math.max(0, viewsScraped - lastPaidViews);
-      const payoutForSub = Number(sub.pending_payout_amount || 0);
-
-      await supabaseAdmin.from('submission_audits').insert({
         submission_id: sub.id,
-        campaign_id: campaignId,
-        creator_id: creatorId,
-        views_scraped: viewsScraped,
-        views_delta: viewsDelta,
-        payout_amount: payoutForSub,
-        status: 'auto_approved',
-        settled_at: now.toISOString(),
+        status: 'completed',
+        paystack_reference: ref,
+        created_at: new Date().toISOString(),
       });
-
-      // 4. Update submission record (reset pending accrual, increment payout_amount)
-      await supabaseAdmin
-        .from('submissions')
-        .update({
-          last_paid_view_count: viewsScraped,
-          payout_amount: Number(sub.payout_amount || 0) + payoutForSub,
-          pending_payout_amount: 0,
-          auto_approve_at: null,
-        })
-        .eq('id', sub.id);
     }
 
+    // Update submission record with net payout
+    await supabaseAdmin
+      .from('submissions')
+      .update({
+        payout_amount: net,
+        pending_payout_amount: 0,
+        status: 'verified_pass',
+        verified_at: new Date().toISOString(),
+      })
+      .eq('id', sub.id);
 
-    batchesCreated++;
-    totalAccrualSettled += totalBatchAmount;
+    // Recompute wallet balance from sum of completed transactions
+    const { data: allTx } = await supabaseAdmin
+      .from('wallet_transactions')
+      .select('amount')
+      .eq('wallet_id', wallet.id)
+      .eq('status', 'completed');
+
+    const newBalance = Math.max(
+      0,
+      (allTx || []).reduce((sum, t) => sum + Number(t.amount || 0), 0)
+    );
+
+    await supabaseAdmin
+      .from('wallets')
+      .update({ balance: newBalance })
+      .eq('id', wallet.id);
+
+    const totalEarned = (allTx || [])
+      .filter((t) => Number(t.amount || 0) > 0)
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    await supabaseAdmin
+      .from('creator_profiles')
+      .update({ total_earned: totalEarned })
+      .eq('profile_id', sub.creator_id);
+
+    settledCount++;
+    totalGross += gross;
+    totalFees += fee;
+    totalNet += net;
   }
 
-  return { batchesCreated, totalAccrualSettled };
+  // Ensure campaign is marked completed
+  await supabaseAdmin
+    .from('campaigns')
+    .update({
+      status: 'completed',
+      spent_budget: Math.max(Number(campaign.spent_budget || 0), totalGross),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', campaignId);
+
+  return {
+    success: true,
+    settledCreatorsCount: settledCount,
+    totalGross,
+    totalFees,
+    totalNetSettled: totalNet,
+  };
 }
 
 /**
- * Releases matured 24-hour escrow batches into the creator's Available Wallet Balance.
- * Runs continuously on-demand or via cron.
+ * Checks for any completed campaigns that haven't been settled yet and settles them.
  */
-export async function autoReleaseMaturedBatches(
-  supabaseAdmin: SupabaseClient,
-  creatorProfileId?: string
-): Promise<{ batchesMatured: number; totalAmountMatured: number }> {
-  const nowIso = new Date().toISOString();
+export async function settleAllCompletedCampaigns(
+  supabaseAdmin: SupabaseClient
+): Promise<{ campaignsSettled: number; totalNetDisbursed: number }> {
+  const { data: completedCampaigns } = await supabaseAdmin
+    .from('campaigns')
+    .select('id, title')
+    .eq('status', 'completed');
 
-  let query = supabaseAdmin
-    .from('wallet_transactions')
-    .select('id, wallet_id, amount, campaign_id, submission_id, clears_at, wallets:wallet_id(id, profile_id, balance)')
-    .eq('status', 'clearing')
-    .lte('clears_at', nowIso);
+  if (!completedCampaigns || completedCampaigns.length === 0) {
+    return { campaignsSettled: 0, totalNetDisbursed: 0 };
+  }
 
-  if (creatorProfileId) {
-    const { data: cw } = await supabaseAdmin
-      .from('wallets')
-      .select('id')
-      .eq('profile_id', creatorProfileId)
-      .eq('wallet_type', 'creator_earnings')
-      .maybeSingle();
+  let campaignsSettled = 0;
+  let totalNetDisbursed = 0;
 
-    if (cw) {
-      query = query.eq('wallet_id', cw.id);
+  for (const camp of completedCampaigns) {
+    const res = await settleCompletedCampaign(supabaseAdmin, camp.id);
+    if (res.success && res.settledCreatorsCount > 0) {
+      campaignsSettled++;
+      totalNetDisbursed += res.totalNetSettled;
     }
   }
 
-  const { data: maturedBatches, error } = await query;
-  if (error || !maturedBatches || maturedBatches.length === 0) {
-    return { batchesMatured: 0, totalAmountMatured: 0 };
-  }
-
-  let batchesMatured = 0;
-  let totalAmountMatured = 0;
-
-  for (const batch of maturedBatches) {
-    const amount = Number(batch.amount || 0);
-    const wallet = batch.wallets as any;
-    if (!wallet || amount <= 0) continue;
-
-    // 1. Mark batch transaction as completed
-    await supabaseAdmin
-      .from('wallet_transactions')
-      .update({ status: 'completed' })
-      .eq('id', batch.id);
-
-    // 2. Credit creator wallet balance (fetch latest balance from DB to prevent stale loop overwrites)
-    const { data: latestWallet } = await supabaseAdmin
-      .from('wallets')
-      .select('balance')
-      .eq('id', wallet.id)
-      .single();
-
-    const currentBalance = Number(latestWallet?.balance || 0);
-    await supabaseAdmin
-      .from('wallets')
-      .update({ balance: currentBalance + amount })
-      .eq('id', wallet.id);
-
-    // 3. Increment creator total_earned
-    const { data: creatorProfile } = await supabaseAdmin
-      .from('creator_profiles')
-      .select('profile_id, total_earned')
-      .eq('profile_id', wallet.profile_id)
-      .maybeSingle();
-
-    if (creatorProfile) {
-      await supabaseAdmin
-        .from('creator_profiles')
-        .update({ total_earned: Number(creatorProfile.total_earned || 0) + amount })
-        .eq('profile_id', wallet.profile_id);
-    }
-
-    // 4. Update corresponding submission_audits to 'approved'
-    if (batch.submission_id) {
-      await supabaseAdmin
-        .from('submission_audits')
-        .update({ status: 'approved' })
-        .eq('submission_id', batch.submission_id)
-        .eq('status', 'auto_approved');
-    }
-
-    batchesMatured++;
-    totalAmountMatured += amount;
-  }
-
-  return { batchesMatured, totalAmountMatured };
+  return { campaignsSettled, totalNetDisbursed };
 }

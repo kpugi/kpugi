@@ -246,8 +246,15 @@ export async function updateCampaignStatusAction(formData: FormData) {
     return { success: false, error: 'Failed to update campaign status.' };
   }
 
-  // Trigger completion notifications
+  // Trigger completion settlement & notifications
   if (newStatus === 'completed' && campaign.status !== 'completed') {
+    try {
+      const { settleCompletedCampaign } = await import('@/lib/supabase/settlement');
+      await settleCompletedCampaign(supabase, campaignId);
+    } catch (settleErr) {
+      console.error('[updateCampaignStatusAction] Error settling completed campaign:', settleErr);
+    }
+
     try {
       const totalViews = campaignSubmissions?.reduce((sum, s) => sum + Number(s.final_view_count || 0), 0) || 0;
 

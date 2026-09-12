@@ -399,17 +399,68 @@ export async function requestPayoutAction(formData: FormData) {
     }
   }
 
-  const newBalance = currentBalance - amount;
+  // 6. Atomic Wallet Update: Lock row and deduct balance via DB atomic function
+  let atomicUsed = false;
+  try {
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc('atomic_request_withdrawal', {
+      p_profile_id: userProfile.profile.id,
+      p_amount: amount,
+      p_reference: refCode,
+      p_bank_name: targetBank.bank_name || 'Bank',
+      p_account_number: targetBank.account_number || '',
+      p_account_name: targetBank.account_name || userProfile.profile.full_name || 'Creator',
+    });
 
-  // 6. Atomic Wallet Update: ensure balance >= amount in DB to prevent double-spend race conditions
-  const { error: walletError } = await supabase
-    .from('wallets')
-    .update({ balance: newBalance })
-    .eq('id', wallet!.id)
-    .gte('balance', amount);
+    if (!rpcErr && rpcRes) {
+      if (!rpcRes.success) {
+        return {
+          success: false,
+          error: rpcRes.error || "Bag ain't deep enough yet 💼... Insufficient wallet balance for this withdrawal.",
+        };
+      }
+      atomicUsed = true;
+    }
+  } catch {
+    atomicUsed = false;
+  }
 
-  if (walletError) {
-    return { success: false, error: 'Failed to update wallet balance. Please try again.' };
+  // Fallback if atomic procedure is not installed in database yet
+  if (!atomicUsed) {
+    const newBalance = Math.round((currentBalance - amount) * 100) / 100;
+    const { error: walletError } = await supabase
+      .from('wallets')
+      .update({ balance: newBalance })
+      .eq('id', wallet!.id)
+      .gte('balance', amount);
+
+    if (walletError) {
+      return { success: false, error: 'Failed to update wallet balance. Please try again.' };
+    }
+
+    // Record transaction in wallet_transactions table
+    await supabase.from('wallet_transactions').insert({
+      wallet_id: wallet!.id,
+      type: 'withdrawal',
+      amount: -amount,
+      gross_amount: amount,
+      fee_amount: 0,
+      net_amount: -amount,
+      status: 'completed',
+      paystack_reference: refCode,
+      created_at: new Date().toISOString(),
+    });
+
+    // Record transaction in payout_requests table
+    await supabase.from('payout_requests').insert({
+      profile_id: userProfile.profile.id,
+      amount: amount,
+      status: 'processing',
+      bank_name: targetBank.bank_name,
+      account_number: targetBank.account_number,
+      account_name: targetBank.account_name || 'Creator',
+      reference: refCode,
+      created_at: new Date().toISOString(),
+    });
   }
 
   // 7. Initiate Live Transfer via Paystack
@@ -430,10 +481,34 @@ export async function requestPayoutAction(formData: FormData) {
 
   if (!transferRes.success && !isStarterTierRestriction) {
     // Rollback wallet balance if transfer was rejected due to other technical errors
-    await supabase
-      .from('wallets')
-      .update({ balance: currentBalance })
-      .eq('id', wallet!.id);
+    let rolledBack = false;
+    try {
+      const { data: rbRes, error: rbErr } = await supabase.rpc('atomic_rollback_withdrawal', {
+        p_reference: refCode,
+      });
+      if (!rbErr && rbRes?.success) {
+        rolledBack = true;
+      }
+    } catch {
+      rolledBack = false;
+    }
+
+    if (!rolledBack) {
+      // Safe fallback: fetch current balance and increment by amount rather than overwriting with stale currentBalance
+      const { data: latestW } = await supabase.from('wallets').select('balance').eq('id', wallet!.id).single();
+      const restored = Math.round(((latestW?.balance || 0) + amount) * 100) / 100;
+      await supabase.from('wallets').update({ balance: restored }).eq('id', wallet!.id);
+
+      await supabase
+        .from('wallet_transactions')
+        .update({ status: 'failed' })
+        .eq('paystack_reference', refCode);
+
+      await supabase
+        .from('payout_requests')
+        .update({ status: 'failed' })
+        .eq('reference', refCode);
+    }
 
     return {
       success: false,
@@ -445,27 +520,15 @@ export async function requestPayoutAction(formData: FormData) {
     ? (transferRes.status || 'success')
     : 'processing';
 
-  // 8. Record transaction in wallet_transactions table
-  await supabase.from('wallet_transactions').insert({
-    wallet_id: wallet!.id,
-    type: 'withdrawal',
-    amount: -amount,
-    paystack_reference: refCode,
-    created_at: new Date().toISOString(),
-  });
-
-  // 9. Record transaction in payout_requests table
-  await supabase.from('payout_requests').insert({
-    profile_id: userProfile.profile.id,
-    amount: amount,
-    status: finalStatus,
-    bank_name: targetBank.bank_name,
-    account_number: targetBank.account_number,
-    account_name: targetBank.account_name || 'Creator',
-    reference: refCode,
-    paystack_transfer_code: transferRes.transferCode || null,
-    created_at: new Date().toISOString(),
-  });
+  // 8. Update payout_requests with transfer details if available
+  await supabase
+    .from('payout_requests')
+    .update({
+      status: finalStatus,
+      paystack_transfer_code: transferRes.transferCode || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('reference', refCode);
 
   // 10. Fire Withdrawal Notification (Knock in-app feed + Resend branded email)
   const maskedAcc = targetBank.account_number
@@ -815,47 +878,35 @@ export async function unjoinCampaignAction(campaignId: string) {
       .eq('id', campaignId);
   }
 
-  // 4. Clawback if funds were already settled in creator's wallet
-  if (clearedPayout > 0) {
-    const { data: creatorWallet } = await supabase
+  // 4. Cleanly reconcile Creator Wallet & Total Earned from ledger
+  const { data: creatorWallet } = await supabase
+    .from('wallets')
+    .select('id')
+    .eq('profile_id', profileId)
+    .eq('wallet_type', 'creator_earnings')
+    .maybeSingle();
+
+  if (creatorWallet) {
+    const { data: txs } = await supabase
+      .from('wallet_transactions')
+      .select('amount')
+      .eq('wallet_id', creatorWallet.id)
+      .eq('status', 'completed');
+
+    const trueBalance = (txs || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const trueEarned = (txs || [])
+      .filter((t) => Number(t.amount || 0) > 0)
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    await supabase
       .from('wallets')
-      .select('id, balance')
-      .eq('profile_id', profileId)
-      .eq('wallet_type', 'creator_earnings')
-      .maybeSingle();
+      .update({ balance: Math.max(0, Math.round(trueBalance * 100) / 100) })
+      .eq('id', creatorWallet.id);
 
-    if (creatorWallet) {
-      const newBalance = Math.max(0, Number(creatorWallet.balance || 0) - clearedPayout);
-      await supabase
-        .from('wallets')
-        .update({ balance: newBalance })
-        .eq('id', creatorWallet.id);
-
-      await supabase.from('wallet_transactions').insert({
-        wallet_id: creatorWallet.id,
-        type: 'withdrawal',
-        amount: -clearedPayout,
-        campaign_id: campaignId,
-        submission_id: submission.id,
-        status: 'completed',
-        paystack_reference: `KP-CLAWBACK-${submission.id.slice(0, 8)}-${Date.now()}`,
-      });
-    }
-
-    const { data: creatorProfile } = await supabase
+    await supabase
       .from('creator_profiles')
-      .select('profile_id, total_earned')
-      .eq('profile_id', profileId)
-      .maybeSingle();
-
-    if (creatorProfile) {
-      await supabase
-        .from('creator_profiles')
-        .update({
-          total_earned: Math.max(0, Number(creatorProfile.total_earned || 0) - clearedPayout),
-        })
-        .eq('profile_id', profileId);
-    }
+      .update({ total_earned: Math.max(0, Math.round(trueEarned * 100) / 100) })
+      .eq('profile_id', profileId);
   }
 
   // 5. Delete the submission record
@@ -976,74 +1027,36 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
     }
   }
 
-  // 5. Clawback & Reversal: If funds had cleared to creator balance, reverse creator wallet
-  if (clearedPayout > 0) {
-    // A. Deduct cleared amount from creator's wallet
-    const { data: creatorWallet } = await supabase
-      .from('wallets')
-      .select('id, balance')
-      .eq('profile_id', profileId)
-      .eq('wallet_type', 'creator_earnings')
-      .maybeSingle();
+  // 5. Cleanly reconcile Creator Wallet & Total Earned from ledger
+  const { data: creatorWallet } = await supabase
+    .from('wallets')
+    .select('id')
+    .eq('profile_id', profileId)
+    .eq('wallet_type', 'creator_earnings')
+    .maybeSingle();
 
-    if (creatorWallet) {
-      const newBalance = Math.max(0, Number(creatorWallet.balance || 0) - clearedPayout);
-      await supabase
-        .from('wallets')
-        .update({ balance: newBalance })
-        .eq('id', creatorWallet.id);
+  if (creatorWallet) {
+    const { data: txs } = await supabase
+      .from('wallet_transactions')
+      .select('amount')
+      .eq('wallet_id', creatorWallet.id)
+      .eq('status', 'completed');
 
-      // Record clawback transaction in wallet_transactions
-      await supabase.from('wallet_transactions').insert({
-        wallet_id: creatorWallet.id,
-        type: 'withdrawal',
-        amount: -clearedPayout,
-        campaign_id: campaignId,
-        submission_id: submission.id,
-        status: 'completed',
-        paystack_reference: `KP-CLAWBACK-${submission.id.slice(0, 8)}-${Date.now()}`,
-      });
-    }
-  }
+    const trueBalance = (txs || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const trueEarned = (txs || [])
+      .filter((t) => Number(t.amount || 0) > 0)
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
-  // 5. Reconcile Creator Wallet & Total Earned from remaining valid audits
-  const [auditsRes, withdrawalsRes, creatorWalletRes] = await Promise.all([
-    supabase
-      .from('submission_audits')
-      .select('payout_amount, status')
-      .eq('creator_id', profileId),
-    supabase
-      .from('payout_requests')
-      .select('amount, status')
-      .eq('profile_id', profileId),
-    supabase
-      .from('wallets')
-      .select('id, balance')
-      .eq('profile_id', profileId)
-      .eq('wallet_type', 'creator_earnings')
-      .maybeSingle(),
-  ]);
-
-  const validAudits = (auditsRes.data || []).filter(
-    (a) => a.status === 'approved' || a.status === 'auto_approved' || a.status === 'completed'
-  );
-  const totalCleared = validAudits.reduce((sum, a) => sum + Number(a.payout_amount || 0), 0);
-  const totalWithdrawn = (withdrawalsRes.data || [])
-    .filter((w) => w.status === 'success' || w.status === 'completed')
-    .reduce((sum, w) => sum + Number(w.amount || 0), 0);
-  const reconciledBalance = totalCleared - totalWithdrawn;
-
-  if (creatorWalletRes.data) {
     await supabase
       .from('wallets')
-      .update({ balance: reconciledBalance })
-      .eq('id', creatorWalletRes.data.id);
-  }
+      .update({ balance: Math.max(0, Math.round(trueBalance * 100) / 100) })
+      .eq('id', creatorWallet.id);
 
-  await supabase
-    .from('creator_profiles')
-    .update({ total_earned: Math.max(0, totalCleared) })
-    .eq('profile_id', profileId);
+    await supabase
+      .from('creator_profiles')
+      .update({ total_earned: Math.max(0, Math.round(trueEarned * 100) / 100) })
+      .eq('profile_id', profileId);
+  }
 
   revalidatePath('/c/wallet');
   revalidatePath('/c/dashboard');

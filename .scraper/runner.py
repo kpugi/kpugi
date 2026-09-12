@@ -196,47 +196,37 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
             "payout": 0,
         }
 
-    # Views exceed or equal minimum threshold -> Compute pending incremental payout
+    # Views exceed or equal minimum threshold -> Validated traffic
     new_views = max(0, final_views - last_paid_views)
-    raw_payout = round((new_views / 1000.0) * cpm_rate)
+    raw_gross = round((final_views / 1000.0) * cpm_rate)
 
-    # 25% Creator Campaign Pool Cap Enforcement
+    # 25% Creator Campaign Pool Cap Enforcement (Gross budget basis)
     total_budget = float(campaign.get('total_budget') or 0)
     creator_cap = (total_budget * 0.25) if total_budget > 0 else float('inf')
-    already_paid = float(sub.get('payout_amount') or 0)
-    max_allowable = max(0.0, creator_cap - already_paid)
-    
-    if max_allowable == float('inf'):
-        incremental_payout = raw_payout
-    else:
-        incremental_payout = min(raw_payout, int(max_allowable))
-
-    # Surge Protection & Auto-approval
-    is_surge = new_views >= SURGE_VIEW_THRESHOLD
-    grace_hours = SURGE_AUTO_APPROVE_HOURS if is_surge else DEFAULT_AUTO_APPROVE_HOURS
-    auto_approve_at = (now_utc + timedelta(hours=grace_hours)).isoformat()
+    gross_earned = min(raw_gross, creator_cap)
 
     updates.update({
-        "pending_payout_amount": incremental_payout,
-        "auto_approve_at": auto_approve_at,
         "status": "verified_pass",
         "verified_at": now_utc.isoformat(),
+        "pending_payout_amount": 0,
     })
 
     db.update_submission(sub_id, updates)
-    logger.info(f"Submission {sub_id[:8]} updated -> Views: {final_views} | New Views: {new_views} | Accruing Payout Today: ₦{incremental_payout:,} (Cap: ₦{creator_cap:,.0f}) | Status: verified_pass")
+    logger.info(f"Submission {sub_id[:8]} verified -> Views: {final_views:,} (New: {new_views:,}) | Est. Gross: ₦{gross_earned:,.0f} (Cap: ₦{creator_cap:,.0f})")
 
-    # Real-time Campaign Budget Deduction
-    delta_payout = incremental_payout - float(sub.get('pending_payout_amount') or 0.0)
-    if delta_payout > 0:
+    # Real-time Campaign Budget Deduction (Brands pay gross)
+    prev_tracked_spend = float(sub.get('last_tracked_gross') or sub.get('payout_amount') or 0.0)
+    delta_spend = max(0.0, gross_earned - prev_tracked_spend)
+
+    if delta_spend > 0:
         current_spent = float(campaign.get('spent_budget') or 0.0)
-        new_spent = current_spent + delta_payout
+        new_spent = current_spent + delta_spend
         is_depleted = new_spent >= total_budget
         new_status = 'completed' if is_depleted else None
         db.update_campaign_budget(
             campaign_id=campaign['id'],
-            spent_increment=delta_payout,
-            reserved_decrement=delta_payout,
+            spent_increment=delta_spend,
+            reserved_decrement=delta_spend,
             new_status=new_status
         )
 
@@ -246,7 +236,7 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
         "reachable": True,
         "views": final_views,
         "status": f"verified ({final_views:,} views)",
-        "payout": incremental_payout,
+        "payout": gross_earned,
     }
 
 

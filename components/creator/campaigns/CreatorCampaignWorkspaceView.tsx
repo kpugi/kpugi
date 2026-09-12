@@ -490,7 +490,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
         }`}>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
-              {isCompleted ? 'Net Payout' : 'Earned Payout'}
+              {isCompleted ? 'Net Payout' : 'Live Accrual (Gross)'}
             </span>
             {isCapReached ? (
               <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-600/40 leading-none shadow-2xs">
@@ -518,9 +518,9 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             {isCapReached
               ? `Max Cap Reached (₦${maxCreatorPoolCap.toLocaleString()})`
               : isCompleted
-              ? `Net (10% fee: ₦${platformFee.toLocaleString()})`
+              ? `Net Take-Home (10% fee: ₦${platformFee.toLocaleString()})`
               : isReserveMet
-              ? 'Verified Run Settled'
+              ? 'Gross Accruing • 10% fee calculated on completion'
               : `₦${baseReserve.toLocaleString()} Reserved`}
           </span>
         </div>

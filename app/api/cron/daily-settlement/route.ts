@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { processDailyBatchSettlement, autoReleaseMaturedBatches } from '@/lib/supabase/settlement';
+import { settleAllCompletedCampaigns } from '@/lib/supabase/settlement';
 import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
 
 export const dynamic = 'force-dynamic';
@@ -20,11 +20,8 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // 1. Collate unbatched today's accruals into 24-hour pending escrow batches
-    const batchResult = await processDailyBatchSettlement(supabase);
-
-    // 2. Release matured 24-hour batches into Available Wallet Balance
-    const releaseResult = await autoReleaseMaturedBatches(supabase);
+    // Settle all completed campaigns that have pending creator earnings
+    const settlementResult = await settleAllCompletedCampaigns(supabase);
 
     // Ping Better Stack Heartbeat on successful completion
     await sendHeartbeat(process.env.BETTERSTACK_HEARTBEAT_DAILY_SETTLEMENT);
@@ -32,10 +29,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      eod_batches_created: batchResult.batchesCreated,
-      total_accrual_settled: batchResult.totalAccrualSettled,
-      matured_batches_released: releaseResult.batchesMatured,
-      total_amount_matured: releaseResult.totalAmountMatured,
+      campaigns_settled: settlementResult.campaignsSettled,
+      total_net_disbursed: settlementResult.totalNetDisbursed,
     });
   } catch (error: any) {
     console.error('[Daily Settlement Cron Error]:', error);

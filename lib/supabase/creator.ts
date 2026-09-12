@@ -101,28 +101,14 @@ export interface CreatorEarningsData {
 export async function getCreatorOverviewData(profileId: string): Promise<CreatorOverviewData> {
   const supabase = createAdminClient();
 
-  // 0. Auto-release matured batches and auto-roll previous day's accruals
-  const { autoReleaseMaturedBatches, processDailyBatchSettlement } = await import('@/lib/supabase/settlement');
-  await autoReleaseMaturedBatches(supabase, profileId);
-
-  const todayUtcStart = new Date();
-  todayUtcStart.setUTCHours(0, 0, 0, 0);
-  const { data: previousDaySubs } = await supabase
-    .from('submissions')
-    .select('id')
-    .eq('creator_id', profileId)
-    .gt('pending_payout_amount', 0)
-    .lt('verified_at', todayUtcStart.toISOString())
-    .limit(1);
-
-  if (previousDaySubs && previousDaySubs.length > 0) {
-    await processDailyBatchSettlement(supabase, profileId);
-  }
   const { data: creatorProfile } = await supabase
     .from('creator_profiles')
     .select('profile_id, total_earned, kyc_status')
     .eq('profile_id', profileId)
     .maybeSingle();
+
+  const now = new Date();
+  const todayUtcStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   const creatorOrFilter = `creator_id.eq.${profileId}`;
 
@@ -497,25 +483,6 @@ export async function getCreatorCampaignDetails(profileId: string, submissionOrC
 export async function getCreatorEarningsData(profileId: string): Promise<CreatorEarningsData> {
   const supabase = createAdminClient();
 
-  // Auto-release any matured 24h escrow batches into the available wallet balance.
-  const { autoReleaseMaturedBatches, processDailyBatchSettlement } = await import('@/lib/supabase/settlement');
-
-  // Auto-roll any pending accruals that have already exceeded the 24h grace window
-  const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: maturedAccruals } = await supabase
-    .from('submissions')
-    .select('id')
-    .eq('creator_id', profileId)
-    .gt('pending_payout_amount', 0)
-    .lte('submitted_at', cutoff24h)
-    .limit(1);
-
-  if (maturedAccruals && maturedAccruals.length > 0) {
-    await processDailyBatchSettlement(supabase, profileId);
-  }
-
-  await autoReleaseMaturedBatches(supabase, profileId);
-
   let { data: wallet } = await supabase
     .from('wallets')
     .select('id, balance')
@@ -663,60 +630,112 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   });
 
   const availableBalance = Number(wallet?.balance || 0);
-  const submissionsTotalEarned = (rawSubmissions || []).reduce(
-    (sum: number, s: any) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
-    0
-  );
-  const totalEarned = Math.max(
-    Number(creator?.total_earned || 0),
-    submissionsTotalEarned,
-    availableBalance + pendingEscrow + totalWithdrawn
-  );
+  const totalEarned = availableBalance + totalWithdrawn;
 
-  // 4. Construct Clean, Non-Duplicative Transaction History
+  // 4. Construct Clean, Non-Duplicative Transaction History (One Entry per Campaign + Withdrawals)
   const rawFormatted: any[] = [];
   const primaryBank = dbBankAccounts.find((b: any) => b.is_primary) || dbBankAccounts[0];
 
-  // A. Format wallet_transactions (Daily Batches, completed payouts, withdrawals)
+  // Map to group and consolidate all transactions by campaign_id
+  const campaignTxMap = new Map<string, any>();
+
   rawTransactions.forEach((tx: any) => {
     const isWithdrawal = tx.type === 'withdrawal' || Number(tx.amount || 0) < 0;
-    const isClearing = tx.status === 'clearing';
-    const bName = primaryBank?.bank_name || 'Direct Bank';
-    const accNum = primaryBank?.account_number || '';
-    const accName = primaryBank?.account_name || 'Creator';
+    if (isWithdrawal) {
+      const bName = primaryBank?.bank_name || 'Direct Bank';
+      const accNum = primaryBank?.account_number || '';
+      const accName = primaryBank?.account_name || 'Creator';
+      const ref = tx.paystack_reference || `KP-WDR-${tx.id.slice(0, 8).toUpperCase()}`;
 
-    const campTitle = isWithdrawal ? `Direct Bank Withdrawal` : (tx.campaigns?.title || 'Daily Settlement Batch');
-    const campaignSubtitle = isWithdrawal ? 'Bank Transfer' : (isClearing ? '24h Verification Escrow' : 'Settled to Available Balance');
+      rawFormatted.push({
+        id: tx.id,
+        title: 'Direct Bank Withdrawal',
+        campaign_title: 'Bank Transfer',
+        reference: ref,
+        amount: -Math.abs(Number(tx.amount || 0)),
+        gross_amount: Math.abs(Number(tx.amount || 0)),
+        fee_amount: 0,
+        net_amount: Math.abs(Number(tx.amount || 0)),
+        views_count: 0,
+        views_scraped: 0,
+        views_delta: 0,
+        cpm_rate: 0,
+        type: 'debit',
+        transaction_type: 'withdrawal',
+        is_withdrawal: true,
+        bank_name: bName,
+        account_number: accNum,
+        account_name: accName,
+        status: tx.status === 'failed' ? 'failed' : 'completed',
+        created_at: tx.created_at,
+        settled_at: tx.created_at,
+        clearance_at: tx.created_at,
+        is_clearing: false,
+        settlement_method: `Direct Bank Settlement (${bName})`,
+      });
+      return;
+    }
+
+    // Campaign Payout Credit
+    const campId = tx.campaign_id || tx.id;
     const subObj = tx.submissions;
-    const viewsSettled = subObj ? Number(subObj.last_paid_view_count || subObj.final_view_count || 0) : 0;
+    const views = Number(tx.views_audited || subObj?.final_view_count || subObj?.last_paid_view_count || 0);
     const cpmRate = Number(tx.campaigns?.cpm_rate || 0);
-    const clearanceTime = tx.clears_at || new Date(new Date(tx.created_at).getTime() + 24 * 3600 * 1000).toISOString();
-    const ref = tx.paystack_reference || `KP-TX-${tx.id.slice(0, 8).toUpperCase()}`;
 
-    rawFormatted.push({
-      id: tx.id,
-      title: campTitle,
-      campaign_title: campaignSubtitle,
-      reference: ref,
-      amount: isWithdrawal ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),
-      views_count: viewsSettled,
-      views_scraped: viewsSettled,
-      views_delta: viewsSettled,
-      cpm_rate: cpmRate,
-      type: isWithdrawal ? 'debit' : 'credit',
-      transaction_type: tx.type,
-      is_withdrawal: isWithdrawal,
-      bank_name: isWithdrawal ? bName : null,
-      account_number: isWithdrawal ? accNum : null,
-      account_name: isWithdrawal ? accName : null,
-      status: isClearing ? 'clearing' : (tx.status || 'completed'),
-      created_at: tx.created_at,
-      settled_at: tx.created_at,
-      clearance_at: clearanceTime,
-      is_clearing: isClearing,
-      settlement_method: isWithdrawal ? `Direct Bank Settlement (${bName})` : (isClearing ? '24h EOD Verification Escrow' : 'Settled to Available Balance'),
-    });
+    const netAmt = Math.abs(Number(tx.net_amount || tx.amount || 0));
+    let grossAmt = Number(tx.gross_amount || 0);
+    let feeAmt = Number(tx.fee_amount || 0);
+
+    if (grossAmt <= 0) {
+      if (views > 0 && cpmRate > 0) {
+        grossAmt = Math.round((views / 1000.0) * cpmRate);
+        feeAmt = Math.round(grossAmt * 0.10);
+      } else {
+        grossAmt = Math.round(netAmt / 0.9);
+        feeAmt = grossAmt - netAmt;
+      }
+    }
+
+    const existing = campaignTxMap.get(campId);
+    if (!existing) {
+      campaignTxMap.set(campId, {
+        id: tx.id,
+        campaign_id: campId,
+        title: tx.campaigns?.title || 'Campaign Settlement',
+        campaign_title: 'Campaign Concluded & Settled',
+        reference: tx.paystack_reference || `KP-CMP-${campId.slice(0, 4).toUpperCase()}`,
+        amount: netAmt,
+        gross_amount: grossAmt,
+        fee_amount: feeAmt,
+        net_amount: netAmt,
+        views_count: views,
+        views_scraped: views,
+        views_delta: views,
+        cpm_rate: cpmRate,
+        type: 'credit',
+        transaction_type: 'campaign_payout',
+        is_withdrawal: false,
+        status: 'completed',
+        created_at: tx.created_at,
+        settled_at: tx.created_at,
+        is_clearing: false,
+        settlement_method: 'Settled to Available Balance',
+      });
+    } else {
+      // Consolidate legacy micro-batches into the single campaign entry
+      existing.amount += netAmt;
+      existing.net_amount += netAmt;
+      existing.gross_amount = Math.max(existing.gross_amount, grossAmt);
+      existing.fee_amount = Math.round(existing.gross_amount * 0.10);
+      existing.views_count = Math.max(existing.views_count, views);
+      existing.created_at = new Date(Math.max(new Date(existing.created_at).getTime(), new Date(tx.created_at).getTime())).toISOString();
+    }
   });
+
+  // Push consolidated campaign entries
+  for (const campTx of campaignTxMap.values()) {
+    rawFormatted.push(campTx);
+  }
 
   // B. Format payout_requests (Bank withdrawals)
   payoutRequests.forEach((p: any) => {
@@ -732,6 +751,9 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       campaign_title: 'Bank Transfer',
       reference: ref,
       amount: -Math.abs(Number(p.amount || 0)),
+      gross_amount: Math.abs(Number(p.amount || 0)),
+      fee_amount: 0,
+      net_amount: Math.abs(Number(p.amount || 0)),
       type: 'debit',
       transaction_type: 'withdrawal',
       is_withdrawal: true,
@@ -745,13 +767,13 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
     });
   });
 
-  // Deduplicate transactions by reference
+  // Deduplicate transactions by reference or campaign_id
   const seenRefs = new Set<string>();
   const formattedTransactions: any[] = [];
   rawFormatted
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .forEach((item) => {
-      const refKey = (item.reference || item.id || '').toUpperCase();
+      const refKey = item.campaign_id ? `CAMP-${item.campaign_id}` : (item.reference || item.id || '').toUpperCase();
       if (!seenRefs.has(refKey)) {
         seenRefs.add(refKey);
         formattedTransactions.push(item);
