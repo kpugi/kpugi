@@ -61,6 +61,9 @@ export default clerkMiddleware(async (auth, req) => {
 
   const response = NextResponse.next();
   response.headers.set('ngrok-skip-browser-warning', 'true');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   // Enforce non-indexable status for all authenticated dashboard & management routes
   if (isProtectedRoute(req)) {

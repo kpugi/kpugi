@@ -53,3 +53,11 @@ scratch/
 .scraper/cache/
 __pycache__/
 *.py[cod]
+
+# Strix penetration testing artifacts
+strix_runs/
+.strix/
+
+# Local agent artifacts
+.agents/
+skills-lock.json

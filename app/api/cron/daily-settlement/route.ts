@@ -2,20 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { settleAllCompletedCampaigns } from '@/lib/supabase/settlement';
 import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
+import { verifyCronRequest } from '@/lib/auth/cron-guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-      const { searchParams } = new URL(request.url);
-      const key = searchParams.get('key');
-      if (!cronSecret || key !== cronSecret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    const authResult = verifyCronRequest(request);
+    if (!authResult.authorized) {
+      return authResult.response!;
     }
 
     const supabase = createAdminClient();

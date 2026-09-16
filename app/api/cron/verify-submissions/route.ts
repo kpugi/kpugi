@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { triggerScraperRun } from '@/lib/scraper/trigger';
 import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
+import { verifyCronRequest } from '@/lib/auth/cron-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +13,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      const url = new URL(request.url);
-      const queryKey = url.searchParams.get('key');
-      if (queryKey !== cronSecret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    const authResult = verifyCronRequest(request);
+    if (!authResult.authorized) {
+      return authResult.response!;
     }
 
     const result = await triggerScraperRun();

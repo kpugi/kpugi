@@ -47,38 +47,31 @@ export async function createCampaignAction(formData: FormData) {
 
   const supabase = createAdminClient();
 
-  // 1. Verify Advertiser Wallet Balance
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('id, balance')
-    .eq('profile_id', userProfile.profile.id)
-    .eq('wallet_type', 'advertiser_funding')
-    .maybeSingle();
+  // 1. Generate Unique Campaign Code & Escrow Reference
+  const code = `KPG-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+  const escrowRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  const currentBalance = Number(wallet?.balance || 0);
-  if (currentBalance < totalBudget) {
+  // 2. Atomic Wallet Deduction for Escrow Commitment
+  const { data: deductResult, error: deductError } = await supabase.rpc(
+    'atomic_deduct_advertiser_budget',
+    {
+      p_profile_id: userProfile.profile.id,
+      p_amount: totalBudget,
+      p_reference: escrowRef,
+    }
+  );
+
+  if (deductError || !deductResult?.success) {
+    const errorMsg = deductResult?.error || deductError?.message || 'Failed to lock campaign budget from wallet balance.';
     return {
       success: false,
-      error: `Bag ain't deep enough yet 💼... You got ₦${currentBalance.toLocaleString()} available but this campaign requires ₦${totalBudget.toLocaleString()}. Top up real quick!`,
+      error: errorMsg.includes('Insufficient available balance')
+        ? `Bag ain't deep enough yet 💼... Top up your wallet to cover ₦${totalBudget.toLocaleString()}!`
+        : errorMsg,
     };
   }
 
-  // 2. Atomic Wallet Deduction for Escrow Commitment
-  const newBalance = currentBalance - totalBudget;
-  const { error: walletError } = await supabase
-    .from('wallets')
-    .update({ balance: newBalance })
-    .eq('id', wallet!.id)
-    .gte('balance', totalBudget);
-
-  if (walletError) {
-    return { success: false, error: 'Failed to lock campaign budget from wallet balance. Please try again.' };
-  }
-
-  // 3. Generate Unique Campaign Code
-  const code = `KPG-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-
-  // 4. Insert Campaign Record
+  // 3. Insert Campaign Record
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
     .insert({
@@ -103,30 +96,22 @@ export async function createCampaignAction(formData: FormData) {
     .single();
 
   if (campaignError || !campaign) {
-    // Refund wallet if campaign creation fails
-    await supabase
-      .from('wallets')
-      .update({ balance: currentBalance })
-      .eq('id', wallet!.id);
+    // Atomically refund wallet if campaign insertion fails
+    await supabase.rpc('atomic_refund_campaign_budget', {
+      p_profile_id: userProfile.profile.id,
+      p_campaign_id: null,
+      p_refund_amount: totalBudget,
+      p_reference: `REFUND-${escrowRef}`,
+    });
 
     return { success: false, error: 'Failed to launch campaign. Budget has been restored to your wallet.' };
   }
 
-  // 5. Record Wallet Escrow Allocation Transaction
-  const escrowRef = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  const { error: txError } = await supabase.from('wallet_transactions').insert({
-    wallet_id: wallet!.id,
-    type: 'campaign_funding',
-    amount: totalBudget,
-    campaign_id: campaign.id,
-    status: 'completed',
-    paystack_reference: escrowRef,
-    created_at: new Date().toISOString(),
-  });
-
-  if (txError) {
-    console.error('[createCampaignAction] wallet_transactions insert failed:', txError);
-  }
+  // 4. Link atomic budget reservation transaction to the created campaign
+  await supabase
+    .from('wallet_transactions')
+    .update({ campaign_id: campaign.id })
+    .eq('paystack_reference', escrowRef);
 
   // 6. Write payment_receipts row for full lookup
   await supabase.from('payment_receipts').insert({
@@ -207,30 +192,13 @@ export async function updateCampaignStatusAction(formData: FormData) {
     const unspentBudget = Math.max(0, Number(campaign.total_budget) - liveSpentBudget);
 
     if (unspentBudget > 0) {
-      const { data: wallet } = await supabase
-        .from('wallets')
-        .select('id, balance')
-        .eq('profile_id', userProfile.profile.id)
-        .eq('wallet_type', 'advertiser_funding')
-        .single();
-
-      if (wallet) {
-        await supabase
-          .from('wallets')
-          .update({ balance: Number(wallet.balance) + unspentBudget })
-          .eq('id', wallet.id);
-
-        const refundRef = `KPG-PAY-RFD-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-        await supabase.from('wallet_transactions').insert({
-          wallet_id: wallet.id,
-          type: 'budget_release_refund',
-          amount: unspentBudget,
-          campaign_id: campaign.id,
-          status: 'completed',
-          paystack_reference: refundRef,
-          created_at: new Date().toISOString(),
-        });
-      }
+      const refundRef = `KPG-PAY-RFD-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      await supabase.rpc('atomic_refund_campaign_budget', {
+        p_profile_id: userProfile.profile.id,
+        p_campaign_id: campaign.id,
+        p_refund_amount: unspentBudget,
+        p_reference: refundRef,
+      });
     }
   }
 
@@ -445,46 +413,29 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
       };
     }
 
-    // 5. Success Path: Update wallet balance atomically
-    const newBalance = Number(wallet.balance) + amountNGN;
-    await supabase
-      .from('wallets')
-      .update({ balance: newBalance })
-      .eq('id', wallet.id);
-
-    // 6. Record verified transaction as 'completed'
-    await supabase.from('wallet_transactions').insert({
-      wallet_id: wallet.id,
-      type: 'deposit',
-      amount: amountNGN,
-      paystack_reference: reference,
-      status: 'completed',
-      created_at: new Date().toISOString(),
-    });
-
-    // 6b. Write payment_receipts row so deposit can be looked up by KPG-PAY-* ID
+    // 5. Success Path: Deposit funds atomically with idempotency lock
     const depositReceiptNum = reference.startsWith('KPG-PAY-')
       ? reference
       : `KPG-PAY-${reference.slice(-5).toUpperCase()}`;
-    await supabase.from('payment_receipts').insert({
-      receipt_number: depositReceiptNum,
-      advertiser_id: profileId,
-      total_amount: amountNGN,
-      escrow_budget: amountNGN,
-      featured_fee: 0,
-      is_featured: false,
-      payment_method: 'paystack',
-      paystack_reference: reference,
-      transaction_type: 'wallet_deposit',
-      advertiser_email: userProfile.profile.email || paystackData?.customer?.email || null,
-      notes: `Paystack wallet top-up verified at ${new Date().toISOString()}`,
-      status: 'paid',
-    }).then(({ error: rErr }) => {
-      // Silently skip duplicate (deposit already recorded on retry)
-      if (rErr && !rErr.message.includes('duplicate')) {
-        console.error('[verifyPaystackDepositAction] payment_receipts insert failed:', rErr);
+
+    const { data: depositResult, error: depositErr } = await supabase.rpc(
+      'atomic_deposit_advertiser_wallet',
+      {
+        p_profile_id: profileId,
+        p_amount: amountNGN,
+        p_reference: reference,
+        p_receipt_number: depositReceiptNum,
+        p_advertiser_email: userProfile.profile.email || paystackData?.customer?.email || null,
+        p_notes: `Paystack wallet top-up verified at ${new Date().toISOString()}`,
       }
-    });
+    );
+
+    if (depositErr || !depositResult?.success) {
+      console.error('[verifyPaystackDepositAction] atomic deposit error:', depositErr || depositResult?.error);
+      return { success: false, error: 'Failed to credit wallet balance.' };
+    }
+
+    const newBalance = Number(depositResult.new_balance);
 
     // 7. Trigger Notifications (Knock In-App + Resend Email)
     const recipientEmail = userProfile.profile.email || paystackData?.customer?.email;

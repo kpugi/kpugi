@@ -61,23 +61,32 @@ export async function POST(req: Request) {
           .maybeSingle();
 
         if (profile) {
-          // Fetch wallet balance
-          const { data: wallet } = await supabase
-            .from('wallets')
-            .select('balance')
-            .eq('profile_id', profile.id)
-            .maybeSingle();
+          // Idempotently credit wallet via atomic RPC
+          const { data: depositResult, error: depositErr } = await supabase.rpc(
+            'atomic_deposit_advertiser_wallet',
+            {
+              p_profile_id: profile.id,
+              p_amount: amountInNaira,
+              p_reference: reference,
+              p_receipt_number: `KPG-PAY-${reference.slice(-5).toUpperCase()}`,
+              p_advertiser_email: profile.email,
+              p_notes: 'Paystack webhook charge.success deposit confirmed',
+            }
+          );
 
-          const newBalance = (Number(wallet?.balance) || 0) + amountInNaira;
-
-          await notifyAdvertiserWalletFunded({
-            clerkId: profile.clerk_id,
-            email: profile.email,
-            amount: amountInNaira,
-            reference,
-            newBalance,
-            profileId: profile.id,
-          });
+          if (depositErr) {
+            console.error('[Paystack Webhook] Error depositing to wallet:', depositErr);
+          } else if (!depositResult?.already_processed) {
+            // Only fire notification if this wasn't already credited by the frontend verification action
+            await notifyAdvertiserWalletFunded({
+              clerkId: profile.clerk_id,
+              email: profile.email,
+              amount: amountInNaira,
+              reference,
+              newBalance: Number(depositResult?.new_balance || 0),
+              profileId: profile.id,
+            });
+          }
         }
       }
     }

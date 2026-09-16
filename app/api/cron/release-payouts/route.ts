@@ -3,20 +3,15 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { notifyCreatorVerificationPassed } from '@/lib/notifications/creator';
 import { notifyAdvertiserSubmissionVerified } from '@/lib/notifications/advertiser';
 import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
+import { verifyCronRequest } from '@/lib/auth/cron-guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-      const url = new URL(request.url);
-      const queryKey = url.searchParams.get('key');
-      if (!cronSecret || queryKey !== cronSecret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    const authResult = verifyCronRequest(request);
+    if (!authResult.authorized) {
+      return authResult.response!;
     }
 
     const supabase = createAdminClient();
@@ -86,93 +81,39 @@ export async function GET(request: Request) {
       const reservedAmt = Number(sub.reserved_amount || 0);
       const newReservedBudget = Math.max(0, Number(campaign?.reserved_budget || 0) - reservedAmt);
 
-      // 1. Credit or initialize creator wallet balance
-      const { data: creatorWallet } = await supabase
-        .from('wallets')
-        .select('id, balance')
-        .eq('profile_id', sub.creator_id)
-        .eq('wallet_type', 'creator_earnings')
-        .maybeSingle();
-
-      if (creatorWallet) {
-        await supabase
-          .from('wallets')
-          .update({ balance: Number(creatorWallet.balance || 0) + pendingPayout })
-          .eq('id', creatorWallet.id);
-
-        await supabase.from('wallet_transactions').insert({
-          wallet_id: creatorWallet.id,
-          type: 'payout',
-          amount: pendingPayout,
-          campaign_id: sub.campaign_id,
-          submission_id: sub.id,
-          paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
-          status: 'completed',
-          created_at: now,
-        });
-      } else {
-        const { data: newWallet } = await supabase
-          .from('wallets')
-          .insert({
-            profile_id: sub.creator_id,
-            wallet_type: 'creator_earnings',
-            balance: pendingPayout,
-          })
-          .select('id')
-          .single();
-
-        if (newWallet) {
-          await supabase.from('wallet_transactions').insert({
-            wallet_id: newWallet.id,
-            type: 'payout',
-            amount: pendingPayout,
-            campaign_id: sub.campaign_id,
-            submission_id: sub.id,
-            paystack_reference: `KP-AUTO-${Date.now().toString().slice(-6)}`,
-            status: 'completed',
-            created_at: now,
-          });
+      // 1. Atomically release submission payout and credit creator wallet
+      const payoutRef = `KP-AUTO-${Date.now().toString().slice(-6)}`;
+      const { data: payoutResult, error: payoutErr } = await supabase.rpc(
+        'atomic_release_submission_payout',
+        {
+          p_submission_id: sub.id,
+          p_reference: payoutRef,
         }
+      );
+
+      if (payoutErr || !payoutResult?.success) {
+        console.error('[release-payouts cron] Atomic payout error for sub:', sub.id, payoutErr || payoutResult?.error);
+        continue;
       }
 
-      // 2. Update creator total_earned
-      const { data: creatorProf } = await supabase
-        .from('creator_profiles')
-        .select('total_earned')
-        .eq('profile_id', sub.creator_id)
-        .maybeSingle();
-
-      if (creatorProf) {
-        await supabase
-          .from('creator_profiles')
-          .update({ total_earned: Number(creatorProf.total_earned || 0) + pendingPayout })
-          .eq('profile_id', sub.creator_id);
-      }
-
-      // 3. Update campaign spent_budget and reserved_budget
+      // 2. Atomically update campaign spent and reserved budget
       if (campaign) {
-        await supabase
-          .from('campaigns')
-          .update({
-            spent_budget: Number(campaign.spent_budget || 0) + pendingPayout,
-            reserved_budget: newReservedBudget,
-            updated_at: now,
-          })
-          .eq('id', campaign.id);
+        await supabase.rpc('atomic_update_campaign_budget', {
+          p_campaign_id: campaign.id,
+          p_spent_increment: pendingPayout,
+          p_reserved_decrement: reservedAmt,
+        });
       }
 
-      // 4. Update submission record state to settled
+      // 3. Update remaining submission metadata
       await supabase
         .from('submissions')
         .update({
           status: newTotalPayout >= maxCreatorCap ? 'completed' : 'verified_pass',
-          payout_amount: newTotalPayout,
           last_paid_view_count: viewCount,
           max_verified_views: Math.max(viewCount, Number(sub.max_verified_views || 0)),
-          pending_payout_amount: 0,
           auto_approve_at: null,
           paid_at: now,
-          verified_at: now,
         })
         .eq('id', sub.id);
 
