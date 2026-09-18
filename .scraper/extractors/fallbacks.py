@@ -353,16 +353,19 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
     if html:
         title_match = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\'](.*?)["\']', html, re.I)
         desc_match = re.search(r'<meta\s+property=["\']og:description["\']\s+content=["\'](.*?)["\']', html, re.I)
+        page_title_match = re.search(r'<title>(.*?)</title>', html, re.I)
         
-        title = title_match.group(1) if title_match else None
-        desc = desc_match.group(1) if desc_match else None
+        title = title_match.group(1).strip() if title_match else None
+        desc = desc_match.group(1).strip() if desc_match else None
+        page_title = page_title_match.group(1).strip() if page_title_match else ""
 
         # Check for account suspension, post deletion, or tombstone patterns
-        combined_text = f"{title or ''} {desc or ''}".lower()
+        combined_text = f"{page_title} {title or ''} {desc or ''}".lower()
         SUSPENSION_PATTERNS = [
             'suspended account',
             'account has been suspended',
             'account suspended',
+            'account has been disabled',
             'tweet is unavailable',
             'post is unavailable',
             'page not found',
@@ -373,6 +376,7 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
             'user not found',
             'something went wrong',
             "sorry, this page isn't available",
+            "the link you followed may be broken",
         ]
         for pattern in SUSPENSION_PATTERNS:
             if pattern in combined_text:
@@ -380,8 +384,17 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
                     reachable=False,
                     platform=platform,
                     extractor="opengraph_fallback",
-                    error_message=f"Post or account is unavailable/suspended: {desc or title or pattern}"
+                    error_message=f"Post or account is unavailable/suspended: {desc or title or page_title or pattern}"
                 )
+
+        # For Instagram: if page title is generic "Instagram" without specific post/user OG tags:
+        if platform == "instagram" and (not title and not desc):
+            return ScrapeResult(
+                reachable=False,
+                platform=platform,
+                extractor="opengraph_fallback",
+                error_message="Instagram post or account is unavailable, removed, or suspended."
+            )
 
         view_count = None
         if desc:
@@ -397,10 +410,19 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
                 elif raw_val.isdigit():
                     view_count = int(raw_val)
 
+        # If OpenGraph returned absolutely no title, no description, and no view count, it's unreachable
+        if not title and not desc and view_count is None:
+            return ScrapeResult(
+                reachable=False,
+                platform=platform,
+                extractor="opengraph_fallback",
+                error_message="Could not resolve post metadata or media tags. Post or account may be unavailable or suspended."
+            )
+
         return ScrapeResult(
             reachable=True,
             view_count=view_count,
-            title=title,
+            title=title or (page_title if page_title != "Instagram" else None),
             description=desc,
             platform=platform,
             extractor="opengraph_fallback",

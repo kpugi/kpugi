@@ -61,25 +61,41 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
         notes=f"Extractor: {result.extractor} | Platform: {result.platform} | Error: {result.error_message or 'None'}"
     )
 
-    # 3. Handle unreachable / deleted posts
-    if not result.reachable:
-        logger.warning(f"Submission {sub_id[:8]} post is unreachable: {result.error_message}")
+    # 3. Handle unreachable / deleted / suspended posts
+    is_completely_empty = (
+        result.reachable and
+        result.view_count is None and
+        result.like_count is None and
+        result.comment_count is None and
+        not result.uploader and
+        not result.title and
+        not result.description
+    )
+
+    if not result.reachable or is_completely_empty:
+        error_msg = result.error_message or (
+            "Post or account is unavailable, removed, or suspended."
+            if is_completely_empty else
+            "Post is private, unreachable, or deleted within the 72-hour audit window."
+        )
+        logger.warning(f"Submission {sub_id[:8]} post is unreachable: {error_msg}")
         prev_pending = float(sub.get('pending_payout_amount') or 0.0)
         updates = {
             "last_scraped_at": now_iso,
             "pending_payout_amount": 0,
             "auto_approve_at": None,
             "status": "verified_fail",
-            "failure_reason": result.error_message or "Post is private, unreachable, or deleted within the 72-hour audit window.",
+            "failure_reason": error_msg,
         }
         db.update_submission(sub_id, updates)
 
-        # Reverse campaign spent/reserved budget if payout was pending
-        if prev_pending > 0 and campaign.get('id'):
+        # Reverse campaign spent/reserved budget if payout was pending or previously tracked
+        prev_spend = max(prev_pending, float(sub.get('payout_amount') or 0.0))
+        if prev_spend > 0 and campaign.get('id'):
             db.update_campaign_budget(
                 campaign_id=campaign['id'],
-                spent_increment=-prev_pending,
-                reserved_decrement=-prev_pending
+                spent_increment=-prev_spend,
+                reserved_decrement=-prev_spend
             )
 
         return {

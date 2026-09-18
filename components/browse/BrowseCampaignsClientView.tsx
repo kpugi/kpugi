@@ -304,7 +304,11 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
   const bgClass = gradients[index % gradients.length];
 
   return (
-    <article className="group relative flex flex-col bg-white dark:bg-[#12141A] rounded-2xl overflow-hidden hover:bg-slate-50 dark:hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border border-kpugi-border dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 cursor-pointer shadow-xs">
+    <article className={`group relative flex flex-col bg-white dark:bg-[#12141A] rounded-2xl overflow-hidden hover:bg-slate-50 dark:hover:bg-[#161820] transition-all duration-300 hover:scale-[1.01] border ${
+      c.is_featured 
+        ? 'border-amber-500/30 hover:border-amber-500/60 dark:border-amber-500/25 dark:hover:border-amber-500/50 shadow-xs' 
+        : 'border-kpugi-border dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 shadow-xs'
+    } cursor-pointer`}>
       {/* Thumbnail Area */}
       <div className="h-[180px] w-full relative overflow-hidden bg-slate-900">
         {/* Ranking Badges Overlay or Completed Badge */}
@@ -315,46 +319,50 @@ function CampaignCard({ c, index, userRole = 'public' }: { c: Campaign, index: n
             </span>
           </div>
         ) : (
-          c.rankBadges && c.rankBadges.length > 0 && (
-            <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
-              {c.rankBadges.map((tier) => {
-                if (tier === 'trending') {
-                  return (
-                    <div
-                      key="trending"
-                      className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-emerald-950/85 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20 cursor-help"
-                      title="📈 Trending: High velocity in the past 24 hours"
-                    >
-                      <span>📈</span>
-                    </div>
-                  );
-                }
-                if (tier === 'hot') {
-                  return (
-                    <div
-                      key="hot"
-                      className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-amber-950/85 border-amber-500/50 text-amber-300 shadow-amber-500/20 cursor-help"
-                      title="🔥 Hot: High activity in the last 7 days"
-                    >
-                      <span>🔥</span>
-                    </div>
-                  );
-                }
-                if (tier === 'popular') {
-                  return (
-                    <div
-                      key="popular"
-                      className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-purple-950/85 border-purple-500/50 text-purple-300 shadow-purple-500/20 cursor-help"
-                      title="👑 Popular: High verified reach in the last 30 days"
-                    >
-                      <span>👑</span>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          )
+          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 flex-wrap max-w-[80%]">
+            {c.is_featured && (
+              <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-[10px] tracking-wide flex items-center gap-1 shadow-md shadow-amber-500/20 border border-amber-300/40 backdrop-blur-md shrink-0">
+                <span>⭐</span>
+                <span>Featured</span>
+              </span>
+            )}
+            {c.rankBadges && c.rankBadges.length > 0 && c.rankBadges.map((tier) => {
+              if (tier === 'trending') {
+                return (
+                  <div
+                    key="trending"
+                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-emerald-950/85 border-emerald-500/50 text-emerald-300 shadow-emerald-500/20 cursor-help"
+                    title="📈 Trending: High velocity in the past 24 hours"
+                  >
+                    <span>📈</span>
+                  </div>
+                );
+              }
+              if (tier === 'hot') {
+                return (
+                  <div
+                    key="hot"
+                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-amber-950/85 border-amber-500/50 text-amber-300 shadow-amber-500/20 cursor-help"
+                    title="🔥 Hot: High activity in the last 7 days"
+                  >
+                    <span>🔥</span>
+                  </div>
+                );
+              }
+              if (tier === 'popular') {
+                return (
+                  <div
+                    key="popular"
+                    className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shadow-md border backdrop-blur-md bg-purple-950/85 border-purple-500/50 text-purple-300 shadow-purple-500/20 cursor-help"
+                    title="👑 Popular: High verified reach in the last 30 days"
+                  >
+                    <span>👑</span>
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
         )}
 
         {/* AI Match Score Badge Overlay (Only for creators & guests, hidden for advertisers) */}
@@ -777,9 +785,17 @@ export default function BrowseCampaignsClientView() {
 
   const featuredItems = useMemo(() => {
     const list = mappedCampaigns.filter((c) => c.is_featured);
-    const targets = list.length > 0 ? list : mappedCampaigns.slice(0, 3);
+    // Prioritize highest budget & CPM for the top 5 hero slots
+    const sortedFeatured = [...list].sort((a, b) => {
+      if ((b.budgetTotal || 0) !== (a.budgetTotal || 0)) {
+        return (b.budgetTotal || 0) - (a.budgetTotal || 0);
+      }
+      return (b.cpm || 0) - (a.cpm || 0);
+    });
+    const targets = sortedFeatured.length > 0 ? sortedFeatured : mappedCampaigns.slice(0, 3);
 
-    return targets.map((c) => ({
+    // Limit hero slider to strictly 5 items max
+    return targets.slice(0, 5).map((c) => ({
       id: c.id,
       brand: c.brand,
       title: c.brief,
@@ -1293,11 +1309,11 @@ export default function BrowseCampaignsClientView() {
           )}
         </div>
 
-        {/* Featured Section Title & Result Count + Grid/List Switcher */}
+        {/* Floor Section Title & Result Count + Grid/List Switcher */}
         <div className="flex items-center justify-between mb-6 gap-3">
           <div className="flex items-baseline gap-2 min-w-0">
             <h2 className="font-display font-bold text-kpugi-ink dark:text-white text-lg sm:text-xl tracking-tight truncate">
-              {searchQuery || activeFiltersCount > 0 ? 'Filtered Campaigns' : 'Featured Campaigns'}
+              {searchQuery || activeFiltersCount > 0 ? 'Filtered Campaigns' : 'Explore Campaigns'}
             </h2>
             <span className="text-xs text-kpugi-slate dark:text-white/50 font-medium shrink-0">
               ({filtered.length})
@@ -1437,21 +1453,29 @@ export default function BrowseCampaignsClientView() {
                                       🏁 Completed
                                     </span>
                                   ) : (
-                                    c.rankBadges?.map((tier) => (
-                                      <span
-                                        key={tier}
-                                        title={tier === 'trending' ? '📈 Trending (24h)' : tier === 'hot' ? '🔥 Hot (7d)' : '👑 Popular (30d)'}
-                                        className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] border cursor-help ${
-                                          tier === 'trending'
-                                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                            : tier === 'hot'
-                                            ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                                            : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
-                                        }`}
-                                      >
-                                        {tier === 'trending' ? '📈' : tier === 'hot' ? '🔥' : '👑'}
-                                      </span>
-                                    ))
+                                    <>
+                                      {c.is_featured && (
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30 text-[9px] font-extrabold flex items-center gap-1 shrink-0">
+                                          <span>⭐</span>
+                                          <span>Featured</span>
+                                        </span>
+                                      )}
+                                      {c.rankBadges?.map((tier) => (
+                                        <span
+                                          key={tier}
+                                          title={tier === 'trending' ? '📈 Trending (24h)' : tier === 'hot' ? '🔥 Hot (7d)' : '👑 Popular (30d)'}
+                                          className={`w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] border cursor-help ${
+                                            tier === 'trending'
+                                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                              : tier === 'hot'
+                                              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                              : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                          }`}
+                                        >
+                                          {tier === 'trending' ? '📈' : tier === 'hot' ? '🔥' : '👑'}
+                                        </span>
+                                      ))}
+                                    </>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1 text-[11px] text-kpugi-slate dark:text-white/40">

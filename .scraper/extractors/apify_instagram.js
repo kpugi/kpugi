@@ -79,11 +79,34 @@ async function scrapeInstagramWithApify(targetUrl) {
       // Successfully ran with this token, advance round-robin pointer for next call
       currentTokenIndex = (tokenIndex + 1) % tokens.length;
 
-    const item = items[0];
-    const views = item.videoPlayCount ?? item.videoViewCount ?? null;
-    const likes = typeof item.likesCount === 'number' ? item.likesCount : null;
-    const comments = typeof item.commentsCount === 'number' ? item.commentsCount : null;
-    const shares = likes ? Math.max(1, Math.round(likes * 0.04)) : null;
+      const item = items[0];
+
+      // Check if item contains actual post data (not empty or error object from suspended/deleted account)
+      const hasPostData = Boolean(
+        item && (
+          item.ownerUsername ||
+          item.shortCode ||
+          item.videoUrl ||
+          item.displayUrl ||
+          typeof item.videoPlayCount === 'number' ||
+          typeof item.videoViewCount === 'number' ||
+          typeof item.likesCount === 'number'
+        )
+      );
+
+      if (!hasPostData || item.error) {
+        return {
+          reachable: false,
+          platform: 'instagram',
+          extractor: 'apify_instagram',
+          error: item.error || 'Post not found, private, or account suspended',
+        };
+      }
+
+      const views = item.videoPlayCount ?? item.videoViewCount ?? null;
+      const likes = typeof item.likesCount === 'number' ? item.likesCount : null;
+      const comments = typeof item.commentsCount === 'number' ? item.commentsCount : null;
+      const shares = likes ? Math.max(1, Math.round(likes * 0.04)) : null;
 
       return {
         reachable: true,

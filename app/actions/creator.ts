@@ -157,26 +157,36 @@ export async function submitCampaignVideoAction(formData: FormData) {
     };
   }
 
-  // Find creator's connected social account for this platform
+  // Find creator's connected social account for this platform (strictly verified)
   let { data: socialAcc } = await supabase
     .from('social_accounts')
-    .select('id, platform, handle')
+    .select('id, platform, handle, verification_status')
     .eq('creator_id', userProfile.profile.id)
     .eq('platform', platform)
+    .eq('verification_status', 'verified')
     .maybeSingle();
 
   if (!socialAcc && (platform === 'x' || platform === 'twitter')) {
     const altPlatform = platform === 'x' ? 'twitter' : 'x';
     const { data: altAcc } = await supabase
       .from('social_accounts')
-      .select('id, platform, handle')
+      .select('id, platform, handle, verification_status')
       .eq('creator_id', userProfile.profile.id)
       .eq('platform', altPlatform)
+      .eq('verification_status', 'verified')
       .maybeSingle();
     socialAcc = altAcc;
   }
 
-  const connectedHandle = socialAcc?.handle || userProfile.creatorProfile?.display_name || userProfile.profile.full_name;
+  if (!socialAcc) {
+    const platformDisplay = platform === 'x' ? 'X (Twitter)' : platform.charAt(0).toUpperCase() + platform.slice(1);
+    return {
+      success: false,
+      error: `You do not have a verified ${platformDisplay} account connected. Please verify your account in Settings > Accounts before submitting.`,
+    };
+  }
+
+  const connectedHandle = socialAcc.handle || userProfile.creatorProfile?.display_name || userProfile.profile.full_name;
   
   // Anti-Fraud Handle Ownership Verification
   const ownershipCheck = validatePostUrlOwnership(rawVideoUrl, connectedHandle, platform);
@@ -184,34 +194,7 @@ export async function submitCampaignVideoAction(formData: FormData) {
     return { success: false, error: ownershipCheck.error };
   }
 
-  let socialAccountId = socialAcc?.id;
-  if (!socialAccountId) {
-    const { data: anySocial } = await supabase
-      .from('social_accounts')
-      .select('id')
-      .eq('creator_id', userProfile.profile.id)
-      .limit(1)
-      .maybeSingle();
-    socialAccountId = anySocial?.id;
-  }
-
-  if (!socialAccountId) {
-    const handle = userProfile.creatorProfile?.display_name || userProfile.profile.full_name || 'creator';
-    const cleanHandle = handle.replace(/^@/, '');
-    const { data: newSocial } = await supabase
-      .from('social_accounts')
-      .insert({
-        creator_id: userProfile.profile.id,
-        platform,
-        handle: cleanHandle,
-        platform_user_id: cleanHandle,
-        verification_status: 'unverified',
-        connected_at: new Date().toISOString(),
-      })
-      .select('id')
-      .maybeSingle();
-    socialAccountId = newSocial?.id;
-  }
+  const socialAccountId = socialAcc.id;
 
   const { error } = await supabase.from('submissions').upsert(
     {

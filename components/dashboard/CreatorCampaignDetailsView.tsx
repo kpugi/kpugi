@@ -1612,7 +1612,7 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-kpugi-blue"
                       required
                     >
-                      <option value="" disabled>Select Connected Handle</option>
+                      <option value="" disabled>Select Verified Handle</option>
                       {socialAccounts.map((account) => (
                         <option key={account.id} value={account.id} className="bg-white dark:bg-[#0B1026] text-slate-900 dark:text-white">
                           @{account.handle} ({account.platform.toUpperCase()})
@@ -1620,8 +1620,11 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                       ))}
                     </select>
                   ) : (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-sans">
-                      No connected social accounts found. Go to <Link href="/settings" className="underline font-bold text-slate-900 dark:text-white">Accounts Settings</Link> to connect handles before joining.
+                    <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-sans space-y-1">
+                      <p className="font-semibold">No verified social accounts found.</p>
+                      <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                        You must connect and verify ownership of your account before you can join campaigns. Go to <Link href="/c/accounts" className="underline font-bold text-slate-900 dark:text-white">Accounts Settings</Link> to complete verification.
+                      </p>
                     </div>
                   )}
                 </div>

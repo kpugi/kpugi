@@ -61,16 +61,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Campaign is not currently active' }, { status: 400 });
       }
 
-      // 2. Fetch Creator Social Account and verify connection
+      // 2. Fetch Creator Social Account and verify connection & verification status
       const { data: socialAccount, error: accErr } = await supabase
         .from('social_accounts')
-        .select('id, platform, follower_count')
+        .select('id, platform, follower_count, verification_status, handle')
         .eq('id', socialAccountId)
         .eq('creator_id', userProfile.profile.id)
         .single();
 
       if (accErr || !socialAccount) {
         return NextResponse.json({ error: 'Social account not found or unauthorized' }, { status: 404 });
+      }
+
+      if (socialAccount.verification_status !== 'verified') {
+        return NextResponse.json({
+          error: `Your @${socialAccount.handle || 'social'} account is not yet verified. Please verify ownership in Accounts Settings before joining campaigns.`
+        }, { status: 403 });
       }
 
       // 3. Payout Reservation estimation
@@ -469,7 +475,7 @@ export async function POST(req: Request) {
       // Check if creator has a 'joined' status record for this campaign
       const { data: existingSub, error: findErr } = await supabase
         .from('submissions')
-        .select('id, status, campaign_id, social_account_id, campaign:campaigns(channels), social_account:social_accounts(platform, handle)')
+        .select('id, status, campaign_id, social_account_id, campaign:campaigns(channels), social_account:social_accounts(platform, handle, verification_status)')
         .eq('campaign_id', campaignId)
         .eq('creator_id', userProfile.profile.id)
         .maybeSingle();
@@ -482,9 +488,16 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Post link has already been submitted for this campaign.' }, { status: 400 });
       }
 
+      const connectedAccount = (existingSub as any)?.social_account;
+      if (!connectedAccount || connectedAccount.verification_status !== 'verified') {
+        return NextResponse.json({
+          error: `Your connected @${connectedAccount?.handle || 'account'} account is not yet verified. Please verify ownership before submitting post links.`,
+        }, { status: 403 });
+      }
+
       // Anti-Fraud Handle Ownership & URL Verification
-      const connectedHandle = (existingSub as any)?.social_account?.handle;
-      const connectedPlatform = (existingSub as any)?.social_account?.platform;
+      const connectedHandle = connectedAccount?.handle;
+      const connectedPlatform = connectedAccount?.platform;
 
       const ownershipCheck = validatePostUrlOwnership(cleanPostUrl, connectedHandle, connectedPlatform);
       if (!ownershipCheck.isValid) {

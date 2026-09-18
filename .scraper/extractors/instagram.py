@@ -88,22 +88,26 @@ def extract_instagram_post(url: str) -> ScrapeResult:
                             ap_data = json.loads(line)
                             if ap_data.get("reachable"):
                                 uploader = ap_data.get("uploader")
-                                return ScrapeResult(
-                                    reachable=True,
-                                    view_count=ap_data.get("view_count"),
-                                    like_count=ap_data.get("like_count"),
-                                    comment_count=ap_data.get("comment_count"),
-                                    share_count=ap_data.get("share_count"),
-                                    uploader=uploader,
-                                    uploader_id=uploader,
-                                    channel=uploader,
-                                    channel_url=f"https://www.instagram.com/{uploader}/" if uploader else None,
-                                    title=ap_data.get("caption") or (f"Instagram post by @{uploader}" if uploader else "Instagram Post"),
-                                    description=ap_data.get("caption"),
-                                    platform="instagram",
-                                    extractor="apify_instagram",
-                                    raw={"shortcode": shortcode, "data": ap_data}
-                                )
+                                view_count = ap_data.get("view_count")
+                                like_count = ap_data.get("like_count")
+                                # Require at least an uploader or valid metric
+                                if uploader or view_count is not None or like_count is not None or ap_data.get("shortcode"):
+                                    return ScrapeResult(
+                                        reachable=True,
+                                        view_count=view_count,
+                                        like_count=like_count,
+                                        comment_count=ap_data.get("comment_count"),
+                                        share_count=ap_data.get("share_count"),
+                                        uploader=uploader,
+                                        uploader_id=uploader,
+                                        channel=uploader,
+                                        channel_url=f"https://www.instagram.com/{uploader}/" if uploader else None,
+                                        title=ap_data.get("caption") or (f"Instagram post by @{uploader}" if uploader else "Instagram Post"),
+                                        description=ap_data.get("caption"),
+                                        platform="instagram",
+                                        extractor="apify_instagram",
+                                        raw={"shortcode": shortcode, "data": ap_data}
+                                    )
                         except json.JSONDecodeError:
                             continue
     except Exception as ap_err:
@@ -417,7 +421,8 @@ def extract_instagram_post(url: str) -> ScrapeResult:
     # ─────────────────────────────────────────────────────────────────────────────
     og_res = extract_opengraph_fallback(url, platform="instagram")
     if og_res and og_res.reachable:
-        return og_res
+        if og_res.title or og_res.description or og_res.view_count is not None:
+            return og_res
 
     # Return yt-dlp result if it had any partial data
     if ytdlp_res and ytdlp_res.reachable:
@@ -425,11 +430,17 @@ def extract_instagram_post(url: str) -> ScrapeResult:
             ytdlp_res.view_count = max(100, int(ytdlp_res.like_count * 20))
         if ytdlp_res.share_count is None and ytdlp_res.like_count:
             ytdlp_res.share_count = max(1, int(ytdlp_res.like_count * 0.04))
-        return ytdlp_res
+        if ytdlp_res.view_count is not None or ytdlp_res.uploader:
+            return ytdlp_res
 
+    err_msg = (
+        og_res.error_message
+        if (og_res and og_res.error_message)
+        else "Could not reach Instagram post. Ensure the account and post are public and not suspended."
+    )
     return ScrapeResult(
         reachable=False,
         platform="instagram",
         extractor="instagram_extractor",
-        error_message="Could not reach Instagram post. Ensure the account and post are public."
+        error_message=err_msg
     )

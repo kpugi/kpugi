@@ -457,6 +457,7 @@ export interface CampaignDetailsForCreator {
     id: string;
     platform: string;
     handle: string;
+    verification_status?: string;
   }[];
   allSubmissions: {
     id: string;
@@ -618,12 +619,13 @@ export async function getCampaignDetailsForCreator(
         .maybeSingle()
     : { data: null };
 
-  // 4. Fetch creator's social accounts (if logged in)
+  // 4. Fetch creator's verified social accounts (only verified accounts can join campaigns)
   const { data: socialAccounts } = creatorProfileId
     ? await supabase
         .from('social_accounts')
-        .select('id, platform, handle')
+        .select('id, platform, handle, verification_status')
         .eq('creator_id', creatorProfileId)
+        .eq('verification_status', 'verified')
     : { data: [] };
 
   // 5. Fetch all submissions & joined slots for this campaign

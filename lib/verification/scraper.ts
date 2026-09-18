@@ -230,15 +230,83 @@ export async function scrapeYouTubeProfile(handle: string): Promise<ScrapedProfi
     }
   }
 
-  // Public HTML parsing for YouTube channel page (@handle)
-  const html = await fetchHtml(`https://www.youtube.com/@${username}`);
-  const description = extractMeta(html, 'og:description') || '';
+  // Public HTML parsing with consent cookie and fallback to curl.exe
+  let html = '';
+  const channelUrl = `https://www.youtube.com/@${username}`;
+
+  // Method 1: fetch with Google consent bypass cookies
+  try {
+    html = await fetchHtml(channelUrl, 12_000, {
+      'Cookie': 'SOCS=CAAaBgiA_rHVBg; PREF=hl=en&gl=US',
+    });
+  } catch {
+    // Method 2: curl.exe fallback (bypasses Node IPv6 / TLS connection stalling)
+    try {
+      const cp = await import('child_process');
+      html = await new Promise<string>((resolve, reject) => {
+        cp.execFile(
+          'curl.exe',
+          [
+            '-s', '-L',
+            '-A', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            '-H', 'Cookie: SOCS=CAAaBgiA_rHVBg; PREF=hl=en&gl=US',
+            '--max-time', '20',
+            channelUrl,
+          ],
+          { maxBuffer: 10 * 1024 * 1024 },
+          (curlErr, stdout) => {
+            if (curlErr || !stdout) return reject(curlErr || new Error('curl returned empty response'));
+            resolve(stdout);
+          }
+        );
+      });
+    } catch {
+      throw new Error(`Could not fetch YouTube channel @${username}. Make sure the channel exists and is public.`);
+    }
+  }
+
+  // Extract description / bio across all YouTube HTML representations:
+  let description = extractMeta(html, 'og:description') || extractMeta(html, 'description') || '';
+
+  // Check channelProfileMicroformatDetails or ytInitialData description
+  if (!description || description.includes('Enjoy the videos and music you love')) {
+    const microMatch = html.match(/"channelProfileMicroformatDetails":[\s\S]*?"description":"([^"]+)"/);
+    if (microMatch) {
+      description = decodeHtmlEntities(microMatch[1].replace(/\\n/g, '\n'));
+    } else {
+      const genericDescMatch = html.match(/"description":\s*"([^"]+)"/);
+      if (genericDescMatch) {
+        description = decodeHtmlEntities(genericDescMatch[1].replace(/\\n/g, '\n'));
+      }
+    }
+  }
+
+  try {
+    const jsonMatch = html.match(/var ytInitialData = ({.*?});<\/script>/);
+    if (jsonMatch) {
+      const data = JSON.parse(jsonMatch[1]);
+      const jsonDesc = data.metadata?.channelMetadataRenderer?.description ||
+                       data.microformat?.microformatDataRenderer?.description;
+      if (jsonDesc) {
+        description = jsonDesc;
+      }
+    }
+  } catch {}
+
   const title = extractMeta(html, 'og:title') || '';
   let avatarUrl = extractMeta(html, 'og:image');
 
   let subscriberCount: number | null = null;
-  const match1 = html.match(/"subscriberCountText":[\s\S]*?"simpleText":"([^"]+)"/);
-  if (match1) subscriberCount = parseFollowerCount(match1[1]);
+  // Check interactionStatistic userInteractionCount (most accurate)
+  const interactionMatch = html.match(/"userInteractionCount":\s*"(\d+)"/);
+  if (interactionMatch) {
+    subscriberCount = parseInt(interactionMatch[1], 10);
+  }
+
+  if (subscriberCount === null) {
+    const match1 = html.match(/"subscriberCountText":[\s\S]*?"simpleText":"([^"]+)"/);
+    if (match1) subscriberCount = parseFollowerCount(match1[1]);
+  }
 
   if (subscriberCount === null) {
     const match2 = html.match(/"subscriberCountText":[\s\S]*?"label":"([^"]+)"/);
