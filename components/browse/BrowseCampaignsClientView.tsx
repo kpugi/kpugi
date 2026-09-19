@@ -33,6 +33,7 @@ interface Campaign {
   tone: string;         
   timePosted: string;
   is_featured: boolean;
+  is_hero_pinned?: boolean;
   matchScore?: number;
   rankBadges: RankTier[];
   status?: string;
@@ -768,6 +769,7 @@ export default function BrowseCampaignsClientView() {
           return `${Math.floor(diff / 86400)}d`;
         })(),
         is_featured: !!c.is_featured,
+        is_hero_pinned: !!c.is_hero_pinned,
         matchScore: c.match_score ?? 75,
         status: c.status || 'live',
         rankBadges: (c.rank_badges || []) as RankTier[],
@@ -784,15 +786,21 @@ export default function BrowseCampaignsClientView() {
   }, [dbCampaigns]);
 
   const featuredItems = useMemo(() => {
-    const list = mappedCampaigns.filter((c) => c.is_featured);
-    // Prioritize highest budget & CPM for the top 5 hero slots
-    const sortedFeatured = [...list].sort((a, b) => {
-      if ((b.budgetTotal || 0) !== (a.budgetTotal || 0)) {
-        return (b.budgetTotal || 0) - (a.budgetTotal || 0);
-      }
-      return (b.cpm || 0) - (a.cpm || 0);
-    });
-    const targets = sortedFeatured.length > 0 ? sortedFeatured : mappedCampaigns.slice(0, 3);
+    // 1. Explicitly admin-pinned campaigns take top priority
+    const pinned = mappedCampaigns.filter((c) => c.is_hero_pinned);
+
+    // 2. Featured floor campaigns fill remaining slots sorted by budget & CPM
+    const nonPinnedFeatured = mappedCampaigns
+      .filter((c) => c.is_featured && !c.is_hero_pinned)
+      .sort((a, b) => {
+        if ((b.budgetTotal || 0) !== (a.budgetTotal || 0)) {
+          return (b.budgetTotal || 0) - (a.budgetTotal || 0);
+        }
+        return (b.cpm || 0) - (a.cpm || 0);
+      });
+
+    const candidates = [...pinned, ...nonPinnedFeatured];
+    const targets = candidates.length > 0 ? candidates : mappedCampaigns.slice(0, 3);
 
     // Limit hero slider to strictly 5 items max
     return targets.slice(0, 5).map((c) => ({
@@ -802,7 +810,7 @@ export default function BrowseCampaignsClientView() {
       category: c.category,
       cpm: c.cpm,
       budget: c.budgetTotal,
-      badge: c.brand === 'Kpugi' ? 'Kpugi Official' : c.brand,
+      badge: c.is_hero_pinned ? 'Featured Pick' : c.brand === 'Kpugi' ? 'Kpugi Official' : c.brand,
       imageUrl: c.thumbnailUrl,
     }));
   }, [mappedCampaigns]);

@@ -230,21 +230,8 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
     db.update_submission(sub_id, updates)
     logger.info(f"Submission {sub_id[:8]} verified -> Views: {final_views:,} (New: {new_views:,}) | Est. Gross: ₦{gross_earned:,.0f} (Cap: ₦{creator_cap:,.0f})")
 
-    # Real-time Campaign Budget Deduction (Brands pay gross)
-    prev_tracked_spend = float(sub.get('last_tracked_gross') or sub.get('payout_amount') or 0.0)
-    delta_spend = max(0.0, gross_earned - prev_tracked_spend)
-
-    if delta_spend > 0:
-        current_spent = float(campaign.get('spent_budget') or 0.0)
-        new_spent = current_spent + delta_spend
-        is_depleted = new_spent >= total_budget
-        new_status = 'completed' if is_depleted else None
-        db.update_campaign_budget(
-            campaign_id=campaign['id'],
-            spent_increment=delta_spend,
-            reserved_decrement=delta_spend,
-            new_status=new_status
-        )
+    # Reconcile campaign budget and enforce 25% creator pool cap idempotently
+    db.reconcile_campaign_budget(campaign['id'])
 
     return {
         "id": sub_id[:8],

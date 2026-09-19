@@ -79,17 +79,20 @@ export async function POST(req: Request) {
         }, { status: 403 });
       }
 
-      // 3. Payout Reservation estimation
-      const remainingBudget = Number(campaign.total_budget) - Number(campaign.reserved_budget);
+      // 3. Payout Reservation estimation (subtract spent and reserved)
+      const totalBudget = Number(campaign.total_budget || 0);
+      const remainingBudget = Math.max(0, totalBudget - Number(campaign.spent_budget || 0) - Number(campaign.reserved_budget || 0));
       if (remainingBudget <= 0) {
         return NextResponse.json({ error: 'Campaign budget is fully reserved or completed' }, { status: 400 });
       }
 
-      const reservedAmount = calculateBudgetReservation(
+      const maxCreatorCap = totalBudget > 0 ? totalBudget * 0.25 : Infinity;
+      const baseReservation = calculateBudgetReservation(
         socialAccount.follower_count || 5000,
         Number(campaign.cpm_rate),
         remainingBudget
       );
+      const reservedAmount = Math.min(baseReservation, maxCreatorCap, remainingBudget);
 
       if (reservedAmount <= 0) {
         return NextResponse.json({ error: 'Insufficient campaign budget remaining' }, { status: 400 });

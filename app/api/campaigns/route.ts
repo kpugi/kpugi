@@ -63,6 +63,7 @@ export async function GET(request: Request) {
         status,
         channels,
         is_featured,
+        is_hero_pinned,
         requirements,
         min_view_threshold,
         required_live_duration_hours,

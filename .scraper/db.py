@@ -345,3 +345,81 @@ class DatabaseClient:
             
         resp = self._http_request("PATCH", url, data=payload, params=params)
         return resp["status_code"] in (200, 204)
+
+    def reconcile_campaign_budget(self, campaign_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Reconciles a campaign's spent_budget and reserved_budget from ground truth.
+        Enforces:
+        1. 25% creator pool cap per submission/creator (gross budget basis).
+        2. Idempotent recalculation: immune to scraper re-runs and duplicate triggers.
+        3. Automatic completion ONLY when sum of all creator capped spend >= total_budget.
+        """
+        campaign_map = self._fetch_campaigns_by_ids([campaign_id])
+        campaign = campaign_map.get(campaign_id)
+        if not campaign:
+            return None
+
+        total_budget = float(campaign.get('total_budget') or 0.0)
+        cpm_rate = float(campaign.get('cpm_rate') or 0.0)
+        min_thresh = int(campaign.get('min_view_threshold') or 1000)
+        creator_cap = (total_budget * 0.25) if total_budget > 0 else float('inf')
+
+        # Fetch all submissions for this campaign
+        url = f"{self.rest_url}/submissions"
+        params = {
+            "campaign_id": f"eq.{campaign_id}",
+            "select": "id,creator_id,status,final_view_count,payout_amount,reserved_amount",
+        }
+        resp = self._http_request("GET", url, params=params)
+        subs = resp.get("data") or [] if resp["status_code"] == 200 else []
+
+        total_spent = 0.0
+        total_reserved = 0.0
+
+        for s in subs:
+            status = s.get("status")
+            views = int(s.get("final_view_count") or 0)
+            reserved = float(s.get("reserved_amount") or cpm_rate)
+            historical_payout = float(s.get("payout_amount") or 0.0)
+
+            if status in ("verified_fail", "rejected"):
+                if historical_payout > 0:
+                    total_spent += min(historical_payout, creator_cap)
+            elif status == "verified_pass" or (status == "pending" and views >= min_thresh):
+                raw_gross = round((views / 1000.0) * cpm_rate)
+                gross_earned = min(raw_gross, creator_cap)
+                total_spent += gross_earned
+            elif status in ("joined", "pending"):
+                total_reserved += min(reserved, creator_cap)
+
+        # Cap spent and remaining
+        total_spent = min(total_spent, total_budget) if total_budget > 0 else total_spent
+        remaining = max(0.0, total_budget - total_spent) if total_budget > 0 else float('inf')
+        total_reserved = min(total_reserved, remaining)
+
+        is_depleted = total_budget > 0 and total_spent >= total_budget
+        current_status = campaign.get("status")
+
+        if current_status in ("paused", "archived"):
+            new_status = current_status
+        elif is_depleted:
+            new_status = "completed"
+        else:
+            new_status = "live"
+
+        update_payload = {
+            "spent_budget": total_spent,
+            "reserved_budget": total_reserved,
+            "status": new_status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        patch_url = f"{self.rest_url}/campaigns"
+        patch_params = {"id": f"eq.{campaign_id}"}
+        patch_resp = self._http_request("PATCH", patch_url, data=update_payload, params=patch_params)
+        if patch_resp["status_code"] in (200, 204):
+            logger.info(f"Reconciled campaign {campaign_id[:8]} -> Spent: ₦{total_spent:,.0f} / ₦{total_budget:,.0f} | Status: {new_status}")
+            return update_payload
+        else:
+            logger.error(f"Failed to reconcile campaign {campaign_id}: {patch_resp['error']}")
+            return None

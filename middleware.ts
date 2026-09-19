@@ -27,15 +27,70 @@ const isProtectedRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const hostname = req.headers.get('host') || '';
 
+  // Determine base origin (production vs local development)
+  const isDev = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+  const mainOrigin = isDev
+    ? `http://${hostname.replace(/^(go|admin)\./, '')}`
+    : 'https://kpugi.com';
+
   // 1. Handle go.kpugi.com subdomain requests seamlessly by redirecting to primary /go prelander
   if (hostname.startsWith('go.kpugi.com') || hostname.startsWith('go.localhost')) {
     const urlParam = req.nextUrl.searchParams.get('url');
     if (!urlParam) {
-      return NextResponse.redirect(new URL('/browse', 'https://kpugi.com'));
+      return NextResponse.redirect(new URL('/browse', mainOrigin));
     }
     return NextResponse.redirect(
-      new URL(`/go?url=${encodeURIComponent(urlParam)}`, 'https://kpugi.com')
+      new URL(`/go?url=${encodeURIComponent(urlParam)}`, mainOrigin)
     );
+  }
+
+  // 2. Handle admin.kpugi.com subdomain — rewrite to /admin/* internally.
+  //    Layer 1 gate: requires a valid Clerk session. Actual admin authorization
+  //    is enforced by Postgres RLS (is_admin() function) in every server action.
+  const isAdminSubdomain =
+    hostname.startsWith('admin.kpugi.com') ||
+    hostname.startsWith('admin.localhost');
+
+  if (isAdminSubdomain) {
+    const { userId } = await auth();
+
+    // Unauthenticated → redirect to main site sign-in
+    if (!userId) {
+      const signInUrl = new URL(`${mainOrigin}/sign-in`);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // Rewrite admin.kpugi.com/anything → /admin/anything (same deployment)
+    const pathname = req.nextUrl.pathname;
+    const rewriteUrl = req.nextUrl.clone();
+    rewriteUrl.pathname = pathname.startsWith('/admin')
+      ? pathname
+      : `/admin${pathname === '/' ? '' : pathname}`;
+
+    const rewriteResponse = NextResponse.rewrite(rewriteUrl);
+    // Mark admin requests as non-indexable
+    rewriteResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    rewriteResponse.headers.set('X-Content-Type-Options', 'nosniff');
+    rewriteResponse.headers.set('X-Frame-Options', 'DENY');
+    rewriteResponse.headers.set('Referrer-Policy', 'no-referrer');
+    return rewriteResponse;
+  }
+
+  // If in production someone visits kpugi.com/admin directly, redirect to admin.kpugi.com
+  if (!isAdminSubdomain && !isDev && req.nextUrl.pathname.startsWith('/admin')) {
+    const adminUrl = new URL(req.nextUrl.pathname + req.nextUrl.search, 'https://admin.kpugi.com');
+    return NextResponse.redirect(adminUrl);
+  }
+
+  // If in dev someone visits localhost:3000/admin directly, ensure protected
+  if (!isAdminSubdomain && isDev && req.nextUrl.pathname.startsWith('/admin')) {
+    const { userId } = await auth();
+    if (!userId) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 
   // 2. Rate limiter for public API endpoints (exclude health check probes)
