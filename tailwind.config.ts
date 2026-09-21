@@ -40,9 +40,18 @@ const config: Config = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        brand: {
+          25: "#f2f7ff",
+          50: "#ecf3ff",
+          100: "#dde9ff",
+          200: "#c2d6ff",
+          300: "#9cb9ff",
+          400: "#7592ff",
+          500: "#2F49E8",
+          600: "#243ac4",
+          700: "#1d2fa3",
+          800: "#182682",
+          900: "#152069",
         },
         kpugi: {
           blue: "#2F49E8",

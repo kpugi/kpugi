@@ -41,6 +41,7 @@ docs/*.json
 # Antigravity IDE / local tool artifacts
 .antigravity
 scratch/
+.temp/
 
 # Scraper Python cache, local env, and virtual environments
 .scraper/venv/

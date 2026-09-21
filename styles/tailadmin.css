@@ -1,0 +1,166 @@
+/* TailAdmin Theme Styles & CSS Variables */
+:root {
+  --color-brand-25: #f2f7ff;
+  --color-brand-50: #ecf3ff;
+  --color-brand-100: #dde9ff;
+  --color-brand-200: #c2d6ff;
+  --color-brand-300: #9cb9ff;
+  --color-brand-400: #7592ff;
+  --color-brand-500: #465fff;
+  --color-brand-600: #3641f5;
+  --color-brand-700: #2a31d8;
+  --color-brand-800: #252dae;
+  --color-brand-900: #262e89;
+
+  --color-success-50: #ecfdf3;
+  --color-success-500: #12b76a;
+  --color-success-600: #039855;
+
+  --color-error-50: #fef3f2;
+  --color-error-500: #f04438;
+  --color-error-600: #d92d20;
+
+  --color-warning-50: #fffaeb;
+  --color-warning-500: #f79009;
+  --color-warning-600: #dc6803;
+
+  --color-blue-light-50: #f0f9ff;
+  --color-blue-light-500: #0ba5ec;
+}
+
+/* Sidebar & Navigation Menu Utilities */
+.menu-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+}
+
+.menu-item-active {
+  background-color: #ecf3ff;
+  color: #465fff;
+}
+.dark .menu-item-active {
+  background-color: rgba(70, 95, 255, 0.12);
+  color: #7592ff;
+}
+
+.menu-item-inactive {
+  color: #475467;
+}
+.menu-item-inactive:hover {
+  background-color: #f2f4f7;
+  color: #1d2939;
+}
+.dark .menu-item-inactive {
+  color: #98a2b3;
+}
+.dark .menu-item-inactive:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.menu-item-icon-active {
+  color: #465fff;
+}
+.dark .menu-item-icon-active {
+  color: #7592ff;
+}
+
+.menu-item-icon-inactive {
+  color: #667085;
+}
+.dark .menu-item-icon-inactive {
+  color: #98a2b3;
+}
+
+.menu-dropdown-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+}
+.menu-dropdown-item-active {
+  background-color: #ecf3ff;
+  color: #465fff;
+}
+.dark .menu-dropdown-item-active {
+  background-color: rgba(70, 95, 255, 0.12);
+  color: #7592ff;
+}
+.menu-dropdown-item-inactive {
+  color: #475467;
+}
+.menu-dropdown-item-inactive:hover {
+  background-color: #f2f4f7;
+  color: #1d2939;
+}
+.dark .menu-dropdown-item-inactive {
+  color: #98a2b3;
+}
+.dark .menu-dropdown-item-inactive:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.menu-dropdown-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.menu-dropdown-badge-active {
+  background-color: #465fff;
+  color: #ffffff;
+}
+.menu-dropdown-badge-inactive {
+  background-color: #f2f4f7;
+  color: #667085;
+}
+.dark .menu-dropdown-badge-inactive {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #98a2b3;
+}
+
+/* Custom scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* TailAdmin Sidebar Dimensions for Tailwind v3 */
+.w-72\.5,
+[class*="w-72.5"] {
+  width: 290px !important;
+}
+
+.w-22\.5,
+[class*="w-22.5"] {
+  width: 90px !important;
+}
+
+.max-w-72\.5 {
+  max-width: 290px !important;
+}
+
+.max-w-22\.5 {
+  max-width: 90px !important;
+}
+
