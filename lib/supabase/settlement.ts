@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { getPlatformSettings } from '@/lib/admin/platform-settings-service';
 
 export interface CampaignSettlementResult {
   success: boolean;
@@ -73,12 +74,14 @@ export async function settleCompletedCampaign(
   let totalGross = 0;
   let totalFees = 0;
   let totalNet = 0;
+  const settings = await getPlatformSettings();
+  const commissionRate = settings.marketplace.commissionRate ?? 0.10;
 
   for (const sub of submissions) {
     const views = Number(sub.final_view_count || 0);
     const rawGross = Math.round((views / 1000.0) * cpmRate);
     const gross = Math.min(rawGross, creatorCap);
-    const fee = Math.round(gross * 0.10);
+    const fee = Math.round(gross * commissionRate);
     const net = gross - fee;
 
     // Get or create creator wallet

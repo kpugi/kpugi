@@ -15,9 +15,11 @@ export interface PayoutCalculation {
  */
 export function calculatePayout(
   verifiedViews: number,
-  cpmRate: number = DEFAULT_CPM_RATE
+  cpmRate: number = DEFAULT_CPM_RATE,
+  commissionRate: number = PLATFORM_COMMISSION_RATE,
+  minViews: number = MIN_VIEW_THRESHOLD
 ): PayoutCalculation {
-  if (verifiedViews < MIN_VIEW_THRESHOLD) {
+  if (verifiedViews < minViews) {
     return {
       grossAmount: 0,
       creatorPayout: 0,
@@ -27,7 +29,7 @@ export function calculatePayout(
   }
 
   const grossAmount = (verifiedViews / 1000) * cpmRate;
-  const commissionAmount = grossAmount * PLATFORM_COMMISSION_RATE;
+  const commissionAmount = grossAmount * commissionRate;
   const creatorPayout = grossAmount - commissionAmount;
 
   return {

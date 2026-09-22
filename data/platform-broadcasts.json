@@ -1,0 +1,43 @@
+[
+  {
+    "id": "broadcast-001",
+    "title": "Instant Payout Settlements Are Now Live!",
+    "message": "We have upgraded our payment infrastructure with Paystack. Approved video submission earnings can now be withdrawn directly to your Nigerian bank account with zero delay.",
+    "tag": "new_feature",
+    "target_audience": "creators",
+    "channels": [
+      "dashboard_banner",
+      "in_app"
+    ],
+    "has_cta": true,
+    "cta_label": "View Wallet & Payouts",
+    "cta_url": "/wallet",
+    "cta_style": "primary",
+    "status": "active",
+    "email_subject": "🚀 Instant Payout Settlements Are Now Live on Kpugi",
+    "email_preview_text": "Withdraw your campaign earnings directly to your bank account with zero delay.",
+    "sent_count": 142,
+    "click_count": 38,
+    "created_at": "2026-09-20T22:46:20.545Z",
+    "updated_at": "2026-09-20T22:46:20.546Z"
+  },
+  {
+    "id": "broadcast-002",
+    "title": "High-Velocity Video Verification Engine Deployed",
+    "message": "Brands can now track live creator TikTok, Instagram Reels, and YouTube Shorts view velocity in real time directly from the campaign dashboard.",
+    "tag": "update",
+    "target_audience": "brands",
+    "channels": [
+      "dashboard_banner"
+    ],
+    "has_cta": true,
+    "cta_label": "Explore Active Campaigns",
+    "cta_url": "/b/dashboard",
+    "cta_style": "primary",
+    "status": "active",
+    "sent_count": 28,
+    "click_count": 12,
+    "created_at": "2026-09-17T22:46:20.546Z",
+    "updated_at": "2026-09-17T22:46:20.546Z"
+  }
+]

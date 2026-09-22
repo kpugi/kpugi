@@ -1,0 +1,60 @@
+{
+  "marketplace": {
+    "maintenanceMode": false,
+    "commissionRate": 0.1,
+    "minViewsThreshold": 100,
+    "minWithdrawalAmount": 5000,
+    "minCampaignBudget": 10000,
+    "featuredFee": 2500,
+    "defaultCurrency": "NGN",
+    "currencySymbol": "₦",
+    "supportEmail": "support@kpugi.com"
+  },
+  "browse": {
+    "heroMaxSlots": 5,
+    "heroAutoSlideIntervalSec": 6,
+    "defaultSortAlgorithm": "trending",
+    "activeCategories": [
+      "Tech",
+      "Finance",
+      "Lifestyle",
+      "Fashion",
+      "Food & Drink",
+      "Gaming",
+      "Beauty",
+      "Sports"
+    ],
+    "announcementBanner": {
+      "enabled": false,
+      "message": "",
+      "theme": "info",
+      "linkUrl": ""
+    },
+    "emptyStateTitle": "No matching campaigns found",
+    "emptyStateDescription": "Try adjusting your filters, searching for a different keyword, or check back soon for new briefs."
+  },
+  "campaigns": {
+    "approvalPolicy": "admin_review",
+    "autoCloseDepleted": true,
+    "allowedSocialPlatforms": {
+      "tiktok": true,
+      "instagram": true,
+      "youtube": true,
+      "twitter": true
+    },
+    "verificationWindowHours": 48,
+    "maxSubmissionsPerCreator": 3
+  },
+  "users": {
+    "kycPolicy": "strict",
+    "kycThresholdAmount": 50000,
+    "followerMinimums": {
+      "tiktok": 1000,
+      "instagram": 1000,
+      "youtube": 500
+    },
+    "requireOnboardingChecklist": true,
+    "flagViewVelocitySpikes": true,
+    "blockDuplicateBankAccounts": true
+  }
+}

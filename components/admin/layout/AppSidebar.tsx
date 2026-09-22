@@ -22,7 +22,7 @@ import {
   LayersIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
-import { UserIcon, Bot } from "lucide-react";
+import { UserIcon, Bot, Sliders, Radio, Share2 } from "lucide-react";
 import { IconMoneybag } from "@tabler/icons-react";
 
 type NavItem = {
@@ -62,9 +62,27 @@ const navItems: NavItem[] = [
     path: "/admin/users",
   },
   {
+    icon: <Share2 className="w-5 h-5" />,
+    name: "Accounts",
+    path: "/admin/accounts",
+  },
+];
+
+const othersItems: NavItem[] = [
+  {
+    icon: <IconMoneybag className="w-5 h-5" />,
+    name: "Finances",
+    path: "/admin/finances",
+  },
+  {
     icon: <Bot className="w-5 h-5" />,
     name: "Scraper",
     path: "/admin/scraper",
+  },
+  {
+    icon: <Radio className="w-5 h-5" />,
+    name: "Broadcasts",
+    path: "/admin/broadcasts",
   },
   {
     icon: <PageIcon />,
@@ -72,31 +90,9 @@ const navItems: NavItem[] = [
     path: "/admin/audit",
   },
   {
-    icon: <PieChartIcon />,
+    icon: <Sliders className="w-5 h-5" />,
     name: "Settings",
-    path: "/admin/system",
-  },
-  {
-    icon: <IconMoneybag className="w-5 h-5" />,
-    name: "Finances",
-    path: "/admin/finances",
-  },
-];
-
-const othersItems: NavItem[] = [
-  {
-    icon: <UserIcon />,
-    name: "Accounts",
-    path: "/admin/accounts",
-  },
-  {
-    name: "Template Tools",
-    icon: <TableIcon />,
-    subItems: [
-      { name: "Basic Tables", path: "/admin/basic-tables", pro: false },
-      { name: "Form Elements", path: "/admin/form-elements", pro: false },
-      { name: "Blank Page", path: "/admin/blank" },
-    ],
+    path: "/admin/settings",
   },
 ];
 
@@ -370,7 +366,7 @@ const AppSidebar: React.FC = () => {
                   }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
+                  "Operations"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -386,7 +382,7 @@ const AppSidebar: React.FC = () => {
                   }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Platform"
                 ) : (
                   <HorizontaLDots />
                 )}

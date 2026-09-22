@@ -30,6 +30,7 @@ import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo'
 import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeModal';
 import OnboardingChecklistCard from '@/components/onboarding/OnboardingChecklistCard';
 import { useKpugiTour } from '@/lib/tour/useKpugiTour';
+import PlatformBroadcastBanner from '@/components/dashboard/PlatformBroadcastBanner';
 
 interface AdvertiserDashboardProps {
   companyName: string;
@@ -125,6 +126,9 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
         role="advertiser"
         displayName={companyName}
       />
+
+      {/* Dynamic Platform Announcement Banner */}
+      <PlatformBroadcastBanner role="advertiser" />
 
       {/* ─────────────────────────────────────────────
           1. EXECUTIVE COMMAND HERO

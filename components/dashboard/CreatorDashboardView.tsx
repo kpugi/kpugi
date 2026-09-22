@@ -29,6 +29,7 @@ import { DashboardActionTodo } from '@/components/dashboard/DashboardActionTodo'
 import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeModal';
 import OnboardingChecklistCard from '@/components/onboarding/OnboardingChecklistCard';
 import { useKpugiTour } from '@/lib/tour/useKpugiTour';
+import PlatformBroadcastBanner from '@/components/dashboard/PlatformBroadcastBanner';
 
 interface CreatorDashboardProps {
   displayName: string;
@@ -106,6 +107,9 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
         role="creator"
         displayName={displayName}
       />
+
+      {/* Dynamic Platform Announcement Banner */}
+      <PlatformBroadcastBanner role="creator" />
 
       {/* ─────────────────────────────────────────────────────
          1. TOP GREETING BANNER
