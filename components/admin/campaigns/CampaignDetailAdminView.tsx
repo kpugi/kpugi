@@ -163,6 +163,22 @@ export interface CampaignDetailProps {
   heroPinnedCount: number;
 }
 
+function renderDateTimeStacked(val: string | Date | null | undefined) {
+  if (!val) return <span className="text-gray-400 dark:text-gray-600">—</span>;
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return <span className="text-gray-400 dark:text-gray-600">—</span>;
+  return (
+    <div className="flex flex-col">
+      <span className="font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
+        {d.toLocaleDateString()}
+      </span>
+      <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+        {d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}
+      </span>
+    </div>
+  );
+}
+
 export default function CampaignDetailAdminView({
   campaign,
   advertiser,
@@ -1223,7 +1239,7 @@ export default function CampaignDetailAdminView({
                     {submissions.length} Total
                   </span>
                 </h2>
-                <p className="text-theme-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Track and audit submissions across social platforms, verify view milestones, and issue manual status overrides.
                 </p>
               </div>
@@ -1331,14 +1347,14 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleSubSort("creator")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Creator</span>
                       {subSortField === "creator" ? (
                         subSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                       ) : (
-                        <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                       )}
                     </div>
                   </TableCell>
@@ -1347,14 +1363,14 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleSubSort("platform")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Platform / Handle</span>
                       {subSortField === "platform" ? (
                         subSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                       ) : (
-                        <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                       )}
                     </div>
                   </TableCell>
@@ -1362,7 +1378,7 @@ export default function CampaignDetailAdminView({
                   {/* Post URL */}
                   <TableCell
                     isHeader
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400"
                   >
                     Post URL
                   </TableCell>
@@ -1371,14 +1387,14 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleSubSort("views")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Verified Views</span>
                       {subSortField === "views" ? (
                         subSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                       ) : (
-                        <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                       )}
                     </div>
                   </TableCell>
@@ -1387,14 +1403,14 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleSubSort("payout")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Reserved Payout</span>
                       {subSortField === "payout" ? (
                         subSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                       ) : (
-                        <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                       )}
                     </div>
                   </TableCell>
@@ -1403,14 +1419,14 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleSubSort("status")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Status</span>
                       {subSortField === "status" ? (
                         subSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                       ) : (
-                        <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                       )}
                     </div>
                   </TableCell>
@@ -1419,14 +1435,14 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleSubSort("date")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Submitted</span>
                       {subSortField === "date" ? (
                         subSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                       ) : (
-                        <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                       )}
                     </div>
                   </TableCell>
@@ -1434,7 +1450,7 @@ export default function CampaignDetailAdminView({
                   {/* Admin Action */}
                   <TableCell
                     isHeader
-                    className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                    className="px-5 py-2.5 text-end text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400"
                   >
                     Admin Action
                   </TableCell>
@@ -1513,8 +1529,8 @@ export default function CampaignDetailAdminView({
                           )}
                         </TableCell>
 
-                        <TableCell className="px-5 py-4 whitespace-nowrap font-mono text-[11px] text-gray-500 dark:text-gray-400">
-                          {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : "—"}
+                        <TableCell className="px-5 py-3 whitespace-nowrap font-mono">
+                          {renderDateTimeStacked(sub.submitted_at)}
                         </TableCell>
 
                         <TableCell className="px-5 py-4 whitespace-nowrap text-end">
@@ -1679,7 +1695,7 @@ export default function CampaignDetailAdminView({
                       {verificationChecks.length} Checks
                     </span>
                   </h4>
-                  <p className="text-theme-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     Telemetry logs generated by the automated scraper engine for each submission in this campaign.
                   </p>
                 </div>
@@ -1755,14 +1771,14 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleRunSort("time")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Checked Time</span>
                         {runSortField === "time" ? (
                           runSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                          <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                         )}
                       </div>
                     </TableCell>
@@ -1771,14 +1787,14 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleRunSort("creator")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Creator / Handle</span>
                         {runSortField === "creator" ? (
                           runSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                          <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                         )}
                       </div>
                     </TableCell>
@@ -1786,7 +1802,7 @@ export default function CampaignDetailAdminView({
                     {/* Post URL */}
                     <TableCell
                       isHeader
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400"
                     >
                       Post URL
                     </TableCell>
@@ -1795,14 +1811,14 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleRunSort("reachable")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Status</span>
                         {runSortField === "reachable" ? (
                           runSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                          <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                         )}
                       </div>
                     </TableCell>
@@ -1811,14 +1827,14 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleRunSort("views")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Audited Views</span>
                         {runSortField === "views" ? (
                           runSortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                          <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                         )}
                       </div>
                     </TableCell>
@@ -1826,7 +1842,7 @@ export default function CampaignDetailAdminView({
                     {/* Extractor Engine */}
                     <TableCell
                       isHeader
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400"
                     >
                       Extractor Engine
                     </TableCell>
@@ -1834,7 +1850,7 @@ export default function CampaignDetailAdminView({
                     {/* Inspect */}
                     <TableCell
                       isHeader
-                      className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                      className="px-5 py-2.5 text-end text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400"
                     >
                       Inspect
                     </TableCell>
@@ -1853,8 +1869,8 @@ export default function CampaignDetailAdminView({
                       const extractor = (chk.notes || "").match(/Extractor:\s*([^|]+)/)?.[1]?.trim() || "engine";
                       return (
                         <TableRow key={chk.id} className="hover:bg-gray-50/50 dark:hover:bg-white/3 transition-colors">
-                          <TableCell className="px-5 py-4 whitespace-nowrap font-mono text-xs text-gray-600 dark:text-gray-300">
-                            {new Date(chk.checked_at).toLocaleString()}
+                          <TableCell className="px-5 py-3 whitespace-nowrap font-mono">
+                            {renderDateTimeStacked(chk.checked_at)}
                           </TableCell>
 
                           <TableCell className="px-5 py-4 whitespace-nowrap text-theme-sm">
@@ -1963,7 +1979,7 @@ export default function CampaignDetailAdminView({
                     {githubRuns.length} Runs
                   </span>
                 </h4>
-                <p className="text-theme-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Synchronized from GitHub API repository workflow runs (`.github/workflows/scraper-cron.yml`).
                 </p>
               </div>
@@ -2013,7 +2029,7 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleGhSort("id")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Run ID</span>
@@ -2031,7 +2047,7 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleGhSort("status")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Status / Conclusion</span>
@@ -2046,13 +2062,13 @@ export default function CampaignDetailAdminView({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                    <TableCell isHeader className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       Event Trigger
                     </TableCell>
                     <TableCell
                       isHeader
                       onClick={() => handleGhSort("duration")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Duration</span>
@@ -2070,7 +2086,7 @@ export default function CampaignDetailAdminView({
                     <TableCell
                       isHeader
                       onClick={() => handleGhSort("time")}
-                      className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                      className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Executed At</span>
@@ -2085,7 +2101,7 @@ export default function CampaignDetailAdminView({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                    <TableCell isHeader className="px-5 py-2.5 text-end text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
                       GitHub Log
                     </TableCell>
                   </TableRow>
@@ -2138,8 +2154,8 @@ export default function CampaignDetailAdminView({
                             {Math.round(run.run_duration_ms / 1000)}s
                           </TableCell>
 
-                          <TableCell className="px-5 py-4 whitespace-nowrap font-mono text-[11px] text-gray-500 dark:text-gray-400">
-                            {new Date(run.created_at).toLocaleString()}
+                          <TableCell className="px-5 py-3 whitespace-nowrap font-mono">
+                            {renderDateTimeStacked(run.created_at)}
                           </TableCell>
 
                           <TableCell className="px-5 py-4 whitespace-nowrap text-end">
@@ -2206,7 +2222,7 @@ export default function CampaignDetailAdminView({
                     {auditTrail.length} Records
                   </span>
                 </h2>
-                <p className="text-theme-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Immutable administrative actions, budget allocations, and lifecycle status change records.
                 </p>
               </div>
@@ -2281,7 +2297,7 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleAuditSort("time")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Timestamp</span>
@@ -2299,7 +2315,7 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleAuditSort("action")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Action</span>
@@ -2317,7 +2333,7 @@ export default function CampaignDetailAdminView({
                   <TableCell
                     isHeader
                     onClick={() => handleAuditSort("source")}
-                    className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Source</span>
@@ -2332,10 +2348,10 @@ export default function CampaignDetailAdminView({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                  <TableCell isHeader className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
                     Justification / Details
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                  <TableCell isHeader className="px-5 py-2.5 text-end text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
                     Payload
                   </TableCell>
                 </TableRow>
@@ -2351,8 +2367,8 @@ export default function CampaignDetailAdminView({
                 ) : (
                   paginatedAuditTrail.map((log) => (
                     <TableRow key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/3 transition-colors">
-                      <TableCell className="px-5 py-4 whitespace-nowrap font-mono text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(log.created_at).toLocaleString()}
+                      <TableCell className="px-5 py-3 whitespace-nowrap font-mono">
+                        {renderDateTimeStacked(log.created_at)}
                       </TableCell>
 
                       <TableCell className="px-5 py-4 whitespace-nowrap">

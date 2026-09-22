@@ -404,7 +404,7 @@ export default function AuditLogsManager({
                 <TableCell
                   isHeader
                   onClick={() => handleSort("time")}
-                  className="py-3.5 font-semibold text-gray-500 text-start text-xs dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 font-semibold text-gray-500 text-start text-[11px] uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Timestamp</span>
@@ -422,7 +422,7 @@ export default function AuditLogsManager({
                 <TableCell
                   isHeader
                   onClick={() => handleSort("user")}
-                  className="py-3.5 font-semibold text-gray-500 text-start text-xs dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 font-semibold text-gray-500 text-start text-[11px] uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>{activeTab === "admin" ? "Operator / Actor" : "User / Account"}</span>
@@ -440,7 +440,7 @@ export default function AuditLogsManager({
                 <TableCell
                   isHeader
                   onClick={() => handleSort("category")}
-                  className="py-3.5 font-semibold text-gray-500 text-start text-xs dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 font-semibold text-gray-500 text-start text-[11px] uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Category</span>
@@ -458,7 +458,7 @@ export default function AuditLogsManager({
                 <TableCell
                   isHeader
                   onClick={() => handleSort("action")}
-                  className="py-3.5 font-semibold text-gray-500 text-start text-xs dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 font-semibold text-gray-500 text-start text-[11px] uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Action &amp; Description</span>
@@ -476,7 +476,7 @@ export default function AuditLogsManager({
                 <TableCell
                   isHeader
                   onClick={() => handleSort("target")}
-                  className="py-3.5 font-semibold text-gray-500 text-start text-xs dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 font-semibold text-gray-500 text-start text-[11px] uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Target Entity</span>
@@ -493,7 +493,7 @@ export default function AuditLogsManager({
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="py-3.5 font-semibold text-gray-500 text-end text-xs dark:text-gray-400"
+                  className="px-5 py-2.5 font-semibold text-gray-500 text-end text-[11px] uppercase tracking-wider dark:text-gray-400"
                 >
                   Action
                 </TableCell>

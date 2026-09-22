@@ -482,14 +482,14 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 <TableCell
                   isHeader
                   onClick={() => handleSort("title")}
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Campaign</span>
                     {sortField === "title" ? (
                       sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                     )}
                   </div>
                 </TableCell>
@@ -498,14 +498,14 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 <TableCell
                   isHeader
                   onClick={() => handleSort("advertiser")}
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Advertiser</span>
                     {sortField === "advertiser" ? (
                       sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                     )}
                   </div>
                 </TableCell>
@@ -514,14 +514,14 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 <TableCell
                   isHeader
                   onClick={() => handleSort("status")}
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Status</span>
                     {sortField === "status" ? (
                       sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                     )}
                   </div>
                 </TableCell>
@@ -530,14 +530,14 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 <TableCell
                   isHeader
                   onClick={() => handleSort("cpm")}
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>CPM</span>
                     {sortField === "cpm" ? (
                       sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                     )}
                   </div>
                 </TableCell>
@@ -546,14 +546,14 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 <TableCell
                   isHeader
                   onClick={() => handleSort("budget")}
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Budget & Spent</span>
                     {sortField === "budget" ? (
                       sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                     )}
                   </div>
                 </TableCell>
@@ -561,7 +561,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 {/* Hero / Featured Header */}
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 select-none"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 select-none"
                 >
                   Hero / Featured
                 </TableCell>
@@ -570,14 +570,14 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 <TableCell
                   isHeader
                   onClick={() => handleSort("created")}
-                  className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Created</span>
                     {sortField === "created" ? (
                       sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-brand-500" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
                     )}
                   </div>
                 </TableCell>
@@ -585,7 +585,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                 {/* Action Header */}
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-end text-theme-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                  className="px-5 py-2.5 text-end text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400"
                 >
                   Action
                 </TableCell>
@@ -727,12 +727,22 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                       </TableCell>
 
                       {/* Created Date */}
-                      <TableCell className="py-3.5 px-4 text-gray-500 dark:text-gray-400 font-mono text-[11px]">
-                        {new Date(c.created_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
+                            {new Date(c.created_at).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                          <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                            {new Date(c.created_at).toLocaleTimeString([], {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
                       </TableCell>
 
                       {/* Action: Open details view */}

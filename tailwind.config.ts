@@ -70,6 +70,12 @@ const config: Config = {
         sans: ["Satoshi", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
+      fontSize: {
+        "theme-xs": ["11px", { lineHeight: "16px", letterSpacing: "0.04em" }],
+        "theme-sm": ["13px", { lineHeight: "18px" }],
+        "theme-md": ["14px", { lineHeight: "20px" }],
+        "theme-xl": ["18px", { lineHeight: "24px" }],
+      },
     },
   },
   plugins: [daisyui],

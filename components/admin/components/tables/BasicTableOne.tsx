@@ -257,7 +257,7 @@ export default function BasicTableOne() {
             <h4 className="font-semibold text-gray-800 text-theme-xl dark:text-white/90">
               Basic Table 1
             </h4>
-            <p className="text-theme-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Active projects, team members, and allocated budget overview.
             </p>
           </div>
@@ -328,7 +328,7 @@ export default function BasicTableOne() {
               <TableCell
                 isHeader
                 onClick={() => handleSort("user")}
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>User</span>
@@ -347,7 +347,7 @@ export default function BasicTableOne() {
               <TableCell
                 isHeader
                 onClick={() => handleSort("projectName")}
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Project Name</span>
@@ -365,7 +365,7 @@ export default function BasicTableOne() {
 
               <TableCell
                 isHeader
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
                 Team
               </TableCell>
@@ -373,7 +373,7 @@ export default function BasicTableOne() {
               <TableCell
                 isHeader
                 onClick={() => handleSort("status")}
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Status</span>
@@ -392,7 +392,7 @@ export default function BasicTableOne() {
               <TableCell
                 isHeader
                 onClick={() => handleSort("budget")}
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Budget</span>
