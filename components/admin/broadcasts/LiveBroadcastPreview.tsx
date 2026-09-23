@@ -71,25 +71,25 @@ export default function LiveBroadcastPreview({
   };
 
   return (
-    <div className="rounded-2xl bg-[#0C101A] border border-slate-800/80 overflow-hidden flex flex-col h-full">
+    <div className="rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 overflow-hidden flex flex-col h-full shadow-xs dark:shadow-none font-sans">
       {/* Preview Header & Channel Switcher */}
-      <div className="p-4 bg-[#080B14] border-b border-slate-800 flex items-center justify-between gap-3">
+      <div className="p-4 bg-gray-50 dark:bg-[#080B14] border-b border-gray-200 dark:border-slate-800 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-bold font-display text-white">
+          <Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-xs font-bold font-display text-gray-900 dark:text-white">
             Live Channel Preview
           </span>
         </div>
 
         {/* Channel Selector Pills */}
-        <div className="flex items-center gap-1 bg-[#0C101A] p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-1 bg-gray-200/70 dark:bg-[#0C101A] p-1 rounded-xl border border-gray-200 dark:border-slate-800">
           <button
             type="button"
             onClick={() => setActivePreviewTab("banner")}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-sans transition-colors ${
               activePreviewTab === "banner"
                 ? "bg-indigo-600 text-white font-semibold shadow-xs"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
             }`}
           >
             <Monitor className="w-3 h-3" />
@@ -102,7 +102,7 @@ export default function LiveBroadcastPreview({
             className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-sans transition-colors ${
               activePreviewTab === "in_app"
                 ? "bg-indigo-600 text-white font-semibold shadow-xs"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
             }`}
           >
             <Bell className="w-3 h-3" />
@@ -115,7 +115,7 @@ export default function LiveBroadcastPreview({
             className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-sans transition-colors ${
               activePreviewTab === "email"
                 ? "bg-indigo-600 text-white font-semibold shadow-xs"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
             }`}
           >
             <Mail className="w-3 h-3" />
@@ -125,7 +125,7 @@ export default function LiveBroadcastPreview({
       </div>
 
       {/* Preview Canvas */}
-      <div className="p-6 flex-1 flex flex-col justify-center bg-radial from-[#0e1424] to-[#080B14]">
+      <div className="p-6 flex-1 flex flex-col justify-center bg-gray-100/70 dark:bg-radial dark:from-[#0e1424] dark:to-[#080B14]">
         {/* ============================================================== */}
         {/* 1. DASHBOARD BANNER PREVIEW */}
         {/* ============================================================== */}

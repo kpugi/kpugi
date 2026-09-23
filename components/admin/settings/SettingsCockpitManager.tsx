@@ -31,6 +31,7 @@ import {
   Terminal,
 } from "lucide-react";
 import Button from "@/components/admin/components/ui/button/Button";
+import Switch from "@/components/admin/components/form/switch/Switch";
 import {
   PlatformSettings,
   DEFAULT_SETTINGS,
@@ -310,14 +311,14 @@ export default function SettingsCockpitManager({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold font-display text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold font-display text-gray-900 dark:text-white tracking-tight">
               Platform Settings Cockpit
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               Live Governance
             </span>
           </div>
-          <p className="text-xs text-slate-400 font-sans mt-1">
+          <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-1">
             Central command center for marketplace fees, public discovery rules, campaign governance, security keys, and automated tasks.
           </p>
         </div>
@@ -328,7 +329,7 @@ export default function SettingsCockpitManager({
             variant="outline"
             size="sm"
             onClick={handleExportConfig}
-            className="flex items-center gap-1.5 text-xs text-slate-300 font-sans"
+            className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-300 font-sans"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
             Export Settings (JSON)
@@ -363,13 +364,13 @@ export default function SettingsCockpitManager({
       )}
 
       {/* Primary Tab Navigation */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-800/80">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-gray-200 dark:border-slate-800/80">
         <button
           onClick={() => setActiveTab("parameters")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "parameters"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <Sliders className="w-3.5 h-3.5" />
@@ -384,7 +385,7 @@ export default function SettingsCockpitManager({
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "browse"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <Compass className="w-3.5 h-3.5" />
@@ -399,7 +400,7 @@ export default function SettingsCockpitManager({
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "campaigns"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <Megaphone className="w-3.5 h-3.5" />
@@ -414,7 +415,7 @@ export default function SettingsCockpitManager({
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "users"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <Users className="w-3.5 h-3.5" />
@@ -429,12 +430,12 @@ export default function SettingsCockpitManager({
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "integrations"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <KeyRound className="w-3.5 h-3.5" />
           <span>API Keys & Services Vault</span>
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300">
             {integrations.length}
           </span>
         </button>
@@ -444,7 +445,7 @@ export default function SettingsCockpitManager({
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "crons"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
@@ -456,7 +457,7 @@ export default function SettingsCockpitManager({
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
             activeTab === "system"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
           }`}
         >
           <Server className="w-3.5 h-3.5" />
@@ -474,7 +475,7 @@ export default function SettingsCockpitManager({
             className={`p-6 rounded-2xl border transition-all ${
               settings.marketplace.maintenanceMode
                 ? "bg-rose-950/20 border-rose-500/30 text-rose-200"
-                : "bg-[#0C101A] border-slate-800/80 text-slate-300"
+                : "bg-white dark:bg-[#0C101A] border-gray-200/80 dark:border-slate-800/80 text-slate-300"
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -489,10 +490,10 @@ export default function SettingsCockpitManager({
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold font-display text-white">
+                  <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                     Public Maintenance Mode
                   </h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                     When active, public visitors will see a friendly maintenance message. Admin console remains accessible.
                   </p>
                 </div>
@@ -508,32 +509,20 @@ export default function SettingsCockpitManager({
                 >
                   {settings.marketplace.maintenanceMode ? "Enabled" : "Disabled"}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
+                <Switch
+                  checked={settings.marketplace.maintenanceMode}
+                  color="blue"
+                  onChange={(checked) => {
                     setSettings((prev) => ({
                       ...prev,
                       marketplace: {
                         ...prev.marketplace,
-                        maintenanceMode: !prev.marketplace.maintenanceMode,
+                        maintenanceMode: checked,
                       },
                     }));
                     setIsMarketplaceDirty(true);
                   }}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.marketplace.maintenanceMode
-                      ? "bg-rose-500"
-                      : "bg-slate-700"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.marketplace.maintenanceMode
-                        ? "translate-x-6"
-                        : "translate-x-1"
-                    }`}
-                  />
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -541,13 +530,13 @@ export default function SettingsCockpitManager({
           {/* Core Financial & Operational Parameters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Commission Rate */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold font-display text-white">
+                  <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                     Platform Service Fee (Commission)
                   </h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                     Percentage retained by Kpugi upon creator payout settlement.
                   </p>
                 </div>
@@ -584,13 +573,13 @@ export default function SettingsCockpitManager({
             </div>
 
             {/* Minimum View Goal */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold font-display text-white">
+                  <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                     Minimum Verified View Goal
                   </h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                     Lowest video view count a creator must achieve before earnings unlock.
                   </p>
                 </div>
@@ -614,18 +603,18 @@ export default function SettingsCockpitManager({
                   }));
                   setIsMarketplaceDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             {/* Minimum Payout Withdrawal */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold font-display text-white">
+                  <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                     Minimum Withdrawal Amount
                   </h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                     Smallest wallet balance required for a creator to request bank payout.
                   </p>
                 </div>
@@ -649,18 +638,18 @@ export default function SettingsCockpitManager({
                   }));
                   setIsMarketplaceDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             {/* Minimum Campaign Budget */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold font-display text-white">
+                  <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                     Minimum Campaign Budget
                   </h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                     Smallest deposit an advertiser can fund when launching a campaign.
                   </p>
                 </div>
@@ -684,18 +673,18 @@ export default function SettingsCockpitManager({
                   }));
                   setIsMarketplaceDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             {/* Featured Campaign Fee */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold font-display text-white">
+                  <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                     Featured Placement Fee
                   </h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                     Flat premium fee charged to brands for pinning to top discovery slots.
                   </p>
                 </div>
@@ -719,17 +708,17 @@ export default function SettingsCockpitManager({
                   }));
                   setIsMarketplaceDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
 
             {/* Support Contact Email */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div>
-                <h3 className="text-sm font-bold font-display text-white">
+                <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                   Platform Support Email
                 </h3>
-                <p className="text-xs text-slate-400 font-sans mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                   Receives escalations and appears in creator transactional receipts.
                 </p>
               </div>
@@ -747,13 +736,13 @@ export default function SettingsCockpitManager({
                   }));
                   setIsMarketplaceDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
           </div>
 
           {/* Section Footer Save Bar */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-[#0A0E1A] border border-slate-800/80">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-[#0A0E1A] border border-gray-200 dark:border-slate-800/80">
             <Button
               variant="outline"
               size="sm"
@@ -784,15 +773,15 @@ export default function SettingsCockpitManager({
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Hero Slider Settings */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white flex items-center gap-2">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white flex items-center gap-2">
                 <Compass className="w-4 h-4 text-indigo-400" />
                 Featured Hero Carousel
               </h3>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-300 font-sans block mb-1">
+                  <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block mb-1">
                     Maximum Hero Slots (Pinned Campaigns)
                   </label>
                   <input
@@ -810,7 +799,7 @@ export default function SettingsCockpitManager({
                       }));
                       setIsBrowseDirty(true);
                     }}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                   <p className="text-[11px] text-slate-500 mt-1">
                     Limits how many campaigns can be featured simultaneously on the top slider.
@@ -818,7 +807,7 @@ export default function SettingsCockpitManager({
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-300 font-sans block mb-1">
+                  <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block mb-1">
                     Auto-Slide Rotation Speed (Seconds)
                   </label>
                   <input
@@ -836,15 +825,15 @@ export default function SettingsCockpitManager({
                       }));
                       setIsBrowseDirty(true);
                     }}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Default Sort Algorithm */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white flex items-center gap-2">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-emerald-400" />
                 Default Campaign Sorting
               </h3>
@@ -890,7 +879,7 @@ export default function SettingsCockpitManager({
                     className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
                       settings.browse.defaultSortAlgorithm === sortOption.id
                         ? "bg-indigo-600/10 border-indigo-500/40 text-white"
-                        : "bg-[#080B14] border-slate-800 text-slate-400 hover:border-slate-700"
+                        : "bg-gray-50 dark:bg-[#080B14] border-gray-300 dark:border-slate-800 text-gray-600 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-700"
                     }`}
                   >
                     <input
@@ -915,12 +904,12 @@ export default function SettingsCockpitManager({
           </div>
 
           {/* Active Marketplace Categories */}
-          <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
             <div>
-              <h3 className="text-sm font-bold font-display text-white">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                 Active Marketplace Categories
               </h3>
-              <p className="text-xs text-slate-400 font-sans mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                 Categories displayed in creator search filters and campaign creation dropdowns.
               </p>
             </div>
@@ -957,7 +946,7 @@ export default function SettingsCockpitManager({
                     handleAddCategory();
                   }
                 }}
-                className="flex-1 px-3 py-2 rounded-xl bg-[#080B14] border border-slate-800 text-white text-xs font-sans focus:outline-none focus:border-indigo-500"
+                className="flex-1 px-3 py-2 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white text-xs font-sans focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
               <Button size="sm" variant="outline" onClick={handleAddCategory}>
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add
@@ -966,51 +955,39 @@ export default function SettingsCockpitManager({
           </div>
 
           {/* Global Announcement Banner */}
-          <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold font-display text-white">
+                <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                   Global Site Announcement Banner
                 </h3>
-                <p className="text-xs text-slate-400 font-sans mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                   Displays a prominent alert banner across all public creator and advertiser pages.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
+              <Switch
+                checked={settings.browse.announcementBanner.enabled}
+                color="blue"
+                onChange={(checked) => {
                   setSettings((prev) => ({
                     ...prev,
                     browse: {
                       ...prev.browse,
                       announcementBanner: {
                         ...prev.browse.announcementBanner,
-                        enabled: !prev.browse.announcementBanner.enabled,
+                        enabled: checked,
                       },
                     },
                   }));
                   setIsBrowseDirty(true);
                 }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.browse.announcementBanner.enabled
-                    ? "bg-indigo-600"
-                    : "bg-slate-700"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.browse.announcementBanner.enabled
-                      ? "translate-x-6"
-                      : "translate-x-1"
-                  }`}
-                />
-              </button>
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs text-slate-300 font-sans block">
+                <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block">
                   Announcement Message
                 </label>
                 <input
@@ -1030,12 +1007,12 @@ export default function SettingsCockpitManager({
                     }));
                     setIsBrowseDirty(true);
                   }}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white text-xs font-sans focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white text-xs font-sans focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs text-slate-300 font-sans block">
+                <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block">
                   Color Theme
                 </label>
                 <select
@@ -1053,7 +1030,7 @@ export default function SettingsCockpitManager({
                     }));
                     setIsBrowseDirty(true);
                   }}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white text-xs font-sans focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white text-xs font-sans focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 >
                   <option value="info">Info (Indigo / Blue)</option>
                   <option value="success">Success (Emerald / Green)</option>
@@ -1085,7 +1062,7 @@ export default function SettingsCockpitManager({
           </div>
 
           {/* Section Footer Save Bar */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-[#0A0E1A] border border-slate-800/80">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-[#0A0E1A] border border-gray-200 dark:border-slate-800/80">
             <Button
               variant="outline"
               size="sm"
@@ -1116,8 +1093,8 @@ export default function SettingsCockpitManager({
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Campaign Approval Policy */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                 Campaign Launch Approval Policy
               </h3>
               <p className="text-xs text-slate-400 font-sans">
@@ -1139,7 +1116,7 @@ export default function SettingsCockpitManager({
                   className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
                     settings.campaigns.approvalPolicy === "admin_review"
                       ? "bg-indigo-600/10 border-indigo-500/40 text-white"
-                      : "bg-[#080B14] border-slate-800 text-slate-400 hover:border-slate-700"
+                      : "bg-gray-50 dark:bg-[#080B14] border-gray-300 dark:border-slate-800 text-gray-600 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-700"
                   }`}
                 >
                   <input
@@ -1173,7 +1150,7 @@ export default function SettingsCockpitManager({
                   className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
                     settings.campaigns.approvalPolicy === "instant_launch"
                       ? "bg-indigo-600/10 border-indigo-500/40 text-white"
-                      : "bg-[#080B14] border-slate-800 text-slate-400 hover:border-slate-700"
+                      : "bg-gray-50 dark:bg-[#080B14] border-gray-300 dark:border-slate-800 text-gray-600 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-700"
                   }`}
                 >
                   <input
@@ -1196,8 +1173,8 @@ export default function SettingsCockpitManager({
             </div>
 
             {/* Allowed Social Networks */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                 Supported Social Platforms
               </h3>
               <p className="text-xs text-slate-400 font-sans">
@@ -1270,12 +1247,12 @@ export default function SettingsCockpitManager({
             </div>
 
             {/* Verification Audit Window */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div>
-                <h3 className="text-sm font-bold font-display text-white">
+                <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                   Post Verification Audit Window
                 </h3>
-                <p className="text-xs text-slate-400 font-sans mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                   How long the scraper monitors video engagement velocity before final settlement.
                 </p>
               </div>
@@ -1292,7 +1269,7 @@ export default function SettingsCockpitManager({
                   }));
                   setIsCampaignsDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               >
                 <option value={24}>24 Hours (Fast settlement)</option>
                 <option value={48}>48 Hours (Recommended baseline)</option>
@@ -1302,12 +1279,12 @@ export default function SettingsCockpitManager({
             </div>
 
             {/* Max Submissions Per Creator */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
               <div>
-                <h3 className="text-sm font-bold font-display text-white">
+                <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                   Submission Limit per Creator
                 </h3>
-                <p className="text-xs text-slate-400 font-sans mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                   Maximum number of distinct video submissions one creator can submit for a single brief.
                 </p>
               </div>
@@ -1327,13 +1304,13 @@ export default function SettingsCockpitManager({
                   }));
                   setIsCampaignsDirty(true);
                 }}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />
             </div>
           </div>
 
           {/* Section Footer Save Bar */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-[#0A0E1A] border border-slate-800/80">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-[#0A0E1A] border border-gray-200 dark:border-slate-800/80">
             <Button
               variant="outline"
               size="sm"
@@ -1364,8 +1341,8 @@ export default function SettingsCockpitManager({
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Identity (KYC) Verification Policy */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                 Creator Identity Verification (KYC)
               </h3>
               <p className="text-xs text-slate-400 font-sans">
@@ -1405,7 +1382,7 @@ export default function SettingsCockpitManager({
                     className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
                       settings.users.kycPolicy === policy.id
                         ? "bg-indigo-600/10 border-indigo-500/40 text-white"
-                        : "bg-[#080B14] border-slate-800 text-slate-400 hover:border-slate-700"
+                        : "bg-gray-50 dark:bg-[#080B14] border-gray-300 dark:border-slate-800 text-gray-600 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-700"
                     }`}
                   >
                     <input
@@ -1427,7 +1404,7 @@ export default function SettingsCockpitManager({
 
               {settings.users.kycPolicy === "threshold" && (
                 <div className="pt-2">
-                  <label className="text-xs text-slate-300 font-sans block mb-1">
+                  <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block mb-1">
                     Exemption Threshold Limit (NGN)
                   </label>
                   <input
@@ -1445,15 +1422,15 @@ export default function SettingsCockpitManager({
                       }));
                       setIsUsersDirty(true);
                     }}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
               )}
             </div>
 
             {/* Minimum Follower Thresholds */}
-            <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                 Audience Size Entry Minimums
               </h3>
               <p className="text-xs text-slate-400 font-sans">
@@ -1462,7 +1439,7 @@ export default function SettingsCockpitManager({
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-300 font-sans block mb-1">
+                  <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block mb-1">
                     TikTok Follower Minimum
                   </label>
                   <input
@@ -1483,12 +1460,12 @@ export default function SettingsCockpitManager({
                       }));
                       setIsUsersDirty(true);
                     }}
-                    className="w-full px-4 py-2 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-300 font-sans block mb-1">
+                  <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block mb-1">
                     Instagram Follower Minimum
                   </label>
                   <input
@@ -1509,12 +1486,12 @@ export default function SettingsCockpitManager({
                       }));
                       setIsUsersDirty(true);
                     }}
-                    className="w-full px-4 py-2 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-300 font-sans block mb-1">
+                  <label className="text-xs text-gray-700 dark:text-slate-300 font-sans block mb-1">
                     YouTube Subscriber Minimum
                   </label>
                   <input
@@ -1535,15 +1512,15 @@ export default function SettingsCockpitManager({
                       }));
                       setIsUsersDirty(true);
                     }}
-                    className="w-full px-4 py-2 rounded-xl bg-[#080B14] border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-300 dark:border-slate-800 text-gray-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Risk & Fraud Protections */}
-            <div className="md:col-span-2 p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-              <h3 className="text-sm font-bold font-display text-white">
+            <div className="md:col-span-2 p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+              <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
                 Automated Risk & Fraud Defenses
               </h3>
 
@@ -1627,7 +1604,7 @@ export default function SettingsCockpitManager({
           </div>
 
           {/* Section Footer Save Bar */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-[#0A0E1A] border border-slate-800/80">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-[#0A0E1A] border border-gray-200 dark:border-slate-800/80">
             <Button
               variant="outline"
               size="sm"
@@ -1661,7 +1638,7 @@ export default function SettingsCockpitManager({
               <h2 className="text-base font-bold font-display text-white">
                 External Integrations Status Vault
               </h2>
-              <p className="text-xs text-slate-400 font-sans mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                 Overview of third-party APIs, gateways, automated scrapers, and database connections.
               </p>
             </div>
@@ -1682,7 +1659,7 @@ export default function SettingsCockpitManager({
               return (
                 <div
                   key={service.key}
-                  className="p-5 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-3.5 transition-all hover:border-slate-700/80"
+                  className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-3.5 transition-all hover:border-slate-700/80"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -1786,13 +1763,13 @@ export default function SettingsCockpitManager({
               <h2 className="text-base font-bold font-display text-white">
                 Scheduled Tasks & Automation Engines
               </h2>
-              <p className="text-xs text-slate-400 font-sans mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-slate-400 font-sans mt-0.5">
                 Background routines that settle balances, scrape social metrics, and enforce campaign deadlines.
               </p>
             </div>
           </div>
 
-          <div className="divide-y divide-slate-800/80 rounded-2xl bg-[#0C101A] border border-slate-800/80 overflow-hidden">
+          <div className="divide-y divide-slate-800/80 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none overflow-hidden">
             {CRON_JOBS.map((job) => {
               const isRunning = runningCronPath === job.path;
 
@@ -1854,7 +1831,7 @@ export default function SettingsCockpitManager({
       {activeTab === "system" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-[#0C101A] border border-slate-800/80">
+            <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
               <div className="flex items-center justify-between text-slate-400 mb-2">
                 <span className="text-xs font-mono uppercase font-semibold">
                   Postgres Security Layer
@@ -1869,7 +1846,7 @@ export default function SettingsCockpitManager({
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#0C101A] border border-slate-800/80">
+            <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
               <div className="flex items-center justify-between text-slate-400 mb-2">
                 <span className="text-xs font-mono uppercase font-semibold">
                   Active Operator
@@ -1884,7 +1861,7 @@ export default function SettingsCockpitManager({
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#0C101A] border border-slate-800/80">
+            <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
               <div className="flex items-center justify-between text-slate-400 mb-2">
                 <span className="text-xs font-mono uppercase font-semibold">
                   Platform Runtime
@@ -1901,8 +1878,8 @@ export default function SettingsCockpitManager({
           </div>
 
           {/* Backup & Audit Summary */}
-          <div className="p-6 rounded-2xl bg-[#0C101A] border border-slate-800/80 space-y-4">
-            <h3 className="text-sm font-bold font-display text-white">
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
+            <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
               System Configuration Backup & Audit
             </h3>
             <p className="text-xs text-slate-400 font-sans">

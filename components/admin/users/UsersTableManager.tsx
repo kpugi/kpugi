@@ -223,7 +223,7 @@ export default function UsersTableManager({
       {/* 1. METRIC KPI CARDS STRIP */}
       {/* ---------------------------------------------------- */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Total Users
@@ -237,7 +237,7 @@ export default function UsersTableManager({
           </p>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Creators
@@ -251,7 +251,7 @@ export default function UsersTableManager({
           </p>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Advertisers
@@ -265,7 +265,7 @@ export default function UsersTableManager({
           </p>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               KYC Verified
@@ -279,7 +279,7 @@ export default function UsersTableManager({
           </p>
         </div>
 
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Admins / Flagged
@@ -308,9 +308,9 @@ export default function UsersTableManager({
       {/* ---------------------------------------------------- */}
       {/* 2. TAILADMIN BASIC TABLE 1 CONTAINER */}
       {/* ---------------------------------------------------- */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+      <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
         {/* Table Header Toolbar: Search & Filter Pills */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5 space-y-4">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-800/80 space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
             <div>
               <h2 className="font-semibold text-gray-800 text-theme-xl dark:text-white/90 flex items-center gap-2">
@@ -423,7 +423,7 @@ export default function UsersTableManager({
         {/* Table Element */}
         <div className="max-w-full overflow-x-auto">
           <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
+            <TableHeader className="border-b border-gray-100 dark:border-slate-800/80 bg-gray-50/70 dark:bg-slate-900/40">
               <TableRow>
                 {/* User / Identity (Sortable) */}
                 <TableCell
@@ -503,7 +503,7 @@ export default function UsersTableManager({
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
+            <TableBody className="divide-y divide-gray-100 dark:divide-slate-800/60">
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -522,7 +522,7 @@ export default function UsersTableManager({
                   return (
                     <TableRow
                       key={u.id}
-                      className="hover:bg-gray-50/50 dark:hover:bg-white/3 transition-colors group"
+                      className="hover:bg-gray-50/70 dark:hover:bg-slate-800/30 transition-colors group"
                     >
                       {/* User / Identity */}
                       <TableCell className="px-5 py-3.5 text-start">
@@ -660,7 +660,7 @@ export default function UsersTableManager({
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
               {Math.min(currentPage * itemsPerPage, filteredData.length)} of{" "}

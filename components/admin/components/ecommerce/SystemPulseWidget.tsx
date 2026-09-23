@@ -85,10 +85,10 @@ export default function SystemPulseWidget({
         </div>
 
         <Link
-          href="/admin/system"
+          href="/admin/settings"
           className="inline-flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
         >
-          Diagnostics
+          Cron Cockpit
           <ExternalLink className="w-3 h-3" />
         </Link>
       </div>

@@ -29,7 +29,6 @@ import {
   TableRow,
 } from "@/components/admin/components/ui/table";
 import Pagination from "@/components/admin/components/tables/Pagination";
-import CampaignRowToggles from "@/components/admin/CampaignRowToggles";
 
 export interface AdminCampaignItem {
   id: string;
@@ -302,7 +301,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-800/80 shadow-2xs">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 text-xs mb-1 font-medium">
             <span>Total Registered</span>
             <Layers className="w-3.5 h-3.5" />
@@ -315,7 +314,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-800/80 shadow-2xs">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-2xs">
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 text-xs mb-1 font-medium">
             <span>Active Live</span>
             <span className="relative flex h-2 w-2">
@@ -331,7 +330,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-800/80 shadow-2xs">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-2xs">
           <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 text-xs mb-1 font-medium">
             <span>Paused / Concluded</span>
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -344,7 +343,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-800/80 shadow-2xs">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-2xs">
           <div className="flex items-center justify-between text-brand-600 dark:text-brand-400 text-xs mb-1 font-medium">
             <span>Capital Deployed</span>
             <Coins className="w-3.5 h-3.5" />
@@ -361,9 +360,9 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
       </div>
 
       {/* Main Table Card (TailAdmin Basic Table 1 & 2 standard) */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3">
+      <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A]">
         {/* Toolbar: Status Filter Tabs, Hero/Featured Chips, Page Size, Search */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5 space-y-3.5">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-800/80 space-y-3.5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
             {/* Status Pills */}
             <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
@@ -476,7 +475,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
         {/* Data Table */}
         <div className="max-w-full overflow-x-auto">
           <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
+            <TableHeader className="border-b border-gray-100 dark:border-slate-800/80 bg-gray-50/70 dark:bg-slate-900/40">
               <TableRow>
                 {/* Campaign Header (Sortable) */}
                 <TableCell
@@ -558,14 +557,6 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                   </div>
                 </TableCell>
 
-                {/* Hero / Featured Header */}
-                <TableCell
-                  isHeader
-                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 select-none"
-                >
-                  Hero / Featured
-                </TableCell>
-
                 {/* Created Header (Sortable) */}
                 <TableCell
                   isHeader
@@ -592,10 +583,10 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/5 font-sans">
+            <TableBody className="divide-y divide-gray-100 dark:divide-slate-800/60 font-sans">
               {paginatedCampaigns.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-14 text-center">
+                  <TableCell colSpan={7} className="py-14 text-center">
                     <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
                       <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 mb-3">
                         <Megaphone className="w-6 h-6" />
@@ -634,7 +625,7 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                     <TableRow
                       key={c.id}
                       onClick={() => router.push(`/admin/campaigns/${c.id}`)}
-                      className="hover:bg-gray-50/70 dark:hover:bg-white/3 transition-colors cursor-pointer group"
+                      className="hover:bg-gray-50/70 dark:hover:bg-slate-800/30 transition-colors cursor-pointer group"
                     >
                       {/* Campaign Cover + Title + Code */}
                       <TableCell className="py-3.5 px-4">
@@ -712,18 +703,6 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                             />
                           </div>
                         </div>
-                      </TableCell>
-
-                      {/* Hero & Featured Operations (Row Toggles) */}
-                      <TableCell
-                        className="py-3.5 px-4"
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                      >
-                        <CampaignRowToggles
-                          campaignId={c.id}
-                          isHeroPinned={!!c.is_hero_pinned}
-                          isFeatured={!!c.is_featured}
-                        />
                       </TableCell>
 
                       {/* Created Date */}

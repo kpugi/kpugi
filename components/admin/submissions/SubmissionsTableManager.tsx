@@ -273,7 +273,7 @@ export default function SubmissionsTableManager({
       {/* ---------------------------------------------------- */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {/* Total Submissions */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Total Submissions
@@ -288,7 +288,7 @@ export default function SubmissionsTableManager({
         </div>
 
         {/* Pending Verification */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Pending Audit
@@ -303,7 +303,7 @@ export default function SubmissionsTableManager({
         </div>
 
         {/* Verified Pass */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Verified Pass
@@ -318,7 +318,7 @@ export default function SubmissionsTableManager({
         </div>
 
         {/* Failed / Flagged */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Failed / Flagged
@@ -333,7 +333,7 @@ export default function SubmissionsTableManager({
         </div>
 
         {/* Total Escrow */}
-        <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs col-span-2 sm:col-span-1">
+        <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Total Escrow Value
@@ -351,7 +351,7 @@ export default function SubmissionsTableManager({
       {/* ---------------------------------------------------- */}
       {/* 2. SEARCH & MULTI-FACET FILTER CONTROLS */}
       {/* ---------------------------------------------------- */}
-      <div className="p-4 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs space-y-4">
+      <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs space-y-4">
         {/* Top bar: Search + Platform selector + Reset */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Search Input */}
@@ -413,7 +413,7 @@ export default function SubmissionsTableManager({
         </div>
 
         {/* Status Category Segment Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs border-t border-gray-100 dark:border-white/5 pt-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs border-t border-gray-100 dark:border-slate-800/80 pt-3">
           {[
             { id: "all", label: "All Submissions", count: totalCount },
             { id: "pending", label: "Pending", count: pendingCount },
@@ -453,10 +453,10 @@ export default function SubmissionsTableManager({
       {/* ---------------------------------------------------- */}
       {/* 3. TAILADMIN BASICTABLEONE TABLE VIEW */}
       {/* ---------------------------------------------------- */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
+      <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
         <div className="max-w-full overflow-x-auto">
           <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
+            <TableHeader className="border-b border-gray-100 dark:border-slate-800/80 bg-gray-50/70 dark:bg-slate-900/40">
               <TableRow>
                 {/* Creator / Submission */}
                 <TableCell
@@ -544,7 +544,7 @@ export default function SubmissionsTableManager({
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
+            <TableBody className="divide-y divide-gray-100 dark:divide-slate-800/60">
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-gray-400 text-xs">
@@ -566,7 +566,7 @@ export default function SubmissionsTableManager({
                   return (
                     <TableRow
                       key={s.id}
-                      className="hover:bg-gray-50/50 dark:hover:bg-white/3 transition-colors group"
+                      className="hover:bg-gray-50/70 dark:hover:bg-slate-800/30 transition-colors group"
                     >
                       {/* Creator & ID */}
                       <TableCell className="px-5 py-3 text-start">
@@ -744,7 +744,7 @@ export default function SubmissionsTableManager({
 
         {/* TailAdmin Pagination Footer */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                 Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}

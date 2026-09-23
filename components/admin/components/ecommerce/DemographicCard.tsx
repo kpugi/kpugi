@@ -189,10 +189,10 @@ export default function DemographicCard({ submissions = [] }: DemographicCardPro
             </DropdownItem>
             <DropdownItem onItemClick={() => setIsOpen(false)}>
               <Link
-                href="/admin/system"
+                href="/admin/accounts"
                 className="block w-full px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:text-brand-500 font-medium"
               >
-                Scraper Health Status
+                Connected Social Registry
               </Link>
             </DropdownItem>
           </Dropdown>

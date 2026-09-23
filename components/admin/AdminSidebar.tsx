@@ -59,12 +59,6 @@ const NAV_ITEMS = [
     badge: 'RLS',
   },
   {
-    label: 'System Health',
-    href: '/admin/system',
-    icon: Activity,
-    badge: null,
-  },
-  {
     label: 'Settings',
     href: '/admin/settings',
     icon: Sliders,

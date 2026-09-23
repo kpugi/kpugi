@@ -16,10 +16,10 @@ export default function SidebarWidget() {
           100% automated settlement and escrow protection.
         </p>
         <Link
-          href="/admin/system"
+          href="/admin/settings"
           className="mt-3 flex items-center justify-center py-2 px-3 text-xs font-semibold text-white rounded-xl bg-brand-500 hover:bg-brand-600 transition-colors shadow-xs"
         >
-          System Health
+          Platform Settings
         </Link>
       </div>
     </div>

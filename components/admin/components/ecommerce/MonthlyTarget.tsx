@@ -64,8 +64,8 @@ export default function MonthlyTarget({
             className="w-48 p-1.5"
           >
             <DropdownItem onItemClick={() => setIsOpen(false)}>
-              <Link href="/admin/system" className="block w-full px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:text-brand-500 font-medium">
-                System Diagnostics
+              <Link href="/admin/scraper" className="block w-full px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:text-brand-500 font-medium">
+                Scraper Diagnostics
               </Link>
             </DropdownItem>
             <DropdownItem onItemClick={() => setIsOpen(false)}>
