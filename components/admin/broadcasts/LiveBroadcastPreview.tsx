@@ -20,6 +20,7 @@ import {
   CtaStyle,
   TAG_METADATA,
 } from "@/lib/admin/platform-broadcasts-types";
+import Announcement7 from "@/components/common/Announcement7";
 
 interface LiveBroadcastPreviewProps {
   title: string;
@@ -51,7 +52,7 @@ export default function LiveBroadcastPreview({
   const [activePreviewTab, setActivePreviewTab] = useState<"banner" | "in_app" | "email">("banner");
 
   const tagInfo = TAG_METADATA[tag] || TAG_METADATA.update;
-  const displayTitle = title.trim() || "Announcement Title Preview";
+  const displayTitle = title.trim() || tagInfo.label || "Platform Update";
   const displayMessage =
     message.trim() ||
     "This is a live preview of how your announcement message will appear across your selected dispatch channels.";
@@ -133,70 +134,17 @@ export default function LiveBroadcastPreview({
           <div className="space-y-3 max-w-xl mx-auto w-full">
             <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 px-1">
               <span>Preview on User Dashboard (/c/dashboard or /b/dashboard)</span>
-              <span className="capitalize">{targetAudience} Audience</span>
             </div>
 
-            {/* The Actual Banner Card */}
-            <div
-              className={`p-4 sm:p-5 rounded-2xl bg-[#0E1528] border ${tagInfo.borderClass} shadow-xl relative overflow-hidden transition-all`}
-            >
-              {/* Top Row: Tag Badge & Dismiss Button */}
-              <div className="flex items-start justify-between gap-3 mb-2.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase border ${tagInfo.badgeClass}`}
-                  >
-                    <span>{tagInfo.emoji}</span>
-                    <span>{tagInfo.label}</span>
-                  </span>
-
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider bg-slate-800/80 px-2 py-0.5 rounded">
-                    {targetAudience === "all"
-                      ? "All Users"
-                      : targetAudience === "creators"
-                      ? "Creators"
-                      : "Advertisers"}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
-                  title="Dismiss banner preview"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Title & Body Text */}
-              <div className="space-y-1.5">
-                <h4 className="text-sm sm:text-base font-bold font-display text-white tracking-tight">
-                  {displayTitle}
-                </h4>
-                <p className="text-xs text-slate-300 font-sans leading-relaxed">
-                  {displayMessage}
-                </p>
-              </div>
-
-              {/* CTA Action Button */}
-              {hasCta && (
-                <div className="mt-3.5 pt-3 border-t border-slate-800/60 flex items-center justify-between">
-                  <button
-                    type="button"
-                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-sans font-semibold transition-all ${getCtaButtonClasses()}`}
-                  >
-                    <span>{displayCtaLabel}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
-
-                  {ctaUrl && (
-                    <span className="text-[10px] font-mono text-slate-500 truncate max-w-[200px]">
-                      {ctaUrl}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* The Actual User-Facing Banner Card */}
+            <Announcement7
+              title={displayTitle}
+              message={displayMessage}
+              tag={tag}
+              ctaText={displayCtaLabel}
+              ctaLink={ctaUrl || undefined}
+              showCta={hasCta}
+            />
           </div>
         )}
 

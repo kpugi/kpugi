@@ -116,15 +116,16 @@ export default function BroadcastsManager({
 
   // Submit Handler
   const handlePublish = (status: "active" | "draft") => {
-    if (!title.trim() || !message.trim()) {
-      showToast("error", "Please provide both a title and message body.");
+    const finalTitle = title.trim() || TAG_METADATA[tag]?.label || "Platform Update";
+    if (!message.trim()) {
+      showToast("error", "Please provide an announcement message body.");
       return;
     }
 
     startTransition(async () => {
       try {
         const res = await createBroadcastAction({
-          title: title.trim(),
+          title: finalTitle,
           message: message.trim(),
           tag,
           target_audience: targetAudience,
@@ -134,7 +135,7 @@ export default function BroadcastsManager({
           cta_url: hasCta ? ctaUrl.trim() || "/c/dashboard" : null,
           cta_style: ctaStyle,
           status,
-          email_subject: emailSubject.trim() || title.trim(),
+          email_subject: emailSubject.trim() || finalTitle,
           email_preview_text: emailPreviewText.trim() || message.trim().slice(0, 100),
         });
 
@@ -474,7 +475,7 @@ export default function BroadcastsManager({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Instant Payout Settlements Are Now Live!"
+                    placeholder={`e.g. ${TAG_METADATA[tag]?.label || "Platform Update"} (optional, defaults to tag)`}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#080B14] border border-slate-800 text-white font-sans text-xs focus:outline-none focus:border-indigo-500"
