@@ -28,7 +28,11 @@ import {
   Sparkles,
   ChevronRight,
   Wallet,
+  Trophy,
+  Award,
 } from "lucide-react";
+import { getCreatorLevel, CREATOR_LEVELS } from "@/lib/utils/levels";
+import CreatorLevelBadge from "@/components/creator/CreatorLevelBadge";
 
 export interface UserRowData {
   id: string;
@@ -68,7 +72,7 @@ interface UsersTableManagerProps {
   currentAdminId: string;
 }
 
-type SortField = "name" | "role" | "balance" | "joined";
+type SortField = "name" | "role" | "balance" | "joined" | "rank";
 type SortDirection = "asc" | "desc";
 
 export default function UsersTableManager({
@@ -81,6 +85,7 @@ export default function UsersTableManager({
     "all" | "creator" | "advertiser" | "both" | "admin" | "suspended"
   >("all");
   const [kycFilter, setKycFilter] = useState<"all" | "verified" | "pending" | "unverified">("all");
+  const [rankFilter, setRankFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joined");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,6 +110,12 @@ export default function UsersTableManager({
   const adminCount = users.filter((u) => u.is_admin).length;
   const suspendedCount = users.filter((u) => u.account_status === "suspended").length;
 
+  // Creator Gamification Rank Analytics
+  const topTierCreatorsCount = users.filter((u) => {
+    const earned = Number(u.creator_profile?.total_earned) || 0;
+    return getCreatorLevel(earned).currentLevelNumber >= 6;
+  }).length;
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -118,6 +129,7 @@ export default function UsersTableManager({
     setSearchQuery("");
     setRoleFilter("all");
     setKycFilter("all");
+    setRankFilter("all");
     setSortField("joined");
     setSortDirection("desc");
     setCurrentPage(1);
@@ -153,6 +165,22 @@ export default function UsersTableManager({
       );
     }
 
+    // Creator Rank filter
+    if (rankFilter !== "all") {
+      if (rankFilter === "top_tier") {
+        result = result.filter((u) => {
+          const earned = Number(u.creator_profile?.total_earned) || 0;
+          return getCreatorLevel(earned).currentLevelNumber >= 6;
+        });
+      } else {
+        const targetLvl = parseInt(rankFilter, 10);
+        result = result.filter((u) => {
+          const earned = Number(u.creator_profile?.total_earned) || 0;
+          return getCreatorLevel(earned).currentLevelNumber === targetLvl;
+        });
+      }
+    }
+
     // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -181,6 +209,12 @@ export default function UsersTableManager({
         case "role":
           comp = a.role.localeCompare(b.role);
           break;
+        case "rank": {
+          const earnedA = Number(a.creator_profile?.total_earned) || 0;
+          const earnedB = Number(b.creator_profile?.total_earned) || 0;
+          comp = earnedA - earnedB;
+          break;
+        }
         case "balance":
           comp = getUserBalance(a) - getUserBalance(b);
           break;
@@ -192,7 +226,7 @@ export default function UsersTableManager({
     });
 
     return result;
-  }, [users, roleFilter, kycFilter, searchQuery, sortField, sortDirection]);
+  }, [users, roleFilter, kycFilter, rankFilter, searchQuery, sortField, sortDirection]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
   const paginatedData = useMemo(() => {
@@ -204,6 +238,7 @@ export default function UsersTableManager({
     searchQuery.trim() !== "" ||
     roleFilter !== "all" ||
     kycFilter !== "all" ||
+    rankFilter !== "all" ||
     sortField !== "joined" ||
     sortDirection !== "desc";
 
@@ -240,15 +275,18 @@ export default function UsersTableManager({
         <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Creators
+              Creators &amp; Ranks
             </span>
             <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5" />
+              <Trophy className="w-3.5 h-3.5" />
             </div>
           </div>
           <p className="text-xl font-bold font-mono text-gray-900 dark:text-white mt-2">
             {creatorCount}
           </p>
+          <span className="text-[10px] text-gray-400 font-mono mt-0.5 block">
+            {topTierCreatorsCount} Top Tier (Lvl 6+)
+          </span>
         </div>
 
         <div className="p-4 rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs">
@@ -384,6 +422,28 @@ export default function UsersTableManager({
                 </select>
               </div>
 
+              {/* Creator Rank Filter */}
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span>Rank:</span>
+                <select
+                  value={rankFilter}
+                  onChange={(e) => {
+                    setRankFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="h-9 px-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white text-xs font-medium focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
+                >
+                  <option value="all">All Creator Ranks</option>
+                  <option value="top_tier">⭐ Top Tier (Lvl 6+ • ₦1M+)</option>
+                  {CREATOR_LEVELS.map((lvl) => (
+                    <option key={lvl.level} value={lvl.level.toString()}>
+                      {lvl.icon} Lvl {lvl.level}: {lvl.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {isFiltered && (
                 <button
                   onClick={handleResetFilters}
@@ -465,6 +525,26 @@ export default function UsersTableManager({
                   </div>
                 </TableCell>
 
+                {/* Creator Rank (Sortable) */}
+                <TableCell
+                  isHeader
+                  onClick={() => handleSort("rank")}
+                  className="px-5 py-2.5 text-start text-[11px] font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400 cursor-pointer select-none hover:text-gray-800 dark:hover:text-white transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Creator Rank</span>
+                    {sortField === "rank" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="w-3.5 h-3.5 text-brand-500" />
+                      ) : (
+                        <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-60" />
+                    )}
+                  </div>
+                </TableCell>
+
                 {/* KYC Verification */}
                 <TableCell
                   isHeader
@@ -507,7 +587,7 @@ export default function UsersTableManager({
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="py-12 text-center text-gray-400 text-xs"
                   >
                     No user profiles match your selected search or filter criteria.
@@ -579,6 +659,25 @@ export default function UsersTableManager({
                             </span>
                           )}
                         </div>
+                      </TableCell>
+
+                      {/* Creator Rank */}
+                      <TableCell className="px-5 py-3.5 text-start whitespace-nowrap">
+                        {u.role === "creator" || u.role === "both" || u.creator_profile ? (
+                          <div className="flex flex-col gap-0.5 items-start">
+                            <CreatorLevelBadge
+                              totalEarned={Number(u.creator_profile?.total_earned) || 0}
+                              variant="pill"
+                            />
+                            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 pl-1">
+                              ₦{(Number(u.creator_profile?.total_earned) || 0).toLocaleString()} earned
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-gray-400 dark:text-gray-500 font-mono">
+                            —
+                          </span>
+                        )}
                       </TableCell>
 
                       {/* KYC Verification */}

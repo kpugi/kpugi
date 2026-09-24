@@ -43,7 +43,11 @@ import {
   Activity,
   History,
   Info,
+  Trophy,
+  Award,
 } from "lucide-react";
+import { getCreatorLevel, CREATOR_LEVELS } from "@/lib/utils/levels";
+import CreatorLevelBadge from "@/components/creator/CreatorLevelBadge";
 import {
   TikTokIcon,
   InstagramIcon,
@@ -195,6 +199,11 @@ export default function UserDetailAdminView({
   const advertiserBalance = Number(advertiserWallet?.balance) || 0;
   const totalBalance = creatorBalance + advertiserBalance;
 
+  // Creator Gamification Rank helpers
+  const isCreator = user.role === "creator" || user.role === "both" || !!creatorProfile;
+  const totalEarned = Number(creatorProfile?.total_earned) || 0;
+  const rankData = getCreatorLevel(totalEarned);
+
   // Copy helper
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -299,6 +308,15 @@ export default function UserDetailAdminView({
                 >
                   {user.role}
                 </span>
+
+                {/* Creator Gamification Rank Badge */}
+                {isCreator && (
+                  <CreatorLevelBadge
+                    totalEarned={totalEarned}
+                    variant="pill"
+                  />
+                )}
+
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-semibold font-mono uppercase ${
                     isSuspended
@@ -446,22 +464,34 @@ export default function UserDetailAdminView({
             </span>
           </div>
 
-          {/* Card 2: Activity Delivered */}
+          {/* Card 2: Creator Gamification Rank or Platform Activity */}
           <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-white/5 border border-gray-100 dark:border-white/5">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block">
-              Platform Activity
-            </span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-lg font-bold font-mono text-gray-900 dark:text-white">
-                {user.role === "advertiser"
-                  ? `${campaignsCreated.length} Campaigns`
-                  : `${submissionsMade.length} Submissions`}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block">
+                {isCreator ? "Creator Rank & Gamification" : "Platform Activity"}
               </span>
+              {isCreator ? (
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+              ) : (
+                <Activity className="w-3.5 h-3.5 text-gray-400" />
+              )}
             </div>
-            <span className="text-[10px] text-gray-400 font-mono mt-0.5 block">
-              {user.role === "advertiser"
-                ? `Active Briefs & Creative Escrows`
-                : `${socialAccounts.length} Connected Social Channels`}
+            <div className="flex items-baseline gap-1.5 mt-1">
+              {isCreator ? (
+                <span className="text-base sm:text-lg font-bold font-display text-gray-900 dark:text-white flex items-center gap-1.5 truncate">
+                  <span>{rankData.levelInfo.icon}</span>
+                  <span>Lvl {rankData.currentLevelNumber}: {rankData.levelInfo.title}</span>
+                </span>
+              ) : (
+                <span className="text-lg font-bold font-mono text-gray-900 dark:text-white">
+                  {campaignsCreated.length} Campaigns
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-gray-400 font-mono mt-0.5 block truncate">
+              {isCreator
+                ? `₦${totalEarned.toLocaleString()} earned • ${rankData.progressPercent}% to Lvl ${rankData.nextLevelInfo?.level || 14}`
+                : "Active Briefs & Creative Escrows"}
             </span>
           </div>
 
@@ -691,6 +721,133 @@ export default function UserDetailAdminView({
               </div>
             )}
           </div>
+
+          {/* Creator Gamification Rank & Progression Card */}
+          {isCreator && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/3 space-y-4 md:col-span-2 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-white/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 flex items-center justify-center font-bold">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-base">
+                      Creator Rank &amp; Gamification Progression
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Platform tier calculated automatically from Paystack verified lifetime campaign earnings.
+                    </p>
+                  </div>
+                </div>
+
+                <CreatorLevelBadge
+                  totalEarned={totalEarned}
+                  variant="pill"
+                />
+              </div>
+
+              {/* 3-card Rank Detail Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Current Level Card */}
+                <div className={`p-4 rounded-xl border flex flex-col justify-between ${rankData.levelInfo.badgeBg} ${rankData.levelInfo.badgeBorder}`}>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-3xl">{rankData.levelInfo.icon}</span>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
+                        Rank #{rankData.currentLevelNumber} of 14
+                      </span>
+                    </div>
+                    <h4 className="font-display font-extrabold text-lg text-gray-900 dark:text-white mt-2">
+                      Level {rankData.currentLevelNumber}: {rankData.levelInfo.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                      {rankData.levelInfo.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 mt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-mono">
+                    <span className="text-gray-500">Tier Range:</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-200">
+                      ₦{rankData.levelInfo.minEarnings.toLocaleString()}
+                      {rankData.levelInfo.maxEarnings ? ` - ₦${rankData.levelInfo.maxEarnings.toLocaleString()}` : '+'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress to Next Rank */}
+                <div className="p-4 rounded-xl border border-gray-200/80 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono block">
+                      Progress to Next Tier
+                    </span>
+                    <div className="flex items-baseline justify-between mt-1">
+                      <span className="text-xl font-bold font-display text-gray-900 dark:text-white">
+                        {rankData.progressPercent}%
+                      </span>
+                      {rankData.nextLevelInfo ? (
+                        <span className="text-xs font-semibold text-brand-600 dark:text-brand-400">
+                          Next: {rankData.nextLevelInfo.icon} {rankData.nextLevelInfo.title}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                          💎 Max Diamond Rank
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden mt-2">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${rankData.levelInfo.gradient}`}
+                        style={{ width: `${rankData.progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 pt-2 border-t border-gray-200/60 dark:border-white/5">
+                    {rankData.nextLevelInfo ? (
+                      <div className="flex justify-between items-center font-mono text-[11px]">
+                        <span>Needed for Lvl {rankData.nextLevelInfo.level}:</span>
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          ₦{rankData.amountNeededForNextLevel.toLocaleString()}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        Maximum platform gamification rank unlocked!
+                      </span>
+                    )}
+                    <div className="flex justify-between items-center font-mono text-[11px]">
+                      <span>Lifetime Earnings:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        ₦{totalEarned.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Platform Rank Perks Card */}
+                <div className="p-4 rounded-xl border border-gray-200/80 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono block">
+                      Platform Ranks Matrix
+                    </span>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                      Kpugi features a 14-tier creator hierarchy granting priority verification queues, escrow limits, and dedicated campaign specialists.
+                    </p>
+                  </div>
+
+                  <div>
+                    <CreatorLevelBadge
+                      totalEarned={totalEarned}
+                      variant="pill"
+                      className="w-full justify-center py-2 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -955,7 +1112,7 @@ export default function UserDetailAdminView({
       {activeTab === "finances" && (
         <div className="space-y-6">
           {/* Wallets Summary Card */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="p-5 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs flex items-center justify-between">
               <div>
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -976,6 +1133,30 @@ export default function UserDetailAdminView({
                 Adjust
               </Button>
             </div>
+
+            {/* Lifetime Earnings & Rank Status for Creators */}
+            {isCreator && (
+              <div className="p-5 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Lifetime Earned (Rank Lvl {rankData.currentLevelNumber})
+                    </span>
+                    <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                  <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                    ₦{totalEarned.toLocaleString()}
+                  </p>
+                  <span className="text-[10px] text-gray-400 font-mono mt-0.5 block">
+                    {rankData.levelInfo.icon} {rankData.levelInfo.title} • {rankData.progressPercent}% to next rank
+                  </span>
+                </div>
+                <CreatorLevelBadge
+                  totalEarned={totalEarned}
+                  variant="pill"
+                />
+              </div>
+            )}
 
             <div className="p-5 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs flex items-center justify-between">
               <div>
