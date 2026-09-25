@@ -177,6 +177,9 @@ export default function UserDetailAdminView({
     "overview" | "footprint" | "activity" | "finances" | "audits"
   >("overview");
 
+  // Audit Ledger Filter State
+  const [auditFilter, setAuditFilter] = useState<"all" | "admin" | "user" | "system">("all");
+
   // Copy Feedback
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -203,6 +206,44 @@ export default function UserDetailAdminView({
   const isCreator = user.role === "creator" || user.role === "both" || !!creatorProfile;
   const totalEarned = Number(creatorProfile?.total_earned) || 0;
   const rankData = getCreatorLevel(totalEarned);
+
+  // Forensic Audit Trail helpers
+  const getActorRoleBadge = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case "admin":
+        return "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/60";
+      case "creator":
+        return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60";
+      case "advertiser":
+      case "brand":
+        return "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/60";
+      case "system":
+      default:
+        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-200/60 dark:border-gray-700/60";
+    }
+  };
+
+  const adminEventsCount = auditTrail.filter(
+    (l) => l.actor_role?.toLowerCase() === "admin"
+  ).length;
+  const userEventsCount = auditTrail.filter((l) =>
+    ["creator", "advertiser", "brand"].includes(l.actor_role?.toLowerCase())
+  ).length;
+  const systemEventsCount = auditTrail.filter(
+    (l) => l.actor_role?.toLowerCase() === "system"
+  ).length;
+
+  const filteredAuditTrail = auditTrail.filter((log) => {
+    if (auditFilter === "all") return true;
+    if (auditFilter === "admin") return log.actor_role?.toLowerCase() === "admin";
+    if (auditFilter === "user") {
+      return ["creator", "advertiser", "brand"].includes(
+        log.actor_role?.toLowerCase()
+      );
+    }
+    if (auditFilter === "system") return log.actor_role?.toLowerCase() === "system";
+    return true;
+  });
 
   // Copy helper
   const handleCopy = (text: string, key: string) => {
@@ -560,7 +601,7 @@ export default function UserDetailAdminView({
             icon: Activity,
           },
           { id: "finances", label: "Financial Ledger", icon: Wallet },
-          { id: "audits", label: "Forensic Audit Trail", icon: History },
+          { id: "audits", label: "Forensic Audit Trail", icon: History, count: auditTrail.length },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -576,6 +617,17 @@ export default function UserDetailAdminView({
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
+              {typeof tab.count === "number" && tab.count > 0 && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none ${
+                    isActive
+                      ? "bg-brand-500 text-white"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -1249,13 +1301,65 @@ export default function UserDetailAdminView({
       {/* ---------------------------------------------------- */}
       {activeTab === "audits" && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/3 shadow-xs">
-          <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-base">
-              Forensic Audit Ledger ({auditTrail.length})
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Append-only security log of all administrative interventions and role transitions for this user.
-            </p>
+          <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-base">
+                Forensic Audit Ledger ({filteredAuditTrail.length})
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Append-only security log of all administrative interventions, user activities, and system records for this account.
+              </p>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100/80 dark:bg-white/5 self-start sm:self-auto overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setAuditFilter("all")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  auditFilter === "all"
+                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-2xs"
+                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                All ({auditTrail.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuditFilter("admin")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  auditFilter === "admin"
+                    ? "bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-2xs"
+                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                Admin Interventions ({adminEventsCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuditFilter("user")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  auditFilter === "user"
+                    ? "bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 shadow-2xs"
+                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                User Activity ({userEventsCount})
+              </button>
+              {systemEventsCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setAuditFilter("system")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                    auditFilter === "system"
+                      ? "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-2xs"
+                      : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                  }`}
+                >
+                  System ({systemEventsCount})
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-w-full overflow-x-auto">
@@ -1281,14 +1385,14 @@ export default function UserDetailAdminView({
               </TableHeader>
 
               <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                {auditTrail.length === 0 ? (
+                {filteredAuditTrail.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="py-12 text-center text-gray-400 text-xs">
-                      No administrative audit events recorded for this user yet.
+                      No audit events found matching the selected filter.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  auditTrail.map((log) => (
+                  filteredAuditTrail.map((log) => (
                     <TableRow key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/3 transition-colors">
                       <TableCell className="px-5 py-3 text-start whitespace-nowrap">
                         {renderStackedDate(log.created_at)}
@@ -1297,11 +1401,11 @@ export default function UserDetailAdminView({
                         {log.action}
                       </TableCell>
                       <TableCell className="px-5 py-3.5 text-start">
-                        <span className="px-2 py-0.5 rounded text-[10px] uppercase font-mono font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200/60 dark:border-gray-700/60">
+                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-bold border ${getActorRoleBadge(log.actor_role)}`}>
                           {log.actor_role}
                         </span>
                       </TableCell>
-                      <TableCell className="px-5 py-3.5 text-start text-xs text-gray-700 dark:text-gray-300 max-w-sm truncate">
+                      <TableCell className="px-5 py-3.5 text-start text-xs text-gray-700 dark:text-gray-300 max-w-md">
                         {log.details || "—"}
                       </TableCell>
                       <TableCell className="px-5 py-3.5 text-end whitespace-nowrap">
@@ -1353,6 +1457,7 @@ export default function UserDetailAdminView({
           email: user.email,
           role: user.role,
           creatorBalance,
+          advertiserBalance,
         }}
         onSuccess={(newBalance, walletType) => {
           setWallets((prev) => {

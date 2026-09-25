@@ -54,7 +54,6 @@ export default async function AdminUserDetailPage({
     walletsRes,
     campaignsRes,
     submissionsRes,
-    auditsRes,
   ] = await Promise.all([
     supabase
       .from('creator_profiles')
@@ -99,28 +98,132 @@ export default async function AdminUserDetailPage({
       `)
       .eq('creator_id', targetUserId)
       .order('submitted_at', { ascending: false }),
+  ]);
+
+  const wallets = walletsRes.data || [];
+  const walletIds = wallets.map((w) => w.id);
+  const allTargetIds = [targetUserId, ...walletIds];
+
+  // 3. Fetch wallet transactions and forensic audit logs across admin, creator, brand, and central tables
+  const [txRes, adminAuditsRes, creatorAuditsRes, brandAuditsRes, centralAuditsRes] = await Promise.all([
+    walletIds.length > 0
+      ? supabase
+          .from('wallet_transactions')
+          .select('*')
+          .in('wallet_id', walletIds)
+          .order('created_at', { ascending: false })
+          .limit(60)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from('admin_audit_log')
+      .select('id, action, target_table, target_id, details, payload, created_at, admin_id')
+      .in('target_id', allTargetIds)
+      .order('created_at', { ascending: false })
+      .limit(60),
+    supabase
+      .from('creator_audit_log')
+      .select('id, action, target_table, target_id, details, payload, created_at')
+      .eq('creator_id', targetUserId)
+      .order('created_at', { ascending: false })
+      .limit(60),
+    supabase
+      .from('brand_audit_log')
+      .select('id, action, target_table, target_id, details, payload, created_at')
+      .eq('brand_id', targetUserId)
+      .order('created_at', { ascending: false })
+      .limit(60),
     supabase
       .from('audit_log')
-      .select('id, action, actor_role, details, payload, created_at')
+      .select('id, action, actor_role, target_table, target_id, payload, created_at')
       .or(`target_id.eq.${targetUserId},profile_id.eq.${targetUserId}`)
       .order('created_at', { ascending: false })
       .limit(60),
   ]);
 
-  const wallets = walletsRes.data || [];
-  const walletIds = wallets.map((w) => w.id);
+  const walletTransactions = txRes.data || [];
 
-  // 3. Fetch wallet transactions if any wallets exist
-  let walletTransactions: any[] = [];
-  if (walletIds.length > 0) {
-    const { data: txData } = await supabase
-      .from('wallet_transactions')
-      .select('*')
-      .in('wallet_id', walletIds)
-      .order('created_at', { ascending: false })
-      .limit(60);
-    walletTransactions = txData || [];
+  // Assemble unified, deduplicated audit trail
+  const auditTrail: Array<{
+    id: string;
+    action: string;
+    actor_role: string;
+    details?: string | null;
+    payload?: any;
+    created_at: string;
+  }> = [];
+  const seenAuditKeys = new Set<string>();
+
+  // A. Admin interventions on this user (suspension, KYC override, wallet adjustments, role changes)
+  for (const r of adminAuditsRes.data || []) {
+    const key = `${r.action}_${Math.floor(new Date(r.created_at).getTime() / 2000)}`;
+    seenAuditKeys.add(key);
+    auditTrail.push({
+      id: r.id,
+      action: r.action,
+      actor_role: 'admin',
+      details: r.details,
+      payload: r.payload,
+      created_at: r.created_at,
+    });
   }
+
+  // B. Creator activities for this user (connected channels, verified socials, submissions, payouts)
+  for (const r of creatorAuditsRes.data || []) {
+    const key = `${r.action}_${Math.floor(new Date(r.created_at).getTime() / 2000)}`;
+    if (!seenAuditKeys.has(key)) {
+      seenAuditKeys.add(key);
+      auditTrail.push({
+        id: r.id,
+        action: r.action,
+        actor_role: 'creator',
+        details: r.details,
+        payload: r.payload,
+        created_at: r.created_at,
+      });
+    }
+  }
+
+  // C. Brand / Advertiser activities for this user
+  for (const r of brandAuditsRes.data || []) {
+    const key = `${r.action}_${Math.floor(new Date(r.created_at).getTime() / 2000)}`;
+    if (!seenAuditKeys.has(key)) {
+      seenAuditKeys.add(key);
+      auditTrail.push({
+        id: r.id,
+        action: r.action,
+        actor_role: 'advertiser',
+        details: r.details,
+        payload: r.payload,
+        created_at: r.created_at,
+      });
+    }
+  }
+
+  // D. Centralized audit log (system validations, submissions pass/fail, etc.)
+  for (const c of centralAuditsRes.data || []) {
+    const key = `${c.action}_${Math.floor(new Date(c.created_at).getTime() / 2000)}`;
+    if (!seenAuditKeys.has(key)) {
+      seenAuditKeys.add(key);
+      const payloadObj = (c.payload as Record<string, any>) || {};
+      const fallbackDetails =
+        payloadObj.details ||
+        payloadObj.reason ||
+        (payloadObj.post_url ? `Post submission for ${payloadObj.campaign_title || 'campaign'}` : null) ||
+        `${c.action} on ${c.target_table || 'system'}`;
+
+      auditTrail.push({
+        id: c.id,
+        action: c.action,
+        actor_role: c.actor_role || 'system',
+        details: fallbackDetails,
+        payload: c.payload,
+        created_at: c.created_at,
+      });
+    }
+  }
+
+  // Sort chronological descending
+  auditTrail.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // 4. Safe Clerk metadata lookup
   let clerkMetadata: {
@@ -176,7 +279,7 @@ export default async function AdminUserDetailPage({
       walletTransactions={walletTransactions}
       campaignsCreated={campaignsRes.data || []}
       submissionsMade={(submissionsRes.data as any) || []}
-      auditTrail={auditsRes.data || []}
+      auditTrail={auditTrail}
       clerkMetadata={clerkMetadata}
       currentAdminId={currentAdminId}
     />

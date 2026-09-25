@@ -19,45 +19,70 @@ export default async function AdminCampaignsPage({
   await requireAdminSession();
   const supabase = createAdminClient();
 
-  // Fetch campaigns joined with advertiser and creatives
-  const { data: rawCampaigns, error } = await supabase
-    .from('campaigns')
-    .select(`
-      id,
-      campaign_code,
-      title,
-      description,
-      ad_format,
-      status,
-      cpm_rate,
-      total_budget,
-      reserved_budget,
-      spent_budget,
-      is_featured,
-      is_hero_pinned,
-      created_at,
-      advertiser_id,
-      advertiser_profiles:advertiser_id (
-        company_name,
-        billing_email,
-        profiles:profiles!advertiser_profiles_profile_id_fkey (
-          full_name,
-          email,
-          avatar_url
+  // Fetch campaigns and submissions in parallel
+  const [campaignsResult, submissionsResult] = await Promise.all([
+    supabase
+      .from('campaigns')
+      .select(`
+        id,
+        campaign_code,
+        title,
+        description,
+        ad_format,
+        status,
+        cpm_rate,
+        total_budget,
+        reserved_budget,
+        spent_budget,
+        is_featured,
+        is_hero_pinned,
+        created_at,
+        advertiser_id,
+        advertiser_profiles:advertiser_id (
+          company_name,
+          billing_email,
+          profiles:profiles!advertiser_profiles_profile_id_fkey (
+            full_name,
+            email,
+            avatar_url
+          )
+        ),
+        campaign_creatives (
+          file_url
         )
-      ),
-      campaign_creatives (
-        file_url
-      )
-    `)
-    .order('created_at', { ascending: false });
+      `)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('submissions')
+      .select('id, campaign_id, status'),
+  ]);
 
-  if (error) {
-    console.error('[AdminCampaignsPage] Error loading campaigns:', error);
+  if (campaignsResult.error) {
+    console.error('[AdminCampaignsPage] Error loading campaigns:', campaignsResult.error);
   }
 
+  const submissionCountsByCampaign = new Map<string, number>();
+  let verifiedSubmissionsCount = 0;
+  let pendingSubmissionsCount = 0;
+
+  (submissionsResult.data || []).forEach((s: any) => {
+    if (s.campaign_id) {
+      submissionCountsByCampaign.set(
+        s.campaign_id,
+        (submissionCountsByCampaign.get(s.campaign_id) || 0) + 1
+      );
+    }
+    if (s.status === 'verified_pass' || s.status === 'paid' || s.status === 'approved') {
+      verifiedSubmissionsCount++;
+    } else if (s.status === 'pending' || s.status === 'joined') {
+      pendingSubmissionsCount++;
+    }
+  });
+
+  const totalSubmissions = submissionsResult.data?.length || 0;
+
   // Map to clean AdminCampaignItem structures
-  const campaigns: AdminCampaignItem[] = (rawCampaigns || []).map((c: any) => {
+  const campaigns: AdminCampaignItem[] = (campaignsResult.data || []).map((c: any) => {
     const advProfile = Array.isArray(c.advertiser_profiles) ? c.advertiser_profiles[0] : c.advertiser_profiles;
     const baseProfile = advProfile?.profiles
       ? Array.isArray(advProfile.profiles)
@@ -85,8 +110,16 @@ export default async function AdminCampaignsPage({
       advertiser_name: advProfile?.company_name || baseProfile?.full_name || 'Brand Partner',
       advertiser_email: advProfile?.billing_email || baseProfile?.email || '',
       cover_image_url: coverUrl,
+      submissions_count: submissionCountsByCampaign.get(c.id) || 0,
     };
   });
 
-  return <CampaignsTableManager campaigns={campaigns} />;
+  return (
+    <CampaignsTableManager
+      campaigns={campaigns}
+      totalSubmissions={totalSubmissions}
+      verifiedSubmissions={verifiedSubmissionsCount}
+      pendingSubmissions={pendingSubmissionsCount}
+    />
+  );
 }

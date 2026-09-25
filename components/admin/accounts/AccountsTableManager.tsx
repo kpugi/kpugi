@@ -14,8 +14,6 @@ import {
   TrendingUp,
   Users,
   ShieldCheck,
-  Video,
-  Heart,
   Filter,
   ArrowUpDown,
   User,
@@ -392,7 +390,6 @@ export default function AccountsTableManager({
                 <TableCell isHeader className="py-3.5 px-4 font-semibold">Platform</TableCell>
                 <TableCell isHeader className="py-3.5 px-4 font-semibold">Social Handle</TableCell>
                 <TableCell isHeader className="py-3.5 px-4 font-semibold text-right">Followers</TableCell>
-                <TableCell isHeader className="py-3.5 px-4 font-semibold">Engagement</TableCell>
                 <TableCell isHeader className="py-3.5 px-4 font-semibold">Verification</TableCell>
                 <TableCell isHeader className="py-3.5 px-4 font-semibold">Connected</TableCell>
                 <TableCell isHeader className="py-3.5 px-4 font-semibold text-right">Actions</TableCell>
@@ -401,7 +398,7 @@ export default function AccountsTableManager({
             <TableBody className="divide-y divide-gray-100 dark:divide-slate-800/60 font-sans">
               {paginatedAccounts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-gray-500 dark:text-slate-500">
+                  <TableCell colSpan={7} className="py-12 text-center text-gray-500 dark:text-slate-500">
                     <p className="text-sm font-semibold">No connected accounts found</p>
                     <p className="text-xs mt-1">Try adjusting your search query or filters.</p>
                   </TableCell>
@@ -428,13 +425,22 @@ export default function AccountsTableManager({
                             <img
                               src={account.creator.avatar_url}
                               alt={account.creator.full_name || "Creator"}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                                const sibling = (e.currentTarget as HTMLElement).nextElementSibling;
+                                if (sibling) (sibling as HTMLElement).style.display = 'flex';
+                              }}
                               className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-slate-700"
                             />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-600 dark:text-slate-300 font-semibold text-xs">
-                              {account.creator.full_name?.charAt(0) || "C"}
-                            </div>
-                          )}
+                          ) : null}
+                          <div
+                            className={`w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 ${
+                              account.creator.avatar_url ? 'hidden' : 'flex'
+                            } items-center justify-center text-gray-600 dark:text-slate-300 font-semibold text-xs select-none`}
+                          >
+                            {account.creator.full_name?.charAt(0) || "C"}
+                          </div>
                           <div>
                             <p className="font-semibold text-gray-900 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                               {account.creator.full_name}
@@ -485,30 +491,6 @@ export default function AccountsTableManager({
                           <p className="text-[10px] text-gray-400 dark:text-slate-500 font-mono">
                             {account.follower_count.toLocaleString()}
                           </p>
-                        )}
-                      </TableCell>
-
-                      {/* Engagement */}
-                      <TableCell className="py-3.5 px-4 text-gray-500 dark:text-slate-400">
-                        {account.video_count || account.likes_count ? (
-                          <div className="space-y-0.5 text-[11px] font-mono">
-                            {account.video_count !== null && (
-                              <p className="flex items-center gap-1">
-                                <Video className="w-3 h-3 text-gray-400 dark:text-slate-500" />
-                                <span>{account.video_count} videos</span>
-                              </p>
-                            )}
-                            {account.likes_count !== null && account.likes_count > 0 && (
-                              <p className="flex items-center gap-1">
-                                <Heart className="w-3 h-3 text-rose-500" />
-                                <span>{formatFollowers(account.likes_count)}</span>
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 dark:text-slate-600 font-mono text-[11px]">
-                            Not synced
-                          </span>
                         )}
                       </TableCell>
 

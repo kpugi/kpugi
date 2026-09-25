@@ -11,6 +11,7 @@ import Script from 'next/script';
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-NLS2FH5C';
+const trustpilotKey = process.env.NEXT_PUBLIC_TRUSTPILOT_INTEGRATION_KEY || 'dT6PBJ5gQ0ZiEkPY';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -143,7 +144,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {`(function(w,d,s,r,n){w.TrustpilotObject=n;w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)};
             a=d.createElement(s);a.async=1;a.src=r;a.type='text/java'+s;f=d.getElementsByTagName(s)[0];
             f.parentNode.insertBefore(a,f)})(window,document,'script', 'https://invitejs.trustpilot.com/tp.min.js', 'tp');
-            tp('register', 'dT6PBJ5gQ0ZiEkPY');`}
+            tp('register', '${trustpilotKey}');`}
           </Script>
           <AnalyticsProvider>
             <ThemeProvider

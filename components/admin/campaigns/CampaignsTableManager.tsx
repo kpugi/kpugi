@@ -9,9 +9,8 @@ import {
   Pin,
   Sparkles,
   ExternalLink,
-  Coins,
   CheckCircle2,
-  TrendingUp,
+  Video,
   X,
   Layers,
   ArrowRight,
@@ -53,12 +52,20 @@ export interface AdminCampaignItem {
 
 interface CampaignsTableManagerProps {
   campaigns: AdminCampaignItem[];
+  totalSubmissions?: number;
+  verifiedSubmissions?: number;
+  pendingSubmissions?: number;
 }
 
 type SortField = "title" | "advertiser" | "status" | "cpm" | "budget" | "spent" | "created";
 type SortDirection = "asc" | "desc";
 
-export default function CampaignsTableManager({ campaigns = [] }: CampaignsTableManagerProps) {
+export default function CampaignsTableManager({
+  campaigns = [],
+  totalSubmissions: propTotalSubmissions,
+  verifiedSubmissions: propVerifiedSubmissions,
+  pendingSubmissions: propPendingSubmissions,
+}: CampaignsTableManagerProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -104,13 +111,12 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
   const heroPinnedCount = campaigns.filter((c) => c.is_hero_pinned).length;
   const featuredCount = campaigns.filter((c) => c.is_featured).length;
 
-  const totalCapitalAllocated = useMemo(() => {
-    return campaigns.reduce((sum, c) => sum + Number(c.total_budget || 0), 0);
-  }, [campaigns]);
-
-  const totalCapitalSpent = useMemo(() => {
-    return campaigns.reduce((sum, c) => sum + Number(c.spent_budget || 0), 0);
-  }, [campaigns]);
+  const totalSubmissions =
+    propTotalSubmissions !== undefined
+      ? propTotalSubmissions
+      : campaigns.reduce((sum, c) => sum + (c.submissions_count || 0), 0);
+  const verifiedSubmissions = propVerifiedSubmissions ?? 0;
+  const pendingSubmissions = propPendingSubmissions ?? 0;
 
   // Filter & Sort campaigns
   const filteredCampaigns = useMemo(() => {
@@ -288,14 +294,6 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
               {featuredCount}
             </span>
           </div>
-
-          <div className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-mono flex items-center gap-2 text-emerald-600 dark:text-emerald-400 shadow-2xs">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span className="font-semibold">Capital:</span>
-            <span className="text-gray-900 dark:text-white font-bold">
-              {formatNaira(totalCapitalAllocated)}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -344,17 +342,17 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-2xs">
-          <div className="flex items-center justify-between text-brand-600 dark:text-brand-400 text-xs mb-1 font-medium">
-            <span>Capital Deployed</span>
-            <Coins className="w-3.5 h-3.5" />
+          <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 text-xs mb-1 font-medium">
+            <span>Video Submissions</span>
+            <Video className="w-3.5 h-3.5" />
           </div>
           <div className="text-xl font-bold font-mono text-gray-900 dark:text-white">
-            {formatNaira(totalCapitalSpent)}
+            {totalSubmissions}
           </div>
           <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
-            {totalCapitalAllocated > 0
-              ? `${Math.round((totalCapitalSpent / totalCapitalAllocated) * 100)}% budget consumed`
-              : "0% budget consumed"}
+            {verifiedSubmissions > 0 || pendingSubmissions > 0
+              ? `${verifiedSubmissions} verified • ${pendingSubmissions} pending`
+              : "Platform creator posts"}
           </div>
         </div>
       </div>
@@ -362,95 +360,105 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
       {/* Main Table Card (TailAdmin Basic Table 1 & 2 standard) */}
       <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A]">
         {/* Toolbar: Status Filter Tabs, Hero/Featured Chips, Page Size, Search */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-800/80 space-y-3.5">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
-            {/* Status Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
-              {statusFilters.map((tab) => {
-                const isActive = selectedStatus === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSelectedStatus(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                      isActive
-                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-800/80">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5">
+            {/* Left Main Filter Bar: Status Pills + Hero & Featured Filter Toggles */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status Pills */}
+              <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+                {statusFilters.map((tab) => {
+                  const isActive = selectedStatus === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedStatus(tab.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                         isActive
-                          ? "bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400"
-                          : "bg-gray-200/70 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                          ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Right Controls: Quick Toggles, Page Size & Search */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Quick Filter Chips */}
-              <button
-                type="button"
-                onClick={() => setFilterHeroOnly((prev) => !prev)}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
-                  filterHeroOnly
-                    ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700"
-                    : "bg-white dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Pin className={`w-3.5 h-3.5 ${filterHeroOnly ? "fill-indigo-500 text-indigo-500" : ""}`} />
-                <span>Hero Only</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterFeaturedOnly((prev) => !prev)}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
-                  filterFeaturedOnly
-                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
-                    : "bg-white dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${filterFeaturedOnly ? "fill-amber-500 text-amber-500" : ""}`} />
-                <span>Featured Only</span>
-              </button>
-
-              {/* Reset Filter button */}
-              {isFiltered && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="px-2.5 py-2 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-center gap-1 transition-colors cursor-pointer"
-                  title="Reset all filters & sorting"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Reset</span>
-                </button>
-              )}
-
-              {/* Per Page Selector */}
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                <span className="hidden sm:inline">Show:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white text-xs font-medium focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
+                      <span>{tab.label}</span>
+                      <span
+                        className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                          isActive
+                            ? "bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400"
+                            : "bg-gray-200/70 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
+              {/* Quick Hero & Featured Filters */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setFilterHeroOnly((prev) => !prev)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    filterHeroOnly
+                      ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 shadow-2xs"
+                      : "bg-white dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Pin className={`w-3.5 h-3.5 ${filterHeroOnly ? "fill-indigo-500 text-indigo-500" : "text-gray-400"}`} />
+                  <span>Hero</span>
+                  <span
+                    className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                      filterHeroOnly
+                        ? "bg-indigo-200/60 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {heroPinnedCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterFeaturedOnly((prev) => !prev)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    filterFeaturedOnly
+                      ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 shadow-2xs"
+                      : "bg-white dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${filterFeaturedOnly ? "fill-amber-500 text-amber-500" : "text-gray-400"}`} />
+                  <span>Featured</span>
+                  <span
+                    className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                      filterFeaturedOnly
+                        ? "bg-amber-200/60 dark:bg-amber-800 text-amber-800 dark:text-amber-200"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {featuredCount}
+                  </span>
+                </button>
+
+                {/* Reset Filter button */}
+                {isFiltered && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Reset all filters & sorting"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Right Controls: strictly Search and Numbering Display */}
+            <div className="flex items-center gap-2.5 shrink-0">
               {/* Search Bar */}
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-56 lg:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
@@ -467,6 +475,20 @@ export default function CampaignsTableManager({ campaigns = [] }: CampaignsTable
                     <X className="w-3 h-3" />
                   </button>
                 )}
+              </div>
+
+              {/* Numbering Display (Show: 10) */}
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                <span className="hidden sm:inline">Show:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="h-9 px-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white text-xs font-medium focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
               </div>
             </div>
           </div>

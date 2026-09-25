@@ -30,11 +30,12 @@ export async function setUserSuspensionStatusAction(
   // 1. Fetch current profile
   const { data: currentProfile, error: fetchErr } = await adminClient
     .from('profiles')
-    .select('id, email, full_name, role, is_admin, clerk_id, account_status, onboarding_checklist_state')
+    .select('id, email, full_name, role, is_admin, clerk_id, onboarding_checklist_state')
     .eq('id', targetProfileId)
     .single();
 
   if (fetchErr || !currentProfile) {
+    console.error('[setUserSuspensionStatusAction] Fetch error:', fetchErr);
     throw new Error('Target profile not found.');
   }
 
@@ -42,6 +43,7 @@ export async function setUserSuspensionStatusAction(
   const now = new Date().toISOString();
 
   // 2. Update profile with service role (bypasses RLS)
+  // Store suspension status reliably in the proven onboarding_checklist_state JSONB column
   const currentChecklist = (currentProfile.onboarding_checklist_state as Record<string, unknown>) || {};
   const updatedChecklist = {
     ...currentChecklist,
@@ -53,9 +55,6 @@ export async function setUserSuspensionStatusAction(
   const { error: updateErr } = await adminClient
     .from('profiles')
     .update({
-      account_status: newStatus,
-      suspended_reason: isSuspending ? reason : null,
-      suspended_at: isSuspending ? now : null,
       onboarding_checklist_state: updatedChecklist,
       updated_at: now,
     })

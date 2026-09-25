@@ -20,7 +20,15 @@ import {
   RefreshCw,
   Share2,
   User,
+  MessageSquare,
 } from "lucide-react";
+import {
+  TikTokIcon,
+  InstagramIcon,
+  YouTubeIcon,
+  FacebookIcon,
+  TwitterXIcon,
+} from "@/components/ui/SocialIcons";
 import {
   Table,
   TableHeader,
@@ -34,6 +42,7 @@ import {
   SocialAccountDetailResponse,
   updateSocialAccountVerificationAction,
   disconnectSocialAccountAction,
+  resyncSocialAccountStatsAction,
 } from "@/app/actions/admin-accounts";
 
 interface AccountDetailViewProps {
@@ -45,6 +54,10 @@ export default function AccountDetailView({
 }: AccountDetailViewProps) {
   const [data, setData] = useState<SocialAccountDetailResponse>(initialData);
   const [isPending, startTransition] = useTransition();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [creatorAvatarError, setCreatorAvatarError] = useState(false);
+  const [ownerAvatarError, setOwnerAvatarError] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -53,6 +66,12 @@ export default function AccountDetailView({
   const account = data.account;
   const submissions = data.submissions;
   const metrics = data.metrics;
+
+  React.useEffect(() => {
+    setAvatarError(false);
+    setCreatorAvatarError(false);
+    setOwnerAvatarError(false);
+  }, [account.avatar_url, account.creator?.avatar_url, account.id]);
 
   const getProfileUrl = (platform: string, handle: string) => {
     const clean = handle.replace(/^@/, "");
@@ -82,6 +101,71 @@ export default function AccountDetailView({
     if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
     if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
     return count.toLocaleString();
+  };
+
+  const renderNetworkIcon = (platform: string, className = "w-3.5 h-3.5") => {
+    const p = platform.toLowerCase();
+    switch (p) {
+      case "youtube":
+        return <YouTubeIcon className={className} />;
+      case "tiktok":
+        return <TikTokIcon className={className} />;
+      case "instagram":
+        return <InstagramIcon className={className} />;
+      case "x":
+      case "twitter":
+        return <TwitterXIcon className={className} />;
+      case "facebook":
+        return <FacebookIcon className={className} />;
+      default:
+        return <Share2 className={className} />;
+    }
+  };
+
+  const getNetworkBadgeStyle = (platform: string) => {
+    const p = platform.toLowerCase();
+    switch (p) {
+      case "youtube":
+        return "bg-red-600 text-white";
+      case "tiktok":
+        return "bg-black text-white";
+      case "instagram":
+        return "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white";
+      case "x":
+      case "twitter":
+        return "bg-black text-white";
+      case "facebook":
+        return "bg-blue-600 text-white";
+      default:
+        return "bg-gray-800 text-white";
+    }
+  };
+
+  const handleResyncStats = async () => {
+    setIsSyncing(true);
+    setFeedback(null);
+    try {
+      const res = await resyncSocialAccountStatsAction(account.id);
+      if (res.success && res.data) {
+        setData(res.data);
+        setFeedback({
+          type: "success",
+          message: "Profile statistics re-synced successfully from live social platform!",
+        });
+      } else {
+        setFeedback({
+          type: "error",
+          message: res.error || "Failed to re-sync stats from social platform.",
+        });
+      }
+    } catch (err: any) {
+      setFeedback({
+        type: "error",
+        message: err?.message || "An unexpected error occurred while re-syncing.",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleToggleVerification = (targetStatus: "verified" | "unverified") => {
@@ -176,8 +260,44 @@ export default function AccountDetailView({
       <div className="p-6 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center font-bold text-xl flex-shrink-0">
-              <Share2 className="w-7 h-7" />
+            {/* Account Picture with Network Overlay Badge */}
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-gray-100 dark:bg-slate-800 flex items-center justify-center font-bold text-lg text-gray-700 dark:text-slate-300 shadow-2xs relative select-none">
+                {account.avatar_url && !avatarError ? (
+                  <img
+                    src={account.avatar_url}
+                    alt={account.display_name || account.handle}
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : account.creator.avatar_url && !creatorAvatarError ? (
+                  <img
+                    src={account.creator.avatar_url}
+                    alt={account.creator.full_name || account.handle}
+                    referrerPolicy="no-referrer"
+                    onError={() => setCreatorAvatarError(true)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-700 dark:text-slate-300 font-bold text-lg">
+                    {(account.display_name || account.handle)
+                      .replace(/^@/, "")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              {/* Network Icon Overlay Badge */}
+              <div
+                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0C101A] shadow-xs ${getNetworkBadgeStyle(
+                  account.platform
+                )}`}
+                title={account.platform}
+              >
+                {renderNetworkIcon(account.platform, "w-3 h-3")}
+              </div>
             </div>
 
             <div>
@@ -188,9 +308,7 @@ export default function AccountDetailView({
                     : `@${account.handle}`}
                 </h1>
 
-                <Badge color="light">
-                  {account.platform}
-                </Badge>
+              
 
                 {account.verification_status === "verified" ? (
                   <Badge color="success">
@@ -221,20 +339,35 @@ export default function AccountDetailView({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isPending || isSyncing}
+              onClick={handleResyncStats}
+              className="flex items-center gap-1.5 border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-xs font-semibold"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${
+                  isSyncing ? "animate-spin text-brand-500" : ""
+                }`}
+              />
+              <span>{isSyncing ? "Re-syncing..." : "Re-sync Stats"}</span>
+            </Button>
+
             <a
               href={getProfileUrl(account.platform, account.handle)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-xs font-sans text-gray-800 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
             >
-              <span>Visit Social Profile</span>
+              <span>View Profile</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
             {account.verification_status !== "verified" ? (
               <Button
                 size="sm"
-                disabled={isPending}
+                disabled={isPending || isSyncing}
                 onClick={() => handleToggleVerification("verified")}
                 className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white"
               >
@@ -245,7 +378,7 @@ export default function AccountDetailView({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={isPending}
+                disabled={isPending || isSyncing}
                 onClick={() => handleToggleVerification("unverified")}
                 className="text-gray-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 text-xs"
               >
@@ -257,7 +390,7 @@ export default function AccountDetailView({
             <Button
               size="sm"
               variant="outline"
-              disabled={isPending}
+              disabled={isPending || isSyncing}
               onClick={handleDisconnect}
               className="text-rose-600 hover:bg-rose-50 border-rose-200 dark:text-rose-400 dark:hover:bg-rose-500/10 dark:border-rose-500/20 text-xs"
             >
@@ -267,66 +400,144 @@ export default function AccountDetailView({
         </div>
       </div>
 
-      {/* 4 Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
-          <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-mono uppercase font-semibold">
-              Followers
-            </span>
-            <Users className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+      {/* 6 Stats Grid: Global Profile vs Campaign Engagement */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Followers (Global) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-mono uppercase font-semibold">
+                Followers
+              </span>
+              <Users className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+              {formatFollowers(account.follower_count)}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-            {formatFollowers(account.follower_count)}
-          </p>
-          <p className="text-[11px] text-gray-400 dark:text-slate-400 mt-1 font-mono">
-            {account.follower_count?.toLocaleString() || "0"} exact
-          </p>
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-slate-400 font-mono">
+              {account.follower_count?.toLocaleString() || "0"} exact
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold">
+              Global
+            </span>
+          </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
-          <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-mono uppercase font-semibold">
-              Following
-            </span>
-            <Users className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+        {/* Following (Global) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-mono uppercase font-semibold">
+                Following
+              </span>
+              <Users className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+              {formatFollowers(account.following_count)}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-            {formatFollowers(account.following_count)}
-          </p>
-          <p className="text-[11px] text-gray-400 dark:text-slate-400 mt-1 font-sans">
-            Accounts followed
-          </p>
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-slate-400 font-sans">
+              Accounts followed
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+              Global
+            </span>
+          </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
-          <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-mono uppercase font-semibold">
-              Total Likes
-            </span>
-            <Heart className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+        {/* Posts Published (Campaign Posts) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-mono uppercase font-semibold">
+                Posts Published
+              </span>
+              <Video className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+              {metrics.totalSubmissions.toLocaleString()}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-            {formatFollowers(account.likes_count)}
-          </p>
-          <p className="text-[11px] text-gray-400 dark:text-slate-400 mt-1 font-sans">
-            Profile post likes
-          </p>
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-slate-400 font-sans">
+              Campaign submissions
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold">
+              Campaigns
+            </span>
+          </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none">
-          <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-mono uppercase font-semibold">
-              Videos Posted
-            </span>
-            <Video className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+        {/* Total Likes (Campaign Posts) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-mono uppercase font-semibold">
+                Total Likes
+              </span>
+              <Heart className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+              {formatFollowers(metrics.totalLikes)}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-            {account.video_count?.toLocaleString() || "0"}
-          </p>
-          <p className="text-[11px] text-gray-400 dark:text-slate-400 mt-1 font-sans">
-            Published clips
-          </p>
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-slate-400 font-mono">
+              {metrics.totalLikes.toLocaleString()} on posts
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold">
+              Campaigns
+            </span>
+          </div>
+        </div>
+
+        {/* Total Comments (Campaign Posts) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-mono uppercase font-semibold">
+                Comments
+              </span>
+              <MessageSquare className="w-4 h-4 text-sky-500 dark:text-sky-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+              {formatFollowers(metrics.totalComments)}
+            </p>
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-slate-400 font-mono">
+              {metrics.totalComments.toLocaleString()} on posts
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold">
+              Campaigns
+            </span>
+          </div>
+        </div>
+
+        {/* Total Shares (Campaign Posts) */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#0C101A] border border-gray-200/80 dark:border-slate-800/80 shadow-xs dark:shadow-none flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-gray-500 dark:text-slate-400 mb-2">
+              <span className="text-[11px] font-mono uppercase font-semibold">
+                Shares
+              </span>
+              <Share2 className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white font-display">
+              {formatFollowers(metrics.totalShares)}
+            </p>
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-slate-400 font-mono">
+              {metrics.totalShares.toLocaleString()} on posts
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold">
+              Campaigns
+            </span>
+          </div>
         </div>
       </div>
 
@@ -340,14 +551,16 @@ export default function AccountDetailView({
           </h3>
 
           <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-gray-50 dark:bg-[#080B14] border border-gray-200 dark:border-slate-800">
-            {account.creator.avatar_url ? (
+            {account.creator.avatar_url && !ownerAvatarError ? (
               <img
                 src={account.creator.avatar_url}
                 alt={account.creator.full_name || "Creator"}
+                referrerPolicy="no-referrer"
+                onError={() => setOwnerAvatarError(true)}
                 className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-slate-700"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-300 font-bold text-base">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-300 font-bold text-base select-none">
                 {account.creator.full_name?.charAt(0) || "C"}
               </div>
             )}
@@ -447,7 +660,10 @@ export default function AccountDetailView({
                 <TableRow>
                   <TableCell isHeader className="py-3 px-4 font-semibold">Campaign</TableCell>
                   <TableCell isHeader className="py-3 px-4 font-semibold">Status</TableCell>
-                  <TableCell isHeader className="py-3 px-4 font-semibold text-right">Verified Views</TableCell>
+                  <TableCell isHeader className="py-3 px-4 font-semibold text-right">Views</TableCell>
+                  <TableCell isHeader className="py-3 px-4 font-semibold text-right">Likes</TableCell>
+                  <TableCell isHeader className="py-3 px-4 font-semibold text-right">Comments</TableCell>
+                  <TableCell isHeader className="py-3 px-4 font-semibold text-right">Shares</TableCell>
                   <TableCell isHeader className="py-3 px-4 font-semibold text-right">Payout Earned</TableCell>
                   <TableCell isHeader className="py-3 px-4 font-semibold">Post URL</TableCell>
                   <TableCell isHeader className="py-3 px-4 font-semibold">Submitted</TableCell>
@@ -464,6 +680,15 @@ export default function AccountDetailView({
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right font-mono font-bold text-gray-900 dark:text-white">
                       {sub.final_view_count.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono text-gray-700 dark:text-slate-300">
+                      {sub.likes_count.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono text-gray-700 dark:text-slate-300">
+                      {sub.comments_count.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono text-gray-700 dark:text-slate-300">
+                      {sub.shares_count.toLocaleString()}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                       ₦{sub.payout_amount.toLocaleString()}

@@ -642,15 +642,16 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   rawTransactions.forEach((tx: any) => {
     const isWithdrawal = tx.type === 'withdrawal' || Number(tx.amount || 0) < 0;
     if (isWithdrawal) {
-      const bName = primaryBank?.bank_name || 'Direct Bank';
-      const accNum = primaryBank?.account_number || '';
-      const accName = primaryBank?.account_name || 'Creator';
+      const isAdminAdj = tx.paystack_reference?.startsWith('ADMIN_ADJ_');
+      const bName = isAdminAdj ? 'Admin Adjustment' : (primaryBank?.bank_name || 'Direct Bank');
+      const accNum = isAdminAdj ? 'Ledger Adjustment' : (primaryBank?.account_number || '');
+      const accName = isAdminAdj ? 'Platform Admin' : (primaryBank?.account_name || 'Creator');
       const ref = tx.paystack_reference || `KP-WDR-${tx.id.slice(0, 8).toUpperCase()}`;
 
       rawFormatted.push({
         id: tx.id,
-        title: 'Direct Bank Withdrawal',
-        campaign_title: 'Bank Transfer',
+        title: isAdminAdj ? 'Admin Balance Debit' : 'Direct Bank Withdrawal',
+        campaign_title: isAdminAdj ? 'Administrative Adjustment' : 'Bank Transfer',
         reference: ref,
         amount: -Math.abs(Number(tx.amount || 0)),
         gross_amount: Math.abs(Number(tx.amount || 0)),
@@ -671,12 +672,13 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         settled_at: tx.created_at,
         clearance_at: tx.created_at,
         is_clearing: false,
-        settlement_method: `Direct Bank Settlement (${bName})`,
+        settlement_method: isAdminAdj ? 'Manual Debit by Administrator' : `Direct Bank Settlement (${bName})`,
       });
       return;
     }
 
-    // Campaign Payout Credit
+    // Campaign Payout Credit / Admin Credit Adjustment
+    const isAdminAdj = tx.paystack_reference?.startsWith('ADMIN_ADJ_') || (!tx.campaign_id && tx.type === 'deposit');
     const campId = tx.campaign_id || tx.id;
     const subObj = tx.submissions;
     const views = Number(tx.views_audited || subObj?.final_view_count || subObj?.last_paid_view_count || 0);
@@ -691,8 +693,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         grossAmt = Math.round((views / 1000.0) * cpmRate);
         feeAmt = Math.round(grossAmt * 0.10);
       } else {
-        grossAmt = Math.round(netAmt / 0.9);
-        feeAmt = grossAmt - netAmt;
+        grossAmt = netAmt;
+        feeAmt = 0;
       }
     }
 
@@ -701,8 +703,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       campaignTxMap.set(campId, {
         id: tx.id,
         campaign_id: campId,
-        title: tx.campaigns?.title || 'Campaign Settlement',
-        campaign_title: 'Campaign Concluded & Settled',
+        title: isAdminAdj ? 'Admin Balance Credit' : (tx.campaigns?.title || 'Deposit / Settlement'),
+        campaign_title: isAdminAdj ? 'Administrative Credit Adjustment' : 'Campaign Concluded & Settled',
         reference: tx.paystack_reference || `KP-CMP-${campId.slice(0, 4).toUpperCase()}`,
         amount: netAmt,
         gross_amount: grossAmt,
@@ -713,13 +715,13 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         views_delta: views,
         cpm_rate: cpmRate,
         type: 'credit',
-        transaction_type: 'campaign_payout',
+        transaction_type: isAdminAdj ? 'admin_credit' : 'campaign_payout',
         is_withdrawal: false,
         status: 'completed',
         created_at: tx.created_at,
         settled_at: tx.created_at,
         is_clearing: false,
-        settlement_method: 'Settled to Available Balance',
+        settlement_method: isAdminAdj ? 'Manual Credit by Administrator' : 'Settled to Available Balance',
       });
     } else {
       // Consolidate legacy micro-batches into the single campaign entry

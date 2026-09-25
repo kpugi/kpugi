@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdminSession } from '@/lib/admin/auth';
 import { logAuditEvent } from '@/lib/audit';
 import { createAdminClient } from '@/lib/supabase/server';
+import { scrapeProfile } from '@/lib/verification/scraper';
 
 export interface ConnectedSocialAccountItem {
   id: string;
@@ -12,6 +13,7 @@ export interface ConnectedSocialAccountItem {
   handle: string;
   display_name: string | null;
   bio: string | null;
+  avatar_url?: string | null;
   platform_user_id: string;
   follower_count: number | null;
   following_count: number | null;
@@ -56,6 +58,9 @@ export interface AccountSubmissionItem {
   status: string;
   final_view_count: number;
   payout_amount: number;
+  likes_count: number;
+  comments_count: number;
+  shares_count: number;
   post_url: string;
   submitted_at: string;
   paid_at: string | null;
@@ -74,6 +79,9 @@ export interface SocialAccountDetailResponse {
     approvedSubmissions: number;
     totalViewsGenerated: number;
     totalPayoutEarned: number;
+    totalLikes: number;
+    totalComments: number;
+    totalShares: number;
   };
 }
 
@@ -93,6 +101,7 @@ export async function fetchConnectedSocialAccountsAction(): Promise<SocialAccoun
       handle,
       display_name,
       bio,
+      avatar_url,
       platform_user_id,
       follower_count,
       following_count,
@@ -157,6 +166,7 @@ export async function fetchConnectedSocialAccountsAction(): Promise<SocialAccoun
       handle: row.handle,
       display_name: row.display_name || creatorProfile?.display_name || null,
       bio: row.bio || null,
+      avatar_url: row.avatar_url || null,
       platform_user_id: row.platform_user_id,
       follower_count: row.follower_count,
       following_count: row.following_count,
@@ -209,6 +219,7 @@ export async function fetchSocialAccountDetailAction(
       handle,
       display_name,
       bio,
+      avatar_url,
       platform_user_id,
       follower_count,
       following_count,
@@ -247,6 +258,9 @@ export async function fetchSocialAccountDetailAction(
       status,
       final_view_count,
       payout_amount,
+      likes_count,
+      comments_count,
+      shares_count,
       post_url,
       submitted_at,
       paid_at,
@@ -256,7 +270,7 @@ export async function fetchSocialAccountDetailAction(
         ad_format
       )
     `)
-    .or(`social_account_id.eq.${accountId},creator_id.eq.${accountRow.creator_id}`)
+    .eq('social_account_id', accountId)
     .order('submitted_at', { ascending: false });
 
   if (subError) {
@@ -269,6 +283,9 @@ export async function fetchSocialAccountDetailAction(
     status: sub.status,
     final_view_count: Number(sub.final_view_count) || 0,
     payout_amount: Number(sub.payout_amount) || 0,
+    likes_count: Number(sub.likes_count) || 0,
+    comments_count: Number(sub.comments_count) || 0,
+    shares_count: Number(sub.shares_count) || 0,
     post_url: sub.post_url || '',
     submitted_at: sub.submitted_at,
     paid_at: sub.paid_at || null,
@@ -278,11 +295,17 @@ export async function fetchSocialAccountDetailAction(
   let totalViewsGenerated = 0;
   let totalPayoutEarned = 0;
   let approvedSubmissions = 0;
+  let totalLikes = 0;
+  let totalComments = 0;
+  let totalShares = 0;
 
   for (const s of submissions) {
     totalViewsGenerated += s.final_view_count;
     totalPayoutEarned += s.payout_amount;
-    if (s.status === 'approved' || s.status === 'paid') {
+    totalLikes += s.likes_count;
+    totalComments += s.comments_count;
+    totalShares += s.shares_count;
+    if (s.status === 'approved' || s.status === 'paid' || s.status === 'verified_pass') {
       approvedSubmissions++;
     }
   }
@@ -297,6 +320,7 @@ export async function fetchSocialAccountDetailAction(
     handle: accountRow.handle,
     display_name: accountRow.display_name || creatorProfile?.display_name || null,
     bio: accountRow.bio || null,
+    avatar_url: accountRow.avatar_url || null,
     platform_user_id: accountRow.platform_user_id,
     follower_count: accountRow.follower_count,
     following_count: accountRow.following_count,
@@ -326,6 +350,9 @@ export async function fetchSocialAccountDetailAction(
       approvedSubmissions,
       totalViewsGenerated,
       totalPayoutEarned,
+      totalLikes,
+      totalComments,
+      totalShares,
     },
   };
 }
@@ -414,3 +441,89 @@ export async function disconnectSocialAccountAction(
 
   return { success: true };
 }
+
+/**
+ * Re-sync live stats (followers, avatar, bio, handle) from the public social profile
+ */
+export async function resyncSocialAccountStatsAction(
+  accountId: string
+): Promise<{ success: boolean; data?: SocialAccountDetailResponse; error?: string }> {
+  try {
+    const { profile } = await requireAdminSession();
+    const supabase = createAdminClient();
+
+    const { data: account, error: accErr } = await supabase
+      .from('social_accounts')
+      .select('*')
+      .eq('id', accountId)
+      .single();
+
+    if (accErr || !account) {
+      return { success: false, error: `Social account not found: ${accErr?.message || 'Missing record'}` };
+    }
+
+    const platformKey = account.platform.toLowerCase() === 'twitter' ? 'x' : account.platform.toLowerCase();
+    const lookupIdentifier = account.platform_user_id || account.handle.replace(/^@/, '');
+
+    let scrapedProfile;
+    try {
+      scrapedProfile = await scrapeProfile(platformKey, lookupIdentifier);
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `Live profile lookup failed: ${err?.message || 'Could not scrape social profile'}`,
+      };
+    }
+
+    const updateData: Record<string, any> = {
+      last_synced_at: new Date().toISOString(),
+    };
+    if (scrapedProfile.followerCount !== null && scrapedProfile.followerCount !== undefined && scrapedProfile.followerCount >= 0) {
+      updateData.follower_count = scrapedProfile.followerCount;
+    }
+    if (scrapedProfile.avatarUrl) {
+      updateData.avatar_url = scrapedProfile.avatarUrl;
+    }
+    if (scrapedProfile.displayName && !account.display_name) {
+      updateData.display_name = scrapedProfile.displayName;
+    }
+    if (scrapedProfile.bio) {
+      updateData.bio = scrapedProfile.bio;
+    }
+
+    const { error: updateErr } = await supabase
+      .from('social_accounts')
+      .update(updateData)
+      .eq('id', account.id);
+
+    if (updateErr) {
+      return { success: false, error: `Database update failed: ${updateErr.message}` };
+    }
+
+    await logAuditEvent({
+      profileId: profile.id,
+      actorRole: 'admin',
+      action: 'social_account.sync',
+      targetTable: 'social_accounts',
+      targetId: account.id,
+      details: `Admin re-synced stats for @${account.handle} (${account.platform})`,
+      payload: {
+        accountId: account.id,
+        handle: account.handle,
+        platform: account.platform,
+        followerCount: updateData.follower_count ?? account.follower_count,
+        avatarUpdated: !!scrapedProfile.avatarUrl,
+      },
+    });
+
+    revalidatePath('/admin/accounts');
+    revalidatePath(`/admin/accounts/${accountId}`);
+
+    const freshData = await fetchSocialAccountDetailAction(accountId);
+    return { success: true, data: freshData };
+  } catch (err: any) {
+    console.error('[resyncSocialAccountStatsAction] Error:', err);
+    return { success: false, error: err?.message || 'Failed to re-sync account statistics' };
+  }
+}
+

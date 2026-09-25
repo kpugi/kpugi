@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { Play, ArrowRight, X, Volume2, Maximize2, Star } from 'lucide-react';
+import TrustBoxWidget from '@/components/common/TrustBoxWidget';
 
 export default function BrandHero32() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -152,37 +153,8 @@ export default function BrandHero32() {
               </div>
             </a>
 
-            {/* Trustpilot Widget */}
-            <a
-              href="https://www.trustpilot.com/review/kpugi.onrender.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] backdrop-blur-md rounded-xl px-3.5 py-2 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#00B67A]/40"
-            >
-              <div className="w-6 h-6 rounded-md bg-[#00B67A] flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_rgba(0,182,122,0.35)]">
-                <Star className="h-3.5 w-3.5 fill-white text-white" />
-              </div>
-              <div className="text-left flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-clash font-bold text-slate-900 dark:text-white leading-none">
-                    Trustpilot
-                  </span>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-2.5 h-2.5 bg-[#00B67A] flex items-center justify-center rounded-[1.5px]"
-                      >
-                        <Star className="h-2 w-2 fill-white text-white" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <span className="text-[11px] font-satoshi text-slate-500 dark:text-white/50 mt-1 leading-none">
-                  Rated <strong className="text-[#00B67A]">4.9/5</strong> by 200+ brands
-                </span>
-              </div>
-            </a>
+            {/* Dynamic Trustpilot TrustBox Widget */}
+            <TrustBoxWidget variant="brand-light" />
           </motion.div>
         </div>
       </section>

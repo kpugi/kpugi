@@ -34,8 +34,8 @@ const endorsements = [
   {
     icon: FaStar,
     iconClass: 'text-emerald-500',
-    score: '4.9 ★',
-    name: 'Trustpilot Rated',
+    score: 'Claimed',
+    name: 'Trustpilot Verified',
   },
   {
     icon: FaShieldAlt,
