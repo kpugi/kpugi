@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { createDiditKycSession } from '@/lib/didit/client';
 
@@ -11,6 +11,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Unauthorized. Creator profile required.' },
         { status: 401 }
+      );
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return NextResponse.json(
+        { error: `Account suspended (${reason || 'Read-Only Mode'}). Identity verification is currently disabled.` },
+        { status: 403 }
       );
     }
 

@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 
 export async function DELETE(request: Request) {
   try {
@@ -16,6 +16,13 @@ export async function DELETE(request: Request) {
     const userProfile = await getOrCreateUserProfile();
     if (!userProfile?.profile?.id) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return NextResponse.json({
+        error: `Account suspended (${reason || 'Read-Only Mode'}). Account deletion is disabled.`,
+      }, { status: 403 });
     }
 
     const supabase = createAdminClient();

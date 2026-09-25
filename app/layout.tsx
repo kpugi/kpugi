@@ -10,6 +10,7 @@ import '@/styles/kpugi-tour.css';
 import Script from 'next/script';
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+const gtmId = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-NLS2FH5C';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -83,6 +84,19 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <head>
+          {/* Google Tag Manager */}
+          <Script
+            id="google-tag-manager"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${gtmId}');`,
+            }}
+          />
+          {/* End Google Tag Manager */}
           <link
             rel="stylesheet"
             href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@400,500,700&display=swap"
@@ -93,6 +107,16 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden">
+          {/* Google Tag Manager (noscript) */}
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+          {/* End Google Tag Manager (noscript) */}
           <Script
             id="dd-rum-sync"
             src="https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js"
@@ -114,6 +138,12 @@ export default function RootLayout({
               trackLongTasks: true,
               defaultPrivacyLevel: 'mask-user-input',
             });`}
+          </Script>
+          <Script id="trustpilot-invite" strategy="afterInteractive">
+            {`(function(w,d,s,r,n){w.TrustpilotObject=n;w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)};
+            a=d.createElement(s);a.async=1;a.src=r;a.type='text/java'+s;f=d.getElementsByTagName(s)[0];
+            f.parentNode.insertBefore(a,f)})(window,document,'script', 'https://invitejs.trustpilot.com/tp.min.js', 'tp');
+            tp('register', 'dT6PBJ5gQ0ZiEkPY');`}
           </Script>
           <AnalyticsProvider>
             <ThemeProvider

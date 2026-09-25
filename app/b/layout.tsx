@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import DashboardLayoutShell from '@/components/dashboard/DashboardLayoutShell';
 
 export const metadata: Metadata = {
@@ -36,8 +36,10 @@ export default async function AdvertiserLayout({ children }: { children: React.R
     redirect('/c/dashboard');
   }
 
+  const suspensionInfo = checkProfileSuspension(userProfile.profile);
+
   return (
-    <DashboardLayoutShell role="advertiser">
+    <DashboardLayoutShell role="advertiser" suspensionInfo={suspensionInfo}>
       {children}
     </DashboardLayoutShell>
   );

@@ -154,7 +154,7 @@ export default function BrandHero32() {
 
             {/* Trustpilot Widget */}
             <a
-              href="https://www.trustpilot.com"
+              href="https://www.trustpilot.com/review/kpugi.onrender.com"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] backdrop-blur-md rounded-xl px-3.5 py-2 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#00B67A]/40"

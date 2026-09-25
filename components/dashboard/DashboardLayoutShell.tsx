@@ -24,17 +24,23 @@ import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import { openFreshdeskWidget } from '@/lib/support/freshdesk';
 import { useKpugiTour } from '@/lib/tour/useKpugiTour';
+import { ShieldAlert } from 'lucide-react';
 
 interface DashboardLayoutShellProps {
   children: React.ReactNode;
   role: 'creator' | 'advertiser';
   title?: string;
+  suspensionInfo?: {
+    isSuspended: boolean;
+    reason: string | null;
+  };
 }
 
 export default function DashboardLayoutShell({
   children,
   role,
   title,
+  suspensionInfo,
 }: DashboardLayoutShellProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -243,6 +249,25 @@ export default function DashboardLayoutShell({
             onMobileMenuToggle={() => setIsMobileOpen(!isMobileOpen)}
             onStartTour={startTour}
           />
+          {suspensionInfo?.isSuspended && (
+            <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3 text-amber-900 dark:text-amber-200">
+              <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs sm:text-sm font-medium">
+                <div className="flex items-center gap-2.5">
+                  <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>
+                    <strong>Account Suspended (Read-Only Mode):</strong> Your account is currently suspended ({suspensionInfo.reason || 'Administrative Review'}). Actions such as joining new campaigns, withdrawing funds, profile edits, and connecting accounts are disabled.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openFreshdeskWidget()}
+                  className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300 hover:underline shrink-0"
+                >
+                  Contact Support &rarr;
+                </button>
+              </div>
+            </div>
+          )}
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
           <DashboardFooter />
         </div>
