@@ -1353,13 +1353,14 @@ export default function UserDetailAdminView({
           email: user.email,
           role: user.role,
           creatorBalance,
+        }}
         onSuccess={(newBalance, walletType) => {
           setWallets((prev) => {
             const exists = prev.find((w) => w.wallet_type === walletType);
             if (exists) {
               return prev.map((w) => (w.wallet_type === walletType ? { ...w, balance: newBalance } : w));
             }
-            return [...prev, { id: 'w_' + Date.now(), wallet_type: walletType, balance: newBalance }];
+            return [...prev, { id: 'w_' + Date.now(), wallet_type: walletType, balance: newBalance, created_at: new Date().toISOString() }];
           });
           router.refresh();
         }}

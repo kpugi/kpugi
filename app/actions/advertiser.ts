@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { clerkClient } from '@clerk/nextjs/server';
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
 import {
@@ -19,6 +19,11 @@ export async function createCampaignAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile || !userProfile.profile) {
     return { success: false, error: "Hol' up ✋... You gotta sign in first to get access!" };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Campaign creation is disabled.` };
   }
 
   if (userProfile.role !== 'advertiser' && !userProfile.advertiserProfile) {
@@ -522,6 +527,11 @@ export async function updateBrandProfileDetailsAction(formData: FormData) {
     return { success: false, error: 'Unauthorized: Please sign in.' };
   }
 
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Brand profile updates are disabled.` };
+  }
+
   const companyName = (formData.get('companyName') as string || '').trim().slice(0, 100);
   const industry = (formData.get('industry') as string || 'E-commerce').trim().slice(0, 50);
   const websiteUrl = (formData.get('websiteUrl') as string || '').trim().slice(0, 200);
@@ -556,6 +566,11 @@ export async function saveAdvertiserAlertSettingsAction(enabled: boolean, thresh
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile || !userProfile.profile) {
     return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Alert preferences cannot be modified.` };
   }
 
   const supabase = createAdminClient();
@@ -730,6 +745,11 @@ export async function updateBrandIdentityAction(payload: {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.profile) {
     return { success: false, error: 'Unauthorized. Please sign in.' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Brand profile updates are disabled.` };
   }
 
   const supabase = createAdminClient();

@@ -1,6 +1,6 @@
 'use server';
 
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
 import { revalidatePath } from 'next/cache';
@@ -125,6 +125,11 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
 
     if (!userProfile || !userProfile.profile) {
       return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Campaign drafts cannot be saved.` };
     }
 
     if (!userProfile.advertiserProfile) {
@@ -252,6 +257,11 @@ export async function verifyPaystackTransactionAction(
     const userProfile = await getOrCreateUserProfile();
     if (!userProfile || !userProfile.profile) {
       return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Campaign funding is disabled.` };
     }
 
     const profileId = userProfile.profile.id;
@@ -412,6 +422,11 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
 
     if (!userProfile || !userProfile.profile) {
       return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Launching campaigns is disabled.` };
     }
 
     if (!userProfile.advertiserProfile) {
@@ -943,6 +958,11 @@ export async function archiveCampaignAction(campaignId: string) {
       return { success: false, error: 'Unauthorized. Please sign in.' };
     }
 
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Campaign archiving is disabled.` };
+    }
+
     if (!userProfile.advertiserProfile) {
       return { success: false, error: 'Only registered advertisers can archive campaigns.' };
     }
@@ -998,6 +1018,11 @@ export async function deleteArchivedCampaignAction(campaignId: string) {
 
     if (!userProfile || !userProfile.profile) {
       return { success: false, error: 'Unauthorized. Please sign in.' };
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Campaign deletion is disabled.` };
     }
 
     if (!userProfile.advertiserProfile) {
@@ -1317,6 +1342,11 @@ export async function chargeWalletForCampaignAction(amount: number, walletRef: s
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile || !userProfile.profile) {
     return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Wallet payments are disabled.` };
   }
 
   const supabase = createAdminClient();
