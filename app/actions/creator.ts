@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { clerkClient } from '@clerk/nextjs/server';
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { saveSocialAccount } from '@/lib/supabase/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
@@ -56,6 +56,14 @@ export async function submitCampaignVideoAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized: Creator profile required' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Video link submission is disabled.`,
+    };
   }
 
   const campaignId = (formData.get('campaignId') as string)?.trim();
@@ -241,6 +249,14 @@ export async function requestPayoutAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Earnings withdrawals are disabled while suspended.`,
+    };
   }
 
   const amount = Number(formData.get('amount'));
@@ -542,6 +558,14 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
     return { success: false, error: 'Unauthorized: Creator profile required' };
   }
 
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Bank account modifications are disabled.`,
+    };
+  }
+
   const bankCode = (formData.get('bankCode') as string)?.trim();
   const bankName = (formData.get('bankName') as string)?.trim();
   const accountNumber = (formData.get('accountNumber') as string)?.trim();
@@ -641,6 +665,14 @@ export async function deleteBankAccountAction(accountId: string) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Bank account modifications are disabled.`,
+    };
   }
 
   if (!accountId) {
@@ -1061,6 +1093,14 @@ export async function linkSocialAccountAction(formData: FormData) {
     return { success: false, error: 'Unauthorized' };
   }
 
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Connecting new social accounts is disabled.`,
+    };
+  }
+
   const platform = (formData.get('platform') as string)?.trim();
   const rawHandle = (formData.get('handle') as string)?.trim();
 
@@ -1113,6 +1153,14 @@ export async function updateCreatorProfileAction(formData: FormData) {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Profile editing is disabled.`,
+    };
   }
 
   const rawDisplayName = (formData.get('displayName') as string)?.trim() || '';
@@ -1205,6 +1253,14 @@ export async function updateNotificationPreferencesAction(prefs: {
   const userProfile = await getOrCreateUserProfile();
   if (!userProfile?.creatorProfile) {
     return { success: false, error: 'Unauthorized' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Notification preferences cannot be modified.`,
+    };
   }
 
   const supabase = createAdminClient();

@@ -2,18 +2,22 @@
 
 import { requireAdminSession } from '@/lib/admin/auth';
 import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
+import { createAdminClient } from '@/lib/supabase/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 
 /**
  * setUserSuspensionStatusAction
- * Suspend or unsuspend a user account with mandatory audit trail
+ * Suspend or unsuspend a user account with mandatory audit trail and Clerk synchronization
  */
 export async function setUserSuspensionStatusAction(
   targetProfileId: string,
   newStatus: 'active' | 'suspended',
-  reason: string
+  reason: string,
+  options?: { banInClerk?: boolean }
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const adminClient = createAdminClient();
 
   if (targetProfileId === adminId) {
     throw new Error('Self-suspension forbidden: You cannot suspend your own administrator account.');
@@ -24,9 +28,9 @@ export async function setUserSuspensionStatusAction(
   }
 
   // 1. Fetch current profile
-  const { data: currentProfile, error: fetchErr } = await supabase
+  const { data: currentProfile, error: fetchErr } = await adminClient
     .from('profiles')
-    .select('id, email, full_name, role, is_admin, onboarding_checklist_state')
+    .select('id, email, full_name, role, is_admin, clerk_id, account_status, onboarding_checklist_state')
     .eq('id', targetProfileId)
     .single();
 
@@ -37,7 +41,7 @@ export async function setUserSuspensionStatusAction(
   const isSuspending = newStatus === 'suspended';
   const now = new Date().toISOString();
 
-  // 2. Update profile (handles both dedicated columns and JSON fallback)
+  // 2. Update profile with service role (bypasses RLS)
   const currentChecklist = (currentProfile.onboarding_checklist_state as Record<string, unknown>) || {};
   const updatedChecklist = {
     ...currentChecklist,
@@ -46,9 +50,7 @@ export async function setUserSuspensionStatusAction(
     suspended_at: isSuspending ? now : null,
   };
 
-  // Attempt update with dedicated columns; fall back to checklist state if columns not yet migrated
-  let updateErr = null;
-  const { error: directErr } = await supabase
+  const { error: updateErr } = await adminClient
     .from('profiles')
     .update({
       account_status: newStatus,
@@ -56,43 +58,72 @@ export async function setUserSuspensionStatusAction(
       suspended_at: isSuspending ? now : null,
       onboarding_checklist_state: updatedChecklist,
       updated_at: now,
-    } as any)
+    })
     .eq('id', targetProfileId);
-
-  if (directErr) {
-    // Retry updating only safe columns
-    const { error: fallbackErr } = await supabase
-      .from('profiles')
-      .update({
-        onboarding_checklist_state: updatedChecklist,
-        updated_at: now,
-      })
-      .eq('id', targetProfileId);
-
-    updateErr = fallbackErr;
-  }
 
   if (updateErr) {
     throw new Error(`Failed to update user suspension status: ${updateErr.message}`);
   }
 
-  // 3. Write immutable audit log
+  // 3. Connect & synchronize with Clerk
+  let clerkSynced = false;
+  let clerkBanned = false;
+  if (currentProfile.clerk_id) {
+    try {
+      const client = await clerkClient();
+
+      // Sync publicMetadata so Clerk is officially aware of the suspension and reason
+      await client.users.updateUserMetadata(currentProfile.clerk_id, {
+        publicMetadata: {
+          isSuspended: isSuspending,
+          suspendedReason: isSuspending ? reason : null,
+          suspendedAt: isSuspending ? now : null,
+        },
+      });
+      clerkSynced = true;
+
+      // Optional Clerk full ban or automatic unban
+      if (isSuspending) {
+        if (options?.banInClerk) {
+          await client.users.banUser(currentProfile.clerk_id);
+          clerkBanned = true;
+        }
+      } else {
+        // Unsuspending: unban in Clerk if user was previously banned
+        try {
+          const clerkUser = await client.users.getUser(currentProfile.clerk_id);
+          if (clerkUser.banned) {
+            await client.users.unbanUser(currentProfile.clerk_id);
+          }
+        } catch (unbanErr) {
+          console.warn('[setUserSuspensionStatusAction] Clerk unban check warning:', unbanErr);
+        }
+      }
+    } catch (clerkErr: any) {
+      console.warn('[setUserSuspensionStatusAction] Clerk sync warning:', clerkErr?.message);
+    }
+  }
+
+  // 4. Write immutable audit log
   await logAuditEvent({
     profileId: adminId,
     actorRole: 'admin',
     action: isSuspending ? AUDIT_ACTIONS.USER_SUSPENDED : AUDIT_ACTIONS.USER_UNSUSPENDED,
     targetTable: 'profiles',
     targetId: targetProfileId,
-    details: `Admin ${isSuspending ? 'suspended' : 'reactivated'} account (${currentProfile.email}): ${reason}`,
+    details: `Admin ${isSuspending ? 'suspended' : 'reactivated'} account (${currentProfile.email}): ${reason} [Clerk Synced: ${clerkSynced}${clerkBanned ? ', Full Ban' : ''}]`,
     payload: {
       targetUser: {
         id: targetProfileId,
         email: currentProfile.email,
         fullName: currentProfile.full_name,
         role: currentProfile.role,
+        clerkId: currentProfile.clerk_id,
       },
       status: newStatus,
       reason,
+      clerkSynced,
+      clerkBanned,
       timestamp: now,
     },
   });
@@ -100,8 +131,10 @@ export async function setUserSuspensionStatusAction(
   revalidatePath('/admin');
   revalidatePath('/admin/users');
   revalidatePath(`/admin/users/${targetProfileId}`);
+  revalidatePath('/c/dashboard');
+  revalidatePath('/b/dashboard');
 
-  return { success: true, status: newStatus };
+  return { success: true, status: newStatus, clerkSynced, clerkBanned };
 }
 
 /**
@@ -115,7 +148,8 @@ export async function adjustUserWalletBalanceAction(
   adjustmentType: 'credit' | 'debit',
   reason: string
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const adminClient = createAdminClient();
 
   if (!amount || isNaN(amount) || amount <= 0) {
     throw new Error('Adjustment amount must be a positive number greater than zero.');
@@ -125,8 +159,8 @@ export async function adjustUserWalletBalanceAction(
     throw new Error('A detailed audit justification is required for wallet adjustments (minimum 5 characters).');
   }
 
-  // 1. Fetch or create wallet
-  let { data: wallet, error: walletErr } = await supabase
+  // 1. Fetch or initialize wallet with adminClient (service role bypasses RLS)
+  let { data: wallet, error: walletErr } = await adminClient
     .from('wallets')
     .select('id, balance')
     .eq('profile_id', targetProfileId)
@@ -139,7 +173,7 @@ export async function adjustUserWalletBalanceAction(
 
   if (!wallet) {
     // Initialize wallet if not yet created
-    const { data: newWallet, error: initErr } = await supabase
+    const { data: newWallet, error: initErr } = await adminClient
       .from('wallets')
       .insert({
         profile_id: targetProfileId,
@@ -156,7 +190,8 @@ export async function adjustUserWalletBalanceAction(
   }
 
   const currentBalance = Number(wallet.balance) || 0;
-  let newBalance = adjustmentType === 'credit' ? currentBalance + amount : currentBalance - amount;
+  const delta = adjustmentType === 'credit' ? amount : -amount;
+  const newBalance = currentBalance + delta;
 
   if (adjustmentType === 'debit' && newBalance < 0) {
     throw new Error(`Insufficient funds: Current balance is ₦${currentBalance.toLocaleString()}, cannot debit ₦${amount.toLocaleString()}.`);
@@ -164,8 +199,8 @@ export async function adjustUserWalletBalanceAction(
 
   const now = new Date().toISOString();
 
-  // 2. Update wallet balance
-  const { error: updateErr } = await supabase
+  // 2. Update wallet balance via service role
+  const { error: updateErr } = await adminClient
     .from('wallets')
     .update({ balance: newBalance })
     .eq('id', wallet.id);
@@ -175,18 +210,41 @@ export async function adjustUserWalletBalanceAction(
   }
 
   // 3. Insert transaction record into ledger
-  const txType = adjustmentType === 'credit' ? 'budget_release_refund' : 'commission_deduction';
+  const txType = adjustmentType === 'credit' ? 'deposit' : 'withdrawal';
   const txRef = `ADMIN_ADJ_${Date.now()}_${adminId.slice(0, 8)}`;
 
-  await supabase.from('wallet_transactions').insert({
+  const { error: txErr } = await adminClient.from('wallet_transactions').insert({
     wallet_id: wallet.id,
     type: txType,
-    amount: amount,
+    amount: delta,
+    gross_amount: amount,
+    net_amount: delta,
+    status: 'completed',
     paystack_reference: txRef,
     created_at: now,
   });
 
-  // 4. Log audit event
+  if (txErr) {
+    console.error('[adjustUserWalletBalanceAction] Transaction record insert failed:', txErr);
+  }
+
+  // 4. Update creator total_earned if creator wallet was credited
+  if (walletType === 'creator_earnings' && adjustmentType === 'credit') {
+    const { data: cp } = await adminClient
+      .from('creator_profiles')
+      .select('total_earned')
+      .eq('profile_id', targetProfileId)
+      .maybeSingle();
+
+    if (cp) {
+      await adminClient
+        .from('creator_profiles')
+        .update({ total_earned: Math.max(0, (Number(cp.total_earned) || 0) + amount) })
+        .eq('profile_id', targetProfileId);
+    }
+  }
+
+  // 5. Log audit event
   await logAuditEvent({
     profileId: adminId,
     actorRole: 'admin',
@@ -210,6 +268,9 @@ export async function adjustUserWalletBalanceAction(
   revalidatePath('/admin');
   revalidatePath('/admin/users');
   revalidatePath(`/admin/users/${targetProfileId}`);
+  revalidatePath('/admin/finances');
+  revalidatePath('/c/wallet');
+  revalidatePath('/b/wallet');
 
   return { success: true, newBalance };
 }
@@ -223,14 +284,15 @@ export async function updateUserRoleAction(
   newRole: 'creator' | 'advertiser' | 'both',
   reason: string
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const adminClient = createAdminClient();
 
   if (!reason || reason.trim().length < 5) {
     throw new Error('A detailed audit justification is required to change roles (minimum 5 characters).');
   }
 
   // 1. Fetch current profile
-  const { data: currentProfile, error: fetchErr } = await supabase
+  const { data: currentProfile, error: fetchErr } = await adminClient
     .from('profiles')
     .select('id, role, full_name, email')
     .eq('id', targetProfileId)
@@ -246,7 +308,7 @@ export async function updateUserRoleAction(
   }
 
   // 2. Update role in profiles
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await adminClient
     .from('profiles')
     .update({ role: newRole, updated_at: new Date().toISOString() })
     .eq('id', targetProfileId);
@@ -257,14 +319,14 @@ export async function updateUserRoleAction(
 
   // 3. Ensure sub-profiles exist
   if (newRole === 'creator' || newRole === 'both') {
-    const { data: cProf } = await supabase
+    const { data: cProf } = await adminClient
       .from('creator_profiles')
       .select('profile_id')
       .eq('profile_id', targetProfileId)
       .maybeSingle();
 
     if (!cProf) {
-      await supabase.from('creator_profiles').insert({
+      await adminClient.from('creator_profiles').insert({
         profile_id: targetProfileId,
         display_name: currentProfile.full_name || 'Creator',
       });
@@ -272,14 +334,14 @@ export async function updateUserRoleAction(
   }
 
   if (newRole === 'advertiser' || newRole === 'both') {
-    const { data: aProf } = await supabase
+    const { data: aProf } = await adminClient
       .from('advertiser_profiles')
       .select('profile_id')
       .eq('profile_id', targetProfileId)
       .maybeSingle();
 
     if (!aProf) {
-      await supabase.from('advertiser_profiles').insert({
+      await adminClient.from('advertiser_profiles').insert({
         profile_id: targetProfileId,
         company_name: currentProfile.full_name || 'Brand Company',
         billing_email: currentProfile.email,
@@ -318,7 +380,8 @@ export async function overrideUserKycStatusAction(
   kycStatus: 'verified' | 'unverified' | 'pending' | 'rejected',
   reason: string
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const adminClient = createAdminClient();
 
   if (!reason || reason.trim().length < 5) {
     throw new Error('A detailed audit justification is required for KYC override (minimum 5 characters).');
@@ -328,20 +391,20 @@ export async function overrideUserKycStatusAction(
   const now = new Date().toISOString();
 
   // Ensure creator profile exists
-  const { data: cProf } = await supabase
+  const { data: cProf } = await adminClient
     .from('creator_profiles')
     .select('profile_id, kyc_status')
     .eq('profile_id', targetProfileId)
     .maybeSingle();
 
   if (!cProf) {
-    await supabase.from('creator_profiles').insert({
+    await adminClient.from('creator_profiles').insert({
       profile_id: targetProfileId,
       kyc_status: kycStatus,
       kyc_verified_at: isVerified ? now : null,
     });
   } else {
-    const { error: updateErr } = await supabase
+    const { error: updateErr } = await adminClient
       .from('creator_profiles')
       .update({
         kyc_status: kycStatus,

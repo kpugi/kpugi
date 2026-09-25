@@ -200,4 +200,47 @@ export const getOrCreateUserProfile = cache(async () => {
   }
 });
 
+export interface SuspensionStatus {
+  isSuspended: boolean;
+  reason: string | null;
+  suspendedAt: string | null;
+}
+
+/**
+ * checkProfileSuspension
+ * Inspects both dedicated account_status column and onboarding_checklist_state fallback
+ */
+export function checkProfileSuspension(profile: any): SuspensionStatus {
+  if (!profile) return { isSuspended: false, reason: null, suspendedAt: null };
+
+  const directStatus = profile.account_status;
+  const checklist = (profile.onboarding_checklist_state as Record<string, any>) || {};
+  const checklistStatus = checklist.account_status;
+
+  if (directStatus === 'suspended' || checklistStatus === 'suspended') {
+    return {
+      isSuspended: true,
+      reason: profile.suspended_reason || checklist.suspended_reason || 'Account has been suspended by an administrator.',
+      suspendedAt: profile.suspended_at || checklist.suspended_at || null,
+    };
+  }
+
+  return { isSuspended: false, reason: null, suspendedAt: null };
+}
+
+/**
+ * assertNotSuspended
+ * Throws a clean error if profile is suspended, enforcing read-only state.
+ */
+export function assertNotSuspended(profile: any): void {
+  const { isSuspended, reason } = checkProfileSuspension(profile);
+  if (isSuspended) {
+    throw new Error(
+      `Account Suspended (Read-Only Mode): ${reason || 'Your account is under administrative review.'} You cannot perform write operations.`
+    );
+  }
+}
+
+export const isProfileSuspended = checkProfileSuspension;
+
 

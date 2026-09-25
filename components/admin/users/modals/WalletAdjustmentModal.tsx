@@ -17,7 +17,7 @@ interface WalletAdjustmentModalProps {
     advertiserBalance?: number;
     creatorBalance?: number;
   } | null;
-  onSuccess?: (newBalance: number) => void;
+  onSuccess?: (newBalance: number, walletType: "advertiser_funding" | "creator_earnings") => void;
 }
 
 export default function WalletAdjustmentModal({
@@ -77,7 +77,7 @@ export default function WalletAdjustmentModal({
         reason.trim()
       );
       if (res.success) {
-        onSuccess?.(res.newBalance);
+        onSuccess?.(res.newBalance, walletType);
         onClose();
         setAmountStr("");
         setReason("");

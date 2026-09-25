@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrCreateUserProfile } from '@/lib/clerk/auth';
+import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { calculateBudgetReservation } from '@/lib/utils/budget';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
@@ -13,6 +13,14 @@ export async function POST(req: Request) {
     const userProfile = await getOrCreateUserProfile();
     if (!userProfile || !userProfile.profile || !userProfile.creatorProfile) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return NextResponse.json(
+        { error: `Account suspended (${reason || 'Read-Only Mode'}). You cannot join new campaigns or submit links.` },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

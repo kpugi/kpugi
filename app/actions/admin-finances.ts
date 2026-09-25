@@ -2,6 +2,7 @@
 
 import { requireAdminSession } from '@/lib/admin/auth';
 import { logAuditEvent } from '@/lib/audit';
+import { createAdminClient } from '@/lib/supabase/server';
 import { paystackFetch } from '@/lib/paystack/client';
 import { revalidatePath } from 'next/cache';
 
@@ -316,8 +317,10 @@ export async function manualWalletAdjustmentAction(
     throw new Error('A detailed audit justification is required (minimum 10 characters).');
   }
 
+  const adminClient = createAdminClient();
+
   // 1. Fetch current wallet
-  const { data: wallet, error: fetchErr } = await supabase
+  const { data: wallet, error: fetchErr } = await adminClient
     .from('wallets')
     .select('id, profile_id, wallet_type, balance')
     .eq('id', walletId)
@@ -335,8 +338,8 @@ export async function manualWalletAdjustmentAction(
     throw new Error(`Insufficient wallet balance. Current balance is ₦${currentBalance.toLocaleString()}.`);
   }
 
-  // 2. Update wallet balance
-  const { error: updateErr } = await supabase
+  // 2. Update wallet balance via service role (bypasses RLS)
+  const { error: updateErr } = await adminClient
     .from('wallets')
     .update({
       balance: newBalance,
@@ -349,10 +352,12 @@ export async function manualWalletAdjustmentAction(
 
   // 3. Insert compensating transaction record
   const ref = `KPG-ADJ-${Date.now().toString(36).toUpperCase()}`;
-  await supabase.from('wallet_transactions').insert({
+  await adminClient.from('wallet_transactions').insert({
     wallet_id: walletId,
     type: direction === 'credit' ? 'deposit' : 'withdrawal',
     amount: delta,
+    gross_amount: amount,
+    net_amount: delta,
     status: 'completed',
     paystack_reference: ref,
     created_at: new Date().toISOString(),
