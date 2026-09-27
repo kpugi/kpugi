@@ -325,7 +325,7 @@ export async function adminGetPendingClaims(): Promise<AdminPerkClaimRow[]> {
       admin_notes,
       reward_paid,
       perk:platform_perks ( title, perk_type, reward_amount, reward_type ),
-      creator:profiles (
+      creator:profiles!platform_perk_claims_creator_id_fkey (
         full_name,
         email,
         avatar_url,
@@ -394,7 +394,7 @@ export async function adminGetAllClaims(): Promise<AdminPerkClaimRow[]> {
       admin_notes,
       reward_paid,
       perk:platform_perks ( title, perk_type, reward_amount, reward_type ),
-      creator:profiles (
+      creator:profiles!platform_perk_claims_creator_id_fkey (
         full_name,
         email,
         avatar_url,
