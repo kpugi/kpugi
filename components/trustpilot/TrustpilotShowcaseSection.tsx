@@ -41,8 +41,6 @@ export default function TrustpilotShowcaseSection({
               ) : (
                 /* Trustpilot Pill */
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                  <span className="w-2 h-2 rounded-full bg-[#00b67a] animate-pulse" />
-                  Official Trustpilot Profile
                 </span>
               )}
             </div>
@@ -69,10 +67,7 @@ export default function TrustpilotShowcaseSection({
                       Trustpilot
                     </strong>
                   </span>
-                  <span>•</span>
-                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-                    100% Unedited Community Feedback
-                  </span>
+                
                 </>
               )}
             </div>
