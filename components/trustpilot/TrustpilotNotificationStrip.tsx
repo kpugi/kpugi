@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
+import { useTrustpilot } from '@/lib/trustpilot/useTrustpilot';
 
 interface TrustpilotNotificationStripProps {
   role?: 'creator' | 'advertiser';
@@ -21,11 +22,9 @@ export default function TrustpilotNotificationStrip({
   onDismiss,
 }: TrustpilotNotificationStripProps) {
   const [isDismissed, setIsDismissed] = useState(false);
+  const { evaluateUrl } = useTrustpilot();
 
   if (isDismissed) return null;
-
-  const targetReviewUrl =
-    'https://www.trustpilot.com/evaluate/kpugi.onrender.com?utm_medium=trustbox&utm_source=ReviewCollector';
 
   const defaultDescription =
     role === 'advertiser'
@@ -39,8 +38,6 @@ export default function TrustpilotNotificationStrip({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      
-
       {/* Banner Widget */}
       <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/20 p-5 relative overflow-hidden transition-all shadow-sm">
         <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-100 dark:bg-emerald-500/10 rounded-full opacity-50 pointer-events-none" />
@@ -59,24 +56,24 @@ export default function TrustpilotNotificationStrip({
                 {badgeLabel}
               </span>
             </div>
-            <p className="text-xs text-emerald-950/80 dark:text-emerald-200/80 leading-relaxed mb-3">
+            <p className="text-xs text-emerald-950/80 dark:text-emerald-200/80 leading-relaxed mb-3 font-satoshi">
               {description || defaultDescription}
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href={targetReviewUrl}
+                href={evaluateUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 rounded-lg bg-[#00b67a] hover:bg-[#009b67] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
+                className="px-4 py-2 rounded-xl bg-[#00b67a] hover:bg-[#009b67] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Rate on Trustpilot</span>
-                <span className="text-emerald-100 text-[11px] tracking-widest">★ ★ ★ ★ ★</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="text-xs font-medium text-emerald-800 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-200 underline underline-offset-2 transition"
+                className="text-xs font-medium text-emerald-800 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-200 underline underline-offset-2 transition cursor-pointer"
               >
                 Not right now
               </button>
@@ -86,7 +83,7 @@ export default function TrustpilotNotificationStrip({
           <button
             type="button"
             onClick={handleDismiss}
-            className="text-emerald-700/60 dark:text-emerald-400/60 hover:text-emerald-900 dark:hover:text-emerald-200 p-1 rounded-lg transition"
+            className="text-emerald-700/60 dark:text-emerald-400/60 hover:text-emerald-900 dark:hover:text-emerald-200 p-1 rounded-lg transition cursor-pointer"
             title="Dismiss"
             aria-label="Dismiss banner"
           >

@@ -112,6 +112,8 @@ export async function adminApprovePerkClaimAction(
     revalidatePath('/c/dashboard');
     revalidatePath('/b/dashboard');
     revalidatePath('/b/wallet');
+    revalidatePath('/api/trustpilot');
+    revalidatePath('/');
   }
 
   return result;

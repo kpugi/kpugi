@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, Check, X, Gift, Sparkles, AlertCircle, CheckCircle2, Clock, Send } from 'lucide-react';
 import { submitPerkProofAction } from '@/app/actions/perks';
+import { useTrustpilot } from '@/lib/trustpilot/useTrustpilot';
 
 export interface TrustpilotCollectorCardProps {
   role?: 'creator' | 'advertiser';
@@ -66,9 +67,9 @@ export default function TrustpilotCollectorCard({
 
   if (isDismissed) return null;
 
+  const { evaluateUrl } = useTrustpilot();
   const currentRating = hoveredRating !== null ? hoveredRating : selectedRating;
-  const targetReviewUrl =
-    'https://www.trustpilot.com/evaluate/kpugi.onrender.com?utm_medium=trustbox&utm_source=ReviewCollector';
+  const targetReviewUrl = evaluateUrl;
 
   const handleDismiss = () => {
     setIsDismissed(true);
