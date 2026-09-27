@@ -19,6 +19,7 @@ import {
   IconSettings,
   IconChartBar,
   IconUsers,
+  IconGift,
 } from '@tabler/icons-react';
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
@@ -72,6 +73,14 @@ export default function DashboardLayoutShell({
       href: '/c/wallet',
       icon: <IconWallet className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/c/wallet'),
+    },
+    {
+      id: 'tour-creator-freebies-nav',
+      label: 'Freebies & Perks',
+      href: '/c/freebies',
+      icon: <IconGift className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/c/freebies'),
+      badge: 'New',
     },
     {
       id: 'tour-creator-submissions-nav',

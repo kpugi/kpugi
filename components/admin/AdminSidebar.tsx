@@ -13,7 +13,8 @@ import {
   Sliders,
   ExternalLink,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Gift,
 } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
@@ -44,6 +45,12 @@ const NAV_ITEMS = [
     label: 'Submissions',
     href: '/admin/submissions',
     icon: CheckSquare,
+    badge: null,
+  },
+  {
+    label: 'Freebies & Perks',
+    href: '/admin/freebies',
+    icon: Gift,
     badge: null,
   },
   {

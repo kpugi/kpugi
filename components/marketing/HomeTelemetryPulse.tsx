@@ -4,6 +4,8 @@ import React from 'react';
 import { FaStar, FaBolt, FaRocket, FaShieldAlt } from 'react-icons/fa';
 import { SiProducthunt } from 'react-icons/si';
 
+import TrustpilotMiniBadge from '@/components/trustpilot/TrustpilotMiniBadge';
+
 interface StatsProps {
   stats?: {
     totalEarnings?: number;
@@ -24,19 +26,7 @@ function formatCompactStat(num: number | undefined, isCurrency = false): string 
   return `${isCurrency ? '₦' : ''}${num.toLocaleString()}`;
 }
 
-const endorsements = [
-  {
-    icon: SiProducthunt,
-    iconClass: 'text-orange-500',
-    score: '#1',
-    name: 'Product of the Day',
-  },
-  {
-    icon: FaStar,
-    iconClass: 'text-emerald-500',
-    score: 'Claimed',
-    name: 'Trustpilot Verified',
-  },
+const otherEndorsements = [
   {
     icon: FaShieldAlt,
     iconClass: 'text-[#2F49E8] dark:text-[#5B7CFF]',
@@ -115,7 +105,24 @@ export default function HomeTelemetryPulse({ stats }: StatsProps) {
 
           {/* Endorsements / Trust Signals */}
           <div className="font-satoshi text-slate-600 dark:text-white/50 mt-8 flex flex-wrap items-center justify-center gap-2">
-            {endorsements.map((e, index) => (
+            {/* Product Hunt */}
+            <div className="flex items-center">
+              <div className="group hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-900 dark:hover:text-white flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm transition-colors duration-300">
+                <SiProducthunt className="size-4 shrink-0 transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6 text-orange-500" />
+                <span className="font-bold text-slate-900 dark:text-white">#1</span>
+                <span>Product of the Day</span>
+              </div>
+              <div className="bg-slate-200 dark:bg-white/10 mx-1 h-3.5 w-px" />
+            </div>
+
+            {/* Trustpilot Mini Badge */}
+            <div className="flex items-center">
+              <TrustpilotMiniBadge variant="strip" />
+              <div className="bg-slate-200 dark:bg-white/10 mx-1 h-3.5 w-px" />
+            </div>
+
+            {/* Other Endorsements */}
+            {otherEndorsements.map((e, index) => (
               <div key={e.name} className="flex items-center">
                 <div className="group hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-900 dark:hover:text-white flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm transition-colors duration-300">
                   <e.icon
@@ -124,7 +131,7 @@ export default function HomeTelemetryPulse({ stats }: StatsProps) {
                   <span className="font-bold text-slate-900 dark:text-white">{e.score}</span>
                   <span>{e.name}</span>
                 </div>
-                {index < endorsements.length - 1 && (
+                {index < otherEndorsements.length - 1 && (
                   <div className="bg-slate-200 dark:bg-white/10 mx-1 h-3.5 w-px" />
                 )}
               </div>

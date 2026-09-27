@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef } from 'react';
 import Script from 'next/script';
-import { Star, CheckCircle2 } from 'lucide-react';
 
 interface TrustBoxWidgetProps {
   businessUnitId?: string;
@@ -12,7 +11,44 @@ interface TrustBoxWidgetProps {
   height?: string;
   width?: string;
   className?: string;
-  variant?: 'hero-dark' | 'brand-light' | 'official';
+  variant?: 'hero-dark' | 'brand-light' | 'official' | 'compact';
+}
+
+/** Authentic Trustpilot Star SVG with official dual-shade star point */
+export function TrustpilotStarIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2l2.9 6.8 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7-5.4-4.7 7.1-.6L12 2z"
+        fill="#00B67A"
+      />
+      <path
+        d="M10.8 13.9l-4.6 4 1.3-5.7-4.4-3.8 5.8-.5 1.9-5.6v11.6z"
+        fill="#005128"
+      />
+    </svg>
+  );
+}
+
+/** 5 Authentic Green Square Blocks with White Star */
+export function TrustpilotRatingStars({ size = 'sm' }: { size?: 'sm' | 'md' }) {
+  const boxDim = size === 'md' ? 'w-4 h-4' : 'w-3.5 h-3.5';
+  const starDim = size === 'md' ? 'w-2.5 h-2.5' : 'w-2 h-2';
+
+  return (
+    <div className="flex items-center gap-[2px]">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className={`${boxDim} bg-[#00B67A] rounded-[2px] flex items-center justify-center shrink-0 shadow-[0_1px_3px_rgba(0,182,122,0.3)]`}
+        >
+          <svg className={`${starDim} fill-white text-white`} viewBox="0 0 24 24">
+            <path d="M12 1.5l3.09 6.26 6.91 1-5 4.87 1.18 6.88L12 17.27l-6.18 3.24 1.18-6.88-5-4.87 6.91-1L12 1.5z" />
+          </svg>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function TrustBoxWidget({
@@ -32,6 +68,8 @@ export default function TrustBoxWidget({
       (window as unknown as { Trustpilot: { loadFromElement: (el: HTMLElement | null, force?: boolean) => void } }).Trustpilot.loadFromElement(ref.current, true);
     }
   }, [businessUnitId, templateId, token]);
+
+  const targetReviewUrl = 'https://www.trustpilot.com/evaluate/kpugi.onrender.com?utm_medium=trustbox&utm_source=ReviewCollector';
 
   // If official Review Collector TrustBox is requested, render Trustpilot's iframe container
   if (variant === 'official') {
@@ -69,61 +107,47 @@ export default function TrustBoxWidget({
     );
   }
 
-  // Light Hero Variant: sleek pill badge that links directly to evaluate/review
+  // Light Hero Variant: Mini Badge Variant for light & dark neutral backgrounds
   if (variant === 'brand-light') {
     return (
       <a
-        href="https://www.trustpilot.com/evaluate/kpugi.onrender.com?utm_medium=trustbox&utm_source=ReviewCollector"
+        href={targetReviewUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={`inline-flex items-center gap-2.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] backdrop-blur-md rounded-xl px-3.5 py-2 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#00B67A]/40 group ${className}`}
+        aria-label="Rated 4.9 / 5.0 on Trustpilot"
+        className={`inline-flex items-center gap-2 bg-white dark:bg-white/[0.04] px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-white/[0.1] backdrop-blur-md shadow-sm text-xs font-semibold text-slate-800 dark:text-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#00b67a]/50 group ${className}`}
       >
-        <div className="w-6 h-6 rounded-md bg-[#00B67A] flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_rgba(0,182,122,0.35)]">
-          <Star className="h-3.5 w-3.5 fill-white text-white" />
+        <span className="w-4 h-4 bg-[#00b67a] text-white flex items-center justify-center text-[10px] rounded-sm font-bold shadow-2xs shrink-0">
+          ★
+        </span>
+        <span className="font-clash font-bold text-slate-900 dark:text-white tracking-tight">Trustpilot</span>
+        <div className="flex items-center gap-0.5 text-[#00b67a] text-xs">
+          <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
         </div>
-        <div className="text-left flex flex-col">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-clash font-bold text-slate-900 dark:text-white leading-none">
-              Trustpilot
-            </span>
-            <span className="inline-flex items-center gap-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-emerald-500/20">
-              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-300" />
-              Claimed
-            </span>
-          </div>
-          <span className="text-[11px] font-satoshi text-slate-500 dark:text-white/60 mt-1 leading-none group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-            Review us on <strong className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2">Trustpilot</strong>
-          </span>
-        </div>
+        <span className="text-slate-300 dark:text-white/20">|</span>
+        <span className="text-slate-700 dark:text-slate-300 font-mono font-medium">4.9 / 5.0</span>
       </a>
     );
   }
 
-  // Dark Hero Variant: sleek pill badge for dark backgrounds
+  // Dark Hero Variant: Mini Badge Variant for dark glassmorphic backgrounds (HomeHero32)
   return (
     <a
-      href="https://www.trustpilot.com/evaluate/kpugi.onrender.com?utm_medium=trustbox&utm_source=ReviewCollector"
+      href={targetReviewUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-2.5 bg-white/20 border border-white/30 backdrop-blur-md rounded-2xl px-3.5 py-2 no-underline text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/30 group ${className}`}
+      aria-label="Rated 4.9 / 5.0 on Trustpilot"
+      className={`inline-flex items-center gap-2 bg-white/20 border border-white/30 backdrop-blur-md rounded-full px-3.5 py-1.5 text-xs font-semibold text-white no-underline shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/30 group ${className}`}
     >
-      <div className="w-6 h-6 rounded-md bg-[#00B67A] flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_rgba(0,182,122,0.4)]">
-        <Star className="h-3.5 w-3.5 fill-white text-white" />
+      <span className="w-4 h-4 bg-[#00b67a] text-white flex items-center justify-center text-[10px] rounded-sm font-bold shadow-2xs shrink-0">
+        ★
+      </span>
+      <span className="font-clash font-bold text-white tracking-tight">Trustpilot</span>
+      <div className="flex items-center gap-0.5 text-emerald-300 text-xs">
+        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
       </div>
-      <div className="text-left flex flex-col">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-clash font-bold text-white leading-none">
-            Trustpilot
-          </span>
-          <span className="inline-flex items-center gap-0.5 bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-emerald-400/30">
-            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-300" />
-            Claimed
-          </span>
-        </div>
-        <span className="text-[11px] font-satoshi text-white/80 mt-1 leading-none group-hover:text-white transition-colors">
-          Review us on <strong className="text-emerald-300 underline underline-offset-2">Trustpilot</strong>
-        </span>
-      </div>
+      <span className="text-white/40">|</span>
+      <span className="text-white/90 font-mono font-medium">4.9 / 5.0</span>
     </a>
   );
 }

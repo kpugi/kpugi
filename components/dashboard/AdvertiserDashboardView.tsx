@@ -31,6 +31,7 @@ import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeMod
 import OnboardingChecklistCard from '@/components/onboarding/OnboardingChecklistCard';
 import { useKpugiTour } from '@/lib/tour/useKpugiTour';
 import PlatformBroadcastBanner from '@/components/dashboard/PlatformBroadcastBanner';
+import TrustpilotCollectorCard from '@/components/trustpilot/TrustpilotCollectorCard';
 
 interface AdvertiserDashboardProps {
   companyName: string;
@@ -777,6 +778,14 @@ export default function AdvertiserDashboardView({ companyName, data }: Advertise
         </div>
 
       </div>
+
+      {/* ─────────────────────────────────────────────────────
+         TRUSTPILOT INCENTIVIZED REVIEW BOUNTY (BRAND OVERVIEW)
+      ───────────────────────────────────────────────────── */}
+      <TrustpilotCollectorCard
+        role="advertiser"
+        rewardAmount={2000}
+      />
 
     </div>
   );

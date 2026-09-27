@@ -62,3 +62,11 @@ strix_runs/
 # Local agent artifacts
 .agents/
 skills-lock.json
+.superpowers/brainstorm/run.cjs
+.gitignore
+.superpowers/brainstorm/session-1/content/admin-panel-spec.html
+.superpowers/brainstorm/session-1/content/creator-ui-spec.html
+.superpowers/brainstorm/session-1/content/layout-options.html
+.superpowers/brainstorm/session-1/content/layout-v2.html
+.superpowers/brainstorm/session-1/content/welcome.html
+.superpowers/brainstorm/session-1/state/server-stopped

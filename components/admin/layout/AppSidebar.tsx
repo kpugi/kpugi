@@ -22,7 +22,7 @@ import {
   LayersIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
-import { UserIcon, Bot, Sliders, Radio, Share2 } from "lucide-react";
+import { UserIcon, Bot, Sliders, Radio, Share2, Gift } from "lucide-react";
 import { IconMoneybag } from "@tabler/icons-react";
 
 type NavItem = {
@@ -55,6 +55,12 @@ const navItems: NavItem[] = [
     icon: <LayersIcon />,
     name: "Submissions",
     path: "/admin/submissions",
+  },
+  {
+    icon: <Gift className="w-5 h-5" />,
+    name: "Freebies & Perks",
+    path: "/admin/freebies",
+    new: true,
   },
   {
     icon: <UserCircleIcon />,

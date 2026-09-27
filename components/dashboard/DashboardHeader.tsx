@@ -50,6 +50,9 @@ function getHeaderTitle(pathname: string, passedTitle?: string, role: string = '
     if (cleanPath.startsWith('/c/accounts') || cleanPath.startsWith('/accounts')) {
       return 'CONNECTED ACCOUNTS';
     }
+    if (cleanPath.startsWith('/c/freebies') || cleanPath.startsWith('/freebies')) {
+      return 'FREEBIES & PERKS';
+    }
     if (cleanPath.startsWith('/c/settings') || cleanPath.startsWith('/settings')) {
       return 'ACCOUNT SETTINGS';
     }

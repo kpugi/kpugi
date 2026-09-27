@@ -30,6 +30,7 @@ import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeMod
 import OnboardingChecklistCard from '@/components/onboarding/OnboardingChecklistCard';
 import { useKpugiTour } from '@/lib/tour/useKpugiTour';
 import PlatformBroadcastBanner from '@/components/dashboard/PlatformBroadcastBanner';
+import TrustpilotNotificationStrip from '@/components/trustpilot/TrustpilotNotificationStrip';
 
 interface CreatorDashboardProps {
   displayName: string;
@@ -712,6 +713,15 @@ export default function CreatorDashboardView({ displayName, data }: CreatorDashb
           </div>
         )}
       </div>
+
+      {/* ─────────────────────────────────────────────────────
+         9. TRUSTPILOT MILESTONE NOTIFICATION STRIP (VARIANT B)
+      ───────────────────────────────────────────────────── */}
+      <TrustpilotNotificationStrip
+        role="creator"
+        badgeLabel="Creator Community"
+        title="Love using Kpugi?"
+      />
 
     </div>
   );
