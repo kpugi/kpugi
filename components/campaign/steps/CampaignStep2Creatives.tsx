@@ -12,6 +12,7 @@ import {
   Play,
   CheckCircle2,
   Upload,
+  Loader2,
 } from 'lucide-react';
 import { generateAICampaignPolishAction } from '@/app/actions/campaign';
 import { optimizeImageFile } from '@/lib/utils/imageOptimizer';
@@ -25,6 +26,8 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   const [tagInput, setTagInput] = useState('');
   const [mentionInput, setMentionInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isAiCaptionLoading, setIsAiCaptionLoading] = useState(false);
+  const [captionAiError, setCaptionAiError] = useState('');
 
   const [videoTab, setVideoTab] = useState<'upload' | 'url'>('upload');
   const [videoUploadError, setVideoUploadError] = useState('');
@@ -283,6 +286,45 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
           mentions: Array.from(new Set([...mentions, ...newMentions])),
         },
       });
+    }
+  };
+
+  const handleAiCaption = async () => {
+    setCaptionAiError('');
+    const title = (formData.title || '').trim();
+    // Strip HTML tags from brief to pass clean text context
+    const rawBrief = (formData.description || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!title && !rawBrief) {
+      setCaptionAiError('Please enter a Campaign Title or Brief in Step 1 first so AI has context.');
+      return;
+    }
+
+    const brandMentions = (formData.requirements?.mentions || []).join(', ');
+    const brandTags = (formData.requirements?.hashtags || []).join(', ');
+
+    const promptContext = `Campaign Title: ${title || 'N/A'}
+Campaign Brief & Value Proposition: ${rawBrief || 'N/A'}
+Campaign Objective: ${formData.objective || 'Brand Awareness'}
+Target Channels: ${(formData.channels || []).join(', ') || 'Social Media'}
+${brandMentions ? `Brand Mentions to include: ${brandMentions}\n` : ''}${brandTags ? `Campaign Hashtags to include: ${brandTags}\n` : ''}`;
+
+    setIsAiCaptionLoading(true);
+    const res = await generateAICampaignPolishAction(promptContext, 'caption');
+    setIsAiCaptionLoading(false);
+
+    if (res.success && res.text) {
+      updateFormData({
+        requirements: {
+          ...formData.requirements,
+          creative_text_copy: res.text,
+        },
+      });
+    } else {
+      setCaptionAiError(res.error || 'Failed to generate AI caption.');
     }
   };
 
@@ -553,26 +595,68 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
 
         {/* Ready-to-Post Text Copy / Caption */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
               <span>Ready-to-Post Caption*</span>
             </label>
-            <span className="text-[10px] font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-full border border-[#dcd8fc] dark:border-indigo-500/30">
-              Creators Copy
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={isAiCaptionLoading}
+                onClick={handleAiCaption}
+                className="text-[11px] font-bold text-[#4f46e5] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 hover:bg-[#e4e1fd] dark:hover:bg-indigo-900/50 border border-[#dcd8fc] dark:border-indigo-500/30 px-3 py-1 rounded-full transition-all flex items-center gap-1.5 disabled:opacity-50"
+                title="Generate ready-to-post caption based on Campaign Title and Brief"
+              >
+                {isAiCaptionLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4f46e5] dark:text-indigo-400" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                )}
+                <span>{isAiCaptionLoading ? 'Generating...' : 'AI Generate'}</span>
+              </button>
+              <span className="text-[10px] font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-[#eeedfd] dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-full border border-[#dcd8fc] dark:border-indigo-500/30">
+                Creators Copy
+              </span>
+            </div>
           </div>
-          <textarea
-            rows={3}
-            value={formData.requirements?.creative_text_copy || ''}
-            onChange={(e) =>
-              updateFormData({
-                requirements: { ...formData.requirements, creative_text_copy: e.target.value },
-              })
-            }
-            placeholder="e.g. 🔥 Exciting news! Kpugi platform is officially launching in Nigeria. Join thousands of creators today! Link in bio #KpugiLaunch"
-            className="w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 outline-none leading-relaxed transition-all"
-          />
+
+          {captionAiError && (
+            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-[11px] text-amber-700 dark:text-amber-400 flex items-center justify-between">
+              <span>{captionAiError}</span>
+              <button
+                type="button"
+                onClick={() => setCaptionAiError('')}
+                className="text-amber-700 hover:text-amber-900 dark:text-amber-400 text-xs font-bold px-1"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          <div className="relative">
+            <textarea
+              rows={3}
+              value={formData.requirements?.creative_text_copy || ''}
+              onChange={(e) =>
+                updateFormData({
+                  requirements: { ...formData.requirements, creative_text_copy: e.target.value },
+                })
+              }
+              placeholder="e.g. 🔥 Exciting news! Kpugi platform is officially launching in Nigeria. Join thousands of creators today! Link in bio #KpugiLaunch"
+              className={`w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-sm text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 outline-none leading-relaxed transition-all ${
+                isAiCaptionLoading ? 'border-[#4338ca] bg-purple-50/20 dark:bg-indigo-950/30' : ''
+              }`}
+            />
+            {isAiCaptionLoading && (
+              <div className="absolute inset-0 bg-white/70 dark:bg-[#12141A]/80 rounded-2xl flex items-center justify-center gap-2 backdrop-blur-[1px]">
+                <Loader2 className="w-4 h-4 animate-spin text-[#4338ca] dark:text-indigo-400" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  AI crafting ready-to-post caption from brief & title...
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

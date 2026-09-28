@@ -37,6 +37,7 @@ import {
   RotateCcw,
   Filter,
 } from "lucide-react";
+import CampaignBriefRenderer from "@/components/campaign/CampaignBriefRenderer";
 import {
   Table,
   TableBody,
@@ -1056,8 +1057,8 @@ export default function CampaignDetailAdminView({
                   <span className="text-[11px] font-mono uppercase text-gray-400 block mb-1">
                     Campaign Description / Pitch
                   </span>
-                  <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                    {campaign.description || "No description provided."}
+                  <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                    <CampaignBriefRenderer content={campaign.description} />
                   </div>
                 </div>
 

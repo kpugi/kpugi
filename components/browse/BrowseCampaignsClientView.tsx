@@ -759,7 +759,7 @@ export default function BrowseCampaignsClientView() {
         budgetSpent: Number(c.spent_budget || 0),
         minViews: c.min_view_threshold || 1000,
         daysLeft: 14,
-        tone: (c.description || '').slice(0, 100) + '...',
+        tone: ((c.description || '').replace(/<[^>]*>/g, '').trim()).slice(0, 100) + '...',
         createdAt: c.created_at,
         timePosted: (() => {
           const diff = Math.floor((Date.now() - new Date(c.created_at).getTime()) / 1000);

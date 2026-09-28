@@ -10,11 +10,16 @@ import { revalidatePath } from 'next/cache';
  */
 export async function generateAICampaignPolishAction(
   promptText: string,
-  mode: 'title' | 'description' | 'requirements' | 'hashtags'
+  mode: 'title' | 'description' | 'requirements' | 'hashtags' | 'caption'
 ) {
   try {
     const nvidiaKey = process.env.NVIDIA_API_KEY;
-    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct';
+    const configuredModel = process.env.NVIDIA_MODEL;
+    // Fall back to meta/llama-3.2-11b-vision-instruct if model is unset or known to stall
+    const modelName =
+      !configuredModel || configuredModel.includes('kimi') || configuredModel.includes('moonshot')
+        ? 'meta/llama-3.2-11b-vision-instruct'
+        : configuredModel;
 
     if (!nvidiaKey) {
       return { success: false, error: 'NVIDIA API Key missing. Please add NVIDIA_API_KEY to .env.local.' };
@@ -25,11 +30,60 @@ export async function generateAICampaignPolishAction(
       systemInstruction =
         'You are an expert marketing strategist for viral social media ad campaigns. Generate a punchy, high-converting 3-to-6 word campaign title based on the brand prompt. Return ONLY the title text with no quotes, markdown, or intro.';
     } else if (mode === 'description') {
+      systemInstruction = `You are an expert campaign strategist on Kpugi, Nigeria's leading pay-per-view creator ad distribution platform.
+
+PLATFORM OPERATING MODEL:
+- On Kpugi, creators DO NOT produce, shoot, film, design, or write original content.
+- The brand provides 100% finished official creative assets (ready-made video ads, promo images/flyers, or official captions), which are attached directly to the campaign page.
+- Creators earn cash per verified view simply by downloading the brand's attached creative asset, publishing it to the approved campaign channels, and driving authentic organic views from their audience.
+
+CRITICAL CONSTRAINTS (STRICT):
+1. NEVER instruct creators to "create content", "shoot a video", "record footage", "write reviews", or "design graphics". Their sole task is to distribute the brand's provided asset.
+2. NEVER output placeholders like "[Insert link to download the asset]", "[Insert link]", "[Download link]", or "[Link to creative]". The creative asset is already attached directly on the campaign page, so simply tell creators to download the attached creative asset directly from this campaign page.
+3. DO NOT hardcode cliché titles like "(Grab & Amplify)". Headings must vary naturally based on the campaign and its specific goal.
+4. DO NOT blindly list all social media platforms. Only refer to the specific approved channels provided in the campaign details (or refer to them as "the approved campaign channels / eligible platforms").
+
+TAILOR THE BRIEF SPECIFICALLY TO THE CAMPAIGN GOAL:
+- If Goal is AWARENESS / BRAND REACH:
+  * Focus on viral audience reach, brand recall, high view counts, and public conversation.
+  * Headings could look like: "## Campaign Overview", "## How to Amplify & Earn", "## Verification & Payout Rules", "## Tips for Maximum Viral Views".
+  * Creators should post at peak hours and drive authentic views and shares.
+
+- If Goal is LEADS / SIGNUPS:
+  * Focus on driving audience curiosity, signups, waitlists, or registrations.
+  * Headings could look like: "## About This Initiative", "## Distribution & Action Steps", "## Payout & Verification Guidelines", "## Tips to Drive Signups & Views".
+  * Creators should emphasize the signup call-to-action and direct followers to the link in bio.
+
+- If Goal is SALES / ORDERS:
+  * Focus on the product value, special discount/offer, purchase urgency, and conversions.
+  * Headings could look like: "## Product Offer & Overview", "## How to Share & Earn", "## Posting & Verification Requirements", "## Tips to Boost Your Conversion Views".
+  * Creators should emphasize the promo offer and buying prompt in their post.
+
+- If Goal is APP INSTALLS:
+  * Focus on app features, key utility, and downloading the app on Google Play / Apple App Store.
+  * Headings could look like: "## App Launch Overview", "## Creator Distribution Guide", "## Payout Eligibility Rules", "## Tips for High-Converting App Views".
+  * Creators should direct followers to download the app via the link in bio.
+
+STRUCTURE OF THE BRIEF:
+1. Campaign Overview (Tailored to the mission/offer and the primary goal)
+2. Creator Instructions (Clear steps: download the attached creative asset from this page and publish it on the approved channels with the official caption)
+3. Posting Rules & Payout Verification (Essential rules: keep post public and live for min 24-48 hours, do not alter/cut the brand asset, use official caption/tags, strictly authentic organic views with zero bot tolerance)
+4. Tips to Maximize Earnings & Views (Goal-specific advice on timing and engagement)
+
+OUTPUT FORMAT:
+Return clean, semantic HTML elements directly (for a rich TipTap WYSIWYG editor):
+- Use <h2> for each section heading (e.g. <h2>Campaign Overview</h2>, <h2>Creator Instructions</h2>, <h2>Posting Rules & Payout Verification</h2>, <h2>Tips for Maximum Reach</h2>).
+- Use <p> for descriptive paragraphs.
+- Use <ul> and <li> for lists of rules and tips.
+- Use <strong> for emphasis.
+- DO NOT wrap in <html>, <body>, or markdown code fences. Return ONLY the clean HTML tags.
+Keep the briefing polished, concise, engaging, and under 1,600 characters so it fits comfortably. Return clean text ready for creators to read. DO NOT include meta-commentary, thinking notes, or bracketed placeholders.`;
+    } else if (mode === 'caption') {
       systemInstruction =
-        'You are an expert ad copywriter. Write a compelling, high-converting creator briefing for content creators based on the brand campaign title, primary goal, and notes. Write strictly the final briefing text for creators to read. DO NOT include meta-commentary, planning thoughts, instructions, or character count notes in your output.';
+        'You are an expert social media copywriter for viral ad campaigns in Nigeria. Write an engaging, high-converting, ready-to-post social media caption for content creators to publish with the brand creative. Hook the audience in the first sentence with an engaging hook or question, clearly communicate the value/offer, include an explicit call-to-action (CTA, e.g. Link in bio, download now, or check out today), and end with 2-4 relevant hashtags and official brand mentions. Use natural emojis for high engagement. Return ONLY the final caption text ready for creators to copy and post. DO NOT include quotation marks, markdown headings, intro remarks, or meta-commentary.';
     } else if (mode === 'requirements') {
       systemInstruction =
-        'Create concise, structured content guidelines (Do & Donts, brand tone, key message) for creators posting ready-made brand video/image/text creatives. Return clean text.';
+        'Create concise, structured content distribution guidelines (Do & Donts, required live duration, brand tone) for creators posting ready-made brand video/image creatives on Kpugi. Emphasize that creators amplify pre-made brand assets and do not produce original content. Return clean text.';
     } else {
       systemInstruction =
         'Generate a comma-separated list of 4 relevant viral hashtags and 2 official brand mentions starting with # and @.';
@@ -41,6 +95,7 @@ export async function generateAICampaignPolishAction(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${nvidiaKey}`,
       },
+      signal: AbortSignal.timeout(25000),
       body: JSON.stringify({
         model: modelName,
         messages: [
@@ -48,13 +103,13 @@ export async function generateAICampaignPolishAction(
           { role: 'user', content: `Brand Campaign Details:\n${promptText}` },
         ],
         temperature: 0.6,
-        max_tokens: 300,
+        max_tokens: mode === 'description' ? 1200 : mode === 'caption' ? 500 : 300,
       }),
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[NVIDIA NIM AI] API error:', errText);
+      const errText = await res.text().catch(() => '');
+      console.error('[NVIDIA NIM AI] API error:', res.status, errText);
       return { success: false, error: 'NVIDIA NIM AI text generation failed' };
     }
 
@@ -64,25 +119,141 @@ export async function generateAICampaignPolishAction(
     // Strip out <think>...</think> reasoning blocks if model outputs thought tokens
     resultText = resultText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
-    if (mode === 'title' || mode === 'description') {
+    if (mode === 'title') {
       resultText = resultText
         .replace(/^#+\s+/gm, '')
         .replace(/\*\*/g, '')
-        .replace(/^[*-]\s+/gm, '• ')
-        .replace(/^Paragraph \d+:.*$/gm, '')
-        .replace(/^We need to.*$/gm, '')
+        .replace(/^"|"$/g, '')
         .replace(/^Here is.*$/gm, '')
         .trim();
     }
 
+    if (mode === 'caption') {
+      resultText = resultText
+        .replace(/^["']|["']$/g, '')
+        .replace(/^Here is (the|a|your).*?:\s*/gim, '')
+        .replace(/^Caption:\s*/gim, '')
+        .replace(/^#+\s+.*?\n/gm, '')
+        .trim();
+    }
+
     if (mode === 'description') {
-      resultText = resultText.slice(0, 500).trim();
+      resultText = resultText
+        .replace(/^Paragraph \d+:.*$/gm, '')
+        .replace(/^Here is (the|your).*$/gim, '')
+        .replace(/^```(?:html)?\s*/gi, '')
+        .replace(/```\s*$/g, '')
+        .trim();
+
+      // Check if text already contains semantic HTML tags (<h2>, <p>, <ul>, <li>)
+      const hasSemanticHtml = /<(?:h[1-4]|p|ul|ol|li)\b[^>]*>/i.test(resultText);
+
+      if (hasSemanticHtml) {
+        // Clean up any double-wrapped or empty tags
+        resultText = resultText
+          .replace(/<p>\s*<(?:h[1-4]|ul|ol)>/gi, (m: string) => m.slice(3))
+          .replace(/<\/(?:h[1-4]|ul|ol)>\s*<\/p>/gi, (m: string) => m.slice(0, -4))
+          .replace(/<p>\s*<\/p>/gi, '')
+          .trim();
+      } else {
+        // Robust line-by-line Markdown to HTML converter
+        const lines = resultText.split(/\r?\n/);
+        const output: string[] = [];
+        let inList = false;
+        let listType = 'ul';
+
+        const closeList = () => {
+          if (inList) {
+            output.push(`</${listType}>`);
+            inList = false;
+          }
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) {
+            closeList();
+            continue;
+          }
+
+          // Heading 2: ## Heading or **Heading:** on a standalone line
+          const h2Match = line.match(/^#{1,2}\s+(.+)$/);
+          const boldHeadingMatch = line.match(/^\*\*(.+?)\*\*:?$/);
+          if (h2Match || boldHeadingMatch) {
+            closeList();
+            const content = (h2Match ? h2Match[1] : boldHeadingMatch![1]).replace(/\*\*/g, '').trim();
+            output.push(`<h2>${content}</h2>`);
+            continue;
+          }
+
+          // Heading 3: ### Heading
+          const h3Match = line.match(/^#{3,4}\s+(.+)$/);
+          if (h3Match) {
+            closeList();
+            const content = h3Match[1].replace(/\*\*/g, '').trim();
+            output.push(`<h3>${content}</h3>`);
+            continue;
+          }
+
+          // Bullet List item (- or * or •)
+          const bulletMatch = line.match(/^[•*-]\s+(.+)$/);
+          if (bulletMatch) {
+            if (!inList || listType !== 'ul') {
+              closeList();
+              output.push('<ul>');
+              inList = true;
+              listType = 'ul';
+            }
+            const itemContent = bulletMatch[1].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            output.push(`<li>${itemContent}</li>`);
+            continue;
+          }
+
+          // Numbered List item (1. 2.)
+          const numberMatch = line.match(/^\d+\.\s+(.+)$/);
+          if (numberMatch) {
+            if (!inList || listType !== 'ol') {
+              closeList();
+              output.push('<ol>');
+              inList = true;
+              listType = 'ol';
+            }
+            const itemContent = numberMatch[1].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            output.push(`<li>${itemContent}</li>`);
+            continue;
+          }
+
+          // Regular paragraph
+          closeList();
+          const formatted = line
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/(^|[^\*])\*([^\*]+)\*([^\*]|$)/g, '$1<em>$2</em>$3');
+          output.push(`<p>${formatted}</p>`);
+        }
+
+        closeList();
+        if (output.length > 0) {
+          resultText = output.join('\n');
+        }
+      }
+
+      resultText = resultText.slice(0, 2000).trim();
     }
 
     return { success: true, text: resultText };
   } catch (err: any) {
+    const isTimeout =
+      err?.name === 'TimeoutError' ||
+      err?.name === 'AbortError' ||
+      err?.code === 'UND_ERR_HEADERS_TIMEOUT' ||
+      err?.message?.includes('aborted');
     console.error('[NVIDIA NIM AI] Server action error:', err);
-    return { success: false, error: err?.message || 'Server error during AI generation' };
+    return {
+      success: false,
+      error: isTimeout
+        ? 'AI request timed out. Please retry or enter your brief directly.'
+        : err?.message || 'Server error during AI generation',
+    };
   }
 }
 
@@ -1262,7 +1433,11 @@ export async function generateAIAnalyticsInsightsAction(
     }
 
     const nvidiaKey = process.env.NVIDIA_API_KEY;
-    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct';
+    const configuredModel = process.env.NVIDIA_MODEL;
+    const modelName =
+      !configuredModel || configuredModel.includes('kimi') || configuredModel.includes('moonshot')
+        ? 'meta/llama-3.2-11b-vision-instruct'
+        : configuredModel;
 
     const totalViews = campaignsPayload.reduce((sum, c) => sum + c.views, 0);
     const totalSpent = campaignsPayload.reduce((sum, c) => sum + c.spent, 0);
@@ -1294,6 +1469,7 @@ Return ONLY a valid JSON object in the exact format: {"optimizationTip": "...", 
         'Content-Type': 'application/json',
         Authorization: `Bearer ${nvidiaKey}`,
       },
+      signal: AbortSignal.timeout(15000),
       body: JSON.stringify({
         model: modelName,
         messages: [
@@ -1307,7 +1483,7 @@ Return ONLY a valid JSON object in the exact format: {"optimizationTip": "...", 
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      console.warn('[AI Analytics Insights] NVIDIA AI HTTP error:', res.status, errText);
+      console.warn('[AI Analytics Insights] NVIDIA AI HTTP notice:', res.status, errText);
       return {
         success: true,
         hasData: true,
@@ -1325,11 +1501,14 @@ Return ONLY a valid JSON object in the exact format: {"optimizationTip": "...", 
       insights: parsed,
     };
   } catch (error: any) {
-    console.error('[AI Analytics Insights] Error:', error);
+    console.warn('[AI Analytics Insights] AI service notice:', error?.message);
     return {
-      success: false,
-      hasData: false,
-      error: error?.message || 'Failed to generate AI insights',
+      success: true,
+      hasData: true,
+      insights: {
+        optimizationTip: 'Channel performance is being evaluated across live placements. Continue driving views to generate enriched optimization insights.',
+        benchmarkComparison: 'Targeting standard Nigeria ad benchmarks (₦1,500 - ₦2,000 CPM / 1k views).',
+      },
     };
   }
 }

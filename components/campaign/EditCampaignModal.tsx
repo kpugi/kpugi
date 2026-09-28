@@ -6,6 +6,7 @@ import { X, Sparkles, Save, Loader2, FileText, AlertCircle, Coins, Target, Trend
 import { updateCampaignDetailsAction, generateAICampaignPolishAction } from '@/app/actions/campaign';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { optimizeImageFile } from '@/lib/utils/imageOptimizer';
+import CampaignBriefEditor from './CampaignBriefEditor';
 
 interface EditCampaignModalProps {
   campaign: {
@@ -19,6 +20,7 @@ interface EditCampaignModalProps {
     min_view_threshold?: number;
     required_live_duration_hours?: number;
     channels?: string[];
+    objective?: string;
     is_featured?: boolean;
     requirements?: any;
     status: string;
@@ -104,14 +106,40 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
     setErrorMsg('');
     setIsAiLoading(true);
 
-    const contextPrompt = `Campaign Title: ${title.trim()}\nUser Draft: ${description || 'No draft provided'}`;
+    const cleanDraft = (description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const approvedChannels =
+      channels && channels.length > 0 ? channels.join(', ') : 'approved campaign channels';
+    const contextPrompt = `Campaign Title: ${title.trim()}
+Primary Campaign Goal: ${campaign.objective || 'Brand Awareness'}
+Approved Channels: ${approvedChannels}
+Brand Notes / Draft Input: ${cleanDraft || 'No notes provided'}`;
     const res = await generateAICampaignPolishAction(contextPrompt, 'description');
     setIsAiLoading(false);
 
     if (res.success && res.text) {
-      setDescription(res.text.slice(0, 500));
+      setDescription(res.text.slice(0, 2000));
     } else {
       setErrorMsg(res.error || 'AI generation failed.');
+    }
+  };
+
+  const handleAiGenerateCaption = async () => {
+    if (!title.trim() && !description.trim()) {
+      setErrorMsg('Please enter a Campaign Title or Brief first.');
+      return;
+    }
+    setErrorMsg('');
+    setIsAiLoading(true);
+
+    const rawBrief = description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const contextPrompt = `Campaign Title: ${title.trim()}\nCampaign Brief: ${rawBrief || 'N/A'}`;
+    const res = await generateAICampaignPolishAction(contextPrompt, 'caption');
+    setIsAiLoading(false);
+
+    if (res.success && res.text) {
+      setCreativeCopy(res.text);
+    } else {
+      setErrorMsg(res.error || 'AI caption generation failed.');
     }
   };
 
@@ -327,13 +355,12 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
                 <span>{isAiLoading ? 'AI Polishing...' : 'Polish with AI'}</span>
               </button>
             </div>
-            <textarea
-              rows={3}
+            <CampaignBriefEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-kpugi-blue/20"
+              onChange={setDescription}
               placeholder="Brief description for creators..."
-              required
+              maxLength={2000}
+              isAiLoading={isAiLoading}
             />
           </div>
 
@@ -437,7 +464,21 @@ export function EditCampaignModal({ campaign, onClose, onSuccess }: EditCampaign
           {/* Section 5: Creative Copy & External Assets */}
           <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-white/10">
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">Approved Caption / Text Copy</label>
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+                  Approved Caption / Text Copy
+                </label>
+                <button
+                  type="button"
+                  disabled={isAiLoading}
+                  onClick={handleAiGenerateCaption}
+                  className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-2 py-0.5 rounded-full transition-all flex items-center gap-1 disabled:opacity-50"
+                  title="Generate ready-to-post caption with AI"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500 dark:text-amber-400" />
+                  <span>AI Generate</span>
+                </button>
+              </div>
               <textarea
                 rows={2}
                 value={creativeCopy}

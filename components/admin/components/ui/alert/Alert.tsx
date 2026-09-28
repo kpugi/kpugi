@@ -1,12 +1,19 @@
-import Link from "next/link";
+"use client";
 
-interface AlertProps {
+import React, { useState } from "react";
+import Link from "next/link";
+import { X } from "lucide-react";
+
+export interface AlertProps {
   variant: "success" | "error" | "warning" | "info"; // Alert type
   title: string; // Title of the alert
   message: string; // Message of the alert
   showLink?: boolean; // Whether to show the "Learn More" link
   linkHref?: string; // Link URL
   linkText?: string; // Link text
+  dismissible?: boolean; // Whether to show the dismiss 'X' button
+  onClose?: () => void; // Optional callback when dismissed
+  dismissKey?: string; // Optional sessionStorage key to persist dismissal across refreshes
 }
 
 const Alert: React.FC<AlertProps> = ({
@@ -16,7 +23,37 @@ const Alert: React.FC<AlertProps> = ({
   showLink = false,
   linkHref = "#",
   linkText = "Learn more",
+  dismissible = false,
+  onClose,
+  dismissKey,
 }) => {
+  const [isDismissed, setIsDismissed] = useState<boolean>(() => {
+    if (typeof window !== "undefined" && dismissKey) {
+      try {
+        return sessionStorage.getItem(dismissKey) === "true";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    if (typeof window !== "undefined" && dismissKey) {
+      try {
+        sessionStorage.setItem(dismissKey, "true");
+      } catch {
+        // Ignore storage errors in private browsing
+      }
+    }
+    onClose?.();
+  };
+
+  if (isDismissed) {
+    return null;
+  }
+
   // Tailwind classes for each variant
   const variantClasses = {
     success: {
@@ -113,30 +150,43 @@ const Alert: React.FC<AlertProps> = ({
 
   return (
     <div
-      className={`rounded-xl border p-4 ${variantClasses[variant].container}`}
+      className={`rounded-xl border p-4 ${variantClasses[variant].container} flex items-start justify-between gap-3 transition-opacity`}
+      role="alert"
     >
-      <div className="flex items-start gap-3">
-        <div className={`-mt-0.5 ${variantClasses[variant].icon}`}>
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        <div className={`-mt-0.5 shrink-0 ${variantClasses[variant].icon}`}>
           {icons[variant]}
         </div>
 
-        <div>
+        <div className="min-w-0 flex-1">
           <h4 className="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
             {title}
           </h4>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{message}</p>
 
           {showLink && (
             <Link
               href={linkHref}
-              className="mt-3 inline-block text-sm font-medium text-gray-500 underline dark:text-gray-400"
+              className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-warning-700 hover:text-warning-800 dark:text-warning-400 dark:hover:text-warning-300 underline"
             >
               {linkText}
             </Link>
           )}
         </div>
       </div>
+
+      {dismissible && (
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="shrink-0 -mr-1 -mt-1 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-hidden focus:ring-2 focus:ring-warning-500/30"
+          title="Dismiss banner"
+          aria-label="Dismiss banner"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };

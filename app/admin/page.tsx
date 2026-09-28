@@ -67,7 +67,7 @@ export default async function AdminOverviewPage() {
       .from("payout_requests")
       .select("id, amount, status"),
     db
-      .from("creator_social_accounts")
+      .from("social_accounts")
       .select("id, platform, verification_status, follower_count"),
     getAllBroadcasts(),
     getPlatformSettings(),
@@ -156,7 +156,7 @@ export default async function AdminOverviewPage() {
     totalAudienceReach += Number(acc.follower_count) || 0;
   });
 
-  const totalSocialAccounts = rawSocial.length > 0 ? rawSocial.length : profiles.length;
+  const totalSocialAccounts = rawSocial.length;
   if (totalAudienceReach === 0) {
     totalAudienceReach = 845200; // sensible demonstration baseline if table is freshly seeded
   }
@@ -242,6 +242,8 @@ export default async function AdminOverviewPage() {
           showLink={true}
           linkHref="/admin/submissions"
           linkText="Inspect Submissions Queue →"
+          dismissible={true}
+          dismissKey="kpugi_admin_review_queue_stale"
         />
       )}
 
@@ -294,12 +296,12 @@ export default async function AdminOverviewPage() {
         </div>
 
         {/* Row 2 Left: Recent Campaigns Creative View (col-12 xl:col-7) */}
-        <div className="col-span-12 xl:col-span-7">
+        <div className="col-span-12 xl:col-span-7 flex flex-col h-full">
           <RecentOrders campaigns={campaigns} />
         </div>
 
         {/* Row 2 Right: Scraper Telemetry & Governance Status (col-12 xl:col-5) */}
-        <div className="col-span-12 xl:col-span-5">
+        <div className="col-span-12 xl:col-span-5 flex flex-col h-full">
           <EngineAndGovernanceMini
             liveCampaignsCount={liveCampaigns}
             maintenanceMode={maintenanceMode}

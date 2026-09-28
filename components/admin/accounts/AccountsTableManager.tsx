@@ -35,12 +35,14 @@ import {
 
 interface AccountsTableManagerProps {
   initialData: SocialAccountsOverview;
+  initialPlatform?: string;
 }
 
 const ITEMS_PER_PAGE = 10;
 
 export default function AccountsTableManager({
   initialData,
+  initialPlatform,
 }: AccountsTableManagerProps) {
   const [accounts] = useState<ConnectedSocialAccountItem[]>(
     initialData.accounts
@@ -49,7 +51,15 @@ export default function AccountsTableManager({
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>(() => {
+    if (initialPlatform) {
+      const p = initialPlatform.toLowerCase();
+      if (["tiktok", "instagram", "youtube", "x", "facebook"].includes(p)) {
+        return p;
+      }
+    }
+    return "all";
+  });
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"followers_desc" | "newest" | "oldest">(
     "followers_desc"

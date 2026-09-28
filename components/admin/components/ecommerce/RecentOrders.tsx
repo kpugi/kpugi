@@ -169,7 +169,7 @@ export default function RecentOrders({ campaigns }: RecentOrdersProps) {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white px-5 pt-5 pb-4 sm:px-6 dark:border-gray-800 dark:bg-gray-900/50 shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white px-5 pt-5 pb-4 sm:px-6 dark:border-gray-800 dark:bg-gray-900/50 shadow-sm h-full flex flex-col justify-between">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-bold font-display text-gray-900 dark:text-white">

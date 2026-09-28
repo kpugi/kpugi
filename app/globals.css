@@ -289,3 +289,54 @@
     transform: translate(-50%, -50%) scale(1) !important;
   }
 }
+
+/* TipTap WYSIWYG Editor Styles */
+.tiptap.ProseMirror {
+  outline: none;
+  min-height: 140px;
+}
+
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.dark .tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  color: #64748b;
+}
+
+.tiptap.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.tiptap.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.tiptap.ProseMirror blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  font-style: italic;
+}
+
+.tiptap.ProseMirror h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.tiptap.ProseMirror h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}

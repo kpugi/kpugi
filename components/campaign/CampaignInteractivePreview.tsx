@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
+import CampaignBriefRenderer from './CampaignBriefRenderer';
 
 export interface CampaignInteractivePreviewProps {
   formData: any;
@@ -101,10 +102,14 @@ export default function CampaignInteractivePreview({
                 <h3 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink dark:text-white leading-tight tracking-tight">
                   {formData.title || 'Reach Real Audiences Through Creators'}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-3 leading-relaxed">
-                  {formData.description ||
-                    'Want your brand in front of real audiences? Kpugi connects brands with creators who can turn your campaigns into engaging social content. Create a campaign, choose your audience, and let creators amplify your message across their platforms.'}
-                </p>
+                <div className="mt-3">
+                  <CampaignBriefRenderer
+                    content={
+                      formData.description ||
+                      'Want your brand in front of real audiences? Kpugi connects brands with creators who can turn your campaigns into engaging social content. Create a campaign, choose your audience, and let creators amplify your message across their platforms.'
+                    }
+                  />
+                </div>
               </div>
 
               {/* Recommended Caption */}

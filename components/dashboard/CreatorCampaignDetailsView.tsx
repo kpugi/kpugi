@@ -1,3 +1,6 @@
+
+
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -12,6 +15,7 @@ import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
 import { getCampaignReviewsSummaryAction, CampaignReviewsSummary } from '@/app/actions/reviews';
+import CampaignBriefRenderer from '@/components/campaign/CampaignBriefRenderer';
 
 const ADVERT_BANNERS = [
   '/images/advertise_banner.jpg',
@@ -585,10 +589,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                <div className="prose max-w-none pb-6 border-b border-kpugi-border dark:border-white/10">
-                  <p className="font-sans text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
-                    {campaign.description}
-                  </p>
+                <div className="pb-6 border-b border-kpugi-border dark:border-white/10">
+                  <CampaignBriefRenderer content={campaign.description} />
                 </div>
 
                 {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

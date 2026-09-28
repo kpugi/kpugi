@@ -17,8 +17,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { generateAICampaignPolishAction } from '@/app/actions/campaign';
-
 import { optimizeImageFile } from '@/lib/utils/imageOptimizer';
+import CampaignBriefEditor from '../CampaignBriefEditor';
 
 interface Step1Props {
   formData: any;
@@ -100,10 +100,10 @@ export function CampaignStep1Basics({
           if (data.transcript) {
             const currentDesc = formData.description || '';
             const combined = currentDesc
-              ? `${currentDesc} ${data.transcript}`.trim()
+              ? `${currentDesc}\n\n${data.transcript}`.trim()
               : data.transcript;
             updateFormData({
-              description: combined.slice(0, 500),
+              description: combined.slice(0, 2000),
             });
           } else if (data.error) {
             setAiError(data.error);
@@ -141,16 +141,27 @@ export function CampaignStep1Basics({
         return;
       }
 
-      const promptContext = `Campaign Title: ${formData.title.trim()}\nPrimary Goal: ${
-        formData.objective || 'Brand Awareness'
-      }\nUser Draft / Voice Notes: ${formData.description || 'No draft provided'}`;
+      const cleanDraft = (formData.description || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const approvedChannels =
+        formData.channels && formData.channels.length > 0
+          ? formData.channels.join(', ')
+          : 'approved campaign channels';
+
+      const promptContext = `Campaign Title: ${formData.title.trim()}
+Primary Campaign Goal: ${formData.objective || 'Brand Awareness'}
+Approved Channels: ${approvedChannels}
+Brand Notes / Draft Input: ${cleanDraft || 'No notes provided'}`;
 
       setIsAiLoading(true);
       const res = await generateAICampaignPolishAction(promptContext, 'description');
       setIsAiLoading(false);
 
       if (res.success && res.text) {
-        updateFormData({ description: res.text.slice(0, 500) });
+        updateFormData({ description: res.text.slice(0, 2000) });
       } else {
         setAiError(res.error || 'AI generation failed');
       }
@@ -201,8 +212,6 @@ export function CampaignStep1Basics({
       icon: Smartphone,
     },
   ];
-
-  const currentDescLength = (formData.description || '').length;
 
   return (
     <div className="space-y-8 font-sans text-slate-900 dark:text-white">
@@ -426,40 +435,20 @@ export function CampaignStep1Basics({
           </div>
         </div>
 
-        <div className="relative">
-          <textarea
-            rows={5}
-            maxLength={500}
-            value={formData.description || ''}
-            onChange={(e) => updateFormData({ description: e.target.value.slice(0, 500) })}
-            placeholder={
-              isTranscribing
-                ? 'Transcribing your voice narration with Deepgram...'
-                : isAiLoading
-                ? 'NVIDIA NIM AI is crafting your creator briefing...'
-                : 'Explain your product, campaign goals, key selling points, and target audience...'
-            }
-            className={`w-full px-4 py-3.5 rounded-2xl bg-[#f8f7ff] dark:bg-white/5 border border-[#e2e0fb] dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-[#161820] focus:ring-2 focus:ring-[#4338ca] dark:focus:ring-indigo-500 focus:border-transparent outline-none font-medium leading-relaxed transition-all ${
-              isTranscribing || isAiLoading ? 'border-[#4338ca] bg-purple-50/20 dark:bg-indigo-950/30' : ''
-            }`}
-          />
-
-          {(isTranscribing || isAiLoading) && (
-            <div className="absolute inset-0 bg-white/70 dark:bg-[#12141A]/80 rounded-2xl flex items-center justify-center gap-2 backdrop-blur-[1px]">
-              <Loader2 className="w-4 h-4 animate-spin text-[#4338ca] dark:text-indigo-400" />
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {isTranscribing ? 'Transcribing voice audio...' : 'AI expanding creator brief...'}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 dark:text-slate-500">
-          <span>Campaign Brief (max 500 chars)</span>
-          <span className={currentDescLength >= 480 ? 'text-amber-600 dark:text-amber-400 font-bold' : ''}>
-            {currentDescLength} / 500
-          </span>
-        </div>
+        <CampaignBriefEditor
+          value={formData.description || ''}
+          onChange={(html) => updateFormData({ description: html })}
+          placeholder={
+            isTranscribing
+              ? 'Transcribing your voice narration with Deepgram...'
+              : isAiLoading
+              ? 'NVIDIA NIM AI is crafting your creator briefing...'
+              : 'Explain your product, campaign goals, key selling points, and target audience...'
+          }
+          maxLength={2000}
+          isAiLoading={isAiLoading}
+          isTranscribing={isTranscribing}
+        />
       </div>
     </div>
   );

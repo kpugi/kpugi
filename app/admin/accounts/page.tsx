@@ -5,9 +5,19 @@ import AccountsTableManager from '@/components/admin/accounts/AccountsTableManag
 
 export const revalidate = 0;
 
-export default async function AdminAccountsPage() {
+interface AdminAccountsPageProps {
+  searchParams?: Promise<{ platform?: string }>;
+}
+
+export default async function AdminAccountsPage({ searchParams }: AdminAccountsPageProps) {
   await requireAdminSession();
+  const resolvedParams = searchParams ? await searchParams : {};
   const data = await fetchConnectedSocialAccountsAction();
 
-  return <AccountsTableManager initialData={data} />;
+  return (
+    <AccountsTableManager
+      initialData={data}
+      initialPlatform={resolvedParams.platform}
+    />
+  );
 }

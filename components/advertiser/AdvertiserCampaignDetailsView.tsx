@@ -215,7 +215,9 @@ export default function AdvertiserCampaignDetailsView({
           </div>
 
           <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-kpugi-ink dark:text-white">{campaign.title}</h1>
-          <p className="text-xs sm:text-sm text-kpugi-slate dark:text-slate-400 line-clamp-2">{campaign.description}</p>
+          <p className="text-xs sm:text-sm text-kpugi-slate dark:text-slate-400 line-clamp-2">
+            {(campaign.description || '').replace(/<[^>]*>/g, '').trim()}
+          </p>
         </div>
 
         {/* Action Controls */}
