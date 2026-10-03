@@ -217,8 +217,49 @@ export async function triggerSingleSubmissionScrapeAction(submissionId: string) 
     throw new Error('This submission has no active post URL to scrape.');
   }
 
-  // Trigger scraper run
-  const result = await triggerScraperRun();
+  let localScraped = false;
+  let scrapeSummary = '';
+
+  // 1. Attempt immediate local Python execution if available (e.g. in local/dev server environment)
+  try {
+    const { execFile } = await import('child_process');
+    const path = await import('path');
+    const scriptPath = path.resolve(process.cwd(), '.scraper', 'runner.py');
+
+    const runLocal = () =>
+      new Promise<string>((resolve, reject) => {
+        execFile(
+          'python',
+          [scriptPath, '--id', submissionId],
+          { timeout: 45000, env: process.env },
+          (error, stdout, stderr) => {
+            if (error) return reject(error);
+            resolve(stdout || stderr || '');
+          }
+        );
+      });
+
+    const output = await runLocal();
+    if (output && output.includes('Social Metric Scraper Execution Finished Successfully')) {
+      localScraped = true;
+      const viewMatch =
+        output.match(/verified \((\d+(?:,\d+)*)\s+views\)/i) ||
+        output.match(/Views:\s*(\d+(?:,\d+)*)/i);
+      const views = viewMatch ? viewMatch[1] : 'updated';
+      scrapeSummary = `Immediate scrape completed! Post verified with ${views} views.`;
+    }
+  } catch (err: any) {
+    console.log(
+      '[triggerSingleSubmissionScrapeAction] Local python run bypassed/failed, falling back to cloud dispatch:',
+      err.message
+    );
+  }
+
+  // 2. Fallback to GitHub Actions dispatch with force mode & specific submission UUID
+  let result = { channel: 'local_worker', message: scrapeSummary };
+  if (!localScraped) {
+    result = await triggerScraperRun({ force: true, submissionId });
+  }
 
   // Log audit event
   await logAuditEvent({
@@ -227,7 +268,7 @@ export async function triggerSingleSubmissionScrapeAction(submissionId: string) 
     action: 'submission.scraper.manual_trigger',
     targetTable: 'submissions',
     targetId: submissionId,
-    details: `Admin requested immediate scraper check via ${result.channel}: ${result.message}`,
+    details: `Admin executed scraper check via ${result.channel}: ${result.message}`,
     payload: {
       submissionId,
       postUrl: sub.post_url,
@@ -238,6 +279,7 @@ export async function triggerSingleSubmissionScrapeAction(submissionId: string) 
 
   revalidatePath('/admin/submissions');
   revalidatePath(`/admin/submissions/${submissionId}`);
+  revalidatePath('/admin/scraper');
 
   return {
     success: true,

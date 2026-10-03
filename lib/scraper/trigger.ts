@@ -6,13 +6,19 @@
  * 2. Otherwise, it falls back to the internal cron route for seamless local & serverless execution.
  */
 
+export interface TriggerScraperOptions {
+  force?: boolean;
+  submissionId?: string;
+  batchSize?: number;
+}
+
 export interface TriggerScraperResult {
   triggered: boolean;
   channel: 'github_actions' | 'internal_cron' | 'none';
   message: string;
 }
 
-export async function triggerScraperRun(): Promise<TriggerScraperResult> {
+export async function triggerScraperRun(options?: TriggerScraperOptions): Promise<TriggerScraperResult> {
   const githubPat = process.env.GITHUB_PAT;
   const githubRepo = process.env.GITHUB_REPO; // e.g. "myorg/kpugi"
 
@@ -30,7 +36,10 @@ export async function triggerScraperRun(): Promise<TriggerScraperResult> {
           event_type: 'trigger-scraper',
           client_payload: {
             triggered_at: new Date().toISOString(),
-            source: 'post_submission',
+            source: options?.submissionId ? 'single_submission' : 'batch_trigger',
+            force: options?.force ? 'true' : 'false',
+            submission_id: options?.submissionId || '',
+            batch_size: String(options?.batchSize || 50),
           },
         }),
       });
@@ -39,7 +48,9 @@ export async function triggerScraperRun(): Promise<TriggerScraperResult> {
         return {
           triggered: true,
           channel: 'github_actions',
-          message: 'GitHub Actions scraper workflow successfully dispatched.',
+          message: options?.submissionId
+            ? `GitHub Actions dispatched for submission #${options.submissionId.slice(0, 8)}.`
+            : `GitHub Actions scraper workflow successfully dispatched${options?.force ? ' (Force Mode: Cooldown Bypassed)' : ''}.`,
         };
       }
     } catch (err: any) {

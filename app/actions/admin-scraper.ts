@@ -157,7 +157,7 @@ export async function getGitHubWorkflowStatusAction(limit = 15): Promise<{
  * dispatchGitHubWorkflowAction
  * Dispatches an on-demand scraper run via GitHub Actions workflow_dispatch
  */
-export async function dispatchGitHubWorkflowAction(batchSize = 50, ref = 'main') {
+export async function dispatchGitHubWorkflowAction(batchSize = 50, ref = 'main', force = false) {
   const { profileId: adminId } = await requireAdminSession();
 
   const token = process.env.GITHUB_PAT;
@@ -182,6 +182,7 @@ export async function dispatchGitHubWorkflowAction(batchSize = 50, ref = 'main')
         ref,
         inputs: {
           batch_size: String(batchSize),
+          force: String(force),
         },
       }),
     }
@@ -342,10 +343,10 @@ export async function testScrapePlaygroundAction(
  * triggerGlobalBatchScrapeAction
  * Dispatches an on-demand scraper run (via GitHub Actions if configured, or internal cron)
  */
-export async function triggerGlobalBatchScrapeAction() {
+export async function triggerGlobalBatchScrapeAction(force: boolean = true) {
   const { profileId: adminId } = await requireAdminSession();
 
-  const res = await triggerScraperRun();
+  const res = await triggerScraperRun({ force });
 
   await logAuditEvent({
     profileId: adminId,

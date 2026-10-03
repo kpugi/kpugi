@@ -21,6 +21,7 @@ export default function DispatchWorkflowModal({
 }: DispatchWorkflowModalProps) {
   const [batchSize, setBatchSize] = useState("50");
   const [branch, setBranch] = useState("main");
+  const [force, setForce] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,7 @@ export default function DispatchWorkflowModal({
 
     try {
       const parsedSize = parseInt(batchSize, 10) || 50;
-      const res = await dispatchGitHubWorkflowAction(parsedSize, branch);
+      const res = await dispatchGitHubWorkflowAction(parsedSize, branch, force);
       onSuccess(res.message);
       onClose();
     } catch (err: any) {
@@ -101,6 +102,22 @@ export default function DispatchWorkflowModal({
             <p className="text-[11px] text-gray-400 mt-1">
               Controls the maximum number of due submissions processed in this GitHub runner execution.
             </p>
+          </div>
+
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40">
+            <input
+              type="checkbox"
+              id="force-audit-checkbox"
+              checked={force}
+              onChange={(e) => setForce(e.target.checked)}
+              className="mt-0.5 rounded text-brand-600 focus:ring-brand-500 cursor-pointer"
+            />
+            <label htmlFor="force-audit-checkbox" className="text-xs text-amber-900 dark:text-amber-200 cursor-pointer select-none">
+              <span className="font-bold block">Force Immediate Audit (Bypass 60m Cooldown)</span>
+              <span className="text-[11px] text-amber-700 dark:text-amber-400 block mt-0.5">
+                Audits all active submissions immediately even if posted less than 60 minutes ago.
+              </span>
+            </label>
           </div>
 
           <div className="p-3 rounded-lg bg-gray-50 dark:bg-white/3 border border-gray-100 dark:border-white/5 space-y-1 text-xs text-gray-600 dark:text-gray-400">

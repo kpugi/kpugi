@@ -12,6 +12,14 @@ on:
         description: 'Number of submissions to audit'
         required: false
         default: '50'
+      force:
+        description: 'Force audit bypassing 60-minute cooldown (true/false)'
+        required: false
+        default: 'false'
+      submission_id:
+        description: 'Specific submission UUID to audit immediately'
+        required: false
+        default: ''
 
   # 3. Webhook trigger from App Server Action on submission
   repository_dispatch:
@@ -59,9 +67,18 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           APIFY_API_TOKENS: ${{ secrets.APIFY_API_TOKENS }}
           APIFY_INSTAGRAM_ACTOR: 'nH2AHrwxeTRJoN5hX'
-          SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || '50' }}
+          SCRAPER_BATCH_SIZE: ${{ github.event.inputs.batch_size || github.event.client_payload.batch_size || '50' }}
+          FORCE_AUDIT: ${{ github.event.inputs.force || github.event.client_payload.force || 'false' }}
+          SUBMISSION_ID: ${{ github.event.inputs.submission_id || github.event.client_payload.submission_id || '' }}
         run: |
-          python .scraper/runner.py
+          ARGS=""
+          if [ "$FORCE_AUDIT" = "true" ] || [ "$FORCE_AUDIT" = "True" ]; then
+            ARGS="$ARGS --force"
+          fi
+          if [ -n "$SUBMISSION_ID" ]; then
+            ARGS="$ARGS --id $SUBMISSION_ID"
+          fi
+          python .scraper/runner.py $ARGS
 
       - name: Process Daily Settlement Batches & Auto-Release
         env:
