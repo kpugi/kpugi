@@ -27,16 +27,16 @@ export interface TrustpilotSummary {
   reviews: TrustpilotReviewItem[];
 }
 
-export const TRUSTPILOT_DOMAIN = 'kpugi.onrender.com';
+export const TRUSTPILOT_DOMAIN = 'kpugi.com';
 export const TRUSTPILOT_EVALUATE_URL =
-  'https://www.trustpilot.com/evaluate/kpugi.onrender.com?utm_medium=trustbox&utm_source=ReviewCollector';
+  'https://www.trustpilot.com/evaluate/kpugi.com?utm_medium=trustbox&utm_source=ReviewCollector';
 export const TRUSTPILOT_REVIEWS_URL =
-  'https://www.trustpilot.com/review/kpugi.onrender.com';
+  'https://www.trustpilot.com/review/kpugi.com';
 
 // Canonical Platform Perk ID for Trustpilot review bounty
 const TP_PERK_ID = '64e36cae-8ca2-4f44-b1e2-d63cdb1b7cdb';
 
-// Real verified reviews published on Trustpilot (https://www.trustpilot.com/review/kpugi.onrender.com)
+// Real verified reviews published on Trustpilot (https://www.trustpilot.com/review/kpugi.com)
 export const VERIFIED_PUBLISHED_REVIEWS: TrustpilotReviewItem[] = [
   {
     id: 'tp-6ab94226a3fc84b2f5119069',
