@@ -44,6 +44,7 @@ export default async function AdminCampaignDetailPage({
       campaign_code,
       title,
       description,
+      cover_image_url,
       ad_format,
       requirements,
       cpm_rate,
@@ -246,9 +247,47 @@ export default async function AdminCampaignDetailPage({
       }
     : null;
 
-  const creatives = Array.isArray(campaign.campaign_creatives)
-    ? campaign.campaign_creatives
-    : [];
+  const creatives =
+    Array.isArray(campaign.campaign_creatives) && campaign.campaign_creatives.length > 0
+      ? campaign.campaign_creatives
+      : [
+          ...(campaign.requirements?.creative_video_url
+            ? [
+                {
+                  id: 'req-vid',
+                  file_url: campaign.requirements.creative_video_url,
+                  name: 'Campaign Video Creative',
+                  creative_type: 'video',
+                  copy_text: campaign.requirements?.creative_text_copy || null,
+                  caption_suggestion: campaign.requirements?.caption_suggestion || null,
+                },
+              ]
+            : []),
+          ...(campaign.requirements?.creative_image_url
+            ? [
+                {
+                  id: 'req-img',
+                  file_url: campaign.requirements.creative_image_url,
+                  name: 'Campaign Image Creative',
+                  creative_type: 'image',
+                  copy_text: campaign.requirements?.creative_text_copy || null,
+                  caption_suggestion: campaign.requirements?.caption_suggestion || null,
+                },
+              ]
+            : []),
+          ...(campaign.cover_image_url
+            ? [
+                {
+                  id: 'cover-img',
+                  file_url: campaign.cover_image_url,
+                  name: 'Campaign Cover',
+                  creative_type: 'image',
+                  copy_text: null,
+                  caption_suggestion: null,
+                },
+              ]
+            : []),
+        ];
 
   const submissions = (submissionsData || []).map((s: any) => {
     const creatorProf = Array.isArray(s.creator) ? s.creator[0] : s.creator;

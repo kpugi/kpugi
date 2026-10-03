@@ -14,6 +14,16 @@ export async function GET(
     const filePath = path.join('/');
     const supabase = createAdminClient();
 
+    // Use direct public CDN URL redirect for fast streaming and native HTTP range support
+    const { data: publicData } = supabase.storage
+      .from('campaign-creatives')
+      .getPublicUrl(filePath);
+
+    if (publicData?.publicUrl) {
+      return NextResponse.redirect(publicData.publicUrl, 307);
+    }
+
+    // Fallback: download directly if public URL is unavailable
     const { data, error } = await supabase.storage
       .from('campaign-creatives')
       .download(filePath);
@@ -24,7 +34,7 @@ export async function GET(
     }
 
     const arrayBuffer = await data.arrayBuffer();
-    const contentType = data.type || 'image/jpeg';
+    const contentType = data.type || 'application/octet-stream';
 
     return new NextResponse(arrayBuffer, {
       headers: {

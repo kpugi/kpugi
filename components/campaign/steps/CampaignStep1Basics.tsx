@@ -38,6 +38,7 @@ export function CampaignStep1Basics({
   const [aiError, setAiError] = useState('');
   const [imageError, setImageError] = useState('');
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -55,11 +56,27 @@ export function CampaignStep1Basics({
     }
 
     try {
-      // Compress and resize image in-browser to max 1200px and 82% quality (~100KB-200KB)
-      const compressedBase64 = await optimizeImageFile(file, 1200, 1200, 0.82);
-      updateFormData({ cover_image_url: compressedBase64 });
+      setIsUploadingImage(true);
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('folder', 'covers');
+
+      const res = await fetch('/api/campaigns/upload', {
+        method: 'POST',
+        body: uploadData,
+      });
+
+      const data = await res.json();
+      setIsUploadingImage(false);
+
+      if (data.success && data.url) {
+        updateFormData({ cover_image_url: data.url });
+      } else {
+        setImageError(data.error || 'Failed to upload cover banner.');
+      }
     } catch (err) {
-      setImageError('Failed to process image. Please try another file.');
+      setIsUploadingImage(false);
+      setImageError('Network error uploading image. Please try again.');
     }
   };
 
@@ -294,7 +311,17 @@ Brand Notes / Draft Input: ${cleanDraft || 'No notes provided'}`;
           className="hidden"
         />
 
-        {formData.cover_image_url ? (
+        {isUploadingImage ? (
+          <div className="w-full aspect-[16/9] max-h-60 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border-2 border-dashed border-indigo-400 dark:border-indigo-500/40 flex flex-col items-center justify-center text-center p-6 space-y-2">
+            <Loader2 className="w-8 h-8 text-[#4338ca] dark:text-indigo-400 animate-spin" />
+            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              Uploading Banner to Storage...
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Securing image in Supabase campaign storage
+            </p>
+          </div>
+        ) : formData.cover_image_url ? (
           <div className="relative w-full aspect-[16/9] max-h-60 rounded-2xl overflow-hidden border border-[#e2e0fb] dark:border-white/10 bg-slate-900 shadow-xs group">
             <img
               src={formData.cover_image_url}

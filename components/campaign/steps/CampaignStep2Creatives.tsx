@@ -32,6 +32,8 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   const [videoTab, setVideoTab] = useState<'upload' | 'url'>('upload');
   const [videoUploadError, setVideoUploadError] = useState('');
   const [imageUploadError, setImageUploadError] = useState('');
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const videoInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +49,7 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
     rawVideoVal &&
       (rawVideoVal.startsWith('data:video') ||
         rawVideoVal.startsWith('/api/media/') ||
+        rawVideoVal.includes('/storage/v1/object/public/') ||
         formData.requirements?.video_source_type === 'file')
   );
 
@@ -117,7 +120,7 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
   const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'];
   const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024; // 50MB limit
 
-  const handleCreativeVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCreativeVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setVideoUploadError('');
     const file = e.target.files?.[0];
     if (!file) return;
@@ -145,19 +148,38 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      updateFormData({
-        requirements: {
-          ...formData.requirements,
-          creative_video_url: base64,
-          video_source_type: 'file',
-        },
+    try {
+      setIsUploadingVideo(true);
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('folder', 'creatives');
+
+      const res = await fetch('/api/campaigns/upload', {
+        method: 'POST',
+        body: uploadData,
       });
-      setActiveVideoTab('upload');
-    };
-    reader.readAsDataURL(file);
+
+      const data = await res.json();
+      setIsUploadingVideo(false);
+
+      if (data.success && data.url) {
+        updateFormData({
+          requirements: {
+            ...formData.requirements,
+            creative_video_url: data.url,
+            video_source_type: 'file',
+          },
+        });
+        setActiveVideoTab('upload');
+      } else {
+        setVideoUploadError(data.error || 'Failed to upload video creative.');
+        if (videoInputRef.current) videoInputRef.current.value = '';
+      }
+    } catch (err: any) {
+      setIsUploadingVideo(false);
+      setVideoUploadError('Network error uploading video. Please try again.');
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
   };
 
   // Video Link Input Handler with Script Sanitization
@@ -204,15 +226,32 @@ export function CampaignStep2Creatives({ formData, updateFormData }: Step2Props)
     }
 
     try {
-      const compressedBase64 = await optimizeImageFile(file, 1200, 1200, 0.82);
-      updateFormData({
-        requirements: {
-          ...formData.requirements,
-          creative_image_url: compressedBase64,
-        },
+      setIsUploadingImage(true);
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('folder', 'creatives');
+
+      const res = await fetch('/api/campaigns/upload', {
+        method: 'POST',
+        body: uploadData,
       });
+
+      const data = await res.json();
+      setIsUploadingImage(false);
+
+      if (data.success && data.url) {
+        updateFormData({
+          requirements: {
+            ...formData.requirements,
+            creative_image_url: data.url,
+          },
+        });
+      } else {
+        setImageUploadError(data.error || 'Failed to upload creative image.');
+      }
     } catch (err) {
-      setImageUploadError('Failed to process image file.');
+      setIsUploadingImage(false);
+      setImageUploadError('Network error uploading image. Please try again.');
     }
   };
 
@@ -438,7 +477,13 @@ ${brandMentions ? `Brand Mentions to include: ${brandMentions}\n` : ''}${brandTa
             {/* TAB 1: FILE UPLOAD MODE */}
             {activeVideoTab === 'upload' && (
               <div className="space-y-3">
-                {isFileUploaded ? (
+                {isUploadingVideo ? (
+                  <div className="h-32 border-2 border-dashed border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl flex flex-col items-center justify-center p-4 text-center space-y-2">
+                    <Loader2 className="w-6 h-6 text-[#4338ca] dark:text-indigo-400 animate-spin" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Uploading Video...</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">This may take a few moments.</span>
+                  </div>
+                ) : isFileUploaded ? (
                   <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-black aspect-video max-h-[220px] flex items-center justify-center group">
                     <video
                       src={rawVideoVal}
@@ -553,7 +598,13 @@ ${brandMentions ? `Brand Mentions to include: ${brandMentions}\n` : ''}${brandTa
               <p className="text-[11px] font-bold text-red-600 dark:text-rose-400">{imageUploadError}</p>
             )}
 
-            {formData.requirements?.creative_image_url ? (
+            {isUploadingImage ? (
+              <div className="h-44 w-full rounded-2xl border-2 border-dashed border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                <Loader2 className="w-6 h-6 text-[#4338ca] dark:text-indigo-400 animate-spin" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Uploading Image to Storage...</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">Securing image asset in Supabase bucket</span>
+              </div>
+            ) : formData.requirements?.creative_image_url ? (
               <div className="relative h-44 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 group bg-slate-900">
                 <img
                   src={formData.requirements.creative_image_url}

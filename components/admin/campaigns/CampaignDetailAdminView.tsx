@@ -722,6 +722,20 @@ export default function CampaignDetailAdminView({
 
   const displayCode = campaign.campaign_code || `#${campaign.id.slice(0, 8).toUpperCase()}`;
   const primaryCreative = creatives[0];
+  const effectiveFileUrl =
+    primaryCreative?.file_url ||
+    (campaign as any).requirements?.creative_video_url ||
+    (campaign as any).requirements?.creative_image_url ||
+    (campaign as any).cover_image_url ||
+    null;
+
+  const ytMatch = effectiveFileUrl?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  const isYouTube = Boolean(ytMatch);
+  const ytId = ytMatch?.[1];
+  const isVideoCreative =
+    !isYouTube &&
+    (Boolean(effectiveFileUrl?.match(/\.(mp4|mov|webm|avi|mkv|ogg)(\?|$)/i)) ||
+      (campaign.ad_format || '').toLowerCase().includes('video'));
   const latestGhRun = githubRuns[0];
 
   return (
@@ -1039,16 +1053,49 @@ export default function CampaignDetailAdminView({
                 <span>Creative Media & Guidelines</span>
               </h2>
 
-              {primaryCreative?.file_url && (
-                <div className="relative rounded-xl overflow-hidden bg-black/90 max-h-80 mb-4 border border-gray-200 dark:border-gray-800">
-                  <img
-                    src={primaryCreative.file_url}
-                    alt={campaign.title}
-                    className="w-full h-full object-contain max-h-80 mx-auto"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/chowdeck_creative.png";
-                    }}
-                  />
+              {effectiveFileUrl ? (
+                <div className="relative rounded-xl overflow-hidden bg-black/95 max-h-[420px] mb-4 border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center">
+                  {isYouTube ? (
+                    <div className="aspect-video w-full">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytId}`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : isVideoCreative ? (
+                    <video
+                      src={effectiveFileUrl}
+                      controls
+                      playsInline
+                      className="w-full max-h-80 object-contain mx-auto"
+                    />
+                  ) : (
+                    <img
+                      src={effectiveFileUrl}
+                      alt={campaign.title}
+                      className="w-full max-h-80 object-contain mx-auto"
+                    />
+                  )}
+                  <div className="w-full bg-gray-900/90 px-3 py-2 border-t border-white/10 flex items-center justify-between text-xs text-gray-300">
+                    <span className="font-mono truncate max-w-[260px] text-[11px] text-gray-400">
+                      {effectiveFileUrl.split("/").pop()}
+                    </span>
+                    <a
+                      href={effectiveFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 font-medium text-brand-400 hover:text-brand-300 hover:underline transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open Asset</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-dashed border-gray-300 dark:border-gray-700 mb-4 text-xs text-gray-400">
+                  No visual creative uploaded for this campaign yet.
                 </div>
               )}
 

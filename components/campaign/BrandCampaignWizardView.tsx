@@ -95,7 +95,15 @@ export function BrandCampaignWizardView({
 
       if (res.success && res.campaignId) {
         setFormData((prev) => {
-          const updated = { ...prev, id: res.campaignId! };
+          const updated = {
+            ...prev,
+            id: res.campaignId!,
+            ...(res.cover_image_url ? { cover_image_url: res.cover_image_url } : {}),
+            requirements: {
+              ...prev.requirements,
+              ...(res.requirements || {}),
+            },
+          };
           if (pendingSaveRef.current) {
             pendingSaveRef.current.id = res.campaignId!;
           }
@@ -462,8 +470,8 @@ export function BrandCampaignWizardView({
   const totalPayableAmount = Number(formData.total_budget || 100000) + (formData.is_featured ? 2500 : 0);
 
   return (
-    <div className="min-h-screen bg-[#f4f3ff] dark:bg-[#0B0E14] py-6 sm:py-8 px-4 sm:px-8 font-sans relative text-slate-900 dark:text-white transition-colors">
-      <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#f4f3ff] dark:bg-[#0B0E14] py-6 sm:py-8 px-3 sm:px-6 lg:px-8 font-sans relative text-slate-900 dark:text-white transition-colors">
+      <div className="w-full max-w-7xl 2xl:max-w-[1400px] mx-auto space-y-6">
         
         {/* Subtle Wizard Navigation Bar with Exit Button */}
         <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
@@ -538,7 +546,7 @@ export function BrandCampaignWizardView({
         </div>
 
         {/* Main Card Container */}
-        <div className="w-full max-w-6xl mx-auto bg-white dark:bg-[#12141A] rounded-3xl p-5 sm:p-12 shadow-sm border border-[#e8e6fd] dark:border-white/10 space-y-8 text-slate-900 dark:text-white">
+        <div className="w-full max-w-7xl 2xl:max-w-[1400px] mx-auto bg-white dark:bg-[#12141A] rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm border border-[#e8e6fd] dark:border-white/10 space-y-8 text-slate-900 dark:text-white">
           {currentStep === 1 && (
             <CampaignStep1Basics
               formData={formData}

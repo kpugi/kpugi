@@ -1,5 +1,49 @@
 import { createAdminClient } from '@/lib/supabase/server';
 
+const STORAGE_BUCKET = 'campaign-creatives';
+
+/**
+ * Uploads a buffer directly to Supabase Storage bucket 'campaign-creatives'
+ * with exponential backoff retry logic to guard against transient socket drops.
+ */
+export async function uploadBufferToStorage(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string,
+  maxRetries: number = 2
+): Promise<string | null> {
+  const supabase = createAdminClient();
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(fileName, buffer, {
+          contentType,
+          upsert: true,
+        });
+
+      if (!error) {
+        return `/api/media/${fileName}`;
+      }
+
+      console.warn(`[Supabase Storage] Upload attempt ${attempt + 1} failed:`, error.message || error);
+      if (attempt < maxRetries) {
+        // Wait with jittered backoff before retry (500ms, 1200ms)
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1) + Math.random() * 200));
+      }
+    } catch (err: any) {
+      console.warn(`[Supabase Storage] Upload exception on attempt ${attempt + 1}:`, err?.message || err);
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1) + Math.random() * 200));
+      }
+    }
+  }
+
+  console.error(`[Supabase Storage] All ${maxRetries + 1} upload attempts failed for ${fileName}`);
+  return null;
+}
+
 /**
  * Uploads a base64 or buffer image/video to Supabase Storage bucket 'campaign-creatives'
  * and returns a clean, domain-proxied URL (/api/media/...) without exposing
@@ -29,26 +73,12 @@ export async function uploadCampaignImageToStorage(
     else if (mimeType.includes('webp')) ext = 'webp';
     else if (mimeType.includes('mp4')) ext = 'mp4';
     else if (mimeType.includes('webm')) ext = 'webm';
+    else if (mimeType.includes('quicktime') || mimeType.includes('mov')) ext = 'mov';
 
     const buffer = Buffer.from(matches[2], 'base64');
     const fileName = `${folder}/cmp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
-    const supabase = createAdminClient();
-
-    const { error } = await supabase.storage
-      .from('campaign-creatives')
-      .upload(fileName, buffer, {
-        contentType: mimeType,
-        upsert: true,
-      });
-
-    if (error) {
-      console.error('[Supabase Storage Upload Error]:', error);
-      return null;
-    }
-
-    // Return clean internal proxy URL without exposing raw Supabase bucket project reference
-    return `/api/media/${fileName}`;
+    return await uploadBufferToStorage(buffer, fileName, mimeType);
   } catch (err) {
     console.error('[uploadCampaignImageToStorage] Error:', err);
     return null;

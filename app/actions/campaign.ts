@@ -372,7 +372,12 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
       }
 
       revalidatePath('/b/campaigns');
-      return { success: true, campaignId: payload.id };
+      return {
+        success: true,
+        campaignId: payload.id,
+        cover_image_url: safeCoverImage,
+        requirements: requirementsWithPayment,
+      };
     }
 
     // Create new draft
@@ -405,7 +410,12 @@ export async function saveCampaignDraftAction(payload: Partial<CampaignWizardPay
     }
 
     revalidatePath('/b/campaigns');
-    return { success: true, campaignId: campaign.id };
+    return {
+      success: true,
+      campaignId: campaign.id,
+      cover_image_url: safeCoverImage,
+      requirements: requirementsWithPayment,
+    };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Server error saving draft' };
   }

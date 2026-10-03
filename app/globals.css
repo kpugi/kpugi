@@ -340,3 +340,149 @@
   margin-top: 0.5rem;
   margin-bottom: 0.25rem;
 }
+
+/* ─────────────────────────────────────────────────────
+   CAMPAIGN BRIEF RENDERER GLOBAL STYLES
+   Ensures semantic HTML (h2, h3, p, ul, ol, li) renders
+   with rich typography everywhere, unaffected by CSS resets.
+───────────────────────────────────────────────────── */
+.campaign-brief-content {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.dark .campaign-brief-content {
+  color: #cbd5e1;
+}
+
+.campaign-brief-content > h2:first-child,
+.campaign-brief-content > *:first-child h2 {
+  margin-top: 0 !important;
+}
+
+.campaign-brief-content h2 {
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 1.75rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  letter-spacing: -0.015em;
+  display: block;
+}
+
+.dark .campaign-brief-content h2 {
+  color: #f8fafc;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.campaign-brief-content h3 {
+  font-family: inherit;
+  font-size: 1.025rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 1.35rem;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+.dark .campaign-brief-content h3 {
+  color: #f1f5f9;
+}
+
+.campaign-brief-content p {
+  margin-top: 0.4rem;
+  margin-bottom: 0.65rem;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.dark .campaign-brief-content p {
+  color: #cbd5e1;
+}
+
+.campaign-brief-content p:empty {
+  display: none;
+}
+
+.campaign-brief-content ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.85rem !important;
+}
+
+.campaign-brief-content ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.85rem !important;
+}
+
+.campaign-brief-content ol > li::marker {
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.campaign-brief-content ul > li::marker {
+  color: #6366f1;
+}
+
+.campaign-brief-content li {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+  line-height: 1.65;
+  color: #334155;
+  padding-left: 0.25rem;
+  display: list-item;
+}
+
+.dark .campaign-brief-content li {
+  color: #cbd5e1;
+}
+
+.campaign-brief-content li > p {
+  margin: 0 !important;
+  display: inline;
+}
+
+.campaign-brief-content strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dark .campaign-brief-content strong {
+  color: #ffffff;
+}
+
+.campaign-brief-content blockquote {
+  border-left: 3px solid #4338ca;
+  background-color: rgba(238, 237, 253, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 0.75rem 0;
+  font-style: italic;
+}
+
+.dark .campaign-brief-content blockquote {
+  border-left-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.campaign-brief-content code {
+  color: #4f46e5;
+  background-color: #eef2ff;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.dark .campaign-brief-content code {
+  color: #a5b4fc;
+  background-color: rgba(99, 102, 241, 0.15);
+}
+
