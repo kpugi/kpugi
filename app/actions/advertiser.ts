@@ -12,6 +12,7 @@ import {
 } from '@/lib/notifications/creator';
 import { notifyAdvertiserCampaignCompleted } from '@/lib/notifications/advertiser';
 import { triggerNotification } from '@/lib/knock/notify';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 // ─── 1. Create Campaign Server Action ─────────────────────────────────────────
 
@@ -136,6 +137,24 @@ export async function createCampaignAction(formData: FormData) {
     if (rErr) console.error('[createCampaignAction] payment_receipts insert failed:', rErr);
   });
 
+  // Immutable Brand Audit Trail
+  logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'advertiser',
+    action: AUDIT_ACTIONS.CAMPAIGN_CREATED,
+    actionCategory: 'campaign',
+    targetTable: 'campaigns',
+    targetId: campaign.id,
+    details: `Created campaign "${title}" with budget ₦${totalBudget.toLocaleString()}`,
+    payload: {
+      title,
+      budget: totalBudget,
+      cpm: cpmRate,
+      channels: channelsRaw,
+      payment_method: 'wallet',
+    },
+  }).catch((e) => console.error('[createCampaignAction] Audit error:', e));
+
   revalidatePath('/b/campaigns');
   revalidatePath('/b/dashboard');
   revalidatePath('/b/wallet');
@@ -252,6 +271,30 @@ export async function updateCampaignStatusAction(formData: FormData) {
       console.error('[updateCampaignStatusAction] Error sending completion notifications:', e);
     }
   }
+
+  // Immutable Brand Audit Trail
+  const actionType =
+    newStatus === 'paused'
+      ? AUDIT_ACTIONS.CAMPAIGN_PAUSED
+      : newStatus === 'live'
+      ? AUDIT_ACTIONS.CAMPAIGN_RESUMED
+      : 'campaign.completed';
+
+  logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'advertiser',
+    action: actionType,
+    actionCategory: 'campaign',
+    targetTable: 'campaigns',
+    targetId: campaignId,
+    details: `Updated campaign status to "${newStatus}" for "${campaign.title}"`,
+    payload: {
+      campaign_id: campaignId,
+      campaign_title: campaign.title,
+      previous_status: campaign.status,
+      new_status: newStatus,
+    },
+  }).catch((e) => console.error('[updateCampaignStatusAction] Audit error:', e));
 
   revalidatePath(`/b/campaigns/${campaignId}`);
   revalidatePath('/b/campaigns');
@@ -456,6 +499,23 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
       });
     }
 
+    // Immutable Brand Audit Trail
+    logAuditEvent({
+      profileId,
+      actorRole: 'advertiser',
+      action: AUDIT_ACTIONS.WALLET_FUNDED,
+      actionCategory: 'finance',
+      targetTable: 'wallet_transactions',
+      targetId: reference,
+      details: `Funded platform escrow with ₦${amountNGN.toLocaleString()}`,
+      payload: {
+        amount: amountNGN,
+        new_balance: newBalance,
+        reference,
+        status: 'completed',
+      },
+    }).catch((e) => console.error('[verifyPaystackDepositAction] Audit error:', e));
+
     if (shouldRevalidate) {
       revalidatePath('/b/wallet');
       revalidatePath('/b/dashboard');
@@ -554,6 +614,22 @@ export async function updateBrandProfileDetailsAction(formData: FormData) {
   if (error) {
     return { success: false, error: 'Failed to update brand profile.' };
   }
+
+  // Immutable Brand Audit Trail
+  logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'advertiser',
+    action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+    actionCategory: 'account',
+    targetTable: 'advertiser_profiles',
+    targetId: userProfile.profile.id,
+    details: `Updated brand profile details (${companyName})`,
+    payload: {
+      company_name: companyName,
+      industry,
+      website_url: websiteUrl,
+    },
+  }).catch((e) => console.error('[updateBrandProfileDetailsAction] Audit error:', e));
 
   revalidatePath('/b/settings');
   revalidatePath('/b/dashboard');

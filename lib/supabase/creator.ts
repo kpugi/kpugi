@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 export interface CreatorSubmission {
   id: string;
@@ -1004,6 +1005,24 @@ export async function saveSocialAccount({
       connected_at: new Date().toISOString(),
     });
   }
+
+  // Immutable Creator Audit Trail
+  const platformDisplay = platformKey === 'x' ? 'X (Twitter)' : platformKey.charAt(0).toUpperCase() + platformKey.slice(1);
+  logAuditEvent({
+    profileId,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.ACCOUNT_CONNECTED,
+    actionCategory: 'account',
+    targetTable: 'social_accounts',
+    targetId: existing?.id || userId,
+    details: `Connected ${platformDisplay} channel @${cleanHandle}`,
+    payload: {
+      handle: cleanHandle,
+      platform: platformKey,
+      followers: followerCount ?? 0,
+      verification_status: accessToken ? 'verified' : 'unverified',
+    },
+  }).catch((e) => console.error('[saveSocialAccount] Audit error:', e));
 
   return { success: true };
 }

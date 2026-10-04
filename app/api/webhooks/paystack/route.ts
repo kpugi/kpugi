@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/server';
 import { notifyAdvertiserWalletFunded } from '@/lib/notifications/advertiser';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 export async function POST(req: Request) {
   try {
@@ -86,6 +87,23 @@ export async function POST(req: Request) {
               newBalance: Number(depositResult?.new_balance || 0),
               profileId: profile.id,
             });
+
+            // Immutable Brand Audit Trail
+            logAuditEvent({
+              profileId: profile.id,
+              actorRole: 'advertiser',
+              action: AUDIT_ACTIONS.WALLET_FUNDED,
+              actionCategory: 'finance',
+              targetTable: 'wallet_transactions',
+              targetId: reference,
+              details: `Funded platform escrow with ₦${amountInNaira.toLocaleString()} via Paystack webhook`,
+              payload: {
+                amount: amountInNaira,
+                new_balance: Number(depositResult?.new_balance || 0),
+                reference,
+                event: 'charge.success',
+              },
+            }).catch((e) => console.error('[Paystack Webhook] Audit error:', e));
           }
         }
       }

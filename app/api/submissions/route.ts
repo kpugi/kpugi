@@ -3,6 +3,7 @@ import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth
 import { createAdminClient } from '@/lib/supabase/server';
 import { calculateBudgetReservation } from '@/lib/utils/budget';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 export async function GET() {
   return NextResponse.json({ submissions: [] });
@@ -181,6 +182,23 @@ export async function POST(req: Request) {
           });
       }
 
+      // Immutable Creator Audit Trail
+      logAuditEvent({
+        profileId: userProfile.profile.id,
+        actorRole: 'creator',
+        action: AUDIT_ACTIONS.CAMPAIGN_JOINED,
+        actionCategory: 'submission',
+        targetTable: 'submissions',
+        targetId: submission.id,
+        details: `Joined campaign "${campaign.title || 'Campaign'}" (reserved ₦${reservedAmount.toLocaleString()})`,
+        payload: {
+          campaign_id: campaignId,
+          campaign_title: campaign.title,
+          reserved_amount: reservedAmount,
+          social_account_id: socialAccountId,
+        },
+      }).catch(err => console.error('[Submissions API] Creator join audit error:', err));
+
       return NextResponse.json({ success: true, action: 'join', submission });
     }
 
@@ -298,6 +316,23 @@ export async function POST(req: Request) {
       if (delErr) {
         return NextResponse.json({ error: 'Failed to unjoin campaign. Please try again.' }, { status: 500 });
       }
+
+      // Immutable Creator Audit Trail
+      logAuditEvent({
+        profileId: userProfile.profile.id,
+        actorRole: 'creator',
+        action: AUDIT_ACTIONS.SUBMISSION_FORFEITED,
+        actionCategory: 'submission',
+        targetTable: 'submissions',
+        targetId: subToUnjoin.id,
+        details: `Left campaign and forfeited reserved slot (₦${subReserved.toLocaleString()})`,
+        payload: {
+          campaign_id: campaignId,
+          submission_id: subToUnjoin.id,
+          reserved_amount: subReserved,
+          cleared_payout: clearedPayout,
+        },
+      }).catch(err => console.error('[Submissions API] Creator unjoin audit error:', err));
 
       return NextResponse.json({ success: true, action: 'unjoin' });
     }
@@ -459,6 +494,22 @@ export async function POST(req: Request) {
         .update({ total_earned: Math.max(0, totalCleared) })
         .eq('profile_id', userProfile.profile.id);
 
+      // Immutable Creator Audit Trail
+      logAuditEvent({
+        profileId: userProfile.profile.id,
+        actorRole: 'creator',
+        action: AUDIT_ACTIONS.SUBMISSION_DELETED,
+        actionCategory: 'submission',
+        targetTable: 'submissions',
+        targetId: subToReset.id,
+        details: `Reset and removed submitted link for campaign #${campaignId.slice(0, 8)}`,
+        payload: {
+          campaign_id: campaignId,
+          submission_id: subToReset.id,
+          previous_post_url: subToReset.post_url,
+        },
+      }).catch(err => console.error('[Submissions API] Creator delete_link audit error:', err));
+
       return NextResponse.json({ success: true, action: 'delete_link', submission: updatedSub });
     }
 
@@ -610,6 +661,23 @@ export async function POST(req: Request) {
             }
           });
       }
+
+      // Immutable Creator Audit Trail
+      logAuditEvent({
+        profileId: userProfile.profile.id,
+        actorRole: 'creator',
+        action: AUDIT_ACTIONS.SUBMISSION_CREATED,
+        actionCategory: 'submission',
+        targetTable: 'submissions',
+        targetId: submission.id,
+        details: `Submitted post for "${campaignData?.title || 'Campaign'}"`,
+        payload: {
+          post_url: cleanPostUrl,
+          campaign_title: campaignData?.title || 'Campaign',
+          campaign_id: submission.campaign_id,
+          platform: socialData?.platform || 'social',
+        },
+      }).catch(err => console.error('[Submissions API] Creator submit link audit error:', err));
 
       return NextResponse.json({ success: true, action: 'submit_link', submission });
     }

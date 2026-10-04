@@ -13,6 +13,7 @@ import {
 } from '@/lib/paystack/payout';
 import { notifyCreatorWithdrawalCompleted, notifyCreatorJoinedCampaign } from '@/lib/notifications/creator';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 export async function getNigerianBanksAction(): Promise<BankOption[]> {
   try {
@@ -234,6 +235,23 @@ export async function submitCampaignVideoAction(formData: FormData) {
 
   // Note: New video submissions enter a 60-minute organic growth incubation window.
   // The automated auditing engine evaluates the post once submitted_at reaches 60 minutes.
+
+  // Immutable Creator Audit Trail
+  logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.SUBMISSION_CREATED,
+    actionCategory: 'submission',
+    targetTable: 'submissions',
+    targetId: campaignId,
+    details: `Submitted video post for "${campaign.title || 'Campaign'}"`,
+    payload: {
+      post_url: parsedUrl.toString(),
+      campaign_title: campaign.title || 'Campaign',
+      campaign_id: campaignId,
+      platform,
+    },
+  }).catch((err) => console.error('[submitCampaignVideoAction] Audit error:', err));
 
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath('/campaigns');
@@ -544,6 +562,23 @@ export async function requestPayoutAction(formData: FormData) {
     profileId: userProfile.profile.id,
   }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
 
+  // Immutable Creator Audit Trail
+  logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.PAYOUT_REQUESTED,
+    actionCategory: 'finance',
+    targetTable: 'payout_requests',
+    targetId: refCode,
+    details: `Requested earnings withdrawal of ₦${amount.toLocaleString()} to ${targetBank.bank_name} (${maskedAcc})`,
+    payload: {
+      amount,
+      bank_name: targetBank.bank_name,
+      reference: refCode,
+      status: finalStatus,
+    },
+  }).catch((err) => console.error('[requestPayoutAction] Audit error:', err));
+
   revalidatePath('/c/wallet');
   revalidatePath('/c/dashboard');
   revalidatePath('/c/payouts');
@@ -650,6 +685,22 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
         .eq('profile_id', profileId);
     }
 
+    // Immutable Creator Audit Trail
+    logAuditEvent({
+      profileId,
+      actorRole: 'creator',
+      action: AUDIT_ACTIONS.BANK_ACCOUNT_ADDED,
+      actionCategory: 'finance',
+      targetTable: 'bank_accounts',
+      targetId: accountNumber.slice(-4),
+      details: `Added Nigerian payout bank account (${bankName} - ****${accountNumber.slice(-4)})`,
+      payload: {
+        bank_name: bankName,
+        account_name: accountName,
+        account_number_masked: `****${accountNumber.slice(-4)}`,
+      },
+    }).catch((e) => console.error('[resolveAndSaveBankAccountAction] Audit error:', e));
+
     revalidatePath('/c/wallet');
     revalidatePath('/c/payouts');
     revalidatePath('/settings');
@@ -749,6 +800,21 @@ export async function deleteBankAccountAction(accountId: string) {
         .eq('profile_id', profileId);
     }
   }
+
+  // Immutable Creator Audit Trail
+  logAuditEvent({
+    profileId,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.BANK_ACCOUNT_DELETED,
+    actionCategory: 'finance',
+    targetTable: 'bank_accounts',
+    targetId: accountId,
+    details: `Deleted payout bank account #${accountId.slice(0, 8)}`,
+    payload: {
+      account_id: accountId,
+      was_primary: targetAccount.is_primary,
+    },
+  }).catch((e) => console.error('[deleteBankAccountAction] Audit error:', e));
 
   revalidatePath('/c/wallet');
   revalidatePath('/c/payouts');
@@ -934,6 +1000,22 @@ export async function unjoinCampaignAction(campaignId: string) {
     return { success: false, error: delErr.message || 'Failed to unjoin campaign.' };
   }
 
+  // Immutable Creator Audit Trail
+  logAuditEvent({
+    profileId,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.SUBMISSION_FORFEITED,
+    actionCategory: 'submission',
+    targetTable: 'submissions',
+    targetId: submission.id,
+    details: `Left campaign and forfeited reserved slot (₦${subReserved.toLocaleString()})`,
+    payload: {
+      campaign_id: campaignId,
+      submission_id: submission.id,
+      reserved_amount: subReserved,
+    },
+  }).catch((e) => console.error('[unjoinCampaignAction] Audit error:', e));
+
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath(`/c/campaigns/${campaignId}`);
   revalidatePath('/c/campaigns');
@@ -1072,6 +1154,22 @@ export async function deleteSubmissionLinkAction(campaignId: string) {
       .update({ total_earned: Math.max(0, Math.round(trueEarned * 100) / 100) })
       .eq('profile_id', profileId);
   }
+
+  // Immutable Creator Audit Trail
+  logAuditEvent({
+    profileId,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.SUBMISSION_DELETED,
+    actionCategory: 'submission',
+    targetTable: 'submissions',
+    targetId: submission.id,
+    details: `Removed submitted post link for campaign "${campaignId}"`,
+    payload: {
+      campaign_id: campaignId,
+      submission_id: submission.id,
+      previous_post_url: submission.post_url,
+    },
+  }).catch((e) => console.error('[deleteSubmissionLinkAction] Audit error:', e));
 
   revalidatePath('/c/wallet');
   revalidatePath('/c/dashboard');
@@ -1240,6 +1338,22 @@ export async function updateCreatorProfileAction(formData: FormData) {
       }
     }
   }
+
+  // Immutable Creator Audit Trail
+  logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'creator',
+    action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+    actionCategory: 'account',
+    targetTable: 'creator_profiles',
+    targetId: userProfile.profile.id,
+    details: `Updated creator profile details (${displayName || 'Profile'})`,
+    payload: {
+      display_name: displayName,
+      creator_handle: creatorHandle || currentCreator?.creator_handle,
+      niches,
+    },
+  }).catch((e) => console.error('[updateCreatorProfileAction] Audit error:', e));
 
   revalidatePath('/settings');
   return { success: true };

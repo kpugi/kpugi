@@ -4,6 +4,7 @@ import { notifyCreatorVerificationPassed } from '@/lib/notifications/creator';
 import { notifyAdvertiserSubmissionVerified } from '@/lib/notifications/advertiser';
 import { sendHeartbeat } from '@/lib/monitoring/heartbeat';
 import { verifyCronRequest } from '@/lib/auth/cron-guard';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,6 +129,25 @@ export async function GET(request: Request) {
         status: 'system_verified',
         settled_at: now,
       });
+
+      // Immutable Creator Audit Trail
+      logAuditEvent({
+        profileId: sub.creator_id,
+        actorRole: 'creator',
+        action: AUDIT_ACTIONS.PAYOUT_RECEIVED,
+        actionCategory: 'finance',
+        targetTable: 'submissions',
+        targetId: sub.id,
+        details: `Wallet credited ₦${pendingPayout.toLocaleString()} from verified views (${viewCount.toLocaleString()} views)`,
+        payload: {
+          submission_id: sub.id,
+          campaign_id: sub.campaign_id,
+          campaign_title: campaign?.title,
+          views: viewCount,
+          payout_amount: pendingPayout,
+          reference: payoutRef,
+        },
+      }).catch((e) => console.error('[release-payouts cron] Creator audit error:', e));
 
       // 5. Fire notification to creator
       const { data: profile } = await supabase

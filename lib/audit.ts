@@ -1,11 +1,13 @@
 import { createAdminClient } from '@/lib/supabase/server';
 
 export type AuditActorRole = 'creator' | 'advertiser' | 'admin' | 'system';
+export type AuditActionCategory = 'account' | 'submission' | 'campaign' | 'finance' | 'security';
 
 export interface AuditEventParams {
   profileId: string | null;    // null for system/cron actions
   actorRole: AuditActorRole;
   action: string;              // e.g. 'campaign.featured.toggle', 'submission.status.override'
+  actionCategory?: AuditActionCategory;
   targetTable?: string;        // e.g. 'campaigns', 'submissions'
   targetId?: string;           // UUID or ID of the affected row
   details?: string;
@@ -43,6 +45,19 @@ export interface BrandAuditParams {
   details?: string;
   payload?: Record<string, unknown>;
   ipAddress?: string | null;
+}
+
+/**
+ * Infer category from action name and actor role if not explicitly provided
+ */
+export function inferActionCategory(action: string, role?: AuditActorRole): AuditActionCategory {
+  const act = action.toLowerCase();
+  if (act.startsWith('submission.') || act.includes('joined') || act.includes('forfeit')) return 'submission';
+  if (act.startsWith('campaign.')) return 'campaign';
+  if (act.startsWith('wallet.') || act.startsWith('payout.') || act.startsWith('bank_account.') || act.includes('finance')) return 'finance';
+  if (act.startsWith('account.') || act.startsWith('social_account.') || act.startsWith('user.') || act.startsWith('profile.')) return 'account';
+  if (act.startsWith('security.') || act.includes('suspension') || act.includes('suspended')) return 'security';
+  return role === 'advertiser' ? 'campaign' : role === 'creator' ? 'submission' : 'account';
 }
 
 /**
@@ -121,6 +136,7 @@ export async function logBrandAudit(params: BrandAuditParams): Promise<void> {
 export async function logAuditEvent(params: AuditEventParams): Promise<void> {
   try {
     const supabase = createAdminClient();
+    const category = params.actionCategory || inferActionCategory(params.action, params.actorRole);
 
     // 1. Write to centralized audit_log
     await supabase.from('audit_log').insert({
@@ -149,6 +165,7 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
       await logCreatorAudit({
         creatorId: params.profileId,
         action: params.action,
+        actionCategory: (category === 'campaign' ? 'submission' : category) as any,
         targetTable: params.targetTable,
         targetId: params.targetId,
         details: params.details,
@@ -159,6 +176,7 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
       await logBrandAudit({
         brandId: params.profileId,
         action: params.action,
+        actionCategory: (category === 'submission' ? 'campaign' : category) as any,
         targetTable: params.targetTable,
         targetId: params.targetId,
         details: params.details,
@@ -179,7 +197,10 @@ export const AUDIT_ACTIONS = {
   CAMPAIGN_CREATED:          'campaign.created',
   CAMPAIGN_FUNDED:           'campaign.funded',
   CAMPAIGN_PAUSED:           'campaign.paused',
+  CAMPAIGN_RESUMED:          'campaign.resumed',
   CAMPAIGN_CANCELLED:        'campaign.cancelled',
+  CAMPAIGN_UPDATED:          'campaign.updated',
+  CAMPAIGN_JOINED:           'campaign.joined',
   CAMPAIGN_FEATURED_TOGGLE:  'campaign.featured.toggle',
   CAMPAIGN_HERO_PIN_TOGGLE:  'campaign.hero_pin.toggle',
   CAMPAIGN_STATUS_OVERRIDE:  'campaign.status.override',
@@ -198,6 +219,10 @@ export const AUDIT_ACTIONS = {
   ACCOUNT_CONNECTED:         'social_account.connected',
   ACCOUNT_DISCONNECTED:      'social_account.disconnected',
   ACCOUNT_VERIFIED:          'social_account.verified',
+
+  // Bank accounts
+  BANK_ACCOUNT_ADDED:        'bank_account.added',
+  BANK_ACCOUNT_DELETED:      'bank_account.deleted',
 
   // Users / profiles
   USER_ADMIN_TOGGLED:        'user.admin.toggled',

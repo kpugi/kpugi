@@ -3,6 +3,7 @@
 import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { createAdminClient } from '@/lib/supabase/server';
 import { uploadCampaignImageToStorage } from '@/lib/supabase/storage';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -1000,6 +1001,27 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       console.error('[Campaign Action] Error dispatching brand notification:', e);
     }
 
+    // 5. Immutable Brand Audit Trail
+    logAuditEvent({
+      profileId: advertiserId,
+      actorRole: 'advertiser',
+      action: AUDIT_ACTIONS.CAMPAIGN_CREATED,
+      actionCategory: 'campaign',
+      targetTable: 'campaigns',
+      targetId: campaign.id,
+      details: `Created and launched campaign "${campaign.title}" with budget ₦${totalBudget.toLocaleString()}`,
+      payload: {
+        title: campaign.title,
+        campaign_code: campaign.campaign_code,
+        budget: totalBudget,
+        cpm: cpmRate,
+        channels: campaign.channels,
+        ad_format: payload.ad_format,
+        receipt_number: receiptNumber,
+        payment_method: payload.payment_method || 'wallet',
+      },
+    }).catch((e) => console.error('[Campaign Action] Error logging campaign audit event:', e));
+
     revalidatePath('/b/campaigns');
     revalidatePath('/b/wallet');
     revalidatePath('/browse');
@@ -1154,7 +1176,7 @@ export async function archiveCampaignAction(campaignId: string) {
     // Check existing campaign status
     const { data: campaign, error: fetchErr } = await supabase
       .from('campaigns')
-      .select('id, status, is_featured, total_budget')
+      .select('id, title, status, is_featured, total_budget')
       .eq('id', campaignId)
       .eq('advertiser_id', advertiserId)
       .single();
@@ -1175,6 +1197,22 @@ export async function archiveCampaignAction(campaignId: string) {
     if (archiveErr) {
       return { success: false, error: `Failed to archive campaign: ${archiveErr.message}` };
     }
+
+    // Immutable Brand Audit Trail
+    logAuditEvent({
+      profileId: advertiserId,
+      actorRole: 'advertiser',
+      action: AUDIT_ACTIONS.CAMPAIGN_CANCELLED,
+      actionCategory: 'campaign',
+      targetTable: 'campaigns',
+      targetId: campaignId,
+      details: `Archived campaign "${campaign.title || campaignId}"`,
+      payload: {
+        campaign_id: campaignId,
+        previous_status: campaign.status,
+        new_status: 'archived',
+      },
+    }).catch((e) => console.error('[Campaign Action] Error logging archive audit:', e));
 
     revalidatePath('/b/campaigns');
     revalidatePath('/b/dashboard');
@@ -1415,6 +1453,23 @@ export async function updateCampaignDetailsAction(payload: {
     if (updateErr) {
       return { success: false, error: `Failed to update campaign: ${updateErr.message}` };
     }
+
+    // Immutable Brand Audit Trail
+    logAuditEvent({
+      profileId: advertiserId,
+      actorRole: 'advertiser',
+      action: AUDIT_ACTIONS.CAMPAIGN_UPDATED,
+      actionCategory: 'campaign',
+      targetTable: 'campaigns',
+      targetId: payload.campaignId,
+      details: `Updated campaign details for "${payload.title}"`,
+      payload: {
+        campaign_id: payload.campaignId,
+        title: payload.title,
+        cpm_rate: payload.cpm_rate,
+        total_budget: payload.total_budget,
+      },
+    }).catch((e) => console.error('[Campaign Action] Error logging update audit:', e));
 
     revalidatePath('/b/campaigns');
     revalidatePath(`/b/campaigns/${payload.campaignId}`);

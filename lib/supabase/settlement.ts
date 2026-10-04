@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getPlatformSettings } from '@/lib/admin/platform-settings-service';
+import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
 export interface CampaignSettlementResult {
   success: boolean;
@@ -191,6 +192,27 @@ export async function settleCompletedCampaign(
       .from('creator_profiles')
       .update({ total_earned: totalEarned })
       .eq('profile_id', sub.creator_id);
+
+    // Immutable Creator Audit Trail
+    logAuditEvent({
+      profileId: sub.creator_id,
+      actorRole: 'creator',
+      action: AUDIT_ACTIONS.PAYOUT_RECEIVED,
+      actionCategory: 'finance',
+      targetTable: 'wallet_transactions',
+      targetId: ref,
+      details: `Wallet credited ₦${net.toLocaleString()} from campaign verification`,
+      payload: {
+        amount: net,
+        gross_amount: gross,
+        fee_amount: fee,
+        views_audited: views,
+        status: 'completed',
+        reference: ref,
+        campaign_id: campaignId,
+        submission_id: sub.id,
+      },
+    }).catch((e) => console.error('[settleCompletedCampaign] Creator audit error:', e));
 
     settledCount++;
     totalGross += gross;
