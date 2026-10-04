@@ -453,7 +453,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       {/* ─────────────────────────────────────────────────────
          MIDDLE ROW: COMPACT TODAY'S PROGRESS STRIP
       ───────────────────────────────────────────────────── */}
-      {Boolean(data.todayViews && data.todayViews > 0) && (
+      {Boolean((data.todayAccrual && data.todayAccrual > 0) || (data.todayViews && data.todayViews > 0)) && (
         <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-center sm:text-left">
           {/* Header Label with Pulsing Live Dot */}
           <div className="space-y-1">
@@ -468,6 +468,11 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             <div className="font-mono font-black text-3xl sm:text-4xl lg:text-5xl text-kpugi-blue tracking-tight">
               +₦{Number(data.todayAccrual).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
+            {Boolean(data.todayViews && data.todayViews > 0) && (
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                from {Number(data.todayViews).toLocaleString()} verified views
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col sm:items-end justify-center gap-1">

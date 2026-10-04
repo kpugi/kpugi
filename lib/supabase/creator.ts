@@ -234,12 +234,24 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   let todayPendingViews = 0;
 
   (rawSubmissions || []).forEach((s: any) => {
-    const pendingPayout = Number(s.pending_payout_amount || 0);
-    if (pendingPayout > 0) {
-      todayPendingPayout += pendingPayout;
-      const finalViews = Number(s.final_view_count || 0);
-      const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
-      const deltaViews = Math.max(0, finalViews - lastPaid);
+    if (s.status === 'verified_fail' || s.status === 'cancelled') return;
+
+    const campaignObj = Array.isArray(s.campaign) ? s.campaign[0] : s.campaign;
+    const finalViews = Number(s.final_view_count || 0);
+    const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
+    const deltaViews = Math.max(0, finalViews - lastPaid);
+    const minThreshold = Number(campaignObj?.min_view_threshold || 1000);
+    const cpmRate = Number(campaignObj?.cpm_rate || 0);
+
+    let subAccrual = Number(s.pending_payout_amount || 0);
+    if (subAccrual <= 0 && finalViews >= minThreshold && cpmRate > 0) {
+      if (!s.payout_amount || Number(s.payout_amount) <= 0) {
+        subAccrual = Math.floor((deltaViews / 1000) * cpmRate);
+      }
+    }
+
+    if (subAccrual > 0) {
+      todayPendingPayout += subAccrual;
       todayPendingViews += deltaViews;
     }
   });
@@ -313,7 +325,17 @@ export async function getCreatorOverviewData(profileId: string): Promise<Creator
   });
 
   const submissionsTotalEarned = (rawSubmissions || []).reduce(
-    (sum: number, s: any) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
+    (sum: number, s: any) => {
+      const campaignObj = Array.isArray(s.campaign) ? s.campaign[0] : s.campaign;
+      const finalViews = Number(s.final_view_count || 0);
+      const minThreshold = Number(campaignObj?.min_view_threshold || 1000);
+      const cpmRate = Number(campaignObj?.cpm_rate || 0);
+      let amt = Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0);
+      if (amt <= 0 && finalViews >= minThreshold && cpmRate > 0 && s.status !== 'verified_fail' && s.status !== 'cancelled') {
+        amt = Math.floor((finalViews / 1000) * cpmRate);
+      }
+      return sum + amt;
+    },
     0
   );
   const liveTotalEarned = Math.max(
@@ -600,12 +622,24 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   let todayViews = 0;
 
   rawSubmissions.forEach((s: any) => {
-    const pendingPayout = Number(s.pending_payout_amount || 0);
-    if (pendingPayout > 0) {
-      todayAccrual += pendingPayout;
-      const finalViews = Number(s.final_view_count || 0);
-      const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
-      const deltaViews = Math.max(0, finalViews - lastPaid);
+    if (s.status === 'verified_fail' || s.status === 'cancelled') return;
+
+    const campaignObj = Array.isArray(s.campaign) ? s.campaign[0] : s.campaign;
+    const finalViews = Number(s.final_view_count || 0);
+    const lastPaid = Math.max(Number(s.last_paid_view_count || 0), Number(s.max_verified_views || 0));
+    const deltaViews = Math.max(0, finalViews - lastPaid);
+    const minThreshold = Number(campaignObj?.min_view_threshold || 1000);
+    const cpmRate = Number(campaignObj?.cpm_rate || 0);
+
+    let subAccrual = Number(s.pending_payout_amount || 0);
+    if (subAccrual <= 0 && finalViews >= minThreshold && cpmRate > 0) {
+      if (!s.payout_amount || Number(s.payout_amount) <= 0) {
+        subAccrual = Math.floor((deltaViews / 1000) * cpmRate);
+      }
+    }
+
+    if (subAccrual > 0) {
+      todayAccrual += subAccrual;
       todayViews += deltaViews;
     }
   });
@@ -629,6 +663,11 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       }
     }
   });
+
+  // If no transactions are explicitly marked 'clearing' in ledger, active today accrual represents pending clearance
+  if (pendingEscrow === 0 && todayAccrual > 0) {
+    pendingEscrow = todayAccrual;
+  }
 
   const availableBalance = Number(wallet?.balance || 0);
   const totalEarned = availableBalance + totalWithdrawn;
