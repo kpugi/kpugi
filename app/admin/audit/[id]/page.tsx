@@ -98,6 +98,7 @@ export default async function AuditLogDetailPage({ params, searchParams }: PageP
   const isSystem = eventType === 'admin' && (!profile || event.action === 'auto_settlement_reconciled');
   const actorName = isSystem ? 'System Automation Engine' : profile?.full_name || 'Platform User';
   const category = event.action_category || event.action?.split('.')[0] || 'general';
+  const client = event.payload?.client;
 
   const formatTimeAgo = (dateString: string) => {
     const ms = Date.now() - new Date(dateString).getTime();
@@ -211,9 +212,34 @@ export default async function AuditLogDetailPage({ params, searchParams }: PageP
             <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
               <span className="font-mono">IP Address</span>
               <span className="font-mono text-gray-800 dark:text-gray-200">
-                {event.ip_address || 'Internal Service Origin'}
+                {event.ip_address || client?.ip || 'Internal Service Origin'}
               </span>
             </div>
+            {client?.location?.formatted && (
+              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
+                <span className="font-mono">Origin Location</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                  <span>{client.location.flag || '🌐'}</span>
+                  <span>{client.location.city ? `${client.location.city}, ${client.location.country || ''}` : client.location.formatted}</span>
+                </span>
+              </div>
+            )}
+            {client?.browser && (
+              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
+                <span className="font-mono">Browser &amp; OS</span>
+                <span className="text-gray-800 dark:text-gray-200 font-sans">
+                  {client.browser} {client.os ? `(${client.os})` : ''}
+                </span>
+              </div>
+            )}
+            {client?.device && client.device !== 'server' && (
+              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
+                <span className="font-mono">Device</span>
+                <span className="capitalize font-mono text-gray-800 dark:text-gray-200 text-[11px]">
+                  {client.deviceModel || client.device}
+                </span>
+              </div>
+            )}
             {profile?.id && (
               <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
                 <span className="font-mono">Profile ID</span>

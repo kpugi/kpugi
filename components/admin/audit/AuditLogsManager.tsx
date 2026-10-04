@@ -560,6 +560,13 @@ export default function AuditLogsManager({
                                 {profile.email}
                               </p>
                             )}
+                            {log.payload?.client && (
+                              <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[180px] mt-0.5 font-sans">
+                                {log.payload.client.location?.flag && <span>{log.payload.client.location.flag}</span>}
+                                <span className="truncate">{log.payload.client.location?.city || log.payload.client.location?.country || log.ip_address || ''}</span>
+                                {log.payload.client.browser && <span className="opacity-80 shrink-0">• {log.payload.client.browser}</span>}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>

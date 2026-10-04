@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server';
+import { getClientAuditInfo, ClientAuditInfo } from '@/lib/audit-client-info';
 
 export type AuditActorRole = 'creator' | 'advertiser' | 'admin' | 'system';
 export type AuditActionCategory = 'account' | 'submission' | 'campaign' | 'finance' | 'security';
@@ -138,6 +139,24 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
     const supabase = createAdminClient();
     const category = params.actionCategory || inferActionCategory(params.action, params.actorRole);
 
+    // Automatically resolve client context (IP, Browser, OS, Location) from request headers
+    let clientInfo: ClientAuditInfo | null = null;
+    let resolvedIp = params.ipAddress || null;
+
+    try {
+      clientInfo = await getClientAuditInfo();
+      if (!resolvedIp && clientInfo.ip) {
+        resolvedIp = clientInfo.ip;
+      }
+    } catch (clientErr) {
+      console.warn('[audit] Could not resolve client request headers:', clientErr);
+    }
+
+    const payloadWithClient = {
+      ...(params.payload || {}),
+      ...(clientInfo ? { client: clientInfo } : {}),
+    };
+
     // 1. Write to centralized audit_log
     await supabase.from('audit_log').insert({
       profile_id: params.profileId,
@@ -145,8 +164,8 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
       action: params.action,
       target_table: params.targetTable ?? null,
       target_id: params.targetId ?? null,
-      payload: params.payload ?? null,
-      ip_address: params.ipAddress ?? null,
+      payload: payloadWithClient,
+      ip_address: resolvedIp,
       created_at: new Date().toISOString(),
     });
 
@@ -158,8 +177,8 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
         targetTable: params.targetTable,
         targetId: params.targetId,
         details: params.details,
-        payload: params.payload,
-        ipAddress: params.ipAddress,
+        payload: payloadWithClient,
+        ipAddress: resolvedIp,
       });
     } else if (params.actorRole === 'creator' && params.profileId) {
       await logCreatorAudit({
@@ -169,8 +188,8 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
         targetTable: params.targetTable,
         targetId: params.targetId,
         details: params.details,
-        payload: params.payload,
-        ipAddress: params.ipAddress,
+        payload: payloadWithClient,
+        ipAddress: resolvedIp,
       });
     } else if (params.actorRole === 'advertiser' && params.profileId) {
       await logBrandAudit({
@@ -180,8 +199,8 @@ export async function logAuditEvent(params: AuditEventParams): Promise<void> {
         targetTable: params.targetTable,
         targetId: params.targetId,
         details: params.details,
-        payload: params.payload,
-        ipAddress: params.ipAddress,
+        payload: payloadWithClient,
+        ipAddress: resolvedIp,
       });
     }
   } catch (err) {
