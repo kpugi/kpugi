@@ -4,6 +4,13 @@ import { requireAdminSession } from '@/lib/admin/auth';
 import { logAuditEvent } from '@/lib/audit';
 import { createAdminClient } from '@/lib/supabase/server';
 import { paystackFetch } from '@/lib/paystack/client';
+import {
+  initiatePaystackTransfer,
+  initiatePaystackBulkTransfer,
+  finalizePaystackTransfer,
+  createPaystackRecipient,
+} from '@/lib/paystack/payout';
+import { notifyCreatorWithdrawalCompleted } from '@/lib/notifications/creator';
 import { revalidatePath } from 'next/cache';
 
 export interface TreasuryMetrics {
@@ -27,7 +34,8 @@ export interface TreasuryMetrics {
  * Fetches real-time Paystack gateway balance and aggregates all internal balances
  */
 export async function fetchPlatformTreasuryMetricsAction(): Promise<TreasuryMetrics> {
-  const { supabase } = await requireAdminSession();
+  await requireAdminSession();
+  const supabase = createAdminClient();
 
   // 1. Fetch live Paystack Gateway Balance
   let paystackBalanceNgn = 0;
@@ -46,7 +54,7 @@ export async function fetchPlatformTreasuryMetricsAction(): Promise<TreasuryMetr
     supabase.from('wallets').select('wallet_type, balance'),
     supabase.from('campaigns').select('total_budget, spent_budget, reserved_budget, is_featured'),
     supabase.from('wallet_transactions').select('type, status, amount'),
-    supabase.from('payout_requests').select('amount').in('status', ['pending', 'processing']),
+    supabase.from('payout_requests').select('amount').in('status', ['pending', 'processing', 'approved']),
     supabase.from('submissions').select('commission_amount, reserved_amount, payout_amount'),
   ]);
 
@@ -151,15 +159,147 @@ export async function verifyPaystackTransactionAction(reference: string) {
 }
 
 /**
- * approvePayoutRequestAction
- * Approves a pending creator withdrawal request with governance audit logging
+ * Helper to ensure a Paystack transfer recipient code exists for a payout request
  */
-export async function approvePayoutRequestAction(
+async function getOrCreateRecipientCode(supabase: any, payout: any): Promise<string | null> {
+  // 1. Check if bank_account_id exists and already has recipient_code
+  if (payout.bank_account_id) {
+    const { data: bank } = await supabase
+      .from('bank_accounts')
+      .select('id, recipient_code, bank_code, account_number, account_name')
+      .eq('id', payout.bank_account_id)
+      .maybeSingle();
+
+    if (bank?.recipient_code) {
+      return bank.recipient_code;
+    }
+
+    if (bank?.bank_code && bank?.account_number) {
+      const res = await createPaystackRecipient({
+        name: bank.account_name || payout.account_name || 'Creator',
+        accountNumber: bank.account_number,
+        bankCode: bank.bank_code,
+      });
+      if (res.success && res.recipientCode) {
+        await supabase
+          .from('bank_accounts')
+          .update({ recipient_code: res.recipientCode })
+          .eq('id', payout.bank_account_id);
+        return res.recipientCode;
+      }
+    }
+  }
+
+  // 2. Lookup bank_accounts by profile_id and account_number
+  if (payout.account_number && payout.profile_id) {
+    const { data: bank } = await supabase
+      .from('bank_accounts')
+      .select('id, recipient_code, bank_code, account_number, account_name')
+      .eq('profile_id', payout.profile_id)
+      .eq('account_number', payout.account_number)
+      .maybeSingle();
+
+    if (bank?.recipient_code) {
+      return bank.recipient_code;
+    }
+    if (bank?.bank_code) {
+      const res = await createPaystackRecipient({
+        name: bank.account_name || payout.account_name || 'Creator',
+        accountNumber: bank.account_number,
+        bankCode: bank.bank_code,
+      });
+      if (res.success && res.recipientCode) {
+        await supabase
+          .from('bank_accounts')
+          .update({ recipient_code: res.recipientCode })
+          .eq('id', bank.id);
+        return res.recipientCode;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * approvePayoutRequestAction
+ * Marks a payout request as 'approved' (cleared for weekly Friday batch disbursement)
+ */
+export async function approvePayoutRequestAction(payoutRequestId: string) {
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
+
+  if (!payoutRequestId) {
+    throw new Error('Payout request ID is required.');
+  }
+
+  const { data: payout, error: fetchErr } = await supabase
+    .from('payout_requests')
+    .select('*')
+    .eq('id', payoutRequestId)
+    .single();
+
+  if (fetchErr || !payout) {
+    throw new Error('Payout request not found.');
+  }
+
+  if (payout.status === 'completed') {
+    throw new Error('This payout request has already been completed.');
+  }
+
+  // Update status to 'approved'
+  const { error: updateErr } = await supabase
+    .from('payout_requests')
+    .update({
+      status: 'approved',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', payoutRequestId);
+
+  if (updateErr) {
+    throw new Error(`Failed to update payout request: ${updateErr.message}`);
+  }
+
+  const ref = payout.reference || payout.transfer_reference;
+  if (ref) {
+    await supabase
+      .from('wallet_transactions')
+      .update({ status: 'approved' })
+      .eq('paystack_reference', ref);
+  }
+
+  await logAuditEvent({
+    profileId: adminId,
+    actorRole: 'admin',
+    action: 'payout.approved',
+    targetTable: 'payout_requests',
+    targetId: payoutRequestId,
+    details: `Admin approved creator withdrawal of ₦${Number(payout.amount).toLocaleString()} for Friday batch settlement.`,
+    payload: {
+      payoutRequestId,
+      creatorProfileId: payout.profile_id,
+      amount: payout.amount,
+      reference: ref,
+      scheduled_for: payout.scheduled_for,
+    },
+  });
+
+  revalidatePath('/admin/finances');
+  revalidatePath('/c/wallet');
+  return { success: true, message: `Payout request approved for Friday settlement batch.` };
+}
+
+/**
+ * disbursePayoutRequestAction
+ * Executes disbursement of a single payout request via Paystack Transfer API or Manual Settlement
+ */
+export async function disbursePayoutRequestAction(
   payoutRequestId: string,
   mode: 'paystack_transfer' | 'manual',
   transferNote?: string
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
 
   if (!payoutRequestId) {
     throw new Error('Payout request ID is required.');
@@ -177,51 +317,356 @@ export async function approvePayoutRequestAction(
   }
 
   if (payout.status === 'completed') {
-    throw new Error('This payout request has already been completed.');
+    throw new Error('This payout request has already been settled and completed.');
   }
 
-  // 2. Update payout_requests status
-  const { error: updateErr } = await supabase
-    .from('payout_requests')
-    .update({
-      status: 'completed',
-    })
-    .eq('id', payoutRequestId);
+  const ref = payout.reference || payout.transfer_reference;
+  const amountNum = Number(payout.amount) || 0;
 
-  if (updateErr) {
-    throw new Error(`Failed to update payout request: ${updateErr.message}`);
-  }
+  // 2. Execute via Live Paystack API
+  if (mode === 'paystack_transfer') {
+    const recipientCode = await getOrCreateRecipientCode(supabase, payout);
+    if (!recipientCode) {
+      throw new Error(
+        'Could not obtain or generate Paystack Recipient Code for this bank account. Please verify bank details or settle manually.'
+      );
+    }
 
-  // 3. Update corresponding wallet_transactions record if exists
-  if (payout.reference) {
+    const transferRes = await initiatePaystackTransfer({
+      recipientCode,
+      amountInKobo: Math.round(amountNum * 100),
+      reference: ref,
+      reason: `Kpugi Creator Payout - ${ref}`,
+    });
+
+    if (!transferRes.success) {
+      throw new Error(`Paystack Transfer Failed: ${transferRes.error || 'Failed to initiate transfer'}`);
+    }
+
+    // Check if transfer requires OTP verification from Paystack
+    if (transferRes.requiresOtp) {
+      await supabase
+        .from('payout_requests')
+        .update({
+          paystack_transfer_code: transferRes.transferCode || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payoutRequestId);
+
+      return {
+        success: true,
+        requiresOtp: true,
+        transferCode: transferRes.transferCode,
+        message: 'Paystack transfer initiated. Please enter the OTP sent to your phone to finalize.',
+      };
+    }
+
+    // Success without OTP
     await supabase
-      .from('wallet_transactions')
-      .update({ status: 'completed' })
-      .eq('paystack_reference', payout.reference);
+      .from('payout_requests')
+      .update({
+        status: 'completed',
+        paystack_transfer_code: transferRes.transferCode || null,
+        processed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payoutRequestId);
+
+    if (ref) {
+      await supabase
+        .from('wallet_transactions')
+        .update({ status: 'completed' })
+        .eq('paystack_reference', ref);
+    }
+  } else {
+    // Manual External Settlement
+    await supabase
+      .from('payout_requests')
+      .update({
+        status: 'completed',
+        admin_notes: transferNote || 'Manual external bank settlement',
+        processed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payoutRequestId);
+
+    if (ref) {
+      await supabase
+        .from('wallet_transactions')
+        .update({ status: 'completed' })
+        .eq('paystack_reference', ref);
+    }
   }
 
-  // 4. Log audit event
+  // 3. Notify Creator
+  const { data: creatorProfile } = await supabase
+    .from('profiles')
+    .select('clerk_id, email')
+    .eq('id', payout.profile_id)
+    .single();
+
+  if (creatorProfile) {
+    const maskedAcc = payout.account_number
+      ? `****${payout.account_number.slice(-4)}`
+      : '****Bank';
+
+    notifyCreatorWithdrawalCompleted({
+      clerkId: creatorProfile.clerk_id,
+      email: creatorProfile.email,
+      amount: amountNum,
+      bankName: payout.bank_name || 'Bank',
+      accountMasked: maskedAcc,
+      reference: ref,
+      profileId: payout.profile_id,
+    }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
+  }
+
+  // 4. Log governance audit trail
   await logAuditEvent({
     profileId: adminId,
     actorRole: 'admin',
-    action: 'payout.approved',
+    action: 'payout.disbursed',
     targetTable: 'payout_requests',
     targetId: payoutRequestId,
-    details: `Admin approved payout of ₦${Number(payout.amount).toLocaleString()} via ${mode} (${transferNote || 'Standard Settlement'})`,
+    details: `Admin disbursed payout of ₦${amountNum.toLocaleString()} via ${mode} (${transferNote || 'Standard Settlement'})`,
     payload: {
       payoutRequestId,
       creatorProfileId: payout.profile_id,
-      amount: payout.amount,
+      amount: amountNum,
       mode,
       bankName: payout.bank_name,
       accountNumber: payout.account_number,
-      reference: payout.reference,
+      reference: ref,
       note: transferNote,
     },
   });
 
   revalidatePath('/admin/finances');
-  return { success: true, message: `Payout request marked as completed successfully.` };
+  revalidatePath('/c/wallet');
+  return { success: true, message: `Payout request disbursed and settled successfully.` };
+}
+
+/**
+ * finalizePaystackTransferAction
+ * Submits OTP received from Paystack to finalize a transfer
+ */
+export async function finalizePaystackTransferAction(
+  payoutRequestId: string,
+  transferCode: string,
+  otp: string
+) {
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
+
+  if (!transferCode || !otp) {
+    throw new Error('Transfer code and OTP are required.');
+  }
+
+  const finalRes = await finalizePaystackTransfer({
+    transferCode,
+    otp,
+  });
+
+  if (!finalRes.success) {
+    throw new Error(`OTP Finalization Failed: ${finalRes.error || finalRes.message || 'Invalid OTP'}`);
+  }
+
+  // Update payout request and wallet transactions to completed
+  await supabase
+    .from('payout_requests')
+    .update({
+      status: 'completed',
+      processed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', payoutRequestId);
+
+  const { data: payout } = await supabase
+    .from('payout_requests')
+    .select('*')
+    .eq('id', payoutRequestId)
+    .single();
+
+  const ref = payout?.reference || payout?.transfer_reference;
+  if (ref) {
+    await supabase
+      .from('wallet_transactions')
+      .update({ status: 'completed' })
+      .eq('paystack_reference', ref);
+  }
+
+  // Notify Creator
+  if (payout) {
+    const { data: creatorProfile } = await supabase
+      .from('profiles')
+      .select('clerk_id, email')
+      .eq('id', payout.profile_id)
+      .single();
+
+    if (creatorProfile) {
+      const maskedAcc = payout.account_number
+        ? `****${payout.account_number.slice(-4)}`
+        : '****Bank';
+
+      notifyCreatorWithdrawalCompleted({
+        clerkId: creatorProfile.clerk_id,
+        email: creatorProfile.email,
+        amount: Number(payout.amount) || 0,
+        bankName: payout.bank_name || 'Bank',
+        accountMasked: maskedAcc,
+        reference: ref,
+        profileId: payout.profile_id,
+      }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
+    }
+  }
+
+  await logAuditEvent({
+    profileId: adminId,
+    actorRole: 'admin',
+    action: 'payout.finalized_otp',
+    targetTable: 'payout_requests',
+    targetId: payoutRequestId,
+    details: `Admin finalized Paystack transfer with OTP for request #${payoutRequestId.slice(0, 8)}`,
+    payload: { payoutRequestId, transferCode },
+  });
+
+  revalidatePath('/admin/finances');
+  revalidatePath('/c/wallet');
+  return { success: true, message: 'Transfer finalized with OTP successfully!' };
+}
+
+/**
+ * disburseBulkPayoutsAction
+ * Processes multiple creator payouts in bulk via Paystack's Bulk Transfer API
+ */
+export async function disburseBulkPayoutsAction(payoutRequestIds: string[]) {
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
+
+  if (!Array.isArray(payoutRequestIds) || payoutRequestIds.length === 0) {
+    throw new Error('Please select at least one payout request to disburse.');
+  }
+
+  // 1. Fetch all selected payout requests that are not yet completed
+  const { data: payouts, error: fetchErr } = await supabase
+    .from('payout_requests')
+    .select('*')
+    .in('id', payoutRequestIds)
+    .in('status', ['processing', 'approved']);
+
+  if (fetchErr || !payouts || payouts.length === 0) {
+    throw new Error('No eligible pending or approved payout requests found to process.');
+  }
+
+  // 2. Prepare bulk transfers list
+  const transfersToProcess = [];
+  const payoutMap = new Map<string, any>();
+
+  for (const payout of payouts) {
+    const recipientCode = await getOrCreateRecipientCode(supabase, payout);
+    if (!recipientCode) {
+      console.warn(`[Bulk Payout] Skipping payout ${payout.id}: No Paystack recipient code.`);
+      continue;
+    }
+
+    const ref = payout.reference || payout.transfer_reference;
+    transfersToProcess.push({
+      amountInKobo: Math.round(Number(payout.amount) * 100),
+      recipientCode,
+      reference: ref,
+      reason: `Kpugi Batch Payout - ${ref}`,
+    });
+    payoutMap.set(ref.toUpperCase(), payout);
+  }
+
+  if (transfersToProcess.length === 0) {
+    throw new Error('Could not resolve recipient codes for any of the selected payout requests.');
+  }
+
+  // 3. Initiate Bulk Transfer via Paystack API
+  const bulkRes = await initiatePaystackBulkTransfer({
+    transfers: transfersToProcess,
+  });
+
+  if (!bulkRes.success) {
+    throw new Error(`Paystack Bulk Transfer Failed: ${bulkRes.error || bulkRes.message || 'Unknown error'}`);
+  }
+
+  // 4. Update status of disbursed payouts in database
+  const successfulRefs: string[] = [];
+  let totalDisbursed = 0;
+
+  for (const item of transfersToProcess) {
+    const matchedPayout = payoutMap.get(item.reference.toUpperCase());
+    if (matchedPayout) {
+      successfulRefs.push(matchedPayout.id);
+      totalDisbursed += Number(matchedPayout.amount) || 0;
+
+      await supabase
+        .from('payout_requests')
+        .update({
+          status: 'completed',
+          processed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', matchedPayout.id);
+
+      const ref = matchedPayout.reference || matchedPayout.transfer_reference;
+      if (ref) {
+        await supabase
+          .from('wallet_transactions')
+          .update({ status: 'completed' })
+          .eq('paystack_reference', ref);
+      }
+
+      // Send completion notifications asynchronously
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('clerk_id, email')
+        .eq('id', matchedPayout.profile_id)
+        .single();
+
+      if (creatorProfile) {
+        const maskedAcc = matchedPayout.account_number
+          ? `****${matchedPayout.account_number.slice(-4)}`
+          : '****Bank';
+
+        notifyCreatorWithdrawalCompleted({
+          clerkId: creatorProfile.clerk_id,
+          email: creatorProfile.email,
+          amount: Number(matchedPayout.amount) || 0,
+          bankName: matchedPayout.bank_name || 'Bank',
+          accountMasked: maskedAcc,
+          reference: ref,
+          profileId: matchedPayout.profile_id,
+        }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
+      }
+    }
+  }
+
+  // 5. Governance Audit Event for Bulk Disbursement
+  await logAuditEvent({
+    profileId: adminId,
+    actorRole: 'admin',
+    action: 'payout.bulk_disbursed',
+    targetTable: 'payout_requests',
+    targetId: `BULK-${new Date().toISOString().slice(0, 10)}`,
+    details: `Admin processed bulk disbursement of ${successfulRefs.length} creator payouts totalling ₦${totalDisbursed.toLocaleString()} via Paystack Bulk Transfer API.`,
+    payload: {
+      count: successfulRefs.length,
+      totalAmount: totalDisbursed,
+      payoutIds: successfulRefs,
+    },
+  });
+
+  revalidatePath('/admin/finances');
+  revalidatePath('/c/wallet');
+  return {
+    success: true,
+    count: successfulRefs.length,
+    totalAmount: totalDisbursed,
+    message: `Disbursed ${successfulRefs.length} payouts totalling ₦${totalDisbursed.toLocaleString()} via Paystack Bulk Transfer.`,
+  };
 }
 
 /**
@@ -233,7 +678,8 @@ export async function rejectPayoutRequestAction(
   reference: string,
   reason: string
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
 
   if (!payoutRequestId) {
     throw new Error('Payout request ID is required.');
@@ -248,18 +694,44 @@ export async function rejectPayoutRequestAction(
   if (reference) {
     const { data: rpcData, error: rpcErr } = await supabase.rpc(
       'atomic_rollback_withdrawal',
-      { p_reference: reference }
+      { p_reference: reference, p_reason: reason.trim() }
     );
     if (!rpcErr && rpcData?.success) {
       rollbackSuccess = true;
     }
   }
 
-  // 2. If RPC was not applied, update status directly
+  // 2. If RPC was not applied, update status and refund balance directly
   if (!rollbackSuccess) {
+    const { data: payout } = await supabase
+      .from('payout_requests')
+      .select('profile_id, amount')
+      .eq('id', payoutRequestId)
+      .single();
+
+    if (payout) {
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('id, balance')
+        .eq('profile_id', payout.profile_id)
+        .eq('wallet_type', 'creator_earnings')
+        .single();
+
+      if (wallet) {
+        await supabase
+          .from('wallets')
+          .update({ balance: Number(wallet.balance) + Number(payout.amount) })
+          .eq('id', wallet.id);
+      }
+    }
+
     await supabase
       .from('payout_requests')
-      .update({ status: 'failed' })
+      .update({
+        status: 'rejected',
+        rejection_reason: reason.trim(),
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', payoutRequestId);
 
     if (reference) {
@@ -287,9 +759,10 @@ export async function rejectPayoutRequestAction(
   });
 
   revalidatePath('/admin/finances');
+  revalidatePath('/c/wallet');
   return {
     success: true,
-    message: `Payout request rejected. Funds have been rolled back to creator balance.`,
+    message: `Payout request rejected. Funds have been refunded to the creator's wallet.`,
   };
 }
 
@@ -303,7 +776,8 @@ export async function manualWalletAdjustmentAction(
   direction: 'credit' | 'debit',
   reason: string
 ) {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
 
   if (!walletId) {
     throw new Error('Wallet ID is required.');
@@ -398,7 +872,8 @@ export async function manualWalletAdjustmentAction(
  * Executes Postgres RPC to recompute and reconcile all wallet balances
  */
 export async function runReconciliationAuditAction() {
-  const { supabase, profileId: adminId } = await requireAdminSession();
+  const { profileId: adminId } = await requireAdminSession();
+  const supabase = createAdminClient();
 
   let rpcResult: any = null;
   try {

@@ -6,7 +6,8 @@ import { CreatorEarningsData } from '@/lib/supabase/creator';
 import { requestPayoutAction, resolveAndSaveBankAccountAction, getNigerianBanksAction, deleteBankAccountAction, setDefaultBankAccountAction } from '@/app/actions/creator';
 import { FALLBACK_NIGERIAN_BANKS, BankOption } from '@/lib/paystack/banks';
 import BankLogo from '@/components/ui/BankLogo';
-import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, ChevronDown, Clock, Filter, Download, Eye, TrendingUp, Hash, Trash2 } from 'lucide-react';
+import { CreditCard, Info, Plus, ShieldCheck, ArrowUpRight, CheckCircle2, Building2, ChevronRight, ChevronDown, Clock, Filter, Download, Eye, TrendingUp, Hash, Trash2, Calendar, AlertCircle } from 'lucide-react';
+import { formatScheduledFriday } from '@/lib/utils/payout-schedule';
 
 interface CreatorEarningsViewProps {
   data: CreatorEarningsData;
@@ -346,6 +347,8 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       status: statusLabel,
       isClearing,
       clearanceAt: tx.clearance_at,
+      scheduledFor: tx.scheduled_for || null,
+      rejectionReason: tx.rejection_reason || null,
       viewsCount: tx.views_count || tx.views_scraped || tx.views_delta || null,
       viewsScraped: tx.views_scraped,
       viewsDelta: tx.views_delta,
@@ -528,15 +531,25 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                 <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 animate-pulse" />
                                 Clearing ({formatHoursRemaining(tx.clearanceAt)})
                               </span>
-                            ) : tx.status === 'Completed' || tx.status === 'Success' ? (
+                            ) : tx.status === 'Completed' || tx.status === 'Success' || tx.status === 'Cleared' ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 Cleared
+                              </span>
+                            ) : tx.status === 'Approved' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+                                <ShieldCheck className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                Approved (Friday Batch)
                               </span>
                             ) : tx.status === 'Processing' ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                                 <Clock className="w-3 h-3 text-blue-600 dark:text-blue-400 animate-pulse" />
                                 Processing
+                              </span>
+                            ) : tx.status === 'Rejected' || tx.status === 'Failed' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30">
+                                <AlertCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                Rejected (Refunded)
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10">
@@ -567,20 +580,32 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                             <Building2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                                             Direct Bank Withdrawal
                                           </span>
-                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                            tx.status === 'Completed' || tx.status === 'Cleared'
+                                              ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                                              : tx.status === 'Approved'
+                                              ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300'
+                                              : tx.status === 'Rejected' || tx.status === 'Failed'
+                                              ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300'
+                                              : 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300'
+                                          }`}>
                                             {tx.status}
                                           </span>
                                         </div>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">
                                           {tx.status === 'Completed' || tx.status === 'Cleared' || tx.status === 'Success'
                                             ? `Disbursed to ${tx.bankName || 'bank account'} (${tx.accountNumber ? '****' + tx.accountNumber.slice(-4) : 'NUBAN'}) via direct settlement.`
-                                            : `Disbursement request of ₦${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} has been submitted and queued for bank settlement.`}
+                                            : tx.status === 'Approved'
+                                            ? `Approved by administrator for weekly Friday settlement${tx.scheduledFor ? ` on ${formatScheduledFriday(tx.scheduledFor)}` : ''}. Bank transfer will be automatically disbursed.`
+                                            : tx.status === 'Rejected' || tx.status === 'Failed'
+                                            ? `Withdrawal request was rejected${tx.rejectionReason ? `: "${tx.rejectionReason}"` : ''}. ₦${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} has been safely refunded to your wallet balance.`
+                                            : `Disbursement request of ₦${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} received. Kpugi clears creator payouts weekly on Fridays${tx.scheduledFor ? ` (Scheduled for batch: ${formatScheduledFriday(tx.scheduledFor)})` : ''}. Currently under admin review.`}
                                         </p>
                                       </div>
                                     </div>
 
                                     {/* Withdrawal Metric Cards */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                                       {/* Box 1: Destination Account */}
                                       <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -608,7 +633,24 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                         </div>
                                       </div>
 
-                                      {/* Box 3: Audit Reference */}
+                                      {/* Box 3: Friday Settlement Cycle */}
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                          <Calendar className="w-3 h-3 text-slate-400" /> Settlement Cycle
+                                        </span>
+                                        <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                                          {tx.scheduledFor ? formatScheduledFriday(tx.scheduledFor) : 'Next Friday Batch'}
+                                        </div>
+                                        <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                          {tx.status === 'Completed' || tx.status === 'Cleared'
+                                            ? 'Settlement finalized'
+                                            : tx.status === 'Approved'
+                                            ? 'Approved for batch'
+                                            : 'Weekly batch queue'}
+                                        </div>
+                                      </div>
+
+                                      {/* Box 4: Audit Reference */}
                                       <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                           <Hash className="w-3 h-3 text-slate-400" /> Reference & Timestamp

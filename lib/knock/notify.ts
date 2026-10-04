@@ -48,8 +48,12 @@ export async function triggerNotification({
     });
 
     return { success: true, result };
-  } catch (error) {
-    console.error('[Knock] Error triggering workflow:', error);
+  } catch (error: any) {
+    if (error?.status === 404 || error?.name === 'NotFoundException') {
+      console.warn(`[Knock] Workflow '${workflowKey}' is not configured in Knock dashboard. In-app feed skipped.`);
+    } else {
+      console.error('[Knock] Error triggering workflow:', error);
+    }
     return { success: false, error };
   }
 }

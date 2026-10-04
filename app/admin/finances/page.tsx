@@ -1,5 +1,6 @@
 import React from 'react';
 import { requireAdminSession } from '@/lib/admin/auth';
+import { createAdminClient } from '@/lib/supabase/server';
 import FinancesDashboardManager, {
   WalletWithProfile,
   CampaignEscrowItem,
@@ -14,7 +15,8 @@ import { PayoutRequestItem } from '@/components/admin/finances/modals/PayoutActi
 export const revalidate = 0;
 
 export default async function AdminFinancesPage() {
-  const { supabase } = await requireAdminSession();
+  await requireAdminSession();
+  const supabase = createAdminClient();
 
   // 1. Fetch metrics, raw tables, and profiles in parallel
   const [
@@ -153,12 +155,19 @@ export default async function AdminFinancesPage() {
     return {
       id: p.id,
       profile_id: p.profile_id,
+      bank_account_id: p.bank_account_id,
       amount: Number(p.amount) || 0,
       status: p.status,
       bank_name: p.bank_name,
       account_number: p.account_number,
       account_name: p.account_name,
-      reference: p.reference,
+      reference: p.reference || p.transfer_reference,
+      transfer_reference: p.transfer_reference,
+      scheduled_for: p.scheduled_for,
+      rejection_reason: p.rejection_reason,
+      admin_notes: p.admin_notes,
+      paystack_transfer_code: p.paystack_transfer_code,
+      processed_at: p.processed_at,
       created_at: p.created_at,
       profile: profile
         ? {

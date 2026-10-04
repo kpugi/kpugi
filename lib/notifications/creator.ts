@@ -448,6 +448,71 @@ export async function notifyCreatorWithdrawalCompleted({
   });
 }
 
+export async function notifyCreatorWithdrawalRequested({
+  clerkId,
+  email,
+  amount,
+  bankName,
+  accountMasked,
+  reference,
+  scheduledFridayFormatted,
+  profileId,
+}: {
+  clerkId: string;
+  email: string;
+  amount: number;
+  bankName: string;
+  accountMasked: string;
+  reference: string;
+  scheduledFridayFormatted: string;
+  profileId?: string;
+}) {
+  await triggerNotification({
+    workflowKey: 'withdrawal-requested',
+    recipients: [clerkId],
+    data: {
+      amount: `₦${amount.toLocaleString()}`,
+      bankName,
+      accountMasked,
+      reference,
+      scheduledFriday: scheduledFridayFormatted,
+      action_url: '/c/wallet',
+    },
+    profileId,
+  });
+
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const formattedAmount = `₦${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+  const html = renderReusableEmailTemplate({
+    to: email,
+    subject: `Withdrawal Queued ⏳ (Friday Batch: ${scheduledFridayFormatted})`,
+    previewText: `Your withdrawal request of ${formattedAmount} has been received and queued.`,
+    headline: 'Withdrawal Queued for Settlement ⏳',
+    subtitle: `We received your payout request. Kpugi clears bank payouts on weekly Friday batches. Your funds are scheduled for the batch on ${scheduledFridayFormatted}.`,
+    details: [
+      { label: 'DESTINATION BANK', value: bankName },
+      { label: 'ACCOUNT NUMBER', value: accountMasked, isMonospace: true },
+      { label: 'AMOUNT', value: formattedAmount, isMonospace: true },
+      { label: 'REFERENCE', value: reference, isMonospace: true },
+      { label: 'SCHEDULED SETTLEMENT', value: scheduledFridayFormatted },
+      { label: 'STATUS', value: 'Processing (Admin Review)' },
+    ],
+    cta: {
+      label: 'View Wallet & Settlement Status',
+      url: `${appUrl}/c/wallet`,
+      subtext: 'Track your pending batch and view live clearance progress.',
+    },
+  });
+
+  await sendEmail({
+    to: email,
+    subject: `Withdrawal Queued ⏳ (Friday Batch: ${scheduledFridayFormatted})`,
+    html,
+  });
+}
+
+
 export async function notifyJoinedCreatorsCampaignCompleted({
   campaignTitle,
   campaignId,

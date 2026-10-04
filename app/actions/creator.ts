@@ -11,7 +11,12 @@ import {
   createPaystackRecipient,
   initiatePaystackTransfer,
 } from '@/lib/paystack/payout';
-import { notifyCreatorWithdrawalCompleted, notifyCreatorJoinedCampaign } from '@/lib/notifications/creator';
+import {
+  notifyCreatorWithdrawalCompleted,
+  notifyCreatorWithdrawalRequested,
+  notifyCreatorJoinedCampaign,
+} from '@/lib/notifications/creator';
+import { calculateScheduledFridayBatch, formatScheduledFriday } from '@/lib/utils/payout-schedule';
 import { validatePostUrlOwnership } from '@/lib/utils/social-url';
 import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
 
@@ -34,8 +39,8 @@ export async function getNigerianBanksAction(): Promise<BankOption[]> {
         .map((b: any) => ({ code: b.code, name: b.name }))
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
     }
-  } catch (err) {
-    console.error('Failed to fetch bank list from Paystack:', err);
+  } catch (err: any) {
+    console.warn('[Paystack Bank Directory] Live bank list fetch timed out, falling back to local registry.');
   }
   return FALLBACK_NIGERIAN_BANKS;
 }
@@ -386,10 +391,12 @@ export async function requestPayoutAction(formData: FormData) {
     return { success: false, error: "Bag ain't deep enough yet 💼... Insufficient wallet balance for this withdrawal." };
   }
 
-  // 4. Generate branded reference code (e.g. KPG-#KPUG1)
+  // 4. Generate branded reference code (e.g. KPG-XXXXX) & compute Friday settlement batch
   const refCode = generateKpugiPayoutReference();
+  const scheduledFriday = calculateScheduledFridayBatch(new Date());
+  const scheduledFridayFormatted = formatScheduledFriday(scheduledFriday);
 
-  // 5. Ensure Paystack Recipient Code
+  // 5. Ensure Paystack Recipient Code is created and cached for admin disbursal
   let recipientCode = targetBank.recipient_code;
   if (!recipientCode) {
     const recipientRes = await createPaystackRecipient({
@@ -398,25 +405,18 @@ export async function requestPayoutAction(formData: FormData) {
       bankCode: targetBank.bank_code,
     });
 
-    if (!recipientRes.success || !recipientRes.recipientCode) {
-      return {
-        success: false,
-        error: recipientRes.error || 'Failed to setup bank transfer recipient with Paystack.',
-      };
-    }
-
-    recipientCode = recipientRes.recipientCode;
-
-    // Persist recipient code on bank_accounts table if id exists
-    if (targetBank.id) {
-      await supabase
-        .from('bank_accounts')
-        .update({ recipient_code: recipientCode })
-        .eq('id', targetBank.id);
+    if (recipientRes.success && recipientRes.recipientCode) {
+      recipientCode = recipientRes.recipientCode;
+      if (targetBank.id) {
+        await supabase
+          .from('bank_accounts')
+          .update({ recipient_code: recipientCode })
+          .eq('id', targetBank.id);
+      }
     }
   }
 
-  // 6. Atomic Wallet Update: Lock row and deduct balance via DB atomic function
+  // 6. Atomic Wallet Update: Lock row, hold funds, and insert processing withdrawal
   let atomicUsed = false;
   try {
     const { data: rpcRes, error: rpcErr } = await supabase.rpc('atomic_request_withdrawal', {
@@ -426,6 +426,8 @@ export async function requestPayoutAction(formData: FormData) {
       p_bank_name: targetBank.bank_name || 'Bank',
       p_account_number: targetBank.account_number || '',
       p_account_name: targetBank.account_name || userProfile.profile.full_name || 'Creator',
+      p_bank_account_id: targetBank.id || null,
+      p_scheduled_for: scheduledFriday.toISOString(),
     });
 
     if (!rpcErr && rpcRes) {
@@ -441,7 +443,7 @@ export async function requestPayoutAction(formData: FormData) {
     atomicUsed = false;
   }
 
-  // Fallback if atomic procedure is not installed in database yet
+  // Fallback if atomic procedure is not installed in database
   if (!atomicUsed) {
     const newBalance = Math.round((currentBalance - amount) * 100) / 100;
     const { error: walletError } = await supabase
@@ -454,7 +456,7 @@ export async function requestPayoutAction(formData: FormData) {
       return { success: false, error: 'Failed to update wallet balance. Please try again.' };
     }
 
-    // Record transaction in wallet_transactions table
+    // Record transaction in wallet_transactions table with status 'processing'
     await supabase.from('wallet_transactions').insert({
       wallet_id: wallet!.id,
       type: 'withdrawal',
@@ -462,105 +464,43 @@ export async function requestPayoutAction(formData: FormData) {
       gross_amount: amount,
       fee_amount: 0,
       net_amount: -amount,
-      status: 'completed',
+      status: 'processing',
       paystack_reference: refCode,
       created_at: new Date().toISOString(),
     });
 
-    // Record transaction in payout_requests table
+    // Record transaction in payout_requests table with status 'processing' and scheduled_for
     await supabase.from('payout_requests').insert({
       profile_id: userProfile.profile.id,
+      bank_account_id: targetBank.id || null,
       amount: amount,
       status: 'processing',
-      bank_name: targetBank.bank_name,
-      account_number: targetBank.account_number,
-      account_name: targetBank.account_name || 'Creator',
+      bank_name: targetBank.bank_name || 'Bank',
+      account_number: targetBank.account_number || '',
+      account_name: targetBank.account_name || userProfile.profile.full_name || 'Creator',
       reference: refCode,
+      transfer_reference: refCode,
+      scheduled_for: scheduledFriday.toISOString(),
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
   }
 
-  // 7. Initiate Live Transfer via Paystack
-  const transferRes = await initiatePaystackTransfer({
-    recipientCode,
-    amountInKobo: Math.round(amount * 100),
-    reference: refCode,
-    reason: `Kpugi Creator Earnings Withdrawal - ${refCode}`,
-  });
-
-  // Handle Paystack starter tier restriction or automated queueing gracefully
-  const isStarterTierRestriction =
-    !transferRes.success &&
-    (transferRes.error?.toLowerCase().includes('starter business') ||
-      transferRes.error?.toLowerCase().includes('third party payout') ||
-      transferRes.error?.toLowerCase().includes('cannot initiate') ||
-      transferRes.error?.toLowerCase().includes('starter'));
-
-  if (!transferRes.success && !isStarterTierRestriction) {
-    // Rollback wallet balance if transfer was rejected due to other technical errors
-    let rolledBack = false;
-    try {
-      const { data: rbRes, error: rbErr } = await supabase.rpc('atomic_rollback_withdrawal', {
-        p_reference: refCode,
-      });
-      if (!rbErr && rbRes?.success) {
-        rolledBack = true;
-      }
-    } catch {
-      rolledBack = false;
-    }
-
-    if (!rolledBack) {
-      // Safe fallback: fetch current balance and increment by amount rather than overwriting with stale currentBalance
-      const { data: latestW } = await supabase.from('wallets').select('balance').eq('id', wallet!.id).single();
-      const restored = Math.round(((latestW?.balance || 0) + amount) * 100) / 100;
-      await supabase.from('wallets').update({ balance: restored }).eq('id', wallet!.id);
-
-      await supabase
-        .from('wallet_transactions')
-        .update({ status: 'failed' })
-        .eq('paystack_reference', refCode);
-
-      await supabase
-        .from('payout_requests')
-        .update({ status: 'failed' })
-        .eq('reference', refCode);
-    }
-
-    return {
-      success: false,
-      error: `Paystack Transfer Failed: ${transferRes.error || 'Could not process transfer.'}`,
-    };
-  }
-
-  const finalStatus = transferRes.success
-    ? (transferRes.status || 'success')
-    : 'processing';
-
-  // 8. Update payout_requests with transfer details if available
-  await supabase
-    .from('payout_requests')
-    .update({
-      status: finalStatus,
-      paystack_transfer_code: transferRes.transferCode || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('reference', refCode);
-
-  // 10. Fire Withdrawal Notification (Knock in-app feed + Resend branded email)
+  // 7. Fire Withdrawal Queued Notification (In-App Feed + Resend Branded Email)
   const maskedAcc = targetBank.account_number
     ? `****${targetBank.account_number.slice(-4)}`
     : '****Bank';
 
-  notifyCreatorWithdrawalCompleted({
+  notifyCreatorWithdrawalRequested({
     clerkId: userProfile.profile.clerk_id,
     email: userProfile.profile.email,
     amount,
-    bankName: targetBank.bank_name,
+    bankName: targetBank.bank_name || 'Bank',
     accountMasked: maskedAcc,
     reference: refCode,
+    scheduledFridayFormatted,
     profileId: userProfile.profile.id,
-  }).catch((err) => console.error('[notifyCreatorWithdrawalCompleted] Error:', err));
+  }).catch((err) => console.error('[notifyCreatorWithdrawalRequested] Error:', err));
 
   // Immutable Creator Audit Trail
   logAuditEvent({
@@ -570,19 +510,27 @@ export async function requestPayoutAction(formData: FormData) {
     actionCategory: 'finance',
     targetTable: 'payout_requests',
     targetId: refCode,
-    details: `Requested earnings withdrawal of ₦${amount.toLocaleString()} to ${targetBank.bank_name} (${maskedAcc})`,
+    details: `Submitted withdrawal request of ₦${amount.toLocaleString()} to ${targetBank.bank_name || 'Bank'} (${maskedAcc}), queued for Friday batch on ${scheduledFridayFormatted}.`,
     payload: {
       amount,
       bank_name: targetBank.bank_name,
+      account_number: maskedAcc,
       reference: refCode,
-      status: finalStatus,
+      scheduled_for: scheduledFriday.toISOString(),
+      status: 'processing',
     },
   }).catch((err) => console.error('[requestPayoutAction] Audit error:', err));
 
   revalidatePath('/c/wallet');
   revalidatePath('/c/dashboard');
   revalidatePath('/c/payouts');
-  return { success: true, reference: refCode };
+  revalidatePath('/admin/finances');
+  return {
+    success: true,
+    reference: refCode,
+    scheduledFor: scheduledFriday.toISOString(),
+    scheduledFridayFormatted,
+  };
 }
 
 // ─── 3. Bank Account Resolution Action ─────────────────────────────────────────

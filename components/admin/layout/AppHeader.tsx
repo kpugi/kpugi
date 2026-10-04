@@ -19,7 +19,12 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ profile }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = React.useState(false);
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -157,7 +162,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ profile }) => {
 
           {/* User Profile Area */}
           <div className="flex items-center gap-2.5 pl-2">
-            <UserButton afterSignOutUrl="/sign-in" />
+            {mounted ? (
+              <UserButton afterSignOutUrl="/sign-in" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-brand-500/20 text-brand-500 flex items-center justify-center text-xs font-bold font-mono">
+                {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'A'}
+              </div>
+            )}
             <div className="hidden sm:flex flex-col text-left">
               <span className="text-xs font-semibold font-display text-gray-800 dark:text-white/90 truncate max-w-[140px]">
                 {profile?.full_name || "Kpugi Clearance"}

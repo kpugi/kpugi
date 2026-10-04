@@ -640,14 +640,23 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
   // Map to group and consolidate all transactions by campaign_id
   const campaignTxMap = new Map<string, any>();
 
+  // Map payout_requests by reference for instant lookup & enrichment
+  const payoutMapByRef = new Map<string, any>();
+  payoutRequests.forEach((p: any) => {
+    if (p.reference) payoutMapByRef.set(p.reference.toUpperCase(), p);
+    if (p.transfer_reference) payoutMapByRef.set(p.transfer_reference.toUpperCase(), p);
+  });
+
   rawTransactions.forEach((tx: any) => {
     const isWithdrawal = tx.type === 'withdrawal' || Number(tx.amount || 0) < 0;
     if (isWithdrawal) {
-      const isAdminAdj = tx.paystack_reference?.startsWith('ADMIN_ADJ_');
-      const bName = isAdminAdj ? 'Admin Adjustment' : (primaryBank?.bank_name || 'Direct Bank');
-      const accNum = isAdminAdj ? 'Ledger Adjustment' : (primaryBank?.account_number || '');
-      const accName = isAdminAdj ? 'Platform Admin' : (primaryBank?.account_name || 'Creator');
       const ref = tx.paystack_reference || `KP-WDR-${tx.id.slice(0, 8).toUpperCase()}`;
+      const matchedPayout = payoutMapByRef.get(ref.toUpperCase());
+      const isAdminAdj = tx.paystack_reference?.startsWith('ADMIN_ADJ_');
+      const bName = matchedPayout?.bank_name || (isAdminAdj ? 'Admin Adjustment' : (primaryBank?.bank_name || 'Direct Bank'));
+      const accNum = matchedPayout?.account_number || (isAdminAdj ? 'Ledger Adjustment' : (primaryBank?.account_number || ''));
+      const accName = matchedPayout?.account_name || (isAdminAdj ? 'Platform Admin' : (primaryBank?.account_name || 'Creator'));
+      const withdrawalStatus = matchedPayout?.status || tx.status || 'processing';
 
       rawFormatted.push({
         id: tx.id,
@@ -668,7 +677,9 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
         bank_name: bName,
         account_number: accNum,
         account_name: accName,
-        status: tx.status === 'failed' ? 'failed' : 'completed',
+        status: withdrawalStatus,
+        scheduled_for: matchedPayout?.scheduled_for || null,
+        rejection_reason: matchedPayout?.rejection_reason || null,
         created_at: tx.created_at,
         settled_at: tx.created_at,
         clearance_at: tx.created_at,
@@ -764,6 +775,8 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
       account_number: accNum,
       account_name: accName,
       status: p.status === 'success' || p.status === 'completed' ? 'completed' : (p.status || 'processing'),
+      scheduled_for: p.scheduled_for || null,
+      rejection_reason: p.rejection_reason || null,
       created_at: p.created_at,
       settled_at: p.created_at,
       settlement_method: `Direct Bank Settlement (${bName})`,

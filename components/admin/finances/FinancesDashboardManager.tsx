@@ -41,6 +41,11 @@ import {
   Check,
   User,
   ShieldAlert,
+  Calendar,
+  Send,
+  CheckSquare,
+  Square,
+  Loader2,
 } from "lucide-react";
 import PayoutActionModal, {
   PayoutRequestItem,
@@ -55,7 +60,9 @@ import PaystackVerifyModal from "./modals/PaystackVerifyModal";
 import {
   TreasuryMetrics,
   runReconciliationAuditAction,
+  disburseBulkPayoutsAction,
 } from "@/app/actions/admin-finances";
+import { formatScheduledFriday } from "@/lib/utils/payout-schedule";
 
 export interface WalletWithProfile {
   id: string;
@@ -140,6 +147,8 @@ export default function FinancesDashboardManager({
   const [payoutStatusFilter, setPayoutStatusFilter] = useState("all");
   const [payoutPage, setPayoutPage] = useState(1);
   const payoutPerPage = 12;
+  const [selectedPayoutIds, setSelectedPayoutIds] = useState<Set<string>>(new Set());
+  const [isBulkDisbursing, setIsBulkDisbursing] = useState(false);
 
   // Deposits Filters
   const [depositSearch, setDepositSearch] = useState("");
@@ -273,9 +282,13 @@ export default function FinancesDashboardManager({
           p.account_name.toLowerCase().includes(payoutSearch.toLowerCase())) ||
         (p.account_number && p.account_number.includes(payoutSearch));
 
+      const pStatus = (p.status || "").toLowerCase();
+      const filter = payoutStatusFilter.toLowerCase();
       const matchesStatus =
-        payoutStatusFilter === "all" ||
-        p.status.toLowerCase() === payoutStatusFilter;
+        filter === "all" ||
+        (filter === "pending" || filter === "processing"
+          ? pStatus === "pending" || pStatus === "processing"
+          : pStatus === filter);
 
       return matchesSearch && matchesStatus;
     });
@@ -289,6 +302,63 @@ export default function FinancesDashboardManager({
     const start = (payoutPage - 1) * payoutPerPage;
     return filteredPayouts.slice(start, start + payoutPerPage);
   }, [filteredPayouts, payoutPage]);
+
+  // Bulk Selection Helpers
+  const toggleSelectAllPayouts = () => {
+    if (selectedPayoutIds.size === paginatedPayouts.length && paginatedPayouts.length > 0) {
+      setSelectedPayoutIds(new Set());
+    } else {
+      const newSet = new Set<string>();
+      paginatedPayouts.forEach((p) => newSet.add(p.id));
+      setSelectedPayoutIds(newSet);
+    }
+  };
+
+  const toggleSelectPayout = (id: string) => {
+    setSelectedPayoutIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectedPayoutsTotalAmount = useMemo(() => {
+    return payoutRequests
+      .filter((p) => selectedPayoutIds.has(p.id))
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  }, [payoutRequests, selectedPayoutIds]);
+
+  const handleBulkDisburse = async () => {
+    const ids = Array.from(selectedPayoutIds);
+    if (ids.length === 0) return;
+    if (
+      !confirm(
+        `Confirm Paystack Bulk Disbursal:\n\nDisburse ₦${selectedPayoutsTotalAmount.toLocaleString()} to ${ids.length} selected creators via Paystack Bulk Transfer API?`
+      )
+    ) {
+      return;
+    }
+
+    setIsBulkDisbursing(true);
+    setBannerAlert(null);
+    try {
+      const res = await disburseBulkPayoutsAction(ids);
+      if (res.success) {
+        setBannerAlert({ type: "success", message: res.message });
+        setSelectedPayoutIds(new Set());
+      } else {
+        setBannerAlert({ type: "error", message: res.message || "Bulk disbursal failed." });
+      }
+    } catch (err: any) {
+      setBannerAlert({ type: "error", message: err.message || "Bulk transfer error." });
+    } finally {
+      setIsBulkDisbursing(false);
+    }
+  };
 
   // Filtered Deposits
   const depositTransactions = useMemo(() => {
@@ -381,12 +451,24 @@ export default function FinancesDashboardManager({
   const renderStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
-        return <Badge color="success">Completed</Badge>;
+      case "success":
+        return <Badge color="success">Settled</Badge>;
+      case "approved":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/60">
+            Approved (Batch)
+          </span>
+        );
       case "pending":
       case "processing":
-        return <Badge color="warning">Pending</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60">
+            Processing
+          </span>
+        );
       case "failed":
-        return <Badge color="error">Failed</Badge>;
+      case "rejected":
+        return <Badge color="error">Rejected</Badge>;
       case "cancelled":
         return <Badge color="light">Cancelled</Badge>;
       default:
@@ -1218,18 +1300,84 @@ export default function FinancesDashboardManager({
                 className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300"
               >
                 <option value="all">All Payout Statuses</option>
-                <option value="pending">Pending Review</option>
-                <option value="completed">Settled</option>
-                <option value="failed">Failed / Rolled Back</option>
+                <option value="processing">Processing (Needs Verdict)</option>
+                <option value="approved">Approved (Friday Batch)</option>
+                <option value="completed">Settled / Completed</option>
+                <option value="rejected">Rejected / Rolled Back</option>
               </select>
             </div>
           </div>
+
+          {/* Bulk Action Bar (Visible when 1 or more payouts are selected) */}
+          {selectedPayoutIds.size > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 shadow-xs">
+              <div className="flex items-center gap-2 text-xs text-purple-900 dark:text-purple-200 font-semibold">
+                <span className="w-6 h-6 rounded-full bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 flex items-center justify-center text-xs font-bold font-mono">
+                  {selectedPayoutIds.size}
+                </span>
+                <span>
+                  {selectedPayoutIds.size} request{selectedPayoutIds.size > 1 ? "s" : ""} selected • Total Payout:{" "}
+                  <strong>₦{selectedPayoutsTotalAmount.toLocaleString()}</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedPayoutIds(new Set())}
+                  disabled={isBulkDisbursing}
+                  className="text-xs"
+                >
+                  Deselect All
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleBulkDisburse}
+                  disabled={isBulkDisbursing}
+                  className="bg-purple-600 hover:bg-purple-700 text-white gap-1.5 text-xs shadow-xs"
+                >
+                  {isBulkDisbursing ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Processing Paystack Bulk Transfer...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Disburse Selected ({selectedPayoutIds.size}) via Paystack Bulk</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Table */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs dark:border-gray-800 dark:bg-gray-900">
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-gray-100 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-800/40">
+                  <TableCell
+                    isHeader
+                    className="py-2.5 px-3 text-center w-10 text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedPayoutIds.size > 0 &&
+                        paginatedPayouts.filter(
+                          (p) => p.status === "processing" || p.status === "approved"
+                        ).length > 0 &&
+                        paginatedPayouts
+                          .filter(
+                            (p) => p.status === "processing" || p.status === "approved"
+                          )
+                          .every((p) => selectedPayoutIds.has(p.id))
+                      }
+                      onChange={toggleSelectAllPayouts}
+                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    />
+                  </TableCell>
                   <TableCell
                     isHeader
                     className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500"
@@ -1264,6 +1412,12 @@ export default function FinancesDashboardManager({
                     isHeader
                     className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500"
                   >
+                    Friday Batch Date
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                  >
                     Requested At
                   </TableCell>
                   <TableCell
@@ -1279,23 +1433,38 @@ export default function FinancesDashboardManager({
                 {paginatedPayouts.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={9}
                       className="py-12 text-center text-xs text-gray-500 dark:text-gray-400"
                     >
-                      No creator payout requests found.
+                      No creator payout requests found matching your filter.
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedPayouts.map((p) => {
                     const formattedDate = new Date(p.created_at);
-                    const isPending =
-                      p.status === "pending" || p.status === "processing";
+                    const isProcessing = p.status === "processing" || p.status === "pending";
+                    const isApproved = p.status === "approved";
+                    const isEligibleForBulk = isProcessing || isApproved;
+                    const isSelected = selectedPayoutIds.has(p.id);
 
                     return (
                       <TableRow
                         key={p.id}
-                        className="border-b border-gray-100 transition-colors hover:bg-gray-50/50 dark:border-gray-800/60 dark:hover:bg-gray-800/30"
+                        className={`border-b border-gray-100 transition-colors hover:bg-gray-50/50 dark:border-gray-800/60 dark:hover:bg-gray-800/30 ${
+                          isSelected ? "bg-purple-50/40 dark:bg-purple-950/20" : ""
+                        }`}
                       >
+                        {/* Checkbox */}
+                        <TableCell className="py-3 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            disabled={!isEligibleForBulk}
+                            checked={isSelected}
+                            onChange={() => toggleSelectPayout(p.id)}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                          />
+                        </TableCell>
+
                         {/* Creator */}
                         <TableCell className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
@@ -1352,7 +1521,7 @@ export default function FinancesDashboardManager({
                         {/* Ref */}
                         <TableCell className="py-3 px-4">
                           <span className="font-mono text-xs text-gray-500">
-                            {p.reference || "N/A"}
+                            {p.reference || p.transfer_reference || "N/A"}
                           </span>
                         </TableCell>
 
@@ -1361,7 +1530,19 @@ export default function FinancesDashboardManager({
                           {renderStatusBadge(p.status)}
                         </TableCell>
 
-                        {/* Date */}
+                        {/* Friday Batch Settlement Date */}
+                        <TableCell className="py-3 px-4">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+                            <Calendar className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            <span className="font-medium">
+                              {p.scheduled_for
+                                ? formatScheduledFriday(p.scheduled_for)
+                                : "Next Friday"}
+                            </span>
+                          </div>
+                        </TableCell>
+
+                        {/* Date Requested */}
                         <TableCell className="py-3 px-4">
                           <div>
                             <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
@@ -1385,11 +1566,21 @@ export default function FinancesDashboardManager({
                         <TableCell className="py-3 px-4 text-right">
                           <Button
                             size="sm"
-                            variant={isPending ? "primary" : "outline"}
+                            variant={isProcessing ? "primary" : isApproved ? "outline" : "outline"}
                             onClick={() => setSelectedPayout(p)}
-                            className="text-xs"
+                            className={`text-xs ${
+                              isProcessing
+                                ? "bg-purple-600 hover:bg-purple-700 text-white"
+                                : isApproved
+                                ? "border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                : ""
+                            }`}
                           >
-                            {isPending ? "Process Payout" : "View Record"}
+                            {isProcessing
+                              ? "Pass Verdict"
+                              : isApproved
+                              ? "Disburse Now"
+                              : "View Record"}
                           </Button>
                         </TableCell>
                       </TableRow>

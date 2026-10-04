@@ -75,6 +75,11 @@ const NAV_ITEMS = [
 
 export default function AdminSidebar({ profile }: AdminSidebarProps) {
   const pathname = usePathname();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === '/admin') {
@@ -178,7 +183,13 @@ export default function AdminSidebar({ profile }: AdminSidebarProps) {
         {/* Current Operator Profile */}
         <div className="p-2.5 rounded-xl bg-[#0E1422] border border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
-            <UserButton afterSignOutUrl="/sign-in" />
+            {mounted ? (
+              <UserButton afterSignOutUrl="/sign-in" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold font-mono">
+                {profile.full_name ? profile.full_name.charAt(0).toUpperCase() : 'A'}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-medium text-slate-200 truncate">
