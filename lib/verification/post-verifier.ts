@@ -211,36 +211,72 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Facebook (Headless Browser & OpenGraph Extractor)
+    // 5. Facebook (Apify -> Bright Data -> OpenGraph Fallback)
     // ─────────────────────────────────────────────────────────────────────────
     if (platform === 'facebook') {
-      try {
-        const cp = await import('child_process');
-        const { promisify } = await import('util');
-        const path = await import('path');
-        const execRunner = promisify(cp['execFile']);
+      const path = await import('path');
+      const fs = await import('fs');
+      const cp = await import('child_process');
+      const { promisify } = await import('util');
+      const execRunner = promisify(cp.execFile);
 
-        const scriptPath = path.resolve(process.cwd(), '.scraper', 'extractors', 'meta_browser_extractor.js');
-        const { stdout } = await execRunner(process.execPath, [scriptPath, 'facebook', targetUrl], { timeout: 35000 });
-        const data = JSON.parse(stdout.trim());
+      // 1. Tier 1: Apify Facebook Extractor
+      const apifyTokens = (process.env.APIFY_API_TOKENS || process.env.APIFY_API_TOKEN || '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
 
-        if (data && data.reachable) {
-          return {
-            reachable: true,
-            platform: 'facebook',
-            authorHandle: data.author_name || data.uploader || urlParsed.extractedHandle,
-            authorName: data.author_name || data.uploader || null,
-            authorId: data.author_id || null,
-            postText: data.description || null,
-            title: data.title || 'Facebook Post',
-            avatarUrl: data.avatarUrl || null,
-          };
+      if (apifyTokens.length > 0) {
+        try {
+          const apifyScript = path.resolve(process.cwd(), '.scraper', 'extractors', 'apify_facebook.js');
+          if (fs.existsSync(apifyScript)) {
+            const { stdout } = await execRunner(process.execPath, [apifyScript, targetUrl], { timeout: 35000 });
+            if (stdout && stdout.trim()) {
+              const data = JSON.parse(stdout.trim());
+              if (data && data.reachable) {
+                return {
+                  reachable: true,
+                  platform: 'facebook',
+                  authorHandle: data.uploader || urlParsed.extractedHandle,
+                  authorName: data.uploader_name || data.uploader || null,
+                  authorId: data.uploader_id || null,
+                  postText: data.description || null,
+                  title: data.title || 'Facebook Post',
+                };
+              }
+            }
+          }
+        } catch {
+          // Fall through to Bright Data
         }
-      } catch (fbErr) {
-        // Fall through to desktop OpenGraph fetch
       }
 
-      // Fallback: fetch with Facebook crawler User-Agent
+      // 2. Tier 2: Bright Data Fallback
+      if (process.env.BRIGHT_DATA_API_KEY) {
+        try {
+          const bdScript = path.resolve(process.cwd(), '.scraper', 'extractors', 'brightdata_facebook.js');
+          if (fs.existsSync(bdScript)) {
+            const { stdout } = await execRunner(process.execPath, [bdScript, targetUrl], { timeout: 30000 });
+            if (stdout && stdout.trim()) {
+              const data = JSON.parse(stdout.trim());
+              if (data && data.reachable) {
+                return {
+                  reachable: true,
+                  platform: 'facebook',
+                  authorHandle: data.uploader || urlParsed.extractedHandle,
+                  authorName: data.uploader_name || data.uploader || null,
+                  postText: data.description || null,
+                  title: data.title || 'Facebook Post',
+                };
+              }
+            }
+          }
+        } catch {
+          // Fall through to OpenGraph fallback
+        }
+      }
+
+      // 3. Tier 3: OpenGraph & Facebook Crawler Fallback
       try {
         const res = await fetchWithTimeout(targetUrl, {
           headers: {
@@ -253,15 +289,20 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
           const html = await res.text();
           const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
           const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
-          return {
-            reachable: true,
-            platform: 'facebook',
-            authorHandle: titleMatch ? titleMatch[1] : urlParsed.extractedHandle,
-            postText: descMatch ? descMatch[1] : null,
-            title: titleMatch ? titleMatch[1] : 'Facebook Post',
-          };
+          const imageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+
+          if (descMatch || titleMatch) {
+            return {
+              reachable: true,
+              platform: 'facebook',
+              authorHandle: urlParsed.extractedHandle || (titleMatch ? titleMatch[1] : null),
+              postText: descMatch ? descMatch[1] : null,
+              title: titleMatch ? titleMatch[1] : 'Facebook Post',
+              avatarUrl: imageMatch ? imageMatch[1] : null,
+            };
+          }
         }
-      } catch (fallbackErr) {}
+      } catch {}
 
       return {
         reachable: false,
