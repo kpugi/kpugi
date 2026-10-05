@@ -47,10 +47,12 @@ import RawTelemetryModal from "./modals/RawTelemetryModal";
 import {
   getGitHubWorkflowStatusAction,
   getApifyStatusAction,
+  getBrightDataStatusAction,
   testScrapePlaygroundAction,
   triggerGlobalBatchScrapeAction,
   GitHubWorkflowRun,
   ApifySystemStatus,
+  BrightDataSystemStatus,
 } from "@/app/actions/admin-scraper";
 import {
   TikTokIcon,
@@ -126,6 +128,7 @@ interface ScraperDashboardManagerProps {
     error?: string;
   };
   initialApifyStatus: ApifySystemStatus;
+  initialBrightDataStatus: BrightDataSystemStatus;
   initialChecks: VerificationCheckRow[];
   initialAudits: SubmissionAuditRow[];
   extractorDistribution: Record<string, number>;
@@ -135,6 +138,7 @@ export default function ScraperDashboardManager({
   initialSummary,
   initialGitHubStatus,
   initialApifyStatus,
+  initialBrightDataStatus,
   initialChecks,
   initialAudits,
   extractorDistribution,
@@ -152,6 +156,9 @@ export default function ScraperDashboardManager({
   // Apify state
   const [apifyStatus, setApifyStatus] = useState(initialApifyStatus);
   const [isRefreshingApify, setIsRefreshingApify] = useState(false);
+
+  // Bright Data state
+  const [brightDataStatus, setBrightDataStatus] = useState(initialBrightDataStatus);
 
   // Global Scrape state
   const [isTriggeringBatch, setIsTriggeringBatch] = useState(false);
@@ -590,7 +597,7 @@ export default function ScraperDashboardManager({
       {activeTab === "overview" && (
         <div className="space-y-6">
           {/* Subsystem Health Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* GitHub Actions Card */}
             <div className="p-5 rounded-2xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs space-y-3">
               <div className="flex items-center justify-between">
@@ -643,12 +650,47 @@ export default function ScraperDashboardManager({
                 </span>
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                Actor <code className="font-mono text-[10px] text-brand-500">{apifyStatus.actorId}</code> delivers 100% verified Instagram post metrics &amp; engagement.
+                Primary cloud actors deliver 100% verified Instagram and Facebook post metrics &amp; engagement.
               </p>
               <div className="pt-2 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
                 <span className="text-gray-400">Cloud Runs:</span>
                 <span className="font-mono font-bold text-gray-900 dark:text-white">
                   {apifyStatus.recentRuns.length} runs monitored
+                </span>
+              </div>
+            </div>
+
+            {/* Bright Data Engine Card */}
+            <div className="p-5 rounded-2xl border border-gray-200/80 bg-white dark:border-slate-800/80 dark:bg-[#0C101A] shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 flex items-center justify-center">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-900 dark:text-white">
+                      Bright Data Engine
+                    </h4>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {brightDataStatus.apiKeyMasked || "API Key Required"}
+                    </span>
+                  </div>
+                </div>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                  brightDataStatus.connected
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                }`}>
+                  {brightDataStatus.connected ? "Active" : "Standby"}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Secondary fallback for Facebook posts &amp; reels via Datasets API (<code className="font-mono text-[10px] text-amber-500">v3/scrape</code>).
+              </p>
+              <div className="pt-2 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                <span className="text-gray-400">FB Dataset:</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-white text-[10px]">
+                  {brightDataStatus.postsDatasetId || "gd_lkaxegm826bjpoo9m5"}
                 </span>
               </div>
             </div>

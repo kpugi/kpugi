@@ -7,6 +7,7 @@ import ScraperDashboardManager, {
 import {
   getGitHubWorkflowStatusAction,
   getApifyStatusAction,
+  getBrightDataStatusAction,
 } from '@/app/actions/admin-scraper';
 
 export const revalidate = 0;
@@ -22,6 +23,7 @@ export default async function AdminScraperPage() {
     auditsRes,
     githubStatus,
     apifyStatus,
+    brightDataStatus,
   ] = await Promise.all([
     // 1. Total checks count
     supabase.from('verification_checks').select('*', { count: 'exact', head: true }),
@@ -100,6 +102,9 @@ export default async function AdminScraperPage() {
 
     // 6. Apify account & actor runs
     getApifyStatusAction(),
+
+    // 7. Bright Data credentials & status
+    getBrightDataStatusAction(),
   ]);
 
   // Transform checks data
@@ -225,6 +230,7 @@ export default async function AdminScraperPage() {
       }}
       initialGitHubStatus={githubStatus}
       initialApifyStatus={apifyStatus}
+      initialBrightDataStatus={brightDataStatus}
       initialChecks={checks}
       initialAudits={audits}
       extractorDistribution={extractorDistribution}

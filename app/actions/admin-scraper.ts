@@ -47,6 +47,36 @@ export interface ApifySystemStatus {
   error?: string;
 }
 
+export interface BrightDataSystemStatus {
+  connected: boolean;
+  configured: boolean;
+  apiKeyMasked?: string;
+  postsDatasetId?: string;
+  reelsDatasetId?: string;
+  error?: string;
+}
+
+export async function getBrightDataStatusAction(): Promise<BrightDataSystemStatus> {
+  await requireAdminSession();
+  const key = process.env.BRIGHT_DATA_API_KEY;
+  if (!key) {
+    return {
+      connected: false,
+      configured: false,
+      error: 'BRIGHT_DATA_API_KEY environment variable is not configured.',
+    };
+  }
+
+  const masked = key.length > 8 ? `${key.slice(0, 4)}...${key.slice(-4)}` : '••••••••';
+  return {
+    connected: true,
+    configured: true,
+    apiKeyMasked: masked,
+    postsDatasetId: process.env.BRIGHT_DATA_FB_POSTS_DATASET || 'gd_lkaxegm826bjpoo9m5',
+    reelsDatasetId: process.env.BRIGHT_DATA_FB_REELS_DATASET || 'gd_lyclm3ey2q6rww027t',
+  };
+}
+
 /**
  * getGitHubWorkflowStatusAction
  * Queries live GitHub Actions REST API for scraper-cron.yml runs and health
