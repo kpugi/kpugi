@@ -220,6 +220,16 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
       const { promisify } = await import('util');
       const execRunner = promisify(cp.execFile);
 
+      const parseSafeJson = (str: string) => {
+        const lines = str.trim().split('\n').map((l) => l.trim()).filter(Boolean);
+        for (let i = lines.length - 1; i >= 0; i--) {
+          if (lines[i].startsWith('{') && lines[i].endsWith('}')) {
+            try { return JSON.parse(lines[i]); } catch {}
+          }
+        }
+        return JSON.parse(str.trim());
+      };
+
       // 1. Tier 1: Apify Facebook Extractor
       const apifyTokens = (process.env.APIFY_API_TOKENS || process.env.APIFY_API_TOKEN || '')
         .split(',')
@@ -232,7 +242,7 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
           if (fs.existsSync(apifyScript)) {
             const { stdout } = await execRunner(process.execPath, [apifyScript, targetUrl], { timeout: 35000 });
             if (stdout && stdout.trim()) {
-              const data = JSON.parse(stdout.trim());
+              const data = parseSafeJson(stdout);
               if (data && data.reachable) {
                 return {
                   reachable: true,
@@ -256,9 +266,9 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
         try {
           const bdScript = path.resolve(process.cwd(), '.scraper', 'extractors', 'brightdata_facebook.js');
           if (fs.existsSync(bdScript)) {
-            const { stdout } = await execRunner(process.execPath, [bdScript, targetUrl], { timeout: 30000 });
+            const { stdout } = await execRunner(process.execPath, [bdScript, targetUrl], { timeout: 45000 });
             if (stdout && stdout.trim()) {
-              const data = JSON.parse(stdout.trim());
+              const data = parseSafeJson(stdout);
               if (data && data.reachable) {
                 return {
                   reachable: true,

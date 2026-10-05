@@ -473,13 +473,28 @@ export async function testScrapePlaygroundAction(
     };
   } catch (err: any) {
     const durationMs = Date.now() - startTime;
+    if (err.stdout) {
+      try {
+        const parsed = safeParseJsonOutput(err.stdout);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            success: Boolean(parsed.reachable),
+            url: targetUrl,
+            durationMs,
+            engineUsed: engine,
+            data: parsed,
+            error: parsed.error || parsed.error_message || (!parsed.reachable ? 'Post unreachable' : undefined),
+          };
+        }
+      } catch {}
+    }
     return {
       success: false,
       url: targetUrl,
       durationMs,
       engineUsed: engine,
       data: null,
-      error: err.message || 'Scrape execution failed.',
+      error: err.stderr ? err.stderr.trim() : (err.message || 'Scrape execution failed.'),
     };
   }
 }

@@ -1,14 +1,14 @@
 /**
- * Bright Data Facebook Post Extractor
+ * Bright Data Facebook Post & Reel Extractor
  * Uses Bright Data Datasets API v3 to fetch post metrics, plays/views, likes, comments, and author.
- * Includes undici connection timeout resilience and async trigger/progress polling.
+ * Includes URL normalization, undici connection timeout resilience, and async trigger/progress polling.
  */
 
 const path = require('path');
 const fs = require('fs');
 const { Agent } = require('undici');
 
-// Resilient dispatcher to prevent transient socket connect timeouts
+// Resilient dispatcher with 35s connect timeout
 const customAgent = new Agent({
   connect: {
     timeout: 35000,
@@ -33,6 +33,16 @@ function loadEnv() {
   }
 }
 
+function normalizeFacebookUrl(url) {
+  if (!url) return '';
+  let norm = url.trim()
+    .replace(/^https?:\/\/(web|m|mobile|touch|l)\.facebook\.com/i, 'https://www.facebook.com');
+  if (!norm.endsWith('/')) {
+    norm += '/';
+  }
+  return norm;
+}
+
 async function scrapeFacebookWithBrightData(targetUrl) {
   if (!targetUrl) {
     return { reachable: false, error: 'No URL provided' };
@@ -47,13 +57,12 @@ async function scrapeFacebookWithBrightData(targetUrl) {
     };
   }
 
-  const isReel = targetUrl.includes('/reel/') || targetUrl.includes('/reels/');
-  const datasetId = isReel
-    ? (process.env.BRIGHT_DATA_FB_REELS_DATASET || 'gd_lyclm3ey2q6rww027t')
-    : (process.env.BRIGHT_DATA_FB_POSTS_DATASET || 'gd_lkaxegm826bjpoo9m5');
+  const normalizedUrl = normalizeFacebookUrl(targetUrl);
+  // gd_lkaxegm826bjpoo9m5 is the Bright Data dataset for all Facebook posts, videos, and reels
+  const datasetId = process.env.BRIGHT_DATA_FB_POSTS_DATASET || 'gd_lkaxegm826bjpoo9m5';
 
   try {
-    // 1. Trigger asynchronous scraping job (instant response with snapshot_id)
+    // 1. Trigger asynchronous scraping job
     const triggerEndpoint = `https://api.brightdata.com/datasets/v3/trigger?dataset_id=${datasetId}&format=json`;
 
     const triggerRes = await fetch(triggerEndpoint, {
@@ -62,7 +71,7 @@ async function scrapeFacebookWithBrightData(targetUrl) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify([{ url: targetUrl }]),
+      body: JSON.stringify([{ url: normalizedUrl }]),
       dispatcher: customAgent,
       signal: AbortSignal.timeout(30000),
     });
@@ -73,7 +82,7 @@ async function scrapeFacebookWithBrightData(targetUrl) {
         reachable: false,
         platform: 'facebook',
         extractor: 'brightdata_facebook',
-        error: `Bright Data HTTP ${triggerRes.status}: ${errorText.slice(0, 150)}`,
+        error: `Bright Data HTTP ${triggerRes.status}: ${errorText.slice(0, 200)}`,
       };
     }
 
@@ -88,7 +97,7 @@ async function scrapeFacebookWithBrightData(targetUrl) {
       };
     }
 
-    // 2. Poll snapshot progress until 'ready' (max ~45s)
+    // 2. Poll snapshot progress until 'ready'
     const maxPolls = 15;
     for (let i = 0; i < maxPolls; i++) {
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -128,11 +137,11 @@ async function scrapeFacebookWithBrightData(targetUrl) {
               reachable: false,
               platform: 'facebook',
               extractor: 'brightdata_facebook',
-              error: prog.error_codes ? `Crawl completed with: ${JSON.stringify(prog.error_codes)}` : 'Empty data returned by Bright Data',
+              error: prog.error_codes ? `Crawl error: ${JSON.stringify(prog.error_codes)}` : 'Empty data returned by Bright Data',
             };
           }
 
-          const uploader = item.page_name || item.profile_name || item.author_name || item.user_username || null;
+          const uploader = item.page_name || item.profile_name || item.author_name || item.user_username || item.user?.name || null;
           const views = typeof item.video_views === 'number'
             ? item.video_views
             : (typeof item.play_count === 'number' ? item.play_count : (typeof item.views === 'number' ? item.views : null));
@@ -166,7 +175,7 @@ async function scrapeFacebookWithBrightData(targetUrl) {
           };
         }
       } catch {
-        // Retry poll next tick
+        // Retry poll
       }
     }
 
@@ -174,7 +183,7 @@ async function scrapeFacebookWithBrightData(targetUrl) {
       reachable: false,
       platform: 'facebook',
       extractor: 'brightdata_facebook',
-      error: `Bright Data snapshot polling timed out after 45s (snapshot: ${snapshotId})`,
+      error: `Bright Data snapshot polling timed out (snapshot: ${snapshotId})`,
     };
   } catch (err) {
     return {
@@ -191,17 +200,19 @@ if (require.main === module) {
   if (!target) {
     console.error(JSON.stringify({ reachable: false, error: 'Usage: node brightdata_facebook.js <url>' }));
     process.exit(1);
+  } else {
+    scrapeFacebookWithBrightData(target)
+      .then(async (res) => {
+        console.log(JSON.stringify(res));
+        try { await customAgent.destroy(); } catch {}
+        process.exit(0);
+      })
+      .catch(async (err) => {
+        console.log(JSON.stringify({ reachable: false, error: err.message || String(err) }));
+        try { await customAgent.destroy(); } catch {}
+        process.exit(0);
+      });
   }
-
-  scrapeFacebookWithBrightData(target)
-    .then((res) => {
-      console.log(JSON.stringify(res));
-      process.exit(res.reachable ? 0 : 1);
-    })
-    .catch((err) => {
-      console.error(JSON.stringify({ reachable: false, error: err.message }));
-      process.exit(1);
-    });
 }
 
 module.exports = { scrapeFacebookWithBrightData };

@@ -1,5 +1,5 @@
 /**
- * Apify Facebook Post Extractor
+ * Apify Facebook Post & Reel Extractor
  * Uses Actor apify/facebook-posts-scraper to fetch post metrics, plays/views, likes, comments, and author.
  */
 
@@ -34,6 +34,12 @@ function getApifyTokens() {
     .filter(Boolean);
 }
 
+function normalizeFacebookUrl(url) {
+  if (!url) return '';
+  return url.trim()
+    .replace(/^https?:\/\/(web|m|mobile|touch|l)\.facebook\.com/i, 'https://www.facebook.com');
+}
+
 const ACTOR_ID = process.env.APIFY_FACEBOOK_ACTOR || 'apify/facebook-posts-scraper';
 let currentTokenIndex = 0;
 
@@ -50,8 +56,9 @@ async function scrapeFacebookWithApify(targetUrl) {
     };
   }
 
+  const normalizedUrl = normalizeFacebookUrl(targetUrl);
   const input = {
-    startUrls: [{ url: targetUrl }],
+    startUrls: [{ url: normalizedUrl }],
     resultsLimit: 1,
   };
 
@@ -63,7 +70,7 @@ async function scrapeFacebookWithApify(targetUrl) {
     const client = new ApifyClient({ token });
 
     try {
-      const run = await client.actor(ACTOR_ID).call(input, { waitSecs: 45 });
+      const run = await client.actor(ACTOR_ID).call(input);
       if (!run || !run.defaultDatasetId) {
         throw new Error('Apify run failed to initialize');
       }
@@ -76,14 +83,49 @@ async function scrapeFacebookWithApify(targetUrl) {
       currentTokenIndex = (tokenIndex + 1) % tokens.length;
       const item = items[0];
 
-      const uploader = item.user?.username || item.pageName || item.user?.name || item.author || null;
+      const uploader = item.short_form_video_context?.video_owner?.name
+        || item.user?.name
+        || item.user?.username
+        || item.pageName
+        || item.author
+        || null;
+
       const views = typeof item.videoViewCount === 'number'
         ? item.videoViewCount
-        : (typeof item.videoPlayCount === 'number' ? item.videoPlayCount : (typeof item.views === 'number' ? item.views : null));
-      const likes = typeof item.likesCount === 'number' ? item.likesCount : (item.reactionCount || null);
-      const comments = typeof item.commentsCount === 'number' ? item.commentsCount : null;
-      const shares = typeof item.sharesCount === 'number' ? item.sharesCount : null;
-      const text = item.text || item.message || item.caption || item.postText || null;
+        : (typeof item.videoPlayCount === 'number'
+          ? item.videoPlayCount
+          : (typeof item.views === 'number'
+            ? item.views
+            : (typeof item.short_form_video_context?.playback_video?.views === 'number'
+              ? item.short_form_video_context.playback_video.views
+              : null)));
+
+      const likes = typeof item.likes === 'number'
+        ? item.likes
+        : (typeof item.likers?.count === 'number'
+          ? item.likers.count
+          : (typeof item.likesCount === 'number'
+            ? item.likesCount
+            : (typeof item.reactionCount === 'number' ? item.reactionCount : null)));
+
+      const comments = typeof item.comments === 'number'
+        ? item.comments
+        : (typeof item.total_comment_count === 'number'
+          ? item.total_comment_count
+          : (typeof item.commentsCount === 'number' ? item.commentsCount : null));
+
+      let shares = null;
+      if (typeof item.share_count_reduced === 'string') {
+        shares = parseInt(item.share_count_reduced.replace(/[^0-9]/g, ''), 10) || null;
+      } else if (typeof item.sharesCount === 'number') {
+        shares = item.sharesCount;
+      } else if (typeof item.shares === 'number') {
+        shares = item.shares;
+      }
+
+      const text = typeof item.message === 'string'
+        ? item.message
+        : (item.message?.text || item.text || item.caption || item.postText || null);
 
       return {
         reachable: true,
@@ -94,16 +136,21 @@ async function scrapeFacebookWithApify(targetUrl) {
         comment_count: comments,
         share_count: shares,
         uploader: uploader,
-        uploader_name: item.user?.name || item.pageName || null,
-        uploader_id: item.user?.id || item.pageId || null,
+        uploader_name: item.short_form_video_context?.video_owner?.name || item.user?.name || item.pageName || null,
+        uploader_id: item.short_form_video_context?.video_owner?.id || item.user?.id || item.pageId || null,
         title: text ? text.slice(0, 80) : `Facebook post by ${uploader || 'creator'}`,
         description: text,
-        post_url: item.url || targetUrl,
-        timestamp: item.timestamp || item.time || null,
+        post_url: item.facebookUrl || item.url || targetUrl,
+        timestamp: item.creation_time || item.timestamp || item.time || null,
       };
     } catch (err) {
       lastError = err;
-      continue;
+      // Only continue to next token if it's an API rate limit or token error
+      const msg = (err && err.message) || String(err);
+      if (msg.includes('rate limit') || msg.includes('401') || msg.includes('403') || msg.includes('token') || msg.includes('credits')) {
+        continue;
+      }
+      break;
     }
   }
 
@@ -120,17 +167,17 @@ if (require.main === module) {
   if (!target) {
     console.error(JSON.stringify({ reachable: false, error: 'Usage: node apify_facebook.js <url>' }));
     process.exit(1);
+  } else {
+    scrapeFacebookWithApify(target)
+      .then((res) => {
+        console.log(JSON.stringify(res));
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.log(JSON.stringify({ reachable: false, error: err.message || String(err) }));
+        process.exit(0);
+      });
   }
-
-  scrapeFacebookWithApify(target)
-    .then((res) => {
-      console.log(JSON.stringify(res));
-      process.exit(res.reachable ? 0 : 1);
-    })
-    .catch((err) => {
-      console.error(JSON.stringify({ reachable: false, error: err.message }));
-      process.exit(1);
-    });
 }
 
 module.exports = { scrapeFacebookWithApify };
