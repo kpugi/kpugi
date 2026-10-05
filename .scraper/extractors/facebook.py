@@ -111,6 +111,90 @@ def extract_facebook_post(url: str) -> ScrapeResult:
     is_video_format = (post_type == "video")
 
     # ─────────────────────────────────────────────────────────────────────────────
+    # Layer 0.5: Apify Facebook Post Extractor (Primary Managed Cloud)
+    # ─────────────────────────────────────────────────────────────────────────────
+    try:
+        from pathlib import Path
+        import subprocess
+        apify_script = Path(__file__).resolve().parent / "apify_facebook.js"
+        if apify_script.exists():
+            cmd = ["node", str(apify_script), url]
+            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=45)
+            if proc.stdout.strip():
+                lines = [line.strip() for line in proc.stdout.strip().splitlines() if line.strip()]
+                for line in reversed(lines):
+                    if line.startswith("{") and line.endswith("}"):
+                        try:
+                            ap_data = json.loads(line)
+                            if ap_data.get("reachable"):
+                                uploader = ap_data.get("uploader") or candidate_handle
+                                view_count = ap_data.get("view_count")
+                                like_count = ap_data.get("like_count")
+                                if uploader or view_count is not None or like_count is not None:
+                                    return ScrapeResult(
+                                        reachable=True,
+                                        view_count=view_count,
+                                        like_count=like_count,
+                                        comment_count=ap_data.get("comment_count"),
+                                        share_count=ap_data.get("share_count"),
+                                        uploader=uploader,
+                                        uploader_id=ap_data.get("uploader_id") or uploader,
+                                        channel=uploader,
+                                        channel_url=f"https://www.facebook.com/{uploader}/" if uploader else None,
+                                        title=ap_data.get("title") or "Facebook Post",
+                                        description=ap_data.get("description"),
+                                        platform="facebook",
+                                        extractor="apify_facebook",
+                                        raw=ap_data
+                                    )
+                        except json.JSONDecodeError:
+                            continue
+    except Exception as ap_err:
+        logger.debug(f"Apify Facebook extraction attempt failed: {ap_err}")
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Layer 0.8: Bright Data Facebook Extractor (Secondary Managed Cloud)
+    # ─────────────────────────────────────────────────────────────────────────────
+    try:
+        from pathlib import Path
+        import subprocess
+        bd_script = Path(__file__).resolve().parent / "brightdata_facebook.js"
+        if bd_script.exists():
+            cmd = ["node", str(bd_script), url]
+            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=35)
+            if proc.stdout.strip():
+                lines = [line.strip() for line in proc.stdout.strip().splitlines() if line.strip()]
+                for line in reversed(lines):
+                    if line.startswith("{") and line.endswith("}"):
+                        try:
+                            bd_data = json.loads(line)
+                            if bd_data.get("reachable"):
+                                uploader = bd_data.get("uploader") or candidate_handle
+                                view_count = bd_data.get("view_count")
+                                like_count = bd_data.get("like_count")
+                                if uploader or view_count is not None or like_count is not None:
+                                    return ScrapeResult(
+                                        reachable=True,
+                                        view_count=view_count,
+                                        like_count=like_count,
+                                        comment_count=bd_data.get("comment_count"),
+                                        share_count=bd_data.get("share_count"),
+                                        uploader=uploader,
+                                        uploader_id=uploader,
+                                        channel=uploader,
+                                        channel_url=f"https://www.facebook.com/{uploader}/" if uploader else None,
+                                        title=bd_data.get("title") or "Facebook Post",
+                                        description=bd_data.get("description"),
+                                        platform="facebook",
+                                        extractor="brightdata_facebook",
+                                        raw=bd_data
+                                    )
+                        except json.JSONDecodeError:
+                            continue
+    except Exception as bd_err:
+        logger.debug(f"Bright Data Facebook extraction attempt failed: {bd_err}")
+
+    # ─────────────────────────────────────────────────────────────────────────────
     # Layer 1: yt-dlp Extraction (Primary for Videos & Reels)
     # ─────────────────────────────────────────────────────────────────────────────
     ytdlp_res: Optional[ScrapeResult] = None
