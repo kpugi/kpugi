@@ -327,7 +327,7 @@ export async function getApifyStatusAction(): Promise<ApifySystemStatus> {
  */
 export async function testScrapePlaygroundAction(
   url: string,
-  engine: 'auto' | 'apify' | 'fallback' = 'auto'
+  engine: string = 'auto'
 ): Promise<{
   success: boolean;
   url: string;
@@ -338,21 +338,123 @@ export async function testScrapePlaygroundAction(
 }> {
   await requireAdminSession();
 
-  if (!url || !url.trim().startsWith('http')) {
+  const targetUrl = url.trim();
+  if (!targetUrl || !targetUrl.startsWith('http')) {
     throw new Error('Please enter a valid HTTP/HTTPS social post URL.');
   }
 
   const startTime = Date.now();
+  const path = await import('path');
+  const fs = await import('fs');
+  const cp = await import('child_process');
+  const { promisify } = await import('util');
+  const execRunner = promisify(cp.execFile);
 
   try {
-    const verifiedDetails = await extractPostForVerification(url.trim());
+    // 1. Direct Bright Data Facebook Extractor
+    if (engine === 'brightdata_facebook') {
+      const scriptPath = path.resolve(process.cwd(), '.scraper', 'extractors', 'brightdata_facebook.js');
+      if (!fs.existsSync(scriptPath)) {
+        throw new Error('brightdata_facebook.js script not found.');
+      }
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 35000 });
+      const durationMs = Date.now() - startTime;
+      const res = JSON.parse(stdout.trim());
+      return {
+        success: Boolean(res && res.reachable),
+        url: targetUrl,
+        durationMs,
+        engineUsed: 'brightdata_facebook',
+        data: res,
+        error: res.error || (res.reachable ? undefined : 'Post unreachable via Bright Data'),
+      };
+    }
+
+    // 2. Direct Apify Facebook Extractor
+    if (engine === 'apify_facebook') {
+      const scriptPath = path.resolve(process.cwd(), '.scraper', 'extractors', 'apify_facebook.js');
+      if (!fs.existsSync(scriptPath)) {
+        throw new Error('apify_facebook.js script not found.');
+      }
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 50000 });
+      const durationMs = Date.now() - startTime;
+      const res = JSON.parse(stdout.trim());
+      return {
+        success: Boolean(res && res.reachable),
+        url: targetUrl,
+        durationMs,
+        engineUsed: 'apify_facebook',
+        data: res,
+        error: res.error || (res.reachable ? undefined : 'Post unreachable via Apify Facebook'),
+      };
+    }
+
+    // 3. Direct Apify Instagram Extractor
+    if (engine === 'apify_instagram' || engine === 'apify') {
+      const scriptPath = path.resolve(process.cwd(), '.scraper', 'extractors', 'apify_instagram.js');
+      if (!fs.existsSync(scriptPath)) {
+        throw new Error('apify_instagram.js script not found.');
+      }
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 50000 });
+      const durationMs = Date.now() - startTime;
+      const res = JSON.parse(stdout.trim());
+      return {
+        success: Boolean(res && res.reachable),
+        url: targetUrl,
+        durationMs,
+        engineUsed: 'apify_instagram',
+        data: res,
+        error: res.error || (res.reachable ? undefined : 'Post unreachable via Apify Instagram'),
+      };
+    }
+
+    // 4. Direct Python Metrics Scraper (yt-dlp, mobile HTML, Syndication, OpenGraph)
+    if (engine === 'python_metrics' || engine === 'fallback') {
+      const scraperDir = path.resolve(process.cwd(), '.scraper');
+      const pyCode = `import sys, json; from extractors import extract_post_metrics; res = extract_post_metrics(sys.argv[1]); print(json.dumps(res.to_dict()))`;
+      const { stdout } = await execRunner('python', ['-c', pyCode, targetUrl], {
+        cwd: scraperDir,
+        timeout: 45000,
+        env: { ...process.env, PYTHONPATH: scraperDir },
+      });
+      const durationMs = Date.now() - startTime;
+      const lines = stdout.trim().split('\n').filter(Boolean);
+      const jsonStr = lines[lines.length - 1];
+      const res = JSON.parse(jsonStr);
+      return {
+        success: Boolean(res && res.reachable),
+        url: targetUrl,
+        durationMs,
+        engineUsed: res.extractor ? `python_${res.extractor}` : 'python_metrics',
+        data: res,
+        error: res.error_message || (res.reachable ? undefined : 'Post unreachable via Python scraper'),
+      };
+    }
+
+    // 5. Creator Post & Ownership Verifier only
+    if (engine === 'post_verifier') {
+      const verifiedDetails = await extractPostForVerification(targetUrl);
+      const durationMs = Date.now() - startTime;
+      return {
+        success: verifiedDetails.reachable,
+        url: targetUrl,
+        durationMs,
+        engineUsed: 'post_verifier',
+        data: verifiedDetails,
+        error: verifiedDetails.errorMessage || undefined,
+      };
+    }
+
+    // 6. Smart Router (Auto: Apify / Bright Data / Python / Verifier)
+    // Run post verification first
+    const verifiedDetails = await extractPostForVerification(targetUrl);
     const durationMs = Date.now() - startTime;
 
     return {
       success: verifiedDetails.reachable,
-      url: url.trim(),
+      url: targetUrl,
       durationMs,
-      engineUsed: engine === 'apify' ? 'apify_instagram' : 'multi_tier_router',
+      engineUsed: verifiedDetails.platform ? `smart_router_${verifiedDetails.platform}` : 'smart_router',
       data: verifiedDetails,
       error: verifiedDetails.errorMessage || undefined,
     };
@@ -360,7 +462,7 @@ export async function testScrapePlaygroundAction(
     const durationMs = Date.now() - startTime;
     return {
       success: false,
-      url: url.trim(),
+      url: targetUrl,
       durationMs,
       engineUsed: engine,
       data: null,

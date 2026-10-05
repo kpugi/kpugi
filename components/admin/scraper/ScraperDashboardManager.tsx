@@ -192,9 +192,7 @@ export default function ScraperDashboardManager({
 
   // Playground state
   const [playgroundUrl, setPlaygroundUrl] = useState("");
-  const [playgroundEngine, setPlaygroundEngine] = useState<
-    "auto" | "apify" | "fallback"
-  >("auto");
+  const [playgroundEngine, setPlaygroundEngine] = useState<string>("auto");
   const [isPlaying, setIsPlaying] = useState(false);
   const [playgroundResult, setPlaygroundResult] = useState<any | null>(null);
 
@@ -1556,12 +1554,15 @@ export default function ScraperDashboardManager({
 
                 <select
                   value={playgroundEngine}
-                  onChange={(e) => setPlaygroundEngine(e.target.value as any)}
-                  className="w-full sm:w-48 px-3 py-2.5 text-xs font-mono rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-hidden focus:border-brand-500"
+                  onChange={(e) => setPlaygroundEngine(e.target.value)}
+                  className="w-full sm:w-64 px-3 py-2.5 text-xs font-mono rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-hidden focus:border-brand-500"
                 >
-                  <option value="auto">Smart Router (Auto)</option>
-                  <option value="apify">Apify Actor (Instagram)</option>
-                  <option value="fallback">Fallback Crawlers</option>
+                  <option value="auto">Smart Router (Auto Multi-Tier)</option>
+                  <option value="brightdata_facebook">Bright Data (Facebook Datasets API)</option>
+                  <option value="apify_facebook">Apify (Facebook Post Actor)</option>
+                  <option value="apify_instagram">Apify (Instagram Post Actor)</option>
+                  <option value="python_metrics">Python Scraper Engine (All Platforms)</option>
+                  <option value="post_verifier">Creator Post Verifier (Ownership)</option>
                 </select>
 
                 <Button
@@ -1619,11 +1620,11 @@ export default function ScraperDashboardManager({
 
               {playgroundResult.data && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-mono">
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800/80">
-                      <span className="text-gray-400 block text-[10px]">Author</span>
+                      <span className="text-gray-400 block text-[10px]">Author / Uploader</span>
                       <span className="font-bold text-gray-900 dark:text-white mt-1 block truncate">
-                        @{playgroundResult.data.authorHandle || "N/A"}
+                        @{playgroundResult.data.uploader || playgroundResult.data.authorHandle || "N/A"}
                       </span>
                     </div>
 
@@ -1635,21 +1636,50 @@ export default function ScraperDashboardManager({
                     </div>
 
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800/80">
-                      <span className="text-gray-400 block text-[10px]">Follower Count</span>
+                      <span className="text-gray-400 block text-[10px]">Views / Plays</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
+                        {playgroundResult.data.view_count !== undefined && playgroundResult.data.view_count !== null
+                          ? Number(playgroundResult.data.view_count).toLocaleString()
+                          : (playgroundResult.data.followerCount ? `${Number(playgroundResult.data.followerCount).toLocaleString()} followers` : "—")}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800/80">
+                      <span className="text-gray-400 block text-[10px]">Likes / Reactions</span>
                       <span className="font-bold text-gray-900 dark:text-white mt-1 block">
-                        {playgroundResult.data.followerCount
-                          ? Number(playgroundResult.data.followerCount).toLocaleString()
+                        {playgroundResult.data.like_count !== undefined && playgroundResult.data.like_count !== null
+                          ? Number(playgroundResult.data.like_count).toLocaleString()
                           : "—"}
                       </span>
                     </div>
 
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800/80">
-                      <span className="text-gray-400 block text-[10px]">Title / Caption</span>
-                      <span className="font-bold text-gray-900 dark:text-white mt-1 block truncate">
-                        {playgroundResult.data.title || playgroundResult.data.postText || "—"}
+                      <span className="text-gray-400 block text-[10px]">Comments</span>
+                      <span className="font-bold text-gray-900 dark:text-white mt-1 block">
+                        {playgroundResult.data.comment_count !== undefined && playgroundResult.data.comment_count !== null
+                          ? Number(playgroundResult.data.comment_count).toLocaleString()
+                          : "—"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800/80">
+                      <span className="text-gray-400 block text-[10px]">Shares</span>
+                      <span className="font-bold text-gray-900 dark:text-white mt-1 block">
+                        {playgroundResult.data.share_count !== undefined && playgroundResult.data.share_count !== null
+                          ? Number(playgroundResult.data.share_count).toLocaleString()
+                          : "—"}
                       </span>
                     </div>
                   </div>
+
+                  {(playgroundResult.data.title || playgroundResult.data.description || playgroundResult.data.postText) && (
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800/80 text-xs font-mono">
+                      <span className="text-gray-400 block text-[10px]">Post Text / Title</span>
+                      <p className="font-medium text-gray-800 dark:text-gray-200 mt-1 line-clamp-3">
+                        {playgroundResult.data.title || playgroundResult.data.description || playgroundResult.data.postText}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="flex justify-end">
                     <Button
