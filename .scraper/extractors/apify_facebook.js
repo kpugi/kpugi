@@ -63,7 +63,7 @@ async function scrapeFacebookWithApify(targetUrl) {
     const client = new ApifyClient({ token });
 
     try {
-      const run = await client.actor(ACTOR_ID).call(input, { timeoutSecs: 45 });
+      const run = await client.actor(ACTOR_ID).call(input, { waitSecs: 45 });
       if (!run || !run.defaultDatasetId) {
         throw new Error('Apify run failed to initialize');
       }

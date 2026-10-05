@@ -350,6 +350,21 @@ export async function testScrapePlaygroundAction(
   const { promisify } = await import('util');
   const execRunner = promisify(cp.execFile);
 
+  function safeParseJsonOutput(stdout: string) {
+    const lines = stdout.trim().split('\n').map((l) => l.trim()).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if ((line.startsWith('{') && line.endsWith('}')) || (line.startsWith('[') && line.endsWith(']'))) {
+        try {
+          return JSON.parse(line);
+        } catch {
+          // keep searching backwards
+        }
+      }
+    }
+    return JSON.parse(stdout.trim());
+  }
+
   try {
     // 1. Direct Bright Data Facebook Extractor
     if (engine === 'brightdata_facebook') {
@@ -357,9 +372,9 @@ export async function testScrapePlaygroundAction(
       if (!fs.existsSync(scriptPath)) {
         throw new Error('brightdata_facebook.js script not found.');
       }
-      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 35000 });
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 70000 });
       const durationMs = Date.now() - startTime;
-      const res = JSON.parse(stdout.trim());
+      const res = safeParseJsonOutput(stdout);
       return {
         success: Boolean(res && res.reachable),
         url: targetUrl,
@@ -376,9 +391,9 @@ export async function testScrapePlaygroundAction(
       if (!fs.existsSync(scriptPath)) {
         throw new Error('apify_facebook.js script not found.');
       }
-      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 50000 });
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 60000 });
       const durationMs = Date.now() - startTime;
-      const res = JSON.parse(stdout.trim());
+      const res = safeParseJsonOutput(stdout);
       return {
         success: Boolean(res && res.reachable),
         url: targetUrl,
@@ -395,9 +410,9 @@ export async function testScrapePlaygroundAction(
       if (!fs.existsSync(scriptPath)) {
         throw new Error('apify_instagram.js script not found.');
       }
-      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 50000 });
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 60000 });
       const durationMs = Date.now() - startTime;
-      const res = JSON.parse(stdout.trim());
+      const res = safeParseJsonOutput(stdout);
       return {
         success: Boolean(res && res.reachable),
         url: targetUrl,
@@ -418,9 +433,7 @@ export async function testScrapePlaygroundAction(
         env: { ...process.env, PYTHONPATH: scraperDir },
       });
       const durationMs = Date.now() - startTime;
-      const lines = stdout.trim().split('\n').filter(Boolean);
-      const jsonStr = lines[lines.length - 1];
-      const res = JSON.parse(jsonStr);
+      const res = safeParseJsonOutput(stdout);
       return {
         success: Boolean(res && res.reachable),
         url: targetUrl,
