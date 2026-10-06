@@ -332,7 +332,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
       id: tx.id,
       date: new Date(tx.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       time: new Date(tx.created_at || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      title: tx.title || (isWithdrawal ? 'Direct Bank Withdrawal' : 'Campaign Earnings'),
+      title: tx.title || (isWithdrawal ? 'Payout' : 'Campaign Earnings'),
       sub: tx.campaign_title || (isWithdrawal ? 'Bank Transfer' : 'Campaign Payout'),
       reference: tx.reference || `TX-${tx.id.slice(0, 8).toUpperCase()}`,
       amount: Math.abs(Number(tx.amount || 0)),
@@ -460,7 +460,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Today's Live Accrual
+                Today
               </span>
             </div>
 
@@ -583,7 +583,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                         <div className="flex items-center gap-2">
                                           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300">
                                             <Building2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                                            Direct Bank Withdrawal
+                                            Payout
                                           </span>
                                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                             tx.status === 'Completed' || tx.status === 'Cleared'
@@ -614,7 +614,7 @@ export default function CreatorEarningsView({ data }: CreatorEarningsViewProps) 
                                       {/* Box 1: Destination Account */}
                                       <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                          <Building2 className="w-3 h-3 text-slate-400" /> Destination Account
+                                          <Building2 className="w-3 h-3 text-slate-400" />Account
                                         </span>
                                         <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
                                           {tx.bankName || 'Direct Bank'}

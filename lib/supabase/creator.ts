@@ -800,7 +800,7 @@ export async function getCreatorEarningsData(profileId: string): Promise<Creator
 
     rawFormatted.push({
       id: `payout-req-${p.id}`,
-      title: `Direct Bank Withdrawal`,
+      title: `Payout`,
       campaign_title: 'Bank Transfer',
       reference: ref,
       amount: -Math.abs(Number(p.amount || 0)),

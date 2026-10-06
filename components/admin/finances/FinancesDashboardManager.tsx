@@ -619,7 +619,6 @@ export default function FinancesDashboardManager({
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-100/80 dark:bg-blue-950/50 dark:text-blue-400">
               <Wallet className="h-5 w-5" />
             </div>
-            <Badge color="info">User Funds</Badge>
           </div>
           <div className="mt-4">
             <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -667,7 +666,6 @@ export default function FinancesDashboardManager({
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-100/80 dark:bg-indigo-950/50 dark:text-indigo-400">
               <Layers className="h-5 w-5" />
             </div>
-            <Badge color="success">Escrow Protected</Badge>
           </div>
           <div className="mt-4">
             <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -722,10 +720,6 @@ export default function FinancesDashboardManager({
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition-colors group-hover:bg-cyan-100/80 dark:bg-cyan-950/50 dark:text-cyan-400">
               <Landmark className="h-5 w-5" />
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Bank Sync
-            </span>
           </div>
           <div className="mt-4">
             <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -769,7 +763,6 @@ export default function FinancesDashboardManager({
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100/80 dark:bg-emerald-950/50 dark:text-emerald-400">
               <TrendingUp className="h-5 w-5" />
             </div>
-            <Badge color="success">Kpugi Revenue</Badge>
           </div>
           <div className="mt-4">
             <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -814,7 +807,6 @@ export default function FinancesDashboardManager({
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition-colors group-hover:bg-purple-100/80 dark:bg-purple-950/50 dark:text-purple-400">
               <ArrowUpRight className="h-5 w-5" />
             </div>
-            <Badge color="light">Bank Payouts</Badge>
           </div>
           <div className="mt-4">
             <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
