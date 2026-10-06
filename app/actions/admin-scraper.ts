@@ -198,7 +198,7 @@ export async function dispatchGitHubWorkflowAction(batchSize = 50, ref = 'main',
     throw new Error('GITHUB_PAT is not configured in .env.local.');
   }
 
-  const res = await fetch(
+  let res = await fetch(
     `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/dispatches`,
     {
       method: 'POST',
@@ -217,6 +217,33 @@ export async function dispatchGitHubWorkflowAction(batchSize = 50, ref = 'main',
       }),
     }
   );
+
+  // If the target ref on GitHub Actions has not yet defined 'force' input (HTTP 422), retry with batch_size only
+  if (res.status === 422) {
+    const errText = await res.text();
+    if (errText.includes('Unexpected inputs provided') || errText.includes('force')) {
+      res = await fetch(
+        `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Kpugi-Admin-CommandCenter',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ref,
+            inputs: {
+              batch_size: String(batchSize),
+            },
+          }),
+        }
+      );
+    } else {
+      throw new Error(`Failed to dispatch GitHub workflow (HTTP ${res.status}): ${errText}`);
+    }
+  }
 
   if (!res.ok && res.status !== 204) {
     const errText = await res.text();
