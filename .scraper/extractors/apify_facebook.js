@@ -43,6 +43,12 @@ function normalizeFacebookUrl(url) {
 function parseNumberWithSuffix(val) {
   if (val === null || val === undefined) return null;
   if (typeof val === 'number') return isNaN(val) ? null : Math.round(val);
+  if (typeof val === 'object') {
+    if (typeof val.count === 'number') return val.count;
+    if (typeof val.total_count === 'number') return val.total_count;
+    if (typeof val.value === 'number') return val.value;
+    return null;
+  }
   if (typeof val !== 'string') return null;
 
   const trimmed = val.trim();
@@ -89,7 +95,7 @@ function resolveViewCount(item, likes, comments, shares) {
     if (cand !== null && cand > 0) return cand;
   }
 
-  // 2. Direct top-level fields
+  // 2. Direct top-level fields (videos and reels short_form_video_context)
   const directCandidates = [
     item.videoViewCount,
     item.videoPlayCount,
@@ -100,6 +106,10 @@ function resolveViewCount(item, likes, comments, shares) {
     item.video_view_count,
     item.viewsCount,
     item.short_form_video_context?.playback_video?.views,
+    item.short_form_video_context?.video?.play_count,
+    item.short_form_video_context?.playback_video?.play_count,
+    item.short_form_video_context?.playback_video?.loop_count,
+    item.loop_count,
   ];
   for (const c of directCandidates) {
     const val = parseNumberWithSuffix(c);
@@ -108,9 +118,10 @@ function resolveViewCount(item, likes, comments, shares) {
 
   // 3. Regex on titles, descriptions, and metadata strings
   const textCandidates = [
+    item.previewTitle,
+    item.previewDescription,
     item.title,
     item.name,
-    item.previewTitle,
     item.description,
     item.postText,
     item.caption,
@@ -123,13 +134,13 @@ function resolveViewCount(item, likes, comments, shares) {
   }
 
   // 4. Fallback: Industry-standard Facebook organic engagement benchmark (~4% feed engagement rate)
-  // Ensures creators are never credited with 0 views on viral posts with thousands of verified reactions
+  // (likes + 2*comments + 3*shares) * 25, without an artificial 100-view floor
   const l = likes || 0;
   const c = comments || 0;
   const s = shares || 0;
   const totalEngagement = l + (c * 2) + (s * 3);
   if (totalEngagement > 0) {
-    return Math.max(100, Math.round(totalEngagement * 25));
+    return Math.round(totalEngagement * 25);
   }
 
   return null;
@@ -178,14 +189,29 @@ async function scrapeFacebookWithApify(targetUrl) {
       currentTokenIndex = (tokenIndex + 1) % tokens.length;
       const item = items[0];
 
-      const uploader = item.short_form_video_context?.video_owner?.name
+      const uploader = item.pageName
+        || item.short_form_video_context?.video_owner?.name
         || item.user?.name
         || item.user?.username
-        || item.pageName
         || item.author
         || null;
 
+      const uploaderName = item.short_form_video_context?.video_owner?.name
+        || item.pageName
+        || item.user?.name
+        || null;
+
+      const uploaderId = item.short_form_video_context?.video_owner?.id
+        || item.owner?.id
+        || item.user?.id
+        || item.pageId
+        || null;
+
       const likes = parseNumberWithSuffix(item.likes)
+        ?? parseNumberWithSuffix(item.reaction_count?.count)
+        ?? parseNumberWithSuffix(item.reaction_count)
+        ?? parseNumberWithSuffix(item.i18n_reaction_count)
+        ?? parseNumberWithSuffix(item.reactionLikeCount)
         ?? parseNumberWithSuffix(item.likers?.count)
         ?? parseNumberWithSuffix(item.unified_reactors?.count)
         ?? parseNumberWithSuffix(item.likesCount)
@@ -194,6 +220,7 @@ async function scrapeFacebookWithApify(targetUrl) {
 
       const comments = parseNumberWithSuffix(item.comments)
         ?? parseNumberWithSuffix(item.total_comment_count)
+        ?? parseNumberWithSuffix(item.comment_rendering_instance?.comments?.total_count)
         ?? parseNumberWithSuffix(item.commentsCount);
 
       const shares = parseNumberWithSuffix(item.share_count_reduced)
@@ -202,9 +229,28 @@ async function scrapeFacebookWithApify(targetUrl) {
 
       const views = resolveViewCount(item, likes, comments, shares);
 
-      const text = typeof item.message === 'string'
-        ? item.message
-        : (item.message?.text || item.text || item.caption || item.postText || item.title || item.name || null);
+      const text = item.previewDescription
+        || (typeof item.message === 'string' ? item.message : item.message?.text)
+        || item.text
+        || item.caption
+        || item.postText
+        || null;
+
+      const title = item.previewTitle
+        || item.title
+        || item.name
+        || (text ? text.slice(0, 80) : `Facebook post by ${uploader || 'creator'}`);
+
+      const thumbnail = item.preferred_thumbnail?.image?.uri
+        || item.short_form_video_context?.playback_video?.thumbnailImage?.uri
+        || item.short_form_video_context?.video?.first_frame_thumbnail
+        || null;
+
+      const durationMs = parseNumberWithSuffix(item.playable_duration_in_ms)
+        ?? parseNumberWithSuffix(item.short_form_video_context?.video?.playable_duration_in_ms)
+        ?? (item.short_form_video_context?.playback_video?.length_in_second ? Math.round(item.short_form_video_context.playback_video.length_in_second * 1000) : null);
+
+      const timestamp = item.publish_time || item.creation_time || item.timestamp || null;
 
       return {
         reachable: true,
@@ -215,12 +261,23 @@ async function scrapeFacebookWithApify(targetUrl) {
         comment_count: comments,
         share_count: shares,
         uploader: uploader,
-        uploader_name: item.short_form_video_context?.video_owner?.name || item.user?.name || item.pageName || null,
-        uploader_id: item.short_form_video_context?.video_owner?.id || item.user?.id || item.pageId || null,
-        title: text ? text.slice(0, 80) : `Facebook post by ${uploader || 'creator'}`,
+        uploader_name: uploaderName,
+        uploader_id: uploaderId,
+        title: title,
         description: text,
         post_url: item.facebookUrl || item.url || targetUrl,
-        timestamp: item.creation_time || item.timestamp || item.time || null,
+        timestamp: timestamp,
+        thumbnail_url: thumbnail,
+        duration_ms: durationMs,
+        reactions_breakdown: (item.reactionLikeCount || item.reactionHahaCount || item.reactionLoveCount) ? {
+          like: item.reactionLikeCount ?? 0,
+          haha: item.reactionHahaCount ?? 0,
+          love: item.reactionLoveCount ?? 0,
+          care: item.reactionCareCount ?? 0,
+          angry: item.reactionAngryCount ?? 0,
+          wow: item.reactionWowCount ?? 0,
+          sad: item.reactionSadCount ?? 0,
+        } : null,
       };
     } catch (err) {
       lastError = err;

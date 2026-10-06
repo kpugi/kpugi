@@ -333,14 +333,17 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
 
         if (res.ok) {
           const html = await res.text();
-          const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
-          const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
-          const imageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+          const descMatch = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i);
+          const titleMatch = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+          const imageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
 
           if (descMatch || titleMatch) {
             let ogViews: number | null = null;
             const ogText = `${titleMatch ? titleMatch[1] : ''} ${descMatch ? descMatch[1] : ''}`;
-            const vm = ogText.match(/([\d,]+(?:\.\d+)?\s*[kmbKMB]?)\s+(?:views|plays)/i);
+            const vm = ogText.match(/([\d,]+(?:\.\d+)?\s*[kmbKMB]?)\s+(?:views|plays|reels?\s+plays)/i);
             if (vm) {
               const raw = vm[1].replace(/,/g, '').trim().toUpperCase();
               if (raw.endsWith('K')) ogViews = Math.round(parseFloat(raw) * 1000);

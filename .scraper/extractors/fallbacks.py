@@ -351,8 +351,14 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
     """
     html = _http_get_text(url)
     if html:
-        title_match = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\'](.*?)["\']', html, re.I)
-        desc_match = re.search(r'<meta\s+property=["\']og:description["\']\s+content=["\'](.*?)["\']', html, re.I)
+        title_match = (
+            re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\'](.*?)["\']', html, re.I)
+            or re.search(r'<meta[^>]+content=["\'](.*?)["\'][^>]+property=["\']og:title["\']', html, re.I)
+        )
+        desc_match = (
+            re.search(r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']', html, re.I)
+            or re.search(r'<meta[^>]+content=["\'](.*?)["\'][^>]+property=["\']og:description["\']', html, re.I)
+        )
         page_title_match = re.search(r'<title>(.*?)</title>', html, re.I)
         
         title = title_match.group(1).strip() if title_match else None
@@ -399,7 +405,7 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
         view_count = None
         for text_source in [desc, title, page_title]:
             if text_source and view_count is None:
-                v_match = re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+(?:views|plays)', text_source, re.I)
+                v_match = re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+(?:views|plays|reels?\s+plays)', text_source, re.I)
                 if v_match:
                     raw_val = v_match.group(1).upper().replace(',', '')
                     if 'K' in raw_val:

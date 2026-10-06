@@ -46,6 +46,12 @@ function normalizeFacebookUrl(url) {
 function parseNumberWithSuffix(val) {
   if (val === null || val === undefined) return null;
   if (typeof val === 'number') return isNaN(val) ? null : Math.round(val);
+  if (typeof val === 'object') {
+    if (typeof val.count === 'number') return val.count;
+    if (typeof val.total_count === 'number') return val.total_count;
+    if (typeof val.value === 'number') return val.value;
+    return null;
+  }
   if (typeof val !== 'string') return null;
 
   const trimmed = val.trim();
@@ -112,7 +118,7 @@ function resolveBrightDataViews(item, likes, comments, shares) {
   const s = shares || 0;
   const totalEngagement = l + (c * 2) + (s * 3);
   if (totalEngagement > 0) {
-    return Math.max(100, Math.round(totalEngagement * 25));
+    return Math.round(totalEngagement * 25);
   }
 
   return null;
