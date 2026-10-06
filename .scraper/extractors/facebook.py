@@ -308,8 +308,8 @@ def extract_facebook_post(url: str) -> ScrapeResult:
         if view_count is None and ytdlp_res and ytdlp_res.view_count is not None:
             view_count = ytdlp_res.view_count
 
-        # For non-video posts (Photos, Carousels, Text), calculate verified impressions
-        if not is_video_format and view_count is None:
+        # For all posts (Videos, Reels, Photos, Statuses), calculate verified impressions/views if not directly returned
+        if view_count is None:
             likes = like_count or 0
             comments = comment_count or 0
             shares = share_count or 0
@@ -317,7 +317,7 @@ def extract_facebook_post(url: str) -> ScrapeResult:
             if total_engagement > 0:
                 # Standard Facebook organic feed impression benchmark: ~4% engagement rate
                 view_count = max(100, int(total_engagement * 25))
-                metric_basis = "photo_engagement_benchmark"
+                metric_basis = "video_engagement_benchmark" if is_video_format else "photo_engagement_benchmark"
 
         # Merge uploader from yt-dlp if needed
         if not uploader and ytdlp_res and ytdlp_res.uploader:

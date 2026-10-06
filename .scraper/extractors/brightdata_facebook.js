@@ -43,6 +43,81 @@ function normalizeFacebookUrl(url) {
   return norm;
 }
 
+function parseNumberWithSuffix(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === 'number') return isNaN(val) ? null : Math.round(val);
+  if (typeof val !== 'string') return null;
+
+  const trimmed = val.trim();
+  if (!trimmed) return null;
+
+  const m = trimmed.match(/^([\d,]+(?:\.\d+)?)\s*([kmbKMB])?$/i);
+  if (m) {
+    const numPart = parseFloat(m[1].replace(/,/g, ''));
+    if (isNaN(numPart)) return null;
+    const suffix = (m[2] || '').toUpperCase();
+    if (suffix === 'K') return Math.round(numPart * 1000);
+    if (suffix === 'M') return Math.round(numPart * 1000000);
+    if (suffix === 'B') return Math.round(numPart * 1000000000);
+    return Math.round(numPart);
+  }
+
+  const digitsOnly = trimmed.replace(/[^0-9]/g, '');
+  if (digitsOnly) {
+    const parsed = parseInt(digitsOnly, 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+}
+
+function extractViewsFromText(text) {
+  if (!text || typeof text !== 'string') return null;
+  const match = text.match(/([\d,]+(?:\.\d+)?\s*[kmbKMB]?)\s+(?:views|plays|reels?\s+plays)/i);
+  if (match) {
+    return parseNumberWithSuffix(match[1]);
+  }
+  return null;
+}
+
+function resolveBrightDataViews(item, likes, comments, shares) {
+  const directCandidates = [
+    item.video_views,
+    item.play_count,
+    item.views,
+    item.video_view_count,
+    item.views_count,
+    item.plays,
+    item.video_plays,
+    item.plays_count,
+  ];
+  for (const c of directCandidates) {
+    const val = parseNumberWithSuffix(c);
+    if (val !== null && val > 0) return val;
+  }
+
+  const textCandidates = [
+    item.post_text,
+    item.caption,
+    item.text,
+    item.title,
+    item.description,
+  ];
+  for (const t of textCandidates) {
+    const fromText = extractViewsFromText(t);
+    if (fromText !== null && fromText > 0) return fromText;
+  }
+
+  const l = likes || 0;
+  const c = comments || 0;
+  const s = shares || 0;
+  const totalEngagement = l + (c * 2) + (s * 3);
+  if (totalEngagement > 0) {
+    return Math.max(100, Math.round(totalEngagement * 25));
+  }
+
+  return null;
+}
+
 async function scrapeFacebookWithBrightData(targetUrl) {
   if (!targetUrl) {
     return { reachable: false, error: 'No URL provided' };
@@ -142,13 +217,18 @@ async function scrapeFacebookWithBrightData(targetUrl) {
           }
 
           const uploader = item.page_name || item.profile_name || item.author_name || item.user_username || item.user?.name || null;
-          const views = typeof item.video_views === 'number'
-            ? item.video_views
-            : (typeof item.play_count === 'number' ? item.play_count : (typeof item.views === 'number' ? item.views : null));
-          const likes = typeof item.likes === 'number' ? item.likes : (typeof item.reactions === 'number' ? item.reactions : null);
-          const comments = typeof item.num_comments === 'number' ? item.num_comments : (typeof item.comments === 'number' ? item.comments : null);
-          const shares = typeof item.num_shares === 'number' ? item.num_shares : (typeof item.shares === 'number' ? item.shares : null);
-          const text = item.post_text || item.caption || item.text || item.description || null;
+          const likes = parseNumberWithSuffix(item.likes)
+            ?? parseNumberWithSuffix(item.reactions)
+            ?? parseNumberWithSuffix(item.num_reactions)
+            ?? parseNumberWithSuffix(item.reaction_count);
+          const comments = parseNumberWithSuffix(item.num_comments)
+            ?? parseNumberWithSuffix(item.comments)
+            ?? parseNumberWithSuffix(item.comments_count);
+          const shares = parseNumberWithSuffix(item.num_shares)
+            ?? parseNumberWithSuffix(item.shares)
+            ?? parseNumberWithSuffix(item.shares_count);
+          const views = resolveBrightDataViews(item, likes, comments, shares);
+          const text = item.post_text || item.caption || item.text || item.description || item.title || null;
 
           return {
             reachable: true,

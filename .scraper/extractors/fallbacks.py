@@ -397,18 +397,19 @@ def extract_opengraph_fallback(url: str, platform: str = "generic") -> ScrapeRes
             )
 
         view_count = None
-        if desc:
-            v_match = re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+(?:views|plays)', desc, re.I)
-            if v_match:
-                raw_val = v_match.group(1).upper().replace(',', '')
-                if 'K' in raw_val:
-                    view_count = int(float(raw_val.replace('K', '')) * 1000)
-                elif 'M' in raw_val:
-                    view_count = int(float(raw_val.replace('M', '')) * 1000000)
-                elif 'B' in raw_val:
-                    view_count = int(float(raw_val.replace('B', '')) * 1000000000)
-                elif raw_val.isdigit():
-                    view_count = int(raw_val)
+        for text_source in [desc, title, page_title]:
+            if text_source and view_count is None:
+                v_match = re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+(?:views|plays)', text_source, re.I)
+                if v_match:
+                    raw_val = v_match.group(1).upper().replace(',', '')
+                    if 'K' in raw_val:
+                        view_count = int(float(raw_val.replace('K', '')) * 1000)
+                    elif 'M' in raw_val:
+                        view_count = int(float(raw_val.replace('M', '')) * 1000000)
+                    elif 'B' in raw_val:
+                        view_count = int(float(raw_val.replace('B', '')) * 1000000000)
+                    elif raw_val.isdigit():
+                        view_count = int(raw_val)
 
         # If OpenGraph returned absolutely no title, no description, and no view count, it's unreachable
         if not title and not desc and view_count is None:
