@@ -211,23 +211,35 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
 
     // Dynamic Anti-Fraud Handle Ownership Check based on the submitted URL's platform
     const parsed = parseSocialPostUrl(videoUrl);
-    const matchingAccount = socialAccounts.find(
+    const matchingAccounts = socialAccounts.filter(
       s => s.platform.toLowerCase() === parsed.platform.toLowerCase() ||
            (parsed.platform === 'x' && (s.platform.toLowerCase() === 'twitter' || s.platform.toLowerCase() === 'x'))
     );
 
     const platformDisplay = parsed.platform === 'x' ? 'X (Twitter)' : parsed.platform.charAt(0).toUpperCase() + parsed.platform.slice(1);
 
-    if (!matchingAccount && parsed.platform !== 'unknown') {
+    if (matchingAccounts.length === 0 && parsed.platform !== 'unknown') {
       setMsg(`Error: No connected ${platformDisplay} account found. Please connect your ${platformDisplay} account under Connected Accounts before submitting.`);
       return;
     }
 
-    const ownershipCheck = validatePostUrlOwnership(
+    let matchingAccount = matchingAccounts[0];
+    let ownershipCheck = validatePostUrlOwnership(
       videoUrl,
       matchingAccount?.handle,
       matchingAccount?.platform || parsed.platform
     );
+
+    if (!ownershipCheck.isValid && matchingAccounts.length > 1) {
+      for (const acc of matchingAccounts) {
+        const check = validatePostUrlOwnership(videoUrl, acc.handle, acc.platform || parsed.platform);
+        if (check.isValid) {
+          matchingAccount = acc;
+          ownershipCheck = check;
+          break;
+        }
+      }
+    }
 
     if (!ownershipCheck.isValid) {
       setMsg(`Error: ${ownershipCheck.error || 'Invalid post URL format or ownership mismatch.'}`);
@@ -1148,9 +1160,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </button>
 
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-kpugi-blue dark:text-blue-400 text-[11px] font-bold font-mono uppercase tracking-wider mb-2 border border-blue-100 dark:border-blue-800/40">
-                Verification Pipeline
-              </div>
+            
               <h3 className="font-display font-bold text-2xl text-kpugi-ink dark:text-white">Submit Post Link</h3>
               <p className="text-xs text-kpugi-slate dark:text-slate-400 mt-1 leading-relaxed">
                 Paste the public URL of your posted content (TikTok, Instagram, YouTube, X/Twitter, Facebook, LinkedIn).

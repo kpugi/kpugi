@@ -171,28 +171,27 @@ export async function submitCampaignVideoAction(formData: FormData) {
     };
   }
 
-  // Find creator's connected social account for this platform (strictly verified)
-  let { data: socialAcc } = await supabase
+  // Find creator's connected social account(s) for this platform (strictly verified)
+  // Supports creators with multiple accounts per platform (e.g. personal profile + page) without PGRST116 errors
+  let { data: socialAccounts } = await supabase
     .from('social_accounts')
     .select('id, platform, handle, verification_status')
     .eq('creator_id', userProfile.profile.id)
     .eq('platform', platform)
-    .eq('verification_status', 'verified')
-    .maybeSingle();
+    .eq('verification_status', 'verified');
 
-  if (!socialAcc && (platform === 'x' || platform === 'twitter')) {
+  if ((!socialAccounts || socialAccounts.length === 0) && (platform === 'x' || platform === 'twitter')) {
     const altPlatform = platform === 'x' ? 'twitter' : 'x';
-    const { data: altAcc } = await supabase
+    const { data: altAccounts } = await supabase
       .from('social_accounts')
       .select('id, platform, handle, verification_status')
       .eq('creator_id', userProfile.profile.id)
       .eq('platform', altPlatform)
-      .eq('verification_status', 'verified')
-      .maybeSingle();
-    socialAcc = altAcc;
+      .eq('verification_status', 'verified');
+    socialAccounts = altAccounts;
   }
 
-  if (!socialAcc) {
+  if (!socialAccounts || socialAccounts.length === 0) {
     const platformDisplay = platform === 'x' ? 'X (Twitter)' : platform.charAt(0).toUpperCase() + platform.slice(1);
     return {
       success: false,
@@ -200,15 +199,27 @@ export async function submitCampaignVideoAction(formData: FormData) {
     };
   }
 
-  const connectedHandle = socialAcc.handle || userProfile.creatorProfile?.display_name || userProfile.profile.full_name;
-  
+  // Find the best matching verified account (or first valid one)
+  let matchedAcc = socialAccounts[0];
+  let ownershipCheck = validatePostUrlOwnership(rawVideoUrl, matchedAcc.handle, platform);
+
+  if (!ownershipCheck.isValid && socialAccounts.length > 1) {
+    for (const acc of socialAccounts) {
+      const check = validatePostUrlOwnership(rawVideoUrl, acc.handle, platform);
+      if (check.isValid) {
+        matchedAcc = acc;
+        ownershipCheck = check;
+        break;
+      }
+    }
+  }
+
   // Anti-Fraud Handle Ownership Verification
-  const ownershipCheck = validatePostUrlOwnership(rawVideoUrl, connectedHandle, platform);
   if (!ownershipCheck.isValid) {
     return { success: false, error: ownershipCheck.error };
   }
 
-  const socialAccountId = socialAcc.id;
+  const socialAccountId = matchedAcc.id;
 
   const { error } = await supabase.from('submissions').upsert(
     {
