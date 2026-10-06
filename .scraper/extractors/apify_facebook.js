@@ -83,7 +83,7 @@ function extractViewsFromText(text) {
   return null;
 }
 
-function resolveViewCount(item, likes, comments, shares) {
+function resolveViewCount(item) {
   // 1. Direct GraphQL Comet Video feedback renderers (Standard FB GraphQL structure)
   const rf = item.video_view_count_renderer?.feedback;
   if (rf) {
@@ -133,16 +133,28 @@ function resolveViewCount(item, likes, comments, shares) {
     if (fromText !== null && fromText > 0) return fromText;
   }
 
-  // 4. Fallback: Industry-standard Facebook organic engagement benchmark (~4% feed engagement rate)
-  // (likes + 2*comments + 3*shares) * 25, without an artificial 100-view floor
-  const l = likes || 0;
-  const c = comments || 0;
-  const s = shares || 0;
-  const totalEngagement = l + (c * 2) + (s * 3);
-  if (totalEngagement > 0) {
-    return Math.round(totalEngagement * 25);
-  }
+  return null;
+}
 
+async function fetchReelPlayCount(client, targetUrl) {
+  try {
+    const run = await client.actor('social_developer/facebook-playcount-scraper').call({
+      startUrls: [{ url: targetUrl }],
+    });
+    if (run && run.defaultDatasetId) {
+      const { items } = await client.dataset(run.defaultDatasetId).listItems();
+      if (items && items.length > 0) {
+        const exact = parseNumberWithSuffix(items[0].play_count)
+          ?? parseNumberWithSuffix(items[0].views)
+          ?? parseNumberWithSuffix(items[0].view_count);
+        if (exact !== null && exact > 0) {
+          return exact;
+        }
+      }
+    }
+  } catch (err) {
+    // Fall through to other layers
+  }
   return null;
 }
 
@@ -163,6 +175,9 @@ async function scrapeFacebookWithApify(targetUrl) {
   }
 
   const normalizedUrl = normalizeFacebookUrl(targetUrl);
+  const isReelUrl = Boolean(
+    targetUrl.includes('/reel/') || targetUrl.includes('/reels/') || targetUrl.includes('/share/r/')
+  );
   const input = {
     startUrls: [{ url: normalizedUrl }],
     resultsLimit: 1,
@@ -227,7 +242,26 @@ async function scrapeFacebookWithApify(targetUrl) {
         ?? parseNumberWithSuffix(item.sharesCount)
         ?? parseNumberWithSuffix(item.shares);
 
-      const views = resolveViewCount(item, likes, comments, shares);
+      let views = resolveViewCount(item);
+
+      // If views not found explicitly in item (common on Reels) or is a Reel URL, query the dedicated playcount actor
+      if (views === null || isReelUrl || item.short_form_video_context) {
+        const exactPlays = await fetchReelPlayCount(client, targetUrl);
+        if (exactPlays !== null && exactPlays > 0) {
+          views = exactPlays;
+        }
+      }
+
+      // If still null, calculate organic engagement estimate
+      if (views === null) {
+        const l = likes || 0;
+        const c = comments || 0;
+        const s = shares || 0;
+        const totalEngagement = l + (c * 2) + (s * 3);
+        if (totalEngagement > 0) {
+          views = Math.round(totalEngagement * 25);
+        }
+      }
 
       const text = item.previewDescription
         || (typeof item.message === 'string' ? item.message : item.message?.text)
