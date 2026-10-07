@@ -237,7 +237,7 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Facebook (Apify -> Bright Data -> OpenGraph Fallback)
+    // 5. Facebook (Apify -> Bright Data -> Python Scraper Engine -> OpenGraph Fallback)
     // ─────────────────────────────────────────────────────────────────────────
     if (platform === 'facebook') {
       const path = await import('path');
@@ -256,7 +256,7 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
         return JSON.parse(str.trim());
       };
 
-      // 1. Tier 1: Apify Facebook Extractor
+      // 1. Tier 1: Apify Facebook Extractor (Primary)
       const apifyTokens = (process.env.APIFY_API_TOKENS || process.env.APIFY_API_TOKEN || '')
         .split(',')
         .map((t) => t.trim())
@@ -266,7 +266,7 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
         try {
           const apifyScript = path.resolve(process.cwd(), '.scraper', 'extractors', 'apify_facebook.js');
           if (fs.existsSync(apifyScript)) {
-            const { stdout } = await execRunner(process.execPath, [apifyScript, targetUrl], { timeout: 35000 });
+            const { stdout } = await execRunner(process.execPath, [apifyScript, targetUrl], { timeout: 85000 });
             if (stdout && stdout.trim()) {
               const data = parseSafeJson(stdout);
               if (data && data.reachable) {
@@ -292,12 +292,12 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
         }
       }
 
-      // 2. Tier 2: Bright Data Fallback
+      // 2. Tier 2: Bright Data Fallback (Secondary)
       if (process.env.BRIGHT_DATA_API_KEY) {
         try {
           const bdScript = path.resolve(process.cwd(), '.scraper', 'extractors', 'brightdata_facebook.js');
           if (fs.existsSync(bdScript)) {
-            const { stdout } = await execRunner(process.execPath, [bdScript, targetUrl], { timeout: 45000 });
+            const { stdout } = await execRunner(process.execPath, [bdScript, targetUrl], { timeout: 95000 });
             if (stdout && stdout.trim()) {
               const data = parseSafeJson(stdout);
               if (data && data.reachable) {
@@ -318,11 +318,43 @@ export async function extractPostForVerification(rawUrl: string): Promise<Verifi
             }
           }
         } catch {
-          // Fall through to OpenGraph fallback
+          // Fall through to Python engine
         }
       }
 
-      // 3. Tier 3: OpenGraph & Facebook Crawler Fallback
+      // 3. Tier 3: Custom Python Scraper Engine Fallback (Tertiary)
+      try {
+        const scraperDir = path.resolve(process.cwd(), '.scraper');
+        const pyCode = `import sys, json; from extractors import extract_post_metrics; res = extract_post_metrics(sys.argv[1]); print(json.dumps(res.to_dict()))`;
+        const { stdout } = await execRunner('python', ['-c', pyCode, targetUrl], {
+          cwd: scraperDir,
+          timeout: 45000,
+          env: { ...process.env, PYTHONPATH: scraperDir },
+        });
+        if (stdout && stdout.trim()) {
+          const pyData = parseSafeJson(stdout);
+          if (pyData && pyData.reachable) {
+            return {
+              reachable: true,
+              platform: 'facebook',
+              authorHandle: pyData.uploader || urlParsed.extractedHandle,
+              uploader: pyData.uploader || urlParsed.extractedHandle,
+              authorName: pyData.channel || pyData.uploader || null,
+              authorId: pyData.uploader_id || null,
+              postText: pyData.description || null,
+              title: pyData.title || 'Facebook Post',
+              view_count: pyData.view_count ?? null,
+              like_count: pyData.like_count ?? null,
+              comment_count: pyData.comment_count ?? null,
+              share_count: pyData.share_count ?? null,
+            };
+          }
+        }
+      } catch {
+        // Fall through to OpenGraph
+      }
+
+      // 4. Tier 4: OpenGraph & Facebook Crawler Fallback
       try {
         const res = await fetchWithTimeout(targetUrl, {
           headers: {

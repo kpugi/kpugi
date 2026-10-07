@@ -119,7 +119,7 @@ def extract_facebook_post(url: str) -> ScrapeResult:
         apify_script = Path(__file__).resolve().parent / "apify_facebook.js"
         if apify_script.exists():
             cmd = ["node", str(apify_script), url]
-            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=45)
+            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=85)
             if proc.stdout.strip():
                 lines = [line.strip() for line in proc.stdout.strip().splitlines() if line.strip()]
                 for line in reversed(lines):
@@ -161,7 +161,7 @@ def extract_facebook_post(url: str) -> ScrapeResult:
         bd_script = Path(__file__).resolve().parent / "brightdata_facebook.js"
         if bd_script.exists():
             cmd = ["node", str(bd_script), url]
-            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=35)
+            proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=95)
             if proc.stdout.strip():
                 lines = [line.strip() for line in proc.stdout.strip().splitlines() if line.strip()]
                 for line in reversed(lines):
@@ -316,7 +316,7 @@ def extract_facebook_post(url: str) -> ScrapeResult:
             total_engagement = likes + (comments * 2) + (shares * 3)
             if total_engagement > 0:
                 # Standard Facebook organic feed impression benchmark: ~4% engagement rate
-                view_count = max(100, int(total_engagement * 25))
+                view_count = int(total_engagement * 25)
                 metric_basis = "video_engagement_benchmark" if is_video_format else "photo_engagement_benchmark"
 
         # Merge uploader from yt-dlp if needed

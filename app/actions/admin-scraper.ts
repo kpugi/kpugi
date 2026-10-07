@@ -399,7 +399,7 @@ export async function testScrapePlaygroundAction(
       if (!fs.existsSync(scriptPath)) {
         throw new Error('brightdata_facebook.js script not found.');
       }
-      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 70000 });
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 95000 });
       const durationMs = Date.now() - startTime;
       const res = safeParseJsonOutput(stdout);
       return {
@@ -418,7 +418,7 @@ export async function testScrapePlaygroundAction(
       if (!fs.existsSync(scriptPath)) {
         throw new Error('apify_facebook.js script not found.');
       }
-      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 60000 });
+      const { stdout } = await execRunner(process.execPath, [scriptPath, targetUrl], { timeout: 85000 });
       const durationMs = Date.now() - startTime;
       const res = safeParseJsonOutput(stdout);
       return {

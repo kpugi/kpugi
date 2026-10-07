@@ -14,6 +14,7 @@ import {
   Download,
   FileText,
   AlertTriangle,
+  AlertCircle,
   RefreshCw,
   Copy,
   Check,
@@ -701,10 +702,12 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                         className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase mt-1 ${
                           submissionState.status === 'verified_pass' || submissionState.status === 'paid'
                             ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                            : submissionState.status === 'verified_fail'
+                            ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300'
                             : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300'
                         }`}
                       >
-                        {submissionState.status === 'verified_pass' ? 'Verified' : submissionState.status}
+                        {submissionState.status === 'verified_pass' ? 'Verified' : submissionState.status === 'verified_fail' ? 'Verification Failed' : submissionState.status}
                       </span>
                     </div>
 
@@ -720,6 +723,25 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                     )}
                   </div>
                 </div>
+
+                {/* ─────────────────────────────────────────────
+                   VERIFICATION FAILURE TRANSPARENCY BANNER
+                ───────────────────────────────────────────── */}
+                {submissionState.status === 'verified_fail' && (
+                  <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 space-y-2">
+                    <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-semibold text-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>Verification Issue Detected</span>
+                    </div>
+                    <p className="text-xs text-rose-800 dark:text-rose-300 font-mono leading-relaxed">
+                      {submissionState.failure_reason ||
+                        'This submission did not pass our automated post verification check. You can remove this link using the trash button and submit a new link afresh.'}
+                    </p>
+                    <span className="text-[11px] text-rose-600 dark:text-rose-400 block">
+                      Tip: Use the red trash button above to remove this link and resubmit your post.
+                    </span>
+                  </div>
+                )}
 
                 {/* ─────────────────────────────────────────────
                    POST PERFORMANCE & AUDIT METRICS BREAKDOWN

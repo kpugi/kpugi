@@ -451,6 +451,7 @@ export interface CampaignDetailsForCreator {
     submitted_at?: string | null;
     auto_approve_at?: string | null;
     pending_payout_amount?: number | null;
+    failure_reason?: string | null;
     social_account_platform?: string | null;
   } | null;
   socialAccounts: {
@@ -595,6 +596,7 @@ export async function getCampaignDetailsForCreator(
           post_url,
           screenshot_url,
           status,
+          failure_reason,
           reserved_amount,
           final_view_count,
           likes_count,
@@ -925,6 +927,7 @@ export async function getCampaignDetailsForCreator(
           post_url: submission.post_url,
           screenshot_url: submission.screenshot_url,
           status: submission.status,
+          failure_reason: (submission as any).failure_reason || null,
           reserved_amount: Number(submission.reserved_amount),
           final_view_count: submission.final_view_count,
           likes_count: (submission as any).likes_count != null ? Number((submission as any).likes_count) : 0,

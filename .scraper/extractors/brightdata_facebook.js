@@ -143,6 +143,8 @@ async function scrapeFacebookWithBrightData(targetUrl) {
   const datasetId = process.env.BRIGHT_DATA_FB_POSTS_DATASET || 'gd_lkaxegm826bjpoo9m5';
 
   try {
+    const bdStart = Date.now();
+    const BD_DEADLINE_MS = parseInt(process.env.BRIGHT_DATA_DEADLINE_MS || '75000', 10);
     // 1. Trigger asynchronous scraping job
     const triggerEndpoint = `https://api.brightdata.com/datasets/v3/trigger?dataset_id=${datasetId}&format=json`;
 
@@ -179,8 +181,9 @@ async function scrapeFacebookWithBrightData(targetUrl) {
     }
 
     // 2. Poll snapshot progress until 'ready'
-    const maxPolls = 15;
+    const maxPolls = 25;
     for (let i = 0; i < maxPolls; i++) {
+      if (Date.now() - bdStart > BD_DEADLINE_MS) break;
       await new Promise((resolve) => setTimeout(resolve, 3000));
       try {
         const progRes = await fetch(`https://api.brightdata.com/datasets/v3/progress/${snapshotId}`, {

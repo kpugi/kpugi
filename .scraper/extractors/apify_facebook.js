@@ -85,7 +85,7 @@ function extractViewsFromText(text) {
 
 function resolveViewCount(item) {
   // 1. Direct GraphQL Comet Video feedback renderers (Standard FB GraphQL structure)
-  const rf = item.video_view_count_renderer?.feedback;
+  const rf = item.video_view_count_renderer?.feedback || item.feedback;
   if (rf) {
     const cand = parseNumberWithSuffix(rf.video_view_count)
       ?? parseNumberWithSuffix(rf.play_count)
@@ -108,8 +108,7 @@ function resolveViewCount(item) {
     item.short_form_video_context?.playback_video?.views,
     item.short_form_video_context?.video?.play_count,
     item.short_form_video_context?.playback_video?.play_count,
-    item.short_form_video_context?.playback_video?.loop_count,
-    item.loop_count,
+    item.short_form_video_context?.playback_video?.view_count,
   ];
   for (const c of directCandidates) {
     const val = parseNumberWithSuffix(c);
@@ -136,26 +135,49 @@ function resolveViewCount(item) {
   return null;
 }
 
-async function fetchReelPlayCount(client, targetUrl) {
+const PLAYCOUNT_ACTOR_ID = process.env.APIFY_FACEBOOK_PLAYCOUNT_ACTOR || 'social_developer/facebook-playcount-scraper';
+// Hard budget for the whole extractor. Callers allow more than this, so we always print JSON before being killed.
+const DEADLINE_MS = parseInt(process.env.APIFY_FACEBOOK_DEADLINE_MS || '65000', 10);
+
+/**
+ * Runs an actor, waiting at most `waitSecs`. If the run is still going, it is aborted
+ * and whatever was pushed to the dataset so far is returned.
+ */
+async function runActorBounded(client, actorId, input, waitSecs) {
+  const run = await client.actor(actorId).call(input, { waitSecs, timeout: waitSecs + 15, log: null });
+  if (!run || !run.defaultDatasetId) {
+    throw new Error(`Apify run for ${actorId} failed to initialize`);
+  }
+  if (run.status === 'RUNNING' || run.status === 'READY') {
+    client.run(run.id).abort().catch(() => {});
+  }
+  const { items } = await client.dataset(run.defaultDatasetId).listItems();
+  return items || [];
+}
+
+async function fetchReelPlayCount(client, targetUrl, waitSecs) {
   try {
-    const run = await client.actor('social_developer/facebook-playcount-scraper').call({
-      startUrls: [{ url: targetUrl }],
-    });
-    if (run && run.defaultDatasetId) {
-      const { items } = await client.dataset(run.defaultDatasetId).listItems();
-      if (items && items.length > 0) {
-        const exact = parseNumberWithSuffix(items[0].play_count)
-          ?? parseNumberWithSuffix(items[0].views)
-          ?? parseNumberWithSuffix(items[0].view_count);
-        if (exact !== null && exact > 0) {
-          return exact;
-        }
-      }
+    const items = await runActorBounded(client, PLAYCOUNT_ACTOR_ID, { startUrls: [{ url: targetUrl }] }, waitSecs);
+    const first = items[0];
+    if (first) {
+      const exact = parseNumberWithSuffix(first.play_count)
+        ?? parseNumberWithSuffix(first.views)
+        ?? parseNumberWithSuffix(first.view_count);
+      if (exact !== null && exact > 0) return exact;
     }
-  } catch (err) {
-    // Fall through to other layers
+  } catch {
+    // Non-fatal: views fall back to other sources
   }
   return null;
+}
+
+function isVideoUrl(url) {
+  return /\/(reels?|videos|watch)\b|fb\.watch|\/share\/(r|v)\//i.test(url || '');
+}
+
+function isTokenError(err) {
+  const msg = ((err && err.message) || String(err)).toLowerCase();
+  return ['rate limit', '401', '403', 'token', 'credit', 'usage', 'limit exceeded', 'not enough'].some((s) => msg.includes(s));
 }
 
 const ACTOR_ID = process.env.APIFY_FACEBOOK_ACTOR || 'apify/facebook-posts-scraper';
@@ -174,10 +196,9 @@ async function scrapeFacebookWithApify(targetUrl) {
     };
   }
 
+  const startedAt = Date.now();
   const normalizedUrl = normalizeFacebookUrl(targetUrl);
-  const isReelUrl = Boolean(
-    targetUrl.includes('/reel/') || targetUrl.includes('/reels/') || targetUrl.includes('/share/r/')
-  );
+  const wantsPlayCount = isVideoUrl(targetUrl);
   const input = {
     startUrls: [{ url: normalizedUrl }],
     resultsLimit: 1,
@@ -186,19 +207,51 @@ async function scrapeFacebookWithApify(targetUrl) {
   let lastError = null;
 
   for (let attempt = 0; attempt < tokens.length; attempt++) {
+    const remainingSecs = Math.floor((DEADLINE_MS - (Date.now() - startedAt)) / 1000) - 3;
+    if (remainingSecs < 10) break;
+
     const tokenIndex = (currentTokenIndex + attempt) % tokens.length;
-    const token = tokens[tokenIndex];
-    const client = new ApifyClient({ token });
+    const client = new ApifyClient({ token: tokens[tokenIndex] });
 
     try {
-      const run = await client.actor(ACTOR_ID).call(input);
-      if (!run || !run.defaultDatasetId) {
-        throw new Error('Apify run failed to initialize');
+      // Run the post scraper and the play-count scraper in parallel (Reels hide views from the post scraper)
+      const [postsResult, playsResult] = await Promise.allSettled([
+        runActorBounded(client, ACTOR_ID, input, remainingSecs),
+        wantsPlayCount ? fetchReelPlayCount(client, targetUrl, remainingSecs) : Promise.resolve(null),
+      ]);
+
+      if (postsResult.status === 'rejected') {
+        throw postsResult.reason;
       }
 
-      const { items } = await client.dataset(run.defaultDatasetId).listItems();
-      if (!items || items.length === 0) {
-        return { reachable: false, error: 'Facebook post not found or private' };
+      const exactPlays = playsResult.status === 'fulfilled' ? playsResult.value : null;
+      const items = postsResult.value.filter((it) => it && !it.error);
+
+      if (items.length === 0) {
+        if (exactPlays !== null) {
+          // Post scraper got blocked but we still have the authoritative play count
+          currentTokenIndex = (tokenIndex + 1) % tokens.length;
+          return {
+            reachable: true,
+            platform: 'facebook',
+            extractor: 'apify_facebook',
+            view_count: exactPlays,
+            like_count: null,
+            comment_count: null,
+            share_count: null,
+            uploader: null,
+            title: 'Facebook Reel',
+            description: null,
+            post_url: targetUrl,
+          };
+        }
+        const errItem = postsResult.value.find((it) => it && it.error);
+        return {
+          reachable: false,
+          platform: 'facebook',
+          extractor: 'apify_facebook',
+          error: errItem?.errorDescription || 'Facebook post not found or private',
+        };
       }
 
       currentTokenIndex = (tokenIndex + 1) % tokens.length;
@@ -242,15 +295,8 @@ async function scrapeFacebookWithApify(targetUrl) {
         ?? parseNumberWithSuffix(item.sharesCount)
         ?? parseNumberWithSuffix(item.shares);
 
-      let views = resolveViewCount(item);
-
-      // If views not found explicitly in item (common on Reels) or is a Reel URL, query the dedicated playcount actor
-      if (views === null || isReelUrl || item.short_form_video_context) {
-        const exactPlays = await fetchReelPlayCount(client, targetUrl);
-        if (exactPlays !== null && exactPlays > 0) {
-          views = exactPlays;
-        }
-      }
+      // Exact play count wins; otherwise use what the post scraper exposed
+      let views = exactPlays ?? resolveViewCount(item);
 
       // If still null, calculate organic engagement estimate
       if (views === null) {
@@ -315,11 +361,8 @@ async function scrapeFacebookWithApify(targetUrl) {
       };
     } catch (err) {
       lastError = err;
-      // Only continue to next token if it's an API rate limit or token error
-      const msg = (err && err.message) || String(err);
-      if (msg.includes('rate limit') || msg.includes('401') || msg.includes('403') || msg.includes('token') || msg.includes('credits')) {
-        continue;
-      }
+      // Rotate to the next token only for quota/auth problems
+      if (isTokenError(err)) continue;
       break;
     }
   }
@@ -338,12 +381,25 @@ if (require.main === module) {
     console.error(JSON.stringify({ reachable: false, error: 'Usage: node apify_facebook.js <url>' }));
     process.exit(1);
   } else {
+    // Watchdog: guarantee a JSON line on stdout even if the Apify API hangs
+    const watchdog = setTimeout(() => {
+      console.log(JSON.stringify({
+        reachable: false,
+        platform: 'facebook',
+        extractor: 'apify_facebook',
+        error: `Apify extractor exceeded ${DEADLINE_MS + 5000}ms deadline`,
+      }));
+      process.exit(0);
+    }, DEADLINE_MS + 5000);
+
     scrapeFacebookWithApify(target)
       .then((res) => {
+        clearTimeout(watchdog);
         console.log(JSON.stringify(res));
         process.exit(0);
       })
       .catch((err) => {
+        clearTimeout(watchdog);
         console.log(JSON.stringify({ reachable: false, error: err.message || String(err) }));
         process.exit(0);
       });
