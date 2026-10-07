@@ -108,7 +108,6 @@ export interface SlideDeckProps {
 }
 
 export function SlideDeck({
-  badgeText = 'Creator Superpowers',
   title = 'Engineered for Creators. Zero Friction.',
   description = 'Swipe through how Kpugi transforms post views into predictable weekly earnings.',
 }: SlideDeckProps) {
@@ -167,10 +166,7 @@ export function SlideDeck({
       <div className="relative z-10 mx-auto max-w-5xl flex flex-col items-center">
         {/* Header */}
         <div className="mx-auto mb-14 flex max-w-2xl flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-slate-200/80 dark:border-white/15 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider mb-4 shadow-xs backdrop-blur-md">
-            <Sparkles className="size-3.5" />
-            <span>{badgeText}</span>
-          </div>
+        
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-4">
             {title}
           </h2>

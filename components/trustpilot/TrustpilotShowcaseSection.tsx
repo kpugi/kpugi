@@ -62,10 +62,7 @@ export default function TrustpilotShowcaseSection({
         
         {/* Header */}
         <div className="text-center space-y-2 max-w-xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#00b67a]" />
-            Official Trustpilot Verification
-          </div>
+         
           <h3 className="text-2xl sm:text-3xl font-extrabold font-clash tracking-tight text-slate-900 dark:text-white">
             Customer Reviews on Trustpilot
           </h3>

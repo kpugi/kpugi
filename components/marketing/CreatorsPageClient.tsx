@@ -170,9 +170,7 @@ export function CreatorsPageClient({
 
         {/* Section Header */}
         <div className="relative z-10 text-center max-w-3xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-slate-200/80 dark:border-white/15 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider mb-3 shadow-xs backdrop-blur-md">
-            <Zap className="size-3.5" /> Interactive Calculator
-          </div>
+          
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-950 dark:text-white">
             Calculate Your Bag 💰
           </h2>
@@ -359,7 +357,6 @@ export function CreatorsPageClient({
       {/* ─── CREATOR SUPERPOWERS / FEATURES (SLIDE DECK) ──────────────────── */}
       <div id="features">
         <SlideDeck
-          badgeText="Creator Superpowers"
           title="Engineered for Creators. Zero Friction."
           description="Swipe through how Kpugi transforms short-form video views into predictable weekly earnings."
         />
@@ -373,7 +370,6 @@ export function CreatorsPageClient({
       {/* ─── NETWORKS & ECOSYSTEM MOSAIC (INTEGRATIONS5) ───────────────────── */}
       <div id="networks">
         <Integrations5
-          badgeText="Supported Networks & Ecosystem"
           title="Every Social Network. Seamlessly Integrated."
           description="Distribute brand campaign drops across 6 major social networks with automatic view counting and direct Friday bank payouts."
         />
@@ -463,7 +459,6 @@ export function CreatorsPageClient({
       {/* ─── 5 BENTO STEPS (FEATURES1) ────────────────────────────────────── */}
       <div id="steps">
         <Features1
-          badgeText="Zero Hassle Workflow"
           title="Five Steps from Signup to Direct Pay 💸"
           description="How Kpugi eliminates traditional agency delays and guarantees direct bank payouts per 1,000 verified views."
         />
@@ -472,8 +467,7 @@ export function CreatorsPageClient({
       {/* ─── CREATOR HYPE & FEEDBACK WALL (STICKERWALL) ─────────────────────── */}
       <div id="community">
         <StickerWall
-          badgeText="Creator Community Wall"
-          title="Creator Wins & Hype Wall 💬"
+          title="Creator Wins & Hype Wall"
           description="Drop a win, toss an emoji, or drag stickers around. Real physics, no limits. Leave your mark on the wall."
         />
       </div>
@@ -481,7 +475,6 @@ export function CreatorsPageClient({
       {/* ─── FREQUENTLY ASKED QUESTIONS (FAQ6) ───────────────────────────────── */}
       <div id="faqs">
         <Faq6
-          badge="Got Questions? We Got Answers"
           title={<>Frequently Asked Questions 💬</>}
           faqs={faqs}
         />

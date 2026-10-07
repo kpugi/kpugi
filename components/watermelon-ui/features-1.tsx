@@ -16,7 +16,6 @@ export interface Features1Props {
 }
 
 export function Features1({
-  badgeText = 'Zero Hassle Workflow',
   title = 'From Signup to Direct Bank Pay in 5 Simple Steps',
   description = 'How Kpugi eliminates agency delays and guarantees automated payouts per 1,000 verified views.',
 }: Features1Props) {
@@ -28,9 +27,7 @@ export function Features1({
       <div className="relative z-10 mx-auto max-w-6xl">
         {/* Header */}
         <div className="mx-auto mb-14 flex max-w-3xl flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-slate-200/80 dark:border-white/15 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider mb-4 shadow-xs backdrop-blur-md">
-            <span>⚡ {badgeText}</span>
-          </div>
+         
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-4">
             {title}
           </h2>
@@ -57,9 +54,7 @@ export function Features1({
               </p>
             </div>
             <div className="inline-flex">
-              <span className="inline-flex items-center rounded-md bg-white/90 dark:bg-white/10 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 shadow-xs">
-                Zero follower minimum
-              </span>
+           
             </div>
           </div>
 
@@ -79,9 +74,7 @@ export function Features1({
               </p>
             </div>
             <div className="inline-flex">
-              <span className="inline-flex items-center rounded-md bg-white/90 dark:bg-white/10 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 shadow-xs">
-                Instant slot reservation
-              </span>
+             
             </div>
           </div>
 
@@ -117,9 +110,7 @@ export function Features1({
             </div>
 
             <div>
-              <span className="inline-flex items-center rounded-md bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                🔒 Zero agency delays
-              </span>
+             
             </div>
           </div>
 
@@ -131,17 +122,13 @@ export function Features1({
                   <HiSwitchHorizontal className="h-5 w-5 text-pink-500" />
                 </div>
               </div>
-              <h3 className="font-display text-lg font-bold text-slate-950 dark:text-white mb-1.5">
-                4. Post & Paste Live Link
-              </h3>
+             
               <p className="font-sans text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
                 Publish your post on your account, then drop the link on Kpugi for real-time automatic view counting.
               </p>
             </div>
             <div className="inline-flex">
-              <span className="inline-flex items-center rounded-md bg-white/90 dark:bg-white/10 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 shadow-xs">
-                Automatic view tracking
-              </span>
+            
             </div>
           </div>
 
@@ -161,9 +148,7 @@ export function Features1({
               </p>
             </div>
             <div className="inline-flex">
-              <span className="inline-flex items-center rounded-md bg-white/90 dark:bg-white/10 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 shadow-xs">
-                Every Friday Direct Deposit
-              </span>
+             
             </div>
           </div>
         </div>

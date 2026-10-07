@@ -19,10 +19,7 @@ export default function HomeWallOfLove() {
         
         {/* Section Header */}
         <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#00b67a] animate-pulse" />
-            Verified Social Proof &amp; Escrow Transparency
-          </div>
+          
           <h2 className="font-clash font-bold text-slate-900 dark:text-white text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.1] [text-wrap:balance]">
             Trusted by growth leaders and Nigerian creators
           </h2>

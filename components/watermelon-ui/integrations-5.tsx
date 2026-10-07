@@ -91,11 +91,9 @@ const CREATOR_NETWORKS = [
 export interface Integrations5Props {
   title?: string;
   description?: string;
-  badgeText?: string;
 }
 
 export function Integrations5({
-  badgeText = 'Supported Networks & Ecosystem',
   title = 'Every Social Network. Endless Drops.',
   description = 'Distribute brand campaign drops across 6 major live social platforms with automatic view counting and direct Friday bank payouts.',
 }: Integrations5Props) {
@@ -107,9 +105,7 @@ export function Integrations5({
       <div className="relative z-10 mx-auto max-w-6xl">
         {/* Header */}
         <div className="mx-auto mb-14 flex max-w-3xl flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-slate-200/80 dark:border-white/15 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider mb-4 shadow-xs backdrop-blur-md">
-            <span>⚡ {badgeText}</span>
-          </div>
+         
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-4">
             {title}
           </h2>

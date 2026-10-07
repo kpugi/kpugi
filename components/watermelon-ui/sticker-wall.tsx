@@ -167,8 +167,7 @@ export interface StickerWallProps {
 }
 
 export function StickerWall({
-  badgeText = 'Creator Community Wall',
-  title = 'Creator Wins & Hype Wall 💬',
+  title = 'Creator Wins & Hype Wall',
   description = 'Drop a win, toss an emoji, or drag stickers around. Real physics, no limits. Leave your mark on the wall.',
 }: StickerWallProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -630,9 +629,7 @@ export function StickerWall({
           >
             {/* Top Title */}
             <div className="pointer-events-none flex flex-col items-center text-center max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 dark:bg-white/10 border border-slate-200/80 dark:border-white/15 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider mb-3 shadow-xs backdrop-blur-md">
-                <span>⚡ {badgeText}</span>
-              </div>
+             
               <h2 className="font-display text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-2">
                 {title}
               </h2>

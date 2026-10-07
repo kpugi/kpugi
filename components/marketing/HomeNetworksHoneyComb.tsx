@@ -248,9 +248,7 @@ export default function HomeNetworksHoneyComb() {
         
         {/* Headline */}
         <div className="mx-auto mb-14 flex max-w-2xl flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold font-satoshi uppercase tracking-wider bg-[#2F49E8]/10 text-[#2F49E8] dark:text-[#5B7CFF] border border-[#2F49E8]/20 mb-4">
-            Multi-Platform Reach
-          </span>
+         
           <h2 className="font-clash font-bold text-slate-900 dark:text-white text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.1] [text-wrap:balance]">
             Seamless across major channels, expanding everywhere
           </h2>
