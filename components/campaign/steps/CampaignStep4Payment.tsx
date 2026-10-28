@@ -12,8 +12,6 @@ import {
   CheckCircle2,
   Receipt,
   ArrowRight,
-  Globe2,
-  Zap,
 } from 'lucide-react';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 
@@ -445,13 +443,13 @@ export function CampaignStep4Payment({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 p-1.5 shadow-xs ${
                     paymentMethod === 'bachs'
-                      ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
-                      : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
+                      ? 'bg-black text-white'
+                      : 'bg-black/90 text-white'
                   }`}
                 >
-                  <Globe2 className="w-4 h-4" />
+                  <img src="/icons/bachs.png" alt="Bachs.io" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h4 className="font-display font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1">
@@ -494,13 +492,13 @@ export function CampaignStep4Payment({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 p-1.5 border shadow-xs ${
                     paymentMethod === 'paystack'
-                      ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
-                      : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
+                      ? 'bg-white dark:bg-white/10 border-indigo-200 dark:border-white/20'
+                      : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10'
                   }`}
                 >
-                  <Zap className="w-4 h-4 text-amber-500" />
+                  <img src="/icons/paystack.png" alt="Paystack" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h4 className="font-display font-extrabold text-xs text-slate-900 dark:text-white">

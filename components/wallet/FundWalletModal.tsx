@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CreditCard, Zap, Loader2, ShieldCheck, CheckCircle2, Globe2 } from 'lucide-react';
+import { X, CreditCard, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import {
   initializePaystackDepositAction,
   verifyPaystackDepositAction,
@@ -244,13 +244,15 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
                 onClick={() => setSelectedProcessor('bachs')}
                 className={`p-3 rounded-2xl border-2 cursor-pointer transition-all text-left space-y-1 ${
                   selectedProcessor === 'bachs'
-                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
+                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 shadow-xs'
                     : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
-                    <Globe2 className="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400" />
+                  <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
+                    <div className="w-5 h-5 rounded-md bg-black flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                      <img src="/icons/bachs.png" alt="Bachs.io" className="w-full h-full object-contain" />
+                    </div>
                     <span>Bachs.io</span>
                   </div>
                   {selectedProcessor === 'bachs' && (
@@ -270,13 +272,15 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
                 onClick={() => setSelectedProcessor('paystack')}
                 className={`p-3 rounded-2xl border-2 cursor-pointer transition-all text-left space-y-1 ${
                   selectedProcessor === 'paystack'
-                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
+                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 shadow-xs'
                     : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
-                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
+                    <div className="w-5 h-5 rounded-md bg-white dark:bg-white/10 flex items-center justify-center shrink-0 p-0.5 border border-slate-200/80 dark:border-white/10 shadow-xs">
+                      <img src="/icons/paystack.png" alt="Paystack" className="w-full h-full object-contain" />
+                    </div>
                     <span>Paystack</span>
                   </div>
                   {selectedProcessor === 'paystack' && (
@@ -325,7 +329,16 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
                   <span>Connecting {selectedProcessor === 'bachs' ? 'Bachs...' : 'Paystack...'}</span>
                 </>
               ) : (
-                <span>Pay with {selectedProcessor === 'bachs' ? 'Bachs.io' : 'Paystack'}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-xs overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src={selectedProcessor === 'bachs' ? '/icons/bachs.png' : '/icons/paystack.png'}
+                      alt=""
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span>Pay with {selectedProcessor === 'bachs' ? 'Bachs.io' : 'Paystack'}</span>
+                </div>
               )}
             </button>
           </div>
