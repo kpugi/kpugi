@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Kpugi Launch Video</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background-color: #08090d;
+        color: #ffffff;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background-color: #08090d;
+        background-image: 
+          radial-gradient(circle 800px at 50% 15%, rgba(47, 73, 232, 0.22), transparent 70%),
+          radial-gradient(circle 600px at 85% 85%, rgba(23, 167, 91, 0.12), transparent 70%);
+      }
+
+      /* Noise Overlay */
+      .bg-grid {
+        position: absolute;
+        inset: 0;
+        background-size: 60px 60px;
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        pointer-events: none;
+      }
+
+      /* Base Scene Layer */
+      .scene {
+        position: absolute;
+        inset: 0;
+        padding: 100px 70px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Typography */
+      .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 28px;
+        border-radius: 9999px;
+        background: rgba(47, 73, 232, 0.16);
+        border: 1px solid rgba(47, 73, 232, 0.4);
+        color: #6882ff;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 40px;
+      }
+
+      .hero-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 86px;
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        color: #ffffff;
+        margin-bottom: 32px;
+      }
+
+      .hero-title span.highlight {
+        color: #7c94ff;
+        background: linear-gradient(135deg, #a5b4fc 0%, #7c94ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .hero-title span.emerald {
+        color: #17a75b;
+        background: linear-gradient(135deg, #34d399 0%, #17a75b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .hero-subtitle {
+        font-size: 34px;
+        line-height: 1.5;
+        color: #94a3b8;
+        max-width: 860px;
+        margin-bottom: 50px;
+      }
+
+      /* Badges & Cards */
+      .glass-card {
+        background: rgba(14, 18, 30, 0.85);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 36px;
+        padding: 44px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      .verified-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(23, 167, 91, 0.15);
+        border: 1.5px solid rgba(23, 167, 91, 0.5);
+        color: #34d399;
+        font-size: 30px;
+        font-weight: 700;
+        padding: 18px 36px;
+        border-radius: 9999px;
+      }
+
+      /* Scene 2: Brand Cards */
+      .brands-container {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        width: 100%;
+        max-width: 900px;
+        margin-top: 30px;
+      }
+
+      .brand-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #0e121e;
+        border: 1.5px solid rgba(255, 255, 255, 0.08);
+        border-radius: 28px;
+        padding: 28px 36px;
+        text-align: left;
+      }
+
+      .brand-info {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .brand-logo-circle {
+        width: 88px;
+        height: 88px;
+        border-radius: 20px;
+        background: #1e2638;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        font-weight: 800;
+        color: #ffffff;
+        overflow: hidden;
+      }
+
+      .brand-logo-circle img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .brand-meta h3 {
+        font-size: 34px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .brand-meta p {
+        font-size: 24px;
+        color: #94a3b8;
+      }
+
+      .cpm-pill {
+        background: rgba(47, 73, 232, 0.2);
+        border: 1px solid rgba(47, 73, 232, 0.5);
+        color: #6882ff;
+        padding: 14px 24px;
+        border-radius: 20px;
+        font-size: 26px;
+        font-weight: 700;
+      }
+
+      /* Scene 3: Audit Engine */
+      .audit-card {
+        width: 100%;
+        max-width: 900px;
+        text-align: left;
+      }
+
+      .audit-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 24px;
+        margin-bottom: 30px;
+      }
+
+      .audit-live-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 24px;
+        font-weight: 700;
+        color: #34d399;
+      }
+
+      .dot-pulse {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 12px #10b981;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 24px;
+      }
+
+      .stat-box {
+        background: #141a2b;
+        border-radius: 24px;
+        padding: 32px 28px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .stat-label {
+        font-size: 24px;
+        color: #94a3b8;
+        margin-bottom: 12px;
+      }
+
+      .stat-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 54px;
+        font-weight: 700;
+        color: #ffffff;
+      }
+
+      .payout-box {
+        grid-column: span 2;
+        background: linear-gradient(135deg, rgba(23, 167, 91, 0.15), rgba(14, 18, 30, 0.95));
+        border: 1.5px solid rgba(23, 167, 91, 0.4);
+      }
+
+      .payout-box .stat-value {
+        color: #34d399;
+      }
+
+      /* Scene 4: Outro */
+      .logo-image {
+        width: 240px;
+        height: auto;
+        margin-bottom: 40px;
+        filter: drop-shadow(0 15px 35px rgba(47, 73, 232, 0.4));
+      }
+
+      .network-icons {
+        display: flex;
+        gap: 24px;
+        margin-top: 40px;
+        margin-bottom: 60px;
+      }
+
+      .network-badge {
+        padding: 16px 28px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 9999px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #cbd5e1;
+      }
+
+      .cta-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        padding: 26px 56px;
+        background: #ffffff;
+        color: #08090d;
+        border-radius: 9999px;
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        box-shadow: 0 20px 50px rgba(255, 255, 255, 0.25);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="25"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div class="bg-grid"></div>
+
+      <!-- Master Audio Track (Speech + Music Bed) -->
+      <audio
+        id="master-audio"
+        class="clip"
+        src="assets/audio/mix.mp3"
+        data-start="0"
+        data-duration="25"
+        data-track-index="0"
+      ></audio>
+
+      <!-- SCENE 1: The Hook (0.0s – 4.5s) -->
+      <div id="scene-1" class="scene clip" data-start="0" data-duration="4.5" data-track-index="1">
+        <div id="s1-tag" class="tag-pill">Nigeria's Creator Marketplace</div>
+        <h1 id="s1-title" class="hero-title">
+          Where posts turn into <span class="emerald">payouts.</span>
+        </h1>
+        <p id="s1-subtitle" class="hero-subtitle">
+          And brands get real, confirmed reach across Africa's top social networks.
+        </p>
+        <div id="s1-badge" class="verified-badge">
+          <span>✓</span> 100% Verified Impressions Only
+        </div>
+      </div>
+
+      <!-- SCENE 2: Top Brands & Active Campaigns (4.5s – 12.0s) -->
+      <div id="scene-2" class="scene clip" data-start="4.5" data-duration="7.5" data-track-index="2">
+        <div id="s2-tag" class="tag-pill">Guaranteed Budgets</div>
+        <h2 id="s2-title" class="hero-title">
+          Connect with <span class="highlight">top brands.</span>
+        </h2>
+        <p id="s2-subtitle" class="hero-subtitle">
+          Instant campaign access with escrow protection. Zero vanity metrics.
+        </p>
+
+        <div class="brands-container">
+          <div id="brand-1" class="brand-card">
+            <div class="brand-info">
+              <div class="brand-logo-circle">
+                <img src="assets/images/chowdeck_creative.png" alt="Chowdeck" />
+              </div>
+              <div class="brand-meta">
+                <h3>Chowdeck</h3>
+                <p>Viral Foodie Challenge • TikTok & IG</p>
+              </div>
+            </div>
+            <div class="cpm-pill">₦5,000 CPM</div>
+          </div>
+
+          <div id="brand-2" class="brand-card">
+            <div class="brand-info">
+              <div class="brand-logo-circle">
+                <img src="assets/images/piggyvest_creative.png" alt="PiggyVest" />
+              </div>
+              <div class="brand-meta">
+                <h3>PiggyVest</h3>
+                <p>Smart Savings Reel • YouTube Shorts & X</p>
+              </div>
+            </div>
+            <div class="cpm-pill">₦6,200 CPM</div>
+          </div>
+
+          <div id="brand-3" class="brand-card">
+            <div class="brand-info">
+              <div class="brand-logo-circle">
+                <img src="assets/images/infinix_creative.png" alt="Infinix" />
+              </div>
+              <div class="brand-meta">
+                <h3>Infinix Mobile</h3>
+                <p>Device Speed Showcase • Multi-Platform</p>
+              </div>
+            </div>
+            <div class="cpm-pill">₦4,800 CPM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 3: Automated Scraper Audit & Instant Payout (12.0s – 18.0s) -->
+      <div id="scene-3" class="scene clip" data-start="12.0" data-duration="6.0" data-track-index="3">
+        <div id="s3-tag" class="tag-pill">Autonomous Audit Engine</div>
+        <h2 id="s3-title" class="hero-title">
+          Audited &amp; <span class="emerald">Paid.</span>
+        </h2>
+
+        <div class="glass-card audit-card">
+          <div class="audit-header">
+            <div>
+              <div style="font-size: 24px; color: #94a3b8; margin-bottom: 6px;">Post Verification</div>
+              <div style="font-size: 30px; font-weight: 700; color: #ffffff;">tiktok.com/@creator/video/739...</div>
+            </div>
+            <div class="audit-live-indicator">
+              <div class="dot-pulse"></div>
+              <span>VERIFIED REACH</span>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-box">
+              <div class="stat-label">Verified Views</div>
+              <div id="view-counter" class="stat-value">45,200</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">Engagement Fidelity</div>
+              <div class="stat-value" style="color: #6882ff;">100%</div>
+            </div>
+
+            <div class="stat-box payout-box">
+              <div class="stat-label">Escrow Settlement Released</div>
+              <div class="stat-value">₦226,000 Settled to Wallet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 4: Outro & Call to Action (18.0s – 25.0s) -->
+      <div id="scene-4" class="scene clip" data-start="18.0" data-duration="7.0" data-track-index="4">
+        <img id="s4-logo" class="logo-image" src="assets/images/kpugi_logo.png" alt="Kpugi" />
+        <h2 id="s4-title" class="hero-title">
+          Real Reach. <br /><span class="emerald">Guaranteed Payouts.</span>
+        </h2>
+        <p id="s4-subtitle" class="hero-subtitle">
+          Nigeria’s premier creator performance advertising network.
+        </p>
+
+        <div class="network-icons">
+          <div class="network-badge">TikTok</div>
+          <div class="network-badge">Instagram</div>
+          <div class="network-badge">YouTube</div>
+          <div class="network-badge">X</div>
+          <div class="network-badge">Facebook</div>
+        </div>
+
+        <div id="s4-cta" class="cta-button">
+          <span>Launch at kpugi.com</span>
+          <span style="font-size: 36px;">→</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ─── SCENE 1 (0.0s – 4.5s) ─────────────────────────────────
+      tl.set("#scene-1", { opacity: 1, pointerEvents: "auto" }, 0);
+      tl.fromTo(
+        "#s1-tag",
+        { opacity: 0, y: -25, scale: 0.9 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.5)" },
+        0.2
+      );
+      tl.fromTo(
+        "#s1-title",
+        { opacity: 0, y: 40, filter: "blur(8px)" },
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease: "power3.out" },
+        0.4
+      );
+      tl.fromTo(
+        "#s1-subtitle",
+        { opacity: 0, y: 25 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+        0.7
+      );
+      tl.fromTo(
+        "#s1-badge",
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" },
+        1.1
+      );
+      // Exit Scene 1
+      tl.to(
+        "#scene-1",
+        { opacity: 0, y: -40, duration: 0.4, ease: "power2.in" },
+        4.1
+      );
+
+      // ─── SCENE 2 (4.5s – 12.0s) ────────────────────────────────
+      tl.set("#scene-2", { opacity: 1, pointerEvents: "auto" }, 4.5);
+      tl.fromTo(
+        "#s2-tag",
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+        4.6
+      );
+      tl.fromTo(
+        "#s2-title",
+        { opacity: 0, y: 35 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+        4.8
+      );
+      tl.fromTo(
+        "#s2-subtitle",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        5.1
+      );
+      // Brand cards arrive staggered
+      tl.fromTo(
+        "#brand-1",
+        { opacity: 0, x: -60, scale: 0.94 },
+        { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+        5.5
+      );
+      tl.fromTo(
+        "#brand-2",
+        { opacity: 0, x: 60, scale: 0.94 },
+        { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+        6.1
+      );
+      tl.fromTo(
+        "#brand-3",
+        { opacity: 0, y: 50, scale: 0.94 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+        6.7
+      );
+      // Exit Scene 2
+      tl.to(
+        "#scene-2",
+        { opacity: 0, scale: 0.95, duration: 0.4, ease: "power2.in" },
+        11.6
+      );
+
+      // ─── SCENE 3 (12.0s – 18.0s) ───────────────────────────────
+      tl.set("#scene-3", { opacity: 1, pointerEvents: "auto" }, 12.0);
+      tl.fromTo(
+        "#s3-tag",
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.4 },
+        12.1
+      );
+      tl.fromTo(
+        "#s3-title",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+        12.3
+      );
+      tl.fromTo(
+        ".audit-card",
+        { opacity: 0, scale: 0.92, y: 40 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: "back.out(1.4)" },
+        12.6
+      );
+
+      // Live View Counter Simulation
+      const viewCounter = { val: 0 };
+      tl.to(
+        viewCounter,
+        {
+          val: 45200,
+          duration: 1.8,
+          ease: "power2.out",
+          onUpdate: function () {
+            const el = document.getElementById("view-counter");
+            if (el) el.textContent = Math.floor(viewCounter.val).toLocaleString();
+          },
+        },
+        13.2
+      );
+
+      // Payout Box Pulse
+      tl.fromTo(
+        ".payout-box",
+        { boxShadow: "0 0 0 rgba(23, 167, 91, 0)" },
+        {
+          boxShadow: "0 0 50px rgba(23, 167, 91, 0.45)",
+          duration: 0.6,
+          repeat: 3,
+          yoyo: true,
+          ease: "sine.inOut",
+        },
+        14.8
+      );
+
+      // Exit Scene 3
+      tl.to(
+        "#scene-3",
+        { opacity: 0, y: -40, duration: 0.4, ease: "power2.in" },
+        17.6
+      );
+
+      // ─── SCENE 4 (18.0s – 25.0s) ───────────────────────────────
+      tl.set("#scene-4", { opacity: 1, pointerEvents: "auto" }, 18.0);
+      tl.fromTo(
+        "#s4-logo",
+        { opacity: 0, scale: 0.75, y: -20 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: "back.out(1.6)" },
+        18.2
+      );
+      tl.fromTo(
+        "#s4-title",
+        { opacity: 0, y: 35 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        18.6
+      );
+      tl.fromTo(
+        "#s4-subtitle",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        19.0
+      );
+      tl.fromTo(
+        ".network-badge",
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.4, stagger: 0.08, ease: "back.out(1.5)" },
+        19.3
+      );
+      tl.fromTo(
+        "#s4-cta",
+        { opacity: 0, scale: 0.9, y: 20 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "back.out(1.8)" },
+        20.0
+      );
+
+      // Subtle CTA pulse before video ends
+      tl.to(
+        "#s4-cta",
+        {
+          scale: 1.05,
+          duration: 0.6,
+          repeat: 2,
+          yoyo: true,
+          ease: "power1.inOut",
+        },
+        21.2
+      );
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

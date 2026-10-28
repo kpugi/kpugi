@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   Receipt,
   ArrowRight,
+  Globe2,
+  Zap,
 } from 'lucide-react';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 
@@ -382,99 +384,148 @@ export function CampaignStep4Payment({
       <div className="space-y-3">
         <label className="text-xs font-bold text-slate-900 dark:text-white">Payment Method</label>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Option 1: Kpugi Escrow Wallet */}
           <div
             onClick={() => updateFormData({ payment_method: 'wallet' })}
-            className={`p-5 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
+            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
               paymentMethod === 'wallet'
                 ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-sm'
                 : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                     paymentMethod === 'wallet'
                       ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
                       : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
                   }`}
                 >
-                  <Wallet className="w-5 h-5" />
+                  <Wallet className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-display font-extrabold text-sm text-slate-900 dark:text-white">
+                  <h4 className="font-display font-extrabold text-xs text-slate-900 dark:text-white">
                     Wallet Balance
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Lock ₦{totalPayable.toLocaleString()} from brand balance
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    From brand balance
                   </p>
                 </div>
               </div>
               <div
-                className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                   paymentMethod === 'wallet'
                     ? 'border-[#4338ca] bg-[#4338ca] text-white'
                     : 'border-slate-300 dark:border-white/20 bg-white dark:bg-white/5'
                 }`}
               >
-                {paymentMethod === 'wallet' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                {paymentMethod === 'wallet' && <CheckCircle2 className="w-3 h-3" />}
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#dcd8fc]/60 dark:border-white/10 flex items-center justify-between text-xs">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">Available Balance:</span>
-              <span className="font-mono font-extrabold text-[#4338ca] dark:text-indigo-400 bg-white dark:bg-white/10 px-2.5 py-0.5 rounded-full border border-[#dcd8fc] dark:border-white/10">
+            <div className="pt-2 border-t border-[#dcd8fc]/60 dark:border-white/10 flex items-center justify-between text-[11px]">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">Available:</span>
+              <span className="font-mono font-extrabold text-[#4338ca] dark:text-indigo-400 bg-white dark:bg-white/10 px-2 py-0.5 rounded-full border border-[#dcd8fc] dark:border-white/10 text-[10px]">
                 ₦{walletBalance.toLocaleString()}
               </span>
             </div>
           </div>
 
-          {/* Option 2: Instant Card & Bank Transfer */}
+          {/* Option 2: Bachs.io Checkout */}
+          <div
+            onClick={() => updateFormData({ payment_method: 'bachs' })}
+            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
+              paymentMethod === 'bachs'
+                ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-sm'
+                : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                    paymentMethod === 'bachs'
+                      ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
+                      : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
+                  }`}
+                >
+                  <Globe2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-display font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1">
+                    <span>Bachs.io</span>
+                    <span className="text-[9px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-1 rounded">New</span>
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Cards, Transfer & Crypto
+                  </p>
+                </div>
+              </div>
+              <div
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                  paymentMethod === 'bachs'
+                    ? 'border-[#4338ca] bg-[#4338ca] text-white'
+                    : 'border-slate-300 dark:border-white/20 bg-white dark:bg-white/5'
+                }`}
+              >
+                {paymentMethod === 'bachs' && <CheckCircle2 className="w-3 h-3" />}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#dcd8fc]/60 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <span>Bachs Checkout</span>
+              <span className="font-mono text-[10px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-500/30">
+                Recommended
+              </span>
+            </div>
+          </div>
+
+          {/* Option 3: Paystack Checkout */}
           <div
             onClick={() => updateFormData({ payment_method: 'paystack' })}
-            className={`p-5 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
+            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
               paymentMethod === 'paystack'
                 ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-sm'
                 : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                     paymentMethod === 'paystack'
                       ? 'bg-[#4338ca] dark:bg-indigo-600 text-white shadow-xs'
                       : 'bg-[#e9e6fd] dark:bg-white/10 text-[#4338ca] dark:text-indigo-400'
                   }`}
                 >
-                  <CreditCard className="w-5 h-5" />
+                  <Zap className="w-4 h-4 text-amber-500" />
                 </div>
                 <div>
-                  <h4 className="font-display font-extrabold text-sm text-slate-900 dark:text-white">
-                    Instant Card & Bank Transfer
+                  <h4 className="font-display font-extrabold text-xs text-slate-900 dark:text-white">
+                    Paystack
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Debit Card, Bank Transfer or USSD checkout
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Cards, Transfer & USSD
                   </p>
                 </div>
               </div>
               <div
-                className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                   paymentMethod === 'paystack'
                     ? 'border-[#4338ca] bg-[#4338ca] text-white'
                     : 'border-slate-300 dark:border-white/20 bg-white dark:bg-white/5'
                 }`}
               >
-                {paymentMethod === 'paystack' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                {paymentMethod === 'paystack' && <CheckCircle2 className="w-3 h-3" />}
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#dcd8fc]/60 dark:border-white/10 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-              <span>Paystack Checkout</span>
-              <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30">
-                Instant Activation
+            <div className="pt-2 border-t border-[#dcd8fc]/60 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <span>Paystack Rail</span>
+              <span className="font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30">
+                Local
               </span>
             </div>
           </div>

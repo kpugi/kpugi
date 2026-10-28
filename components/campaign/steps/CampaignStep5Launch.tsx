@@ -19,7 +19,7 @@ import CampaignInteractivePreview from '@/components/campaign/CampaignInteractiv
 interface Step5Props {
   formData: any;
   paymentRef: string;
-  paymentMethod: 'wallet' | 'paystack';
+  paymentMethod: 'wallet' | 'paystack' | 'bachs';
   isPublishing: boolean;
   onConfirmLaunch: () => void;
 }

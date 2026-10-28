@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "historyId": "2cd3c2df-0d31-499e-86e0-490a26f4899e",
+  "currentRevision": "01404175-3f75-4ace-a09e-1048a3417d68",
+  "pendingChanges": false,
+  "files": {
+    "AGENTS.md": {
+      "hash": "1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\1d\\1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5"
+    },
+    "CLAUDE.md": {
+      "hash": "1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\1d\\1d4f0c8ca2507b94fd7c9df709fff01416adbd51a0f922b9d6ed2f40129147d5"
+    },
+    "assets/audio/mix.mp3": {
+      "hash": "6b0ec2588bc8f9683b5846475e50a2c90034c76e1d94d4800bb66c15d166dfd1",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\6b\\6b0ec2588bc8f9683b5846475e50a2c90034c76e1d94d4800bb66c15d166dfd1"
+    },
+    "assets/audio/voice_scene1.mp3": {
+      "hash": "dc6a02428cea7b4a61f0baf6efcbf4bc2f89828f3af147ea1ac99ea145c73da4",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\dc\\dc6a02428cea7b4a61f0baf6efcbf4bc2f89828f3af147ea1ac99ea145c73da4"
+    },
+    "assets/audio/voice_scene2.mp3": {
+      "hash": "aaa1778f63b83ca7dc27e22ef972e7fd0614cd8a16b52e4a7f08267ed69a6b47",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\aa\\aaa1778f63b83ca7dc27e22ef972e7fd0614cd8a16b52e4a7f08267ed69a6b47"
+    },
+    "assets/audio/voice_scene3.mp3": {
+      "hash": "b518d311899a60dfce003dd375eec985e3420276106f4654e2d8568f06245407",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\b5\\b518d311899a60dfce003dd375eec985e3420276106f4654e2d8568f06245407"
+    },
+    "assets/audio/voice_scene4.mp3": {
+      "hash": "e3191a7691054a13367489559ed03a676f84428ba81c834d8a579a4ceec761d2",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\e3\\e3191a7691054a13367489559ed03a676f84428ba81c834d8a579a4ceec761d2"
+    },
+    "assets/images/chowdeck_creative.png": {
+      "hash": "fe61f6cc46ffe3f0ac97ce083981250c318f353a12d5c2d32c3b70c06bde9497",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\fe\\fe61f6cc46ffe3f0ac97ce083981250c318f353a12d5c2d32c3b70c06bde9497"
+    },
+    "assets/images/favicon.png": {
+      "hash": "fd1718e2d02dfc70f89afaf8713495885e3cc666f30e0a4e419d10f58f64441b",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\fd\\fd1718e2d02dfc70f89afaf8713495885e3cc666f30e0a4e419d10f58f64441b"
+    },
+    "assets/images/infinix_creative.png": {
+      "hash": "b9430c06d0d2da11e9907c2740d483ba5c736ccb7c104d6fe1f7e5d421cf34cb",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\b9\\b9430c06d0d2da11e9907c2740d483ba5c736ccb7c104d6fe1f7e5d421cf34cb"
+    },
+    "assets/images/kpugi_bot_avatar.png": {
+      "hash": "b282df3504ea4ac19ba8a0318621b7c8ab2981b6914e2697d0271e5ebe0e00fc",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\b2\\b282df3504ea4ac19ba8a0318621b7c8ab2981b6914e2697d0271e5ebe0e00fc"
+    },
+    "assets/images/kpugi_favicon.png": {
+      "hash": "0a473d3c3caf2be03be88435300af7eeb545959bebbe71fdaf71edd9d9a41110",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\0a\\0a473d3c3caf2be03be88435300af7eeb545959bebbe71fdaf71edd9d9a41110"
+    },
+    "assets/images/kpugi_logo.png": {
+      "hash": "e949ae42c5d27e943652ce38686b3162240b113df5bc54e377830d2bcf0e7f5a",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\e9\\e949ae42c5d27e943652ce38686b3162240b113df5bc54e377830d2bcf0e7f5a"
+    },
+    "assets/images/kpugi_logo_raw.png": {
+      "hash": "80ec2351fb210f6c6cbb0cb7eb0cd5d3128318fc76285ad49bcd93e00de3933c",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\80\\80ec2351fb210f6c6cbb0cb7eb0cd5d3128318fc76285ad49bcd93e00de3933c"
+    },
+    "assets/images/kpugi_mobile_mockup.png": {
+      "hash": "ad355a93fefe776d0601212da45bb1adb5a0b5ccd8861c3fe9453693d42ca4ab",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\ad\\ad355a93fefe776d0601212da45bb1adb5a0b5ccd8861c3fe9453693d42ca4ab"
+    },
+    "assets/images/piggyvest_creative.png": {
+      "hash": "de34c8b7481c3ed2ef2036c956f61fb350466c08a27bb1cc452b4e90d896937e",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\de\\de34c8b7481c3ed2ef2036c956f61fb350466c08a27bb1cc452b4e90d896937e"
+    },
+    "assets/images/zaron_creative.png": {
+      "hash": "e763e68bd070e8ca11c8834d74ccae36034ff102c796b04db4e6d994d4b0e451",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\e7\\e763e68bd070e8ca11c8834d74ccae36034ff102c796b04db4e6d994d4b0e451"
+    },
+    "hyperframes.json": {
+      "hash": "53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\53\\53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50"
+    },
+    "index.html": {
+      "hash": "2fd3e4120672591a73f97686e7d9305ee4924d8e7b297390fb5841c9e2235fed",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\2f\\2fd3e4120672591a73f97686e7d9305ee4924d8e7b297390fb5841c9e2235fed"
+    },
+    "meta.json": {
+      "hash": "af2e0fd56b29aa074f4fc07f2c2e26e877301d9a70ddd2726fbb42b3de892dd7",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\af\\af2e0fd56b29aa074f4fc07f2c2e26e877301d9a70ddd2726fbb42b3de892dd7"
+    },
+    "package.json": {
+      "hash": "0417cbd5767b85aed83c108a3aea0f0e777913240063cd695644ea8feba6e397",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\04\\0417cbd5767b85aed83c108a3aea0f0e777913240063cd695644ea8feba6e397"
+    },
+    "assets/music/track.mp3": {
+      "hash": "f9912f2c962ada1e579f5ccc5a7d854d67e5e81ee96a7dd8c885a8480ae58d09",
+      "content": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\f9\\f9912f2c962ada1e579f5ccc5a7d854d67e5e81ee96a7dd8c885a8480ae58d09"
+    }
+  },
+  "revisions": {
+    "01404175-3f75-4ace-a09e-1048a3417d68": {
+      "actor": {
+        "kind": "outside",
+        "name": "Outside"
+      },
+      "label": "Changed outside the app",
+      "startedAt": 1792154035962,
+      "endedAt": 1792154035964,
+      "files": {
+        "index.html": {
+          "before": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\4a\\4abb23d48dd9fb9c3358303e112f0a435ceea971427ae0aeb5a92de9c2f0c000",
+          "after": "C:\\Users\\HP\\.cache\\hyperframes\\history\\2cd3c2df-0d31-499e-86e0-490a26f4899e\\blobs\\2f\\2fd3e4120672591a73f97686e7d9305ee4924d8e7b297390fb5841c9e2235fed"
+        }
+      }
+    }
+  },
+  "checks": {
+    "latest": {
+      "revision": "01404175-3f75-4ace-a09e-1048a3417d68",
+      "id": "b3c98d54-ee9c-41af-b22b-b0ea81c0c239"
+    },
+    "revisions": {
+      "01404175-3f75-4ace-a09e-1048a3417d68": [
+        {
+          "id": "b3c98d54-ee9c-41af-b22b-b0ea81c0c239",
+          "scope": "project",
+          "report": "C:\\Users\\HP\\Desktop\\Kpugi\\brag-output\\composition\\.hyperframes\\artifacts\\checks\\b3c98d54-ee9c-41af-b22b-b0ea81c0c239.json",
+          "metadata": {
+            "ok": true,
+            "browserSkipped": false,
+            "options": {
+              "samples": 9,
+              "atTransitions": false,
+              "maxIssues": 80,
+              "collapseStatic": true,
+              "tolerance": 2,
+              "timeout": 3000,
+              "contrast": true,
+              "strict": false,
+              "snapshots": false,
+              "browserGpuMode": "auto"
+            }
+          },
+          "createdAt": 1792154052691,
+          "contentHash": "1b9e11c6ec635203fca759e49e436aa2175ee1aadcb1b23d59a3910437b1bef9",
+          "revision": "01404175-3f75-4ace-a09e-1048a3417d68",
+          "inputFingerprint": "bc39b8501e0f0268669ee4c7a8b75bc44c14bbe0704826e7e38f22ef2307ed5e",
+          "inputScope": "local-project-files",
+          "attribution": "recorded-revision"
+        }
+      ]
+    },
+    "unversioned": [
+      {
+        "id": "e6ce95d0-481b-4c4c-a94f-01f075652a97",
+        "scope": "project",
+        "report": "C:\\Users\\HP\\Desktop\\Kpugi\\brag-output\\composition\\.hyperframes\\artifacts\\checks\\e6ce95d0-481b-4c4c-a94f-01f075652a97.json",
+        "metadata": {
+          "ok": true,
+          "browserSkipped": false,
+          "options": {
+            "samples": 9,
+            "atTransitions": false,
+            "maxIssues": 80,
+            "collapseStatic": true,
+            "tolerance": 2,
+            "timeout": 3000,
+            "contrast": true,
+            "strict": false,
+            "snapshots": false,
+            "browserGpuMode": "auto"
+          }
+        },
+        "createdAt": 1792154007972,
+        "contentHash": "61137111e666e3486b7707e9b232dfb1f26370e8cebb6419b5b773fa1566a8ee",
+        "revision": null,
+        "inputFingerprint": "0571d5ee3b7db4ccabad49af80a3a6ccfcab6bed4ec764a355c8fd2e2dcc13eb",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "snapshots": {
+    "latest": null,
+    "revisions": {},
+    "unversioned": []
+  },
+  "renders": {
+    "latest": {
+      "id": "a24f744b-d3cb-4568-84eb-53ac30878c6c",
+      "completedAt": 1792154191080,
+      "output": "C:\\Users\\HP\\Desktop\\Kpugi\\brag-output\\brag.mp4",
+      "status": "completed",
+      "revision": "01404175-3f75-4ace-a09e-1048a3417d68"
+    },
+    "retainedRevisions": [
+      "01404175-3f75-4ace-a09e-1048a3417d68"
+    ]
+  },
+  "pendingArtifactCleanup": []
+}

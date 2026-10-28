@@ -2,8 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CreditCard, Zap, Loader2, AlertCircle } from 'lucide-react';
-import { initializePaystackDepositAction, verifyPaystackDepositAction, logCancelledPaystackDepositAction } from '@/app/actions/advertiser';
+import { X, CreditCard, Zap, Loader2, ShieldCheck, CheckCircle2, Globe2 } from 'lucide-react';
+import {
+  initializePaystackDepositAction,
+  verifyPaystackDepositAction,
+  logCancelledPaystackDepositAction,
+  initializeBachsDepositAction,
+  logCancelledBachsDepositAction,
+} from '@/app/actions/advertiser';
 import { formatCompactCurrency } from '@/lib/utils/format';
 
 interface FundWalletModalProps {
@@ -16,6 +22,7 @@ interface FundWalletModalProps {
 export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }: FundWalletModalProps) {
   const [mounted, setMounted] = useState(false);
   const [depositAmount, setDepositAmount] = useState('500000');
+  const [selectedProcessor, setSelectedProcessor] = useState<'bachs' | 'paystack'>('bachs');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -69,6 +76,30 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
       return;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 1. ROUTE VIA BACHS CHECKOUT
+    // ─────────────────────────────────────────────────────────────
+    if (selectedProcessor === 'bachs') {
+      try {
+        const initRes = await initializeBachsDepositAction(amtNum);
+        if (initRes.success && initRes.checkout_url) {
+          window.location.href = initRes.checkout_url;
+          return;
+        } else {
+          setIsSubmitting(false);
+          setErrorMsg(initRes.error || 'Failed to initialize Bachs checkout session.');
+          return;
+        }
+      } catch (err: any) {
+        setIsSubmitting(false);
+        setErrorMsg(err?.message || 'Error connecting to Bachs payment gateway.');
+        return;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 2. ROUTE VIA PAYSTACK CHECKOUT
+    // ─────────────────────────────────────────────────────────────
     const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
     const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
@@ -202,15 +233,77 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
             </div>
           </div>
 
+          {/* Payment Processor Selector */}
+          <div className="space-y-2 pt-1">
+            <label className="font-bold text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wider block">
+              Select Payment Gateway
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Option A: Bachs.io */}
+              <div
+                onClick={() => setSelectedProcessor('bachs')}
+                className={`p-3 rounded-2xl border-2 cursor-pointer transition-all text-left space-y-1 ${
+                  selectedProcessor === 'bachs'
+                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
+                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
+                    <Globe2 className="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400" />
+                    <span>Bachs.io</span>
+                  </div>
+                  {selectedProcessor === 'bachs' && (
+                    <CheckCircle2 className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Cards, Bank Transfer & Stablecoins
+                </p>
+                <span className="inline-block text-[9px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/50 px-1.5 py-0.5 rounded">
+                  Recommended
+                </span>
+              </div>
+
+              {/* Option B: Paystack */}
+              <div
+                onClick={() => setSelectedProcessor('paystack')}
+                className={`p-3 rounded-2xl border-2 cursor-pointer transition-all text-left space-y-1 ${
+                  selectedProcessor === 'paystack'
+                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
+                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Paystack</span>
+                  </div>
+                  {selectedProcessor === 'paystack' && (
+                    <CheckCircle2 className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Nigerian Cards, Transfer & USSD
+                </p>
+                <span className="inline-block text-[9px] font-bold text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                  Local Rail
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-between text-xs">
             <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-amber-500" /> Payment Gateway
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Escrow Security
             </span>
-            <span className="font-bold text-slate-900 dark:text-white font-mono">Paystack Popup</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">100% Protected</span>
           </div>
 
           <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-            Payments trigger an inline Paystack popup modal. Funds are credited immediately upon confirmation.
+            {selectedProcessor === 'bachs'
+              ? 'You will be redirected to Bachs secure checkout page. Funds credit immediately to your escrow balance.'
+              : 'Payments open an inline Paystack popup modal. Funds credit immediately upon confirmation.'}
           </p>
 
           <div className="pt-2 flex items-center justify-end gap-2">
@@ -229,10 +322,10 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Opening Paystack...</span>
+                  <span>Connecting {selectedProcessor === 'bachs' ? 'Bachs...' : 'Paystack...'}</span>
                 </>
               ) : (
-                <span>Pay with Paystack</span>
+                <span>Pay with {selectedProcessor === 'bachs' ? 'Bachs.io' : 'Paystack'}</span>
               )}
             </button>
           </div>

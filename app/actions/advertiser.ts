@@ -1104,3 +1104,223 @@ export async function syncBrandClerkIdentityAction() {
 }
 
 
+
+
+// ─── 10. Bachs.io Payment Gateway Actions ─────────────────────────────────────
+
+/**
+ * Initialize Bachs Deposit Checkout Session
+ */
+export async function initializeBachsDepositAction(amount: number) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: "Hol' up ✋... You gotta sign in first to get access!" };
+  }
+
+  if (amount < 5000) {
+    return { success: false, error: "Hold on now 🛑... Minimum top-up is ₦5,000! Let's get them numbers up." };
+  }
+
+  const { createBachsCheckoutSession, generateBachsReference } = await import('@/lib/bachs/checkout');
+  const reference = generateBachsReference();
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const successUrl = `${baseUrl}/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${reference}&processor=bachs`;
+  const cancelUrl = `${baseUrl}/b/wallet?cancelled=true&processor=bachs`;
+
+  try {
+    const session = await createBachsCheckoutSession({
+      amountInNaira: amount,
+      customerEmail: userProfile.profile.email || 'advertiser@kpugi.com',
+      customerName: userProfile.profile.full_name || undefined,
+      reference,
+      successUrl,
+      cancelUrl,
+      metadata: {
+        profileId: userProfile.profile.id,
+        clerkId: userProfile.profile.clerk_id,
+        walletType: 'advertiser_funding',
+        amount,
+      },
+    });
+
+    if (!session || !session.checkout_url) {
+      return { success: false, error: 'Failed to generate Bachs checkout session.' };
+    }
+
+    return {
+      success: true,
+      checkout_url: session.checkout_url,
+      checkout_id: session.checkout_id,
+      reference: session.reference || reference,
+    };
+  } catch (err: any) {
+    console.error('[initializeBachsDepositAction Error]:', err);
+    return { success: false, error: err?.message || 'Error connecting to Bachs payment gateway.' };
+  }
+}
+
+/**
+ * Verify Bachs Deposit Reference & Credit Wallet (Idempotent)
+ */
+export async function verifyBachsDepositAction(
+  referenceOrSessionId: string,
+  shouldRevalidate: boolean = true
+) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const profileId = userProfile.profile.id;
+  const supabase = createAdminClient();
+
+  // 1. Database-Level Idempotency Check: Prevent Double Crediting
+  const { data: existingTx } = await supabase
+    .from('wallet_transactions')
+    .select('id, amount, status')
+    .eq('paystack_reference', referenceOrSessionId)
+    .maybeSingle();
+
+  if (existingTx && existingTx.status === 'completed') {
+    return {
+      success: true,
+      alreadyProcessed: true,
+      amount: Number(existingTx.amount),
+      status: 'completed',
+    };
+  }
+
+  try {
+    const { retrieveBachsCheckoutSession } = await import('@/lib/bachs/checkout');
+    const session = await retrieveBachsCheckoutSession(referenceOrSessionId);
+
+    const isPaid =
+      session.status === 'complete' ||
+      session.payment_status === 'paid' ||
+      session.charge?.status === 'successful';
+
+    const rawAmount = session.charge?.amount_paid || session.amount || 0;
+    const amountNGN = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount);
+    const reference = session.reference || referenceOrSessionId;
+
+    if (!isPaid) {
+      const status = session.status === 'expired' ? 'cancelled' : 'pending';
+      return {
+        success: false,
+        status,
+        error:
+          status === 'pending'
+            ? 'Payment is still being processed by Bachs.'
+            : 'Payment session expired or was cancelled.',
+      };
+    }
+
+    const receiptNumber = `KPG-BCH-${reference.replace(/^KPG-BCH-/, '').slice(0, 6).toUpperCase()}`;
+
+    // Atomically credit wallet with row lock & idempotency
+    const { data: depositResult, error: depositErr } = await supabase.rpc(
+      'atomic_deposit_advertiser_wallet',
+      {
+        p_profile_id: profileId,
+        p_amount: amountNGN,
+        p_reference: reference,
+        p_receipt_number: receiptNumber,
+        p_advertiser_email: userProfile.profile.email || session.customer?.email || null,
+        p_notes: `Bachs.io wallet top-up verified at ${new Date().toISOString()}`,
+      }
+    );
+
+    if (depositErr || !depositResult?.success) {
+      console.error('[verifyBachsDepositAction] atomic deposit error:', depositErr || depositResult?.error);
+      return { success: false, error: 'Failed to credit wallet balance.' };
+    }
+
+    const newBalance = Number(depositResult.new_balance);
+
+    // Notifications
+    const recipientEmail = userProfile.profile.email || session.customer?.email;
+    if (recipientEmail) {
+      const { notifyAdvertiserWalletFunded } = await import('@/lib/notifications/advertiser');
+      await notifyAdvertiserWalletFunded({
+        clerkId: userProfile.profile.clerk_id || profileId,
+        email: recipientEmail,
+        amount: amountNGN,
+        newBalance,
+        reference,
+        profileId,
+      });
+    }
+
+    // Audit Trail
+    logAuditEvent({
+      profileId,
+      actorRole: 'advertiser',
+      action: AUDIT_ACTIONS.WALLET_FUNDED,
+      actionCategory: 'finance',
+      targetTable: 'wallet_transactions',
+      targetId: reference,
+      details: `Funded platform escrow with ₦${amountNGN.toLocaleString()} via Bachs.io`,
+      payload: {
+        amount: amountNGN,
+        new_balance: newBalance,
+        reference,
+        processor: 'bachs',
+        status: 'completed',
+      },
+    }).catch((e) => console.error('[verifyBachsDepositAction] Audit error:', e));
+
+    if (shouldRevalidate) {
+      revalidatePath('/b/wallet');
+    }
+
+    return {
+      success: true,
+      amount: amountNGN,
+      new_balance: newBalance,
+      reference,
+      status: 'completed',
+    };
+  } catch (err: any) {
+    console.error('[verifyBachsDepositAction] Error:', err);
+    return { success: false, error: err?.message || 'Error verifying Bachs transaction' };
+  }
+}
+
+/**
+ * Log Cancelled Bachs Deposit Attempt in History
+ */
+export async function logCancelledBachsDepositAction(reference: string, amount: number) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) return { success: false };
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from('wallet_transactions')
+    .select('id')
+    .eq('paystack_reference', reference)
+    .maybeSingle();
+
+  if (existing) return { success: true };
+
+  const { data: wallet } = await supabase
+    .from('wallets')
+    .select('id')
+    .eq('profile_id', userProfile.profile.id)
+    .eq('wallet_type', 'advertiser_funding')
+    .maybeSingle();
+
+  if (!wallet) return { success: false };
+
+  await supabase.from('wallet_transactions').insert({
+    wallet_id: wallet.id,
+    type: 'deposit',
+    amount: amount,
+    paystack_reference: reference,
+    status: 'cancelled',
+    created_at: new Date().toISOString(),
+  });
+
+  revalidatePath('/b/wallet');
+  return { success: true };
+}

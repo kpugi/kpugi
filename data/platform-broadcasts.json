@@ -1,5 +1,30 @@
 [
   {
+    "id": "broadcast-mvryhkd7",
+    "title": "Testing",
+    "message": "Testing",
+    "tag": "update",
+    "target_audience": "creators",
+    "channels": [
+      "dashboard_banner",
+      "in_app",
+      "email"
+    ],
+    "has_cta": true,
+    "cta_label": "Learn More",
+    "cta_url": "/c/dashboard",
+    "cta_style": "outline",
+    "status": "active",
+    "email_subject": "Testing",
+    "email_preview_text": "Testing",
+    "sent_count": 6,
+    "click_count": 0,
+    "created_by": "63799353-577f-48f9-8ee6-9aa517766ab4",
+    "created_at": "2026-10-28T10:12:55.771Z",
+    "updated_at": "2026-10-28T10:13:13.959Z",
+    "expires_at": null
+  },
+  {
     "id": "broadcast-001",
     "title": "Instant Payout Settlements Are Now Live!",
     "message": "We have upgraded our payment infrastructure with Paystack. Approved video submission earnings can now be withdrawn directly to your Nigerian bank account with zero delay.",

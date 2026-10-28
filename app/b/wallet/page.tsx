@@ -4,14 +4,20 @@ import { redirect } from 'next/navigation';
 import { getOrCreateUserProfile } from '@/lib/clerk/auth';
 import AdvertiserWalletView from '@/components/advertiser/AdvertiserWalletView';
 import { getBrandWalletData } from '@/lib/supabase/advertiser';
-import { verifyPaystackDepositAction } from '@/app/actions/advertiser';
+import { verifyPaystackDepositAction, verifyBachsDepositAction } from '@/app/actions/advertiser';
 
 export const metadata: Metadata = {
   title: 'Billing & Escrow Wallet',
 };
 
 interface PageProps {
-  searchParams: Promise<{ reference?: string; trxref?: string }>;
+  searchParams: Promise<{
+    reference?: string;
+    trxref?: string;
+    session_id?: string;
+    processor?: string;
+    cancelled?: string;
+  }>;
 }
 
 export default async function BrandWalletPage({ searchParams }: PageProps) {
@@ -22,10 +28,35 @@ export default async function BrandWalletPage({ searchParams }: PageProps) {
   }
 
   const resolvedParams = await searchParams;
+  const isBachs =
+    resolvedParams?.processor === 'bachs' ||
+    Boolean(resolvedParams?.session_id) ||
+    Boolean(resolvedParams?.reference?.startsWith('KPG-BCH-'));
+
+  const bachsRef = resolvedParams?.session_id || resolvedParams?.reference || null;
   const paystackRef = resolvedParams?.reference || resolvedParams?.trxref || null;
   let verificationNotice: { text: string; type: 'success' | 'error' } | null = null;
 
-  if (paystackRef) {
+  if (resolvedParams?.cancelled) {
+    verificationNotice = {
+      text: 'Deposit was cancelled. No funds were deducted.',
+      type: 'error',
+    };
+  } else if (isBachs && bachsRef) {
+    // Pass false for shouldRevalidate to prevent revalidatePath during Server Component render
+    const verifyRes = await verifyBachsDepositAction(bachsRef, false);
+    if (verifyRes.success) {
+      verificationNotice = {
+        text: `₦${verifyRes.amount?.toLocaleString()} successfully verified & funded into your brand wallet via Bachs.io!`,
+        type: 'success',
+      };
+    } else {
+      verificationNotice = {
+        text: verifyRes.error || 'Bachs payment verification failed.',
+        type: 'error',
+      };
+    }
+  } else if (paystackRef) {
     // Pass false for shouldRevalidate to prevent revalidatePath during Server Component render
     const verifyRes = await verifyPaystackDepositAction(paystackRef, false);
     if (verifyRes.success) {

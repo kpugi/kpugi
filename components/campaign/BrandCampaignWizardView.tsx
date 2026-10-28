@@ -50,7 +50,7 @@ export function BrandCampaignWizardView({
     ad_format: initialData?.ad_format || 'Video Asset',
     channels: initialData?.channels || ['TikTok', 'Instagram'],
     is_featured: Boolean(initialData?.is_featured),
-    payment_method: (initialData?.payment_method || 'wallet') as 'wallet' | 'paystack',
+    payment_method: (initialData?.payment_method || 'wallet') as 'wallet' | 'paystack' | 'bachs',
     paystack_reference: initialRef,
     is_paid: Boolean(initialRef || initialData?.is_paid),
     requirements: {
@@ -333,6 +333,53 @@ export function BrandCampaignWizardView({
       setCurrentStep(5);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Bachs.io Instant Checkout (Cards, Bank Transfer, Stablecoins)
+    // ─────────────────────────────────────────────────────────────
+    if (method === 'bachs') {
+      setIsSubmitting(true);
+      try {
+        // 1. Auto-save current draft to get or persist campaign ID
+        const draftRes = await saveCampaignDraftAction({
+          ...formData,
+          payment_method: 'bachs',
+        });
+
+        const campaignId = draftRes.success && draftRes.campaignId ? draftRes.campaignId : formData.id;
+        const { createBachsCheckoutSession, generateBachsReference } = await import('@/lib/bachs/checkout');
+        const ref = generateBachsReference('KPG-CMP');
+        const baseUrl = window.location.origin;
+
+        const session = await createBachsCheckoutSession({
+          amountInNaira: totalPayableAmount,
+          customerEmail: advertiserEmail || 'advertiser@kpugi.com',
+          reference: ref,
+          successUrl: `${baseUrl}/b/campaigns/new?draftId=${campaignId}&session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs&step=5`,
+          cancelUrl: `${baseUrl}/b/campaigns/new?draftId=${campaignId}&cancelled=true`,
+          metadata: {
+            campaignId,
+            campaignTitle: formData.title,
+            isFeatured: Boolean(formData.is_featured),
+            amount: totalPayableAmount,
+            processor: 'bachs',
+          },
+        });
+
+        if (session && session.checkout_url) {
+          window.location.href = session.checkout_url;
+          return;
+        } else {
+          setErrorMessage('Could not launch Bachs checkout session.');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err: any) {
+        setErrorMessage(err?.message || 'Error launching Bachs checkout.');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     // Paystack Instant Checkout

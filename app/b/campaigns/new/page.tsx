@@ -10,7 +10,13 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ draftId?: string }>;
+  searchParams: Promise<{
+    draftId?: string;
+    step?: string;
+    reference?: string;
+    session_id?: string;
+    processor?: string;
+  }>;
 }
 
 export default async function BrandNewCampaignPage({ searchParams }: PageProps) {
@@ -52,8 +58,65 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
         redirect(`/b/campaigns/${draft.id}/success`);
       }
 
-      const payRef = draft.requirements?.paystack_reference || draft.paystack_reference || '';
-      const payMethod = draft.requirements?.payment_method || draft.payment_method || 'wallet';
+      let payRef = draft.requirements?.paystack_reference || draft.paystack_reference || '';
+      let payMethod = draft.requirements?.payment_method || draft.payment_method || 'wallet';
+
+      // Verify returning Bachs checkout session
+      if (resolvedParams?.processor === 'bachs' && (resolvedParams?.session_id || resolvedParams?.reference)) {
+        const incomingRef = resolvedParams?.session_id || resolvedParams?.reference;
+        if (incomingRef) {
+          try {
+            const { retrieveBachsCheckoutSession } = await import('@/lib/bachs/checkout');
+            const session = await retrieveBachsCheckoutSession(incomingRef);
+            const isPaid =
+              session.status === 'complete' ||
+              session.payment_status === 'paid' ||
+              session.charge?.status === 'successful';
+
+            if (isPaid) {
+              const paidAmount = Number(session.charge?.amount_paid || session.amount || draft.total_budget);
+              const receiptNum = `KPG-BCH-${session.reference.replace(/^KPG-BCH-/, '').slice(0, 6).toUpperCase()}`;
+
+              await supabase.from('payment_receipts').upsert(
+                {
+                  receipt_number: receiptNum,
+                  advertiser_id: userProfile.profile.id,
+                  campaign_id: draft.id,
+                  campaign_title: draft.title,
+                  total_amount: paidAmount,
+                  escrow_budget: Number(draft.total_budget),
+                  featured_fee: draft.is_featured ? 2500 : 0,
+                  is_featured: Boolean(draft.is_featured),
+                  payment_method: 'bachs',
+                  paystack_reference: session.reference,
+                  status: 'paid',
+                  issued_at: new Date().toISOString(),
+                },
+                { onConflict: 'receipt_number' }
+              );
+
+              // Update draft record with verified payment
+              await supabase
+                .from('campaigns')
+                .update({
+                  paystack_reference: session.reference,
+                  payment_method: 'bachs',
+                  requirements: {
+                    ...(draft.requirements || {}),
+                    paystack_reference: session.reference,
+                    payment_method: 'bachs',
+                  },
+                })
+                .eq('id', draft.id);
+
+              payRef = session.reference;
+              payMethod = 'bachs';
+            }
+          } catch (e) {
+            console.error('[BrandNewCampaignPage] Error verifying Bachs session:', e);
+          }
+        }
+      }
 
       initialData = {
         id: draft.id,

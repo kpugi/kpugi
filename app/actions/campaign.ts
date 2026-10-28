@@ -270,7 +270,7 @@ export interface CampaignWizardPayload {
   required_live_duration_hours: number;
   channels: string[];
   is_featured?: boolean;
-  payment_method?: 'paystack' | 'wallet';
+  payment_method?: 'paystack' | 'bachs' | 'wallet';
   paystack_reference?: string;
   requirements: {
     objective?: string;
@@ -902,8 +902,8 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
         } catch (e) {
           console.error('[createCampaignWizardAction] Error recording wallet debit:', e);
         }
-      } else if (payload.payment_method === 'paystack') {
-        // Fallback for Paystack: ensure dual ledger entries exist (Deposit + Campaign Funding Debit)
+      } else if (payload.payment_method === 'paystack' || payload.payment_method === 'bachs') {
+        // Fallback for gateway payments: ensure dual ledger entries exist (Deposit + Campaign Funding Debit)
         try {
           let { data: advWallet } = await supabase
             .from('wallets')
