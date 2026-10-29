@@ -73,8 +73,8 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
   const paymentSourceStr = data.payment_method === 'wallet'
     ? 'Kpugi Wallet'
     : isBachs
-    ? 'Bachs.io Checkout (Cards / Bank Transfer / Crypto)'
-    : 'Paystack Card / Transfer';
+    ? 'Bachs.io'
+    : 'Paystack';
 
   const modalContent = (
     <div

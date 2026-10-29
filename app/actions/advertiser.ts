@@ -327,6 +327,26 @@ export async function initializePaystackDepositAction(amount: number) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const callbackUrl = `${baseUrl}/b/wallet`;
 
+  // 1. Lock exact transaction amount on our backend before launching Paystack
+  const supabase = createAdminClient();
+  let { data: wallet } = await supabase
+    .from('wallets')
+    .select('id')
+    .eq('profile_id', userProfile.profile.id)
+    .eq('wallet_type', 'advertiser_funding')
+    .maybeSingle();
+
+  if (wallet) {
+    await supabase.from('wallet_transactions').insert({
+      wallet_id: wallet.id,
+      type: 'deposit',
+      amount: amount, // Locked to what the user inputted on Kpugi!
+      paystack_reference: reference,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    });
+  }
+
   try {
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
@@ -343,6 +363,7 @@ export async function initializePaystackDepositAction(amount: number) {
           profile_id: userProfile.profile.id,
           wallet_type: 'advertiser_funding',
           deposit_amount: amount,
+          amount: amount,
         },
       }),
     });
@@ -389,12 +410,12 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
     .eq('paystack_reference', reference)
     .maybeSingle();
 
-  if (existingTx) {
+  if (existingTx && existingTx.status === 'completed') {
     return {
-      success: existingTx.status === 'completed',
+      success: true,
       alreadyProcessed: true,
       amount: Number(existingTx.amount),
-      status: existingTx.status || 'completed',
+      status: 'completed',
     };
   }
 
@@ -409,7 +430,22 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
 
     const json = await res.json();
     const paystackData = json.data;
-    const amountNGN = paystackData?.amount ? Number(paystackData.amount) / 100 : 0;
+
+    // Strictly lock amount to what user inputted on Kpugi backend, NOT Paystack customer gross fees
+    let amountNGN = 0;
+    if (existingTx && existingTx.status === 'pending' && Number(existingTx.amount) > 0) {
+      amountNGN = Number(existingTx.amount);
+    } else if (paystackData?.metadata?.deposit_amount && Number(paystackData.metadata.deposit_amount) > 0) {
+      amountNGN = Number(paystackData.metadata.deposit_amount);
+    } else if (paystackData?.metadata?.amount && Number(paystackData.metadata.amount) > 0) {
+      amountNGN = Number(paystackData.metadata.amount);
+    } else if (paystackData?.requested_amount && Number(paystackData.requested_amount) > 0) {
+      amountNGN = Number(paystackData.requested_amount) / 100;
+    } else if (paystackData?.fees && Number(paystackData.fees) > 0 && Number(paystackData.amount) > Number(paystackData.fees)) {
+      amountNGN = (Number(paystackData.amount) - Number(paystackData.fees)) / 100;
+    } else {
+      amountNGN = paystackData?.amount ? Number(paystackData.amount) / 100 : 0;
+    }
 
     // 3. Get or create advertiser funding wallet
     let { data: wallet } = await supabase
@@ -462,6 +498,10 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
     }
 
     // 5. Success Path: Deposit funds atomically with idempotency lock
+    if (existingTx && existingTx.status === 'pending') {
+      await supabase.from('wallet_transactions').delete().eq('id', existingTx.id);
+    }
+
     const depositReceiptNum = reference.startsWith('KPG-PAY-')
       ? reference
       : `KPG-PAY-${reference.slice(-5).toUpperCase()}`;

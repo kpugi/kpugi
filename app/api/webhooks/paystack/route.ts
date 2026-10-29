@@ -37,11 +37,36 @@ export async function POST(req: Request) {
     const event = payload?.event;
     const data = payload?.data;
     const reference = data?.reference;
-    const amountInKobo = data?.amount || 0;
-    const amountInNaira = amountInKobo / 100;
     const customerEmail = data?.customer?.email;
 
     const supabase = createAdminClient();
+
+    // Check if an existing transaction was pre-locked on Kpugi backend with exact inputted amount
+    let existingTx: any = null;
+    if (reference) {
+      const { data: tx } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('paystack_reference', reference)
+        .maybeSingle();
+      existingTx = tx;
+    }
+
+    // Lock strictly onto Kpugi user input amount (ignoring customer processing fees added by Paystack)
+    let amountInNaira = 0;
+    if (existingTx && Number(existingTx.amount) > 0) {
+      amountInNaira = Number(existingTx.amount);
+    } else if (data?.metadata?.deposit_amount && Number(data.metadata.deposit_amount) > 0) {
+      amountInNaira = Number(data.metadata.deposit_amount);
+    } else if (data?.metadata?.amount && Number(data.metadata.amount) > 0) {
+      amountInNaira = Number(data.metadata.amount);
+    } else if (data?.requested_amount && Number(data.requested_amount) > 0) {
+      amountInNaira = Number(data.requested_amount) / 100;
+    } else if (data?.fees && Number(data.fees) > 0 && Number(data.amount) > Number(data.fees)) {
+      amountInNaira = (Number(data.amount) - Number(data.fees)) / 100;
+    } else {
+      amountInNaira = (data?.amount || 0) / 100;
+    }
 
     // Log raw Paystack webhook event
     await supabase.from('paystack_events').insert({
@@ -51,7 +76,7 @@ export async function POST(req: Request) {
     });
 
     if (event === 'charge.success' && reference) {
-      console.log('[Paystack Webhook] Charge successful reference:', reference);
+      console.log(`[Paystack Webhook] Charge successful reference: ${reference}, locked amount: ₦${amountInNaira}`);
 
       // Attempt to locate advertiser by email or metadata
       if (customerEmail) {
@@ -62,6 +87,11 @@ export async function POST(req: Request) {
           .maybeSingle();
 
         if (profile) {
+          // Clean up initial pending row if it exists before atomic RPC
+          if (existingTx && existingTx.status === 'pending') {
+            await supabase.from('wallet_transactions').delete().eq('id', existingTx.id);
+          }
+
           // Idempotently credit wallet via atomic RPC
           const { data: depositResult, error: depositErr } = await supabase.rpc(
             'atomic_deposit_advertiser_wallet',

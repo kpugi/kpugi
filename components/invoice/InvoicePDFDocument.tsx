@@ -377,8 +377,8 @@ export const InvoicePDFDocument: React.FC<{ data: InvoiceData }> = ({ data }) =>
   const paymentSourceStr = data.payment_method === 'wallet'
     ? 'Kpugi Wallet'
     : isBachs
-    ? 'Bachs.io Checkout (Cards / Bank Transfer / Crypto)'
-    : 'Paystack Card / Transfer';
+    ? 'Bachs.io'
+    : 'Paystack';
 
   return (
     <Document title={`Receipt_${data.receipt_number}`}>

@@ -162,6 +162,25 @@ export function BrandCampaignWizardView({
     isPublished,
   ]);
 
+  // Cleanly strip payment callback query parameters from the browser address bar
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search) {
+      const url = new URL(window.location.href);
+      const paymentParams = ['reference', 'trxref', 'checkout_id', 'processor', 'session_id'];
+      let changed = false;
+      paymentParams.forEach((param) => {
+        if (url.searchParams.has(param)) {
+          url.searchParams.delete(param);
+          changed = true;
+        }
+      });
+      if (changed) {
+        const cleanUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '');
+        window.history.replaceState(null, '', cleanUrl);
+      }
+    }
+  }, []);
+
   const steps = [
     { number: 1, title: 'Basics' },
     { number: 2, title: 'Requirements' },
@@ -453,6 +472,10 @@ export function BrandCampaignWizardView({
         amount: totalPayableAmount * 100, // amount in kobo
         currency: 'NGN',
         ref: paystackRef,
+        metadata: {
+          amount: totalPayableAmount,
+          campaignId: formData.id,
+        },
         onSuccess: (transaction: any) => onPaymentSuccess(transaction.reference || paystackRef),
         onCancel: onPaymentCancel,
         onClose: onPaymentCancel,
@@ -466,6 +489,10 @@ export function BrandCampaignWizardView({
           amount: totalPayableAmount * 100,
           currency: 'NGN',
           ref: paystackRef,
+          metadata: {
+            amount: totalPayableAmount,
+            campaignId: formData.id,
+          },
           callback: (response: any) => onPaymentSuccess(response.reference || paystackRef),
           onClose: onPaymentCancel,
         });

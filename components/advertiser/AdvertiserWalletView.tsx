@@ -63,6 +63,23 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
 
   useEffect(() => {
     setMounted(true);
+
+    // Cleanly strip payment callback query parameters from the browser address bar
+    if (typeof window !== 'undefined' && window.location.search) {
+      const url = new URL(window.location.href);
+      const paymentParams = ['reference', 'trxref', 'checkout_id', 'processor', 'session_id', 'cancelled'];
+      let changed = false;
+      paymentParams.forEach((param) => {
+        if (url.searchParams.has(param)) {
+          url.searchParams.delete(param);
+          changed = true;
+        }
+      });
+      if (changed) {
+        const cleanUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '');
+        window.history.replaceState(null, '', cleanUrl);
+      }
+    }
   }, []);
 
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);

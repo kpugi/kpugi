@@ -467,8 +467,22 @@ export async function verifyPaystackTransactionAction(
 
       const data = await res.json();
       if (data.status && data.data?.status === 'success') {
-        verifiedAmount = Number(data.data.amount) / 100; // convert from kobo
-        customerEmail = data.data.customer?.email || customerEmail;
+        const paystackData = data.data;
+
+        // Strictly lock verifiedAmount to what was inputted on Kpugi (metadata?.amount), NOT Paystack customer gross fees
+        if (metadata?.amount && Number(metadata.amount) > 0) {
+          verifiedAmount = Number(metadata.amount);
+        } else if (paystackData?.metadata?.amount && Number(paystackData.metadata.amount) > 0) {
+          verifiedAmount = Number(paystackData.metadata.amount);
+        } else if (paystackData?.requested_amount && Number(paystackData.requested_amount) > 0) {
+          verifiedAmount = Number(paystackData.requested_amount) / 100;
+        } else if (paystackData?.fees && Number(paystackData.fees) > 0 && Number(paystackData.amount) > Number(paystackData.fees)) {
+          verifiedAmount = (Number(paystackData.amount) - Number(paystackData.fees)) / 100;
+        } else {
+          verifiedAmount = Number(paystackData.amount) / 100;
+        }
+
+        customerEmail = paystackData.customer?.email || customerEmail;
       } else {
         return {
           success: false,

@@ -100,8 +100,16 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
     // ─────────────────────────────────────────────────────────────
     // 2. ROUTE VIA PAYSTACK CHECKOUT
     // ─────────────────────────────────────────────────────────────
+    setIsSubmitting(true);
+    const initRes = await initializePaystackDepositAction(amtNum);
+    if (!initRes.success || !initRes.reference) {
+      setIsSubmitting(false);
+      setErrorMsg(initRes.error || 'Failed to initialize Paystack checkout.');
+      return;
+    }
+
     const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
-    const paystackRef = `KPG-PAY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const paystackRef = initRes.reference;
 
     const onPaymentSuccess = async (ref: string) => {
       setIsSubmitting(true);
@@ -133,6 +141,10 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
           amount: amtNum * 100,
           currency: 'NGN',
           ref: paystackRef,
+          metadata: {
+            amount: amtNum,
+            deposit_amount: amtNum,
+          },
           onSuccess: (transaction: any) => onPaymentSuccess(transaction.reference || paystackRef),
           onCancel: onPaymentCancel,
           onClose: onPaymentCancel,
@@ -147,6 +159,10 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
           amount: amtNum * 100,
           currency: 'NGN',
           ref: paystackRef,
+          metadata: {
+            amount: amtNum,
+            deposit_amount: amtNum,
+          },
           callback: (response: any) => onPaymentSuccess(response.reference || paystackRef),
           onClose: onPaymentCancel,
         });
@@ -155,8 +171,7 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
       }
     }
 
-    const initRes = await initializePaystackDepositAction(amtNum);
-    if (initRes.success && initRes.authorization_url) {
+    if (initRes.authorization_url) {
       window.location.href = initRes.authorization_url;
     } else {
       setIsSubmitting(false);
