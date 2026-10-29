@@ -20,7 +20,7 @@ export default async function BrandDashboardPage() {
     redirect('/onboarding/role');
   }
 
-  if (userProfile.role === 'creator') {
+  if (userProfile.role === 'creator' && !userProfile.advertiserProfile) {
     redirect('/c/dashboard');
   }
 

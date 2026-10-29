@@ -860,7 +860,7 @@ export async function getBrandWalletData(profileId: string): Promise<BrandWallet
     campaign_code: t.campaign?.campaign_code || null,
     amount: Number(t.amount),
     status: (t.status || 'completed').toUpperCase(),
-    reference: t.paystack_reference || `KP-TX-${t.id.slice(0, 6)}`,
+    reference: t.paystack_reference || (t.reference ? t.reference : `KPG-PAY-${t.id.slice(0, 5).toUpperCase()}`),
     created_at: t.created_at,
   }));
 

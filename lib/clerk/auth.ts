@@ -113,14 +113,15 @@ export const getOrCreateUserProfile = cache(async () => {
     let advertiserProfile = null;
     let creatorProfile = null;
 
-    if (profile.role === 'advertiser' || profile.role === 'both') {
-      let { data } = await supabase
-        .from('advertiser_profiles')
-        .select('*')
-        .eq('profile_id', profile.id)
-        .maybeSingle();
+    // Check if advertiser profile already exists in DB
+    let { data: advData } = await supabase
+      .from('advertiser_profiles')
+      .select('*')
+      .eq('profile_id', profile.id)
+      .maybeSingle();
 
-      if (!data) {
+    if (profile.role === 'advertiser' || profile.role === 'both') {
+      if (!advData) {
         const { data: newAdv } = await supabase
           .from('advertiser_profiles')
           .upsert(
@@ -133,10 +134,10 @@ export const getOrCreateUserProfile = cache(async () => {
           )
           .select('*')
           .maybeSingle();
-        data = newAdv;
+        advData = newAdv;
       }
-      advertiserProfile = data;
     }
+    advertiserProfile = advData;
 
     if (profile.role === 'creator' || profile.role === 'both' || !profile.role) {
       let { data } = await supabase
@@ -162,8 +163,18 @@ export const getOrCreateUserProfile = cache(async () => {
       creatorProfile = data;
     }
 
+    // If account has an active company name/advertiser profile configured, guarantee advertiser access
+    const effectiveRole = (profile.role === 'advertiser' || profile.role === 'both')
+      ? profile.role
+      : (advertiserProfile?.company_name ? 'advertiser' : (profile.role || 'creator'));
+
+    if (profile.role !== effectiveRole) {
+      profile.role = effectiveRole;
+      await supabase.from('profiles').update({ role: effectiveRole }).eq('id', profile.id);
+    }
+
     // Ensure matching wallet exists only if missing (preserves existing balances)
-    const targetWalletType = profile.role === 'advertiser' ? 'advertiser_budget' : 'creator_earnings';
+    const targetWalletType = effectiveRole === 'advertiser' ? 'advertiser_budget' : 'creator_earnings';
     const { data: existingWallet } = await supabase
       .from('wallets')
       .select('id')
@@ -181,14 +192,14 @@ export const getOrCreateUserProfile = cache(async () => {
         });
     }
 
-    const hasRole = Boolean(profile.role && profile.role !== 'none');
+    const hasRole = Boolean(effectiveRole && effectiveRole !== 'none');
 
     return {
       userId,
       profile,
       advertiserProfile,
       creatorProfile,
-      role: profile.role || 'creator',
+      role: effectiveRole,
       onboardingComplete: hasRole,
     };
   } catch (err: any) {

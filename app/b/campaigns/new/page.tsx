@@ -77,7 +77,7 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
               const paidAmount = Number(session.charge?.amount_paid || session.amount || draft.total_budget);
               const receiptNum = `KPG-BCH-${session.reference.replace(/^KPG-BCH-/, '').slice(0, 6).toUpperCase()}`;
 
-              await supabase.from('payment_receipts').upsert(
+              const receiptRes = await supabase.from('payment_receipts').upsert(
                 {
                   receipt_number: receiptNum,
                   advertiser_id: userProfile.profile.id,
@@ -95,12 +95,32 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
                 { onConflict: 'receipt_number' }
               );
 
-              // Update draft record with verified payment
+              // Gracefully handle database check constraint if 'bachs' enum is still pending
+              if (receiptRes.error && receiptRes.error.message.includes('check constraint')) {
+                await supabase.from('payment_receipts').upsert(
+                  {
+                    receipt_number: receiptNum,
+                    advertiser_id: userProfile.profile.id,
+                    campaign_id: draft.id,
+                    campaign_title: draft.title,
+                    total_amount: paidAmount,
+                    escrow_budget: Number(draft.total_budget),
+                    featured_fee: draft.is_featured ? 2500 : 0,
+                    is_featured: Boolean(draft.is_featured),
+                    payment_method: 'paystack',
+                    paystack_reference: session.reference,
+                    status: 'paid',
+                    issued_at: new Date().toISOString(),
+                    notes: 'Paid via Bachs.io Gateway',
+                  },
+                  { onConflict: 'receipt_number' }
+                );
+              }
+
+              // Update draft record with verified payment in requirements JSONB
               await supabase
                 .from('campaigns')
                 .update({
-                  paystack_reference: session.reference,
-                  payment_method: 'bachs',
                   requirements: {
                     ...(draft.requirements || {}),
                     paystack_reference: session.reference,
@@ -108,6 +128,60 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
                   },
                 })
                 .eq('id', draft.id);
+
+              // Ensure dual ledger entries exist in wallet_transactions for brand wallet history
+              try {
+                let { data: advWallet } = await supabase
+                  .from('wallets')
+                  .select('id')
+                  .eq('profile_id', userProfile.profile.id)
+                  .eq('wallet_type', 'advertiser_funding')
+                  .maybeSingle();
+
+                if (!advWallet) {
+                  const { data: newW } = await supabase
+                    .from('wallets')
+                    .insert({ profile_id: userProfile.profile.id, wallet_type: 'advertiser_funding', balance: 0 })
+                    .select('id')
+                    .single();
+                  advWallet = newW;
+                }
+
+                if (advWallet) {
+                  const { data: existingTx } = await supabase
+                    .from('wallet_transactions')
+                    .select('id, type')
+                    .eq('paystack_reference', session.reference);
+
+                  const hasDeposit = existingTx?.some((t) => t.type === 'deposit');
+                  const hasDebit = existingTx?.some((t) => t.type === 'campaign_funding');
+
+                  if (!hasDeposit) {
+                    await supabase.from('wallet_transactions').insert({
+                      wallet_id: advWallet.id,
+                      type: 'deposit',
+                      amount: paidAmount,
+                      paystack_reference: session.reference,
+                      status: 'completed',
+                      created_at: new Date(Date.now() - 1000).toISOString(),
+                    });
+                  }
+
+                  if (!hasDebit) {
+                    await supabase.from('wallet_transactions').insert({
+                      wallet_id: advWallet.id,
+                      type: 'campaign_funding',
+                      amount: Number(draft.total_budget || paidAmount),
+                      campaign_id: draft.id,
+                      paystack_reference: session.reference,
+                      status: 'completed',
+                      created_at: new Date().toISOString(),
+                    });
+                  }
+                }
+              } catch (txErr) {
+                console.error('[BrandNewCampaignPage] Error recording Bachs dual ledger entries:', txErr);
+              }
 
               payRef = session.reference;
               payMethod = 'bachs';

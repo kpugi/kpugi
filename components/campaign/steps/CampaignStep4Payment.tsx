@@ -89,7 +89,7 @@ export function CampaignStep4Payment({
               </div>
             </div>
             <span className="font-mono text-sm font-extrabold text-[#4338ca] dark:text-indigo-400 bg-white dark:bg-white/10 px-3.5 py-1.5 rounded-full border border-[#dcd8fc] dark:border-white/10 shadow-2xs">
-              {formData.paystack_reference || `KPG-PAY-${Date.now().toString().slice(-6)}`}
+              {formData.paystack_reference || (paymentMethod === 'bachs' ? `KPG-BCH-${Date.now().toString().slice(-6)}` : `KPG-PAY-${Date.now().toString().slice(-6)}`)}
             </span>
           </div>
 
@@ -104,8 +104,8 @@ export function CampaignStep4Payment({
 
             <div className="p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-1">
               <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Payment Method</div>
-              <div className="font-bold text-slate-900 dark:text-white text-xs capitalize">
-                {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Card / Transfer'}
+              <div className="font-bold text-slate-900 dark:text-white text-xs">
+                {paymentMethod === 'wallet' ? 'Kpugi Wallet' : paymentMethod === 'bachs' ? 'Bachs.io' : 'Paystack'}
               </div>
             </div>
 

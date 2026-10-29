@@ -32,7 +32,7 @@ export default async function AdvertiserLayout({ children }: { children: React.R
     redirect('/onboarding/role');
   }
 
-  if (userProfile.role !== 'advertiser') {
+  if (userProfile.role !== 'advertiser' && userProfile.role !== 'both' && !userProfile.advertiserProfile) {
     redirect('/c/dashboard');
   }
 

@@ -3,10 +3,9 @@
  * Supports both Live (https://api.bachs.io) and Sandbox (https://sandbox-api.bachs.io)
  */
 
-const BACHS_API_KEY = process.env.BACHS_API_KEY || '';
-
 export function getBachsBaseUrl(): string {
-  if (BACHS_API_KEY.startsWith('sk_sandbox_')) {
+  const apiKey = process.env.BACHS_API_KEY || '';
+  if (apiKey.startsWith('sk_sandbox_')) {
     return 'https://sandbox-api.bachs.io';
   }
   return 'https://api.bachs.io';

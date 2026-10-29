@@ -70,15 +70,15 @@ export function CampaignStep5Launch({
             <span>Payment Reference</span>
           </span>
           <span className="font-mono font-bold text-[#4338ca] dark:text-indigo-400 bg-white dark:bg-white/10 px-3 py-1 rounded-full border border-[#dcd8fc] dark:border-white/10">
-            {paymentRef || `KPG-PAY-${Date.now().toString(36).slice(-5).toUpperCase()}`}
+            {paymentRef || (paymentMethod === 'bachs' ? `KPG-BCH-${Date.now().toString(36).slice(-5).toUpperCase()}` : `KPG-PAY-${Date.now().toString(36).slice(-5).toUpperCase()}`)}
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div className="p-3.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-0.5">
             <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Payment Method</div>
-            <div className="font-bold text-slate-800 dark:text-slate-200 text-xs capitalize truncate">
-              {paymentMethod === 'wallet' ? 'Kpugi Wallet' : 'Card / Transfer'}
+            <div className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">
+              {paymentMethod === 'wallet' ? 'Kpugi Wallet' : paymentMethod === 'bachs' ? 'Bachs.io' : 'Paystack'}
             </div>
           </div>
 

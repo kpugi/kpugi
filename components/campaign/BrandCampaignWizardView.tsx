@@ -9,7 +9,13 @@ import { CampaignStep2Creatives } from './steps/CampaignStep2Creatives';
 import { CampaignStep3Targeting } from './steps/CampaignStep3Targeting';
 import { CampaignStep4Payment } from './steps/CampaignStep4Payment';
 import { CampaignStep5Launch } from './steps/CampaignStep5Launch';
-import { createCampaignWizardAction, saveCampaignDraftAction, verifyPaystackTransactionAction, chargeWalletForCampaignAction } from '@/app/actions/campaign';
+import {
+  createCampaignWizardAction,
+  saveCampaignDraftAction,
+  verifyPaystackTransactionAction,
+  chargeWalletForCampaignAction,
+  initializeBachsCampaignCheckoutAction,
+} from '@/app/actions/campaign';
 
 interface BrandCampaignWizardViewProps {
   walletBalance?: number;
@@ -348,30 +354,20 @@ export function BrandCampaignWizardView({
         });
 
         const campaignId = draftRes.success && draftRes.campaignId ? draftRes.campaignId : formData.id;
-        const { createBachsCheckoutSession, generateBachsReference } = await import('@/lib/bachs/checkout');
-        const ref = generateBachsReference('KPG-CMP');
-        const baseUrl = window.location.origin;
 
-        const session = await createBachsCheckoutSession({
-          amountInNaira: totalPayableAmount,
-          customerEmail: advertiserEmail || 'advertiser@kpugi.com',
-          reference: ref,
-          successUrl: `${baseUrl}/b/campaigns/new?draftId=${campaignId}&session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs&step=5`,
-          cancelUrl: `${baseUrl}/b/campaigns/new?draftId=${campaignId}&cancelled=true`,
-          metadata: {
-            campaignId,
-            campaignTitle: formData.title,
-            isFeatured: Boolean(formData.is_featured),
-            amount: totalPayableAmount,
-            processor: 'bachs',
-          },
+        const initRes = await initializeBachsCampaignCheckoutAction({
+          campaignId,
+          campaignTitle: formData.title,
+          totalPayableAmount,
+          isFeatured: Boolean(formData.is_featured),
+          advertiserEmail,
         });
 
-        if (session && session.checkout_url) {
-          window.location.href = session.checkout_url;
+        if (initRes.success && initRes.checkout_url) {
+          window.location.href = initRes.checkout_url;
           return;
         } else {
-          setErrorMessage('Could not launch Bachs checkout session.');
+          setErrorMessage(initRes.error || 'Could not launch Bachs checkout session.');
           setIsSubmitting(false);
           return;
         }

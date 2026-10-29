@@ -147,8 +147,16 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
 
   // Map database transactions to UI shape dynamically
   const transactions = (dbTransactions || []).map((t) => {
+    const isBachsTx =
+      t.reference?.startsWith('KPG-BCH-') ||
+      t.reference?.startsWith('KPG-CMP-') ||
+      (t as any).paystack_reference?.startsWith('KPG-BCH-') ||
+      (t as any).paystack_reference?.startsWith('KPG-CMP-') ||
+      (t as any).payment_method === 'bachs' ||
+      Boolean((t as any).notes?.toLowerCase().includes('bachs'));
+
     let typeLabel = 'Deposit';
-    let desc = 'Wallet Top Up (Paystack)';
+    let desc = isBachsTx ? 'Wallet Top Up (Bachs.io)' : 'Wallet Top Up (Paystack)';
 
     if (t.transaction_type === 'campaign_funding' || t.transaction_type === 'debit') {
       typeLabel = 'Campaign Funding';
@@ -158,11 +166,14 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       desc = t.campaign_title ? `Refund: ${t.campaign_title}` : 'Unspent Budget Refund';
     } else if (t.transaction_type === 'deposit') {
       typeLabel = 'Deposit';
-      desc = 'Wallet Top Up (Paystack)';
+      desc = isBachsTx ? 'Wallet Top Up (Bachs.io)' : 'Wallet Top Up (Paystack)';
     }
 
     const isCredit = typeLabel === 'Deposit' || typeLabel === 'Unspent Refund';
     const txDate = new Date(t.created_at);
+    const defaultRef = isBachsTx
+      ? `KPG-BCH-${t.id.slice(0, 5).toUpperCase()}`
+      : `KPG-PAY-${t.id.slice(0, 5).toUpperCase()}`;
 
     return {
       id: t.id,
@@ -181,16 +192,25 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       campaignId: t.campaign_id || null,
       campaignCode: t.campaign_code || null,
       campaignTitle: t.campaign_title || null,
-      reference: t.reference || `KPG-PAY-${t.id.slice(0, 5).toUpperCase()}`,
+      reference: t.reference || defaultRef,
       rawCreatedAt: t.created_at,
       amount: isCredit ? Math.abs(t.amount) : -Math.abs(t.amount),
       status: (t.status || 'COMPLETED').toUpperCase(),
+      isBachs: isBachsTx,
     };
   });
 
   const handleOpenReceipt = async (tx: any) => {
     const isDeposit = tx.type === 'Deposit';
-    const refNum = tx.reference || `KPG-PAY-${tx.id.slice(0, 5).toUpperCase()}`;
+    const isBachsTx =
+      tx.isBachs ||
+      tx.reference?.startsWith('KPG-BCH-') ||
+      tx.reference?.startsWith('KPG-CMP-');
+
+    const defaultRef = isBachsTx
+      ? `KPG-BCH-${tx.id.slice(0, 5).toUpperCase()}`
+      : `KPG-PAY-${tx.id.slice(0, 5).toUpperCase()}`;
+    const refNum = tx.reference || defaultRef;
 
     const fallbackInvoice: InvoiceData = {
       receipt_number: refNum,
@@ -200,7 +220,8 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       escrow_budget: Math.abs(tx.amount),
       featured_fee: 0,
       is_featured: false,
-      payment_method: isDeposit ? 'paystack' : 'wallet',
+      payment_method: isBachsTx ? 'bachs' : (isDeposit ? 'paystack' : 'wallet'),
+      paystack_reference: refNum,
       status: tx.status,
       advertiser_name: advertiserEmail?.split('@')[0] || 'Brand Partner',
       advertiser_email: advertiserEmail,
@@ -215,6 +236,15 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
       const res = await getReceiptByIdAction(refNum);
       if (res.success && res.receipt) {
         const r = res.receipt;
+        const receiptIsBachs =
+          isBachsTx ||
+          r.payment_method === 'bachs' ||
+          r.receipt_number?.startsWith('KPG-BCH-') ||
+          r.receipt_number?.startsWith('KPG-CMP-') ||
+          r.paystack_reference?.startsWith('KPG-BCH-') ||
+          r.paystack_reference?.startsWith('KPG-CMP-') ||
+          Boolean((r as any).notes?.toLowerCase().includes('bachs'));
+
         setSelectedInvoice({
           receipt_number: r.receipt_number || refNum,
           transaction_type: isDeposit ? 'deposit' : 'campaign_funding',
@@ -225,7 +255,7 @@ export default function AdvertiserWalletView({ data, verificationNotice }: Adver
           escrow_budget: Number(r.escrow_budget || Math.abs(tx.amount)),
           featured_fee: isDeposit ? Number(r.featured_fee || 0) : 0,
           is_featured: isDeposit ? Boolean(r.is_featured) : false,
-          payment_method: r.payment_method || (isDeposit ? 'paystack' : 'wallet'),
+          payment_method: receiptIsBachs ? 'bachs' : (r.payment_method || (isDeposit ? 'paystack' : 'wallet')),
           paystack_reference: r.paystack_reference || refNum,
           status: (r.status || tx.status || 'PAID').toUpperCase(),
           advertiser_name: advertiserEmail?.split('@')[0] || 'Brand Partner',

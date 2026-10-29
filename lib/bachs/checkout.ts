@@ -56,6 +56,16 @@ export function generateBachsReference(prefix: string = 'KPG-BCH'): string {
   return `${prefix}-${code}`;
 }
 
+function sanitizeBachsUrl(url: string, fallbackPath: string = ''): string {
+  const defaultBase = 'https://kpugi.com';
+  let target = url || `${defaultBase}${fallbackPath}`;
+  // Bachs strictly forbids localhost even in sandbox
+  if (target.includes('localhost') || target.includes('127.0.0.1') || target.startsWith('http://')) {
+    target = target.replace(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, defaultBase);
+  }
+  return target;
+}
+
 /**
  * Create a Hosted Checkout Session on Bachs.io
  */
@@ -69,7 +79,17 @@ export async function createBachsCheckoutSession({
   metadata,
 }: CreateCheckoutParams): Promise<BachsCheckoutSessionResponse> {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
+  const ref = reference || generateBachsReference();
   
+  const resolvedSuccessUrl = sanitizeBachsUrl(
+    successUrl || `${appUrl}/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs`,
+    `/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs`
+  );
+  const resolvedCancelUrl = sanitizeBachsUrl(
+    cancelUrl || `${appUrl}/b/wallet?cancelled=true&processor=bachs`,
+    `/b/wallet?cancelled=true&processor=bachs`
+  );
+
   const payload: any = {
     pricing: {
       amount: amountInNaira.toFixed(2),
@@ -79,9 +99,9 @@ export async function createBachsCheckoutSession({
       email: customerEmail,
       ...(customerName ? { name: customerName } : {}),
     },
-    reference: reference || generateBachsReference(),
-    success_url: successUrl || `${appUrl}/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${reference}&processor=bachs`,
-    cancel_url: cancelUrl || `${appUrl}/b/wallet?cancelled=true&processor=bachs`,
+    reference: ref,
+    success_url: resolvedSuccessUrl,
+    cancel_url: resolvedCancelUrl,
   };
 
   if (metadata && Object.keys(metadata).length > 0) {

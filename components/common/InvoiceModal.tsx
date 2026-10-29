@@ -62,8 +62,18 @@ export function InvoiceModal({ data, campaignId, onClose }: InvoiceModalProps) {
       maximumFractionDigits: 2,
     })}`;
 
+  const isBachs =
+    data.payment_method === 'bachs' ||
+    data.receipt_number?.startsWith('KPG-BCH-') ||
+    data.paystack_reference?.startsWith('KPG-BCH-') ||
+    data.receipt_number?.startsWith('KPG-CMP-') ||
+    data.paystack_reference?.startsWith('KPG-CMP-') ||
+    Boolean((data as any).notes?.toLowerCase().includes('bachs'));
+
   const paymentSourceStr = data.payment_method === 'wallet'
     ? 'Kpugi Wallet'
+    : isBachs
+    ? 'Bachs.io Checkout (Cards / Bank Transfer / Crypto)'
     : 'Paystack Card / Transfer';
 
   const modalContent = (

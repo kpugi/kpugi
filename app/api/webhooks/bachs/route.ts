@@ -101,52 +101,180 @@ export async function POST(req: Request) {
       }
 
       if (profileId) {
-        // Idempotently credit wallet via atomic PostgreSQL stored procedure
+        const campaignId = metadata?.campaignId || null;
         const receiptNumber = `KPG-BCH-${reference.replace(/^KPG-BCH-/, '').slice(0, 6).toUpperCase()}`;
-        const { data: depositResult, error: depositErr } = await supabase.rpc(
-          'atomic_deposit_advertiser_wallet',
-          {
-            p_profile_id: profileId,
-            p_amount: amountInNaira,
-            p_reference: reference,
-            p_receipt_number: receiptNumber,
-            p_advertiser_email: targetEmail,
-            p_notes: 'Bachs.io webhook collection.succeeded deposit confirmed',
-          }
-        );
 
-        if (depositErr) {
-          console.error('[Bachs Webhook] Error depositing to wallet:', depositErr);
-        } else if (!depositResult?.already_processed) {
-          // Fire in-app and email notification
-          if (clerkId && targetEmail) {
-            await notifyAdvertiserWalletFunded({
-              clerkId,
-              email: targetEmail,
-              amount: amountInNaira,
-              reference,
-              newBalance: Number(depositResult?.new_balance || 0),
+        if (campaignId) {
+          // Direct Campaign Payment flow
+          const { data: campaign } = await supabase
+            .from('campaigns')
+            .select('id, title, total_budget, is_featured, requirements')
+            .eq('id', campaignId)
+            .maybeSingle();
+
+          if (campaign) {
+            await supabase
+              .from('campaigns')
+              .update({
+                requirements: {
+                  ...(campaign.requirements || {}),
+                  paystack_reference: reference,
+                  payment_method: 'bachs',
+                },
+              })
+              .eq('id', campaign.id);
+
+            const receiptUpsert = await supabase.from('payment_receipts').upsert(
+              {
+                receipt_number: receiptNumber,
+                advertiser_id: profileId,
+                campaign_id: campaign.id,
+                campaign_title: campaign.title,
+                total_amount: amountInNaira,
+                escrow_budget: Number(campaign.total_budget || amountInNaira),
+                featured_fee: campaign.is_featured ? 2500 : 0,
+                is_featured: Boolean(campaign.is_featured),
+                payment_method: 'bachs',
+                paystack_reference: reference,
+                status: 'paid',
+                issued_at: new Date().toISOString(),
+              },
+              { onConflict: 'receipt_number' }
+            );
+
+            if (receiptUpsert.error && receiptUpsert.error.message.includes('check constraint')) {
+              await supabase.from('payment_receipts').upsert(
+                {
+                  receipt_number: receiptNumber,
+                  advertiser_id: profileId,
+                  campaign_id: campaign.id,
+                  campaign_title: campaign.title,
+                  total_amount: amountInNaira,
+                  escrow_budget: Number(campaign.total_budget || amountInNaira),
+                  featured_fee: campaign.is_featured ? 2500 : 0,
+                  is_featured: Boolean(campaign.is_featured),
+                  payment_method: 'paystack',
+                  paystack_reference: reference,
+                  status: 'paid',
+                  issued_at: new Date().toISOString(),
+                  notes: 'Paid via Bachs.io Gateway',
+                },
+                { onConflict: 'receipt_number' }
+              );
+            }
+
+            // Ensure dual ledger entries in wallet_transactions for campaign payment
+            try {
+              let { data: advWallet } = await supabase
+                .from('wallets')
+                .select('id')
+                .eq('profile_id', profileId)
+                .eq('wallet_type', 'advertiser_funding')
+                .maybeSingle();
+
+              if (!advWallet) {
+                const { data: newW } = await supabase
+                  .from('wallets')
+                  .insert({ profile_id: profileId, wallet_type: 'advertiser_funding', balance: 0 })
+                  .select('id')
+                  .single();
+                advWallet = newW;
+              }
+
+              if (advWallet) {
+                const { data: existingTx } = await supabase
+                  .from('wallet_transactions')
+                  .select('id, type')
+                  .eq('paystack_reference', reference);
+
+                const hasDeposit = existingTx?.some((t) => t.type === 'deposit');
+                const hasDebit = existingTx?.some((t) => t.type === 'campaign_funding');
+
+                if (!hasDeposit) {
+                  await supabase.from('wallet_transactions').insert({
+                    wallet_id: advWallet.id,
+                    type: 'deposit',
+                    amount: amountInNaira,
+                    paystack_reference: reference,
+                    status: 'completed',
+                    created_at: new Date(Date.now() - 1000).toISOString(),
+                  });
+                }
+
+                if (!hasDebit) {
+                  await supabase.from('wallet_transactions').insert({
+                    wallet_id: advWallet.id,
+                    type: 'campaign_funding',
+                    amount: Number(campaign.total_budget || amountInNaira),
+                    campaign_id: campaign.id,
+                    paystack_reference: reference,
+                    status: 'completed',
+                    created_at: new Date().toISOString(),
+                  });
+                }
+              }
+            } catch (ledgerErr) {
+              console.error('[Bachs Webhook] Error recording dual ledger entries:', ledgerErr);
+            }
+
+            logAuditEvent({
               profileId,
+              actorRole: 'advertiser',
+              action: AUDIT_ACTIONS.WALLET_FUNDED,
+              actionCategory: 'finance',
+              targetTable: 'campaigns',
+              targetId: campaign.id,
+              details: `Funded campaign "${campaign.title}" with ₦${amountInNaira.toLocaleString()} via Bachs.io checkout`,
+              payload: { reference, amount: amountInNaira, processor: 'bachs', sessionId, receiptNumber },
             });
           }
+        } else {
+          // Standard Wallet Deposit flow
+          const { data: depositResult, error: depositErr } = await supabase.rpc(
+            'atomic_deposit_advertiser_wallet',
+            {
+              p_profile_id: profileId,
+              p_amount: amountInNaira,
+              p_reference: reference,
+              p_receipt_number: receiptNumber,
+              p_advertiser_email: targetEmail,
+              p_notes: 'Bachs.io webhook collection.succeeded deposit confirmed',
+            }
+          );
 
-          // Immutable Brand Audit Trail
-          logAuditEvent({
-            profileId,
-            actorRole: 'advertiser',
-            action: AUDIT_ACTIONS.WALLET_FUNDED,
-            actionCategory: 'finance',
-            targetTable: 'wallet_transactions',
-            targetId: reference,
-            details: `Funded platform escrow with ₦${amountInNaira.toLocaleString()} via Bachs.io checkout`,
-            payload: {
-              reference,
-              amount: amountInNaira,
-              processor: 'bachs',
-              sessionId,
-              receiptNumber,
-            },
-          });
+          if (depositErr) {
+            console.error('[Bachs Webhook] Error depositing to wallet:', depositErr);
+          } else if (!depositResult?.already_processed) {
+            // Fire in-app and email notification
+            if (clerkId && targetEmail) {
+              await notifyAdvertiserWalletFunded({
+                clerkId,
+                email: targetEmail,
+                amount: amountInNaira,
+                reference,
+                newBalance: Number(depositResult?.new_balance || 0),
+                profileId,
+              });
+            }
+
+            // Immutable Brand Audit Trail
+            logAuditEvent({
+              profileId,
+              actorRole: 'advertiser',
+              action: AUDIT_ACTIONS.WALLET_FUNDED,
+              actionCategory: 'finance',
+              targetTable: 'wallet_transactions',
+              targetId: reference,
+              details: `Funded platform escrow with ₦${amountInNaira.toLocaleString()} via Bachs.io checkout`,
+              payload: {
+                reference,
+                amount: amountInNaira,
+                processor: 'bachs',
+                sessionId,
+                receiptNumber,
+              },
+            });
+          }
         }
       } else {
         console.warn('[Bachs Webhook] Could not locate profile for customer email:', customerEmail);

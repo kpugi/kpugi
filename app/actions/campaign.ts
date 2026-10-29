@@ -829,14 +829,16 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
       // Payment is not pre-charged (e.g. Paystack checkout just completed on client,
       // or first-time creation via other actions).
       if (!receiptNumber) {
-        receiptNumber = `KPG-PAY-${Math.random()
+        const isBachsPay = payload.payment_method === 'bachs' || payload.paystack_reference?.startsWith('KPG-BCH-');
+        const prefix = isBachsPay ? 'KPG-BCH' : 'KPG-PAY';
+        receiptNumber = `${prefix}-${Math.random()
           .toString(36)
           .substring(2, 7)
           .toUpperCase()}`;
       }
 
       try {
-        await supabase.from('payment_receipts').insert({
+        const { error: insErr } = await supabase.from('payment_receipts').insert({
           receipt_number: receiptNumber,
           advertiser_id: advertiserId,
           campaign_id: campaign.id,
@@ -846,9 +848,26 @@ export async function createCampaignWizardAction(payload: CampaignWizardPayload)
           featured_fee: featuredFee,
           is_featured: isFeatured,
           payment_method: payload.payment_method || 'wallet',
-          paystack_reference: payload.paystack_reference || `WALLET-${Date.now()}`,
+          paystack_reference: payload.paystack_reference || receiptNumber,
           status: 'paid',
         });
+
+        if (insErr && insErr.message.includes('check constraint')) {
+          await supabase.from('payment_receipts').insert({
+            receipt_number: receiptNumber,
+            advertiser_id: advertiserId,
+            campaign_id: campaign.id,
+            campaign_title: campaign.title,
+            total_amount: totalPaid,
+            escrow_budget: totalBudget,
+            featured_fee: featuredFee,
+            is_featured: isFeatured,
+            payment_method: 'paystack',
+            paystack_reference: payload.paystack_reference || receiptNumber,
+            status: 'paid',
+            notes: payload.payment_method === 'bachs' ? 'Paid via Bachs.io Gateway' : undefined,
+          });
+        }
       } catch (e) {
         console.error('[Campaign Action] Error inserting receipt:', e);
       }
@@ -1660,4 +1679,56 @@ export async function chargeWalletForCampaignAction(amount: number, walletRef: s
 
   return { success: true, walletRef };
 }
+
+/**
+ * Initialize Bachs Hosted Checkout Session for Campaign Funding (Server Action)
+ */
+export async function initializeBachsCampaignCheckoutAction(params: {
+  campaignId?: string;
+  campaignTitle?: string;
+  totalPayableAmount: number;
+  isFeatured?: boolean;
+  advertiserEmail?: string;
+}) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Unauthorized: Please sign in.' };
+  }
+
+  const { createBachsCheckoutSession, generateBachsReference } = await import('@/lib/bachs/checkout');
+  const ref = generateBachsReference('KPG-BCH');
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+  try {
+    const session = await createBachsCheckoutSession({
+      amountInNaira: params.totalPayableAmount,
+      customerEmail: params.advertiserEmail || userProfile.profile.email || 'advertiser@kpugi.com',
+      reference: ref,
+      successUrl: `${appUrl}/b/campaigns/new?draftId=${params.campaignId || ''}&session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs&step=5`,
+      cancelUrl: `${appUrl}/b/campaigns/new?draftId=${params.campaignId || ''}&cancelled=true`,
+      metadata: {
+        campaignId: params.campaignId,
+        campaignTitle: params.campaignTitle,
+        isFeatured: Boolean(params.isFeatured),
+        amount: params.totalPayableAmount,
+        processor: 'bachs',
+      },
+    });
+
+    if (session && session.checkout_url) {
+      return {
+        success: true,
+        checkout_url: session.checkout_url,
+        checkout_id: session.checkout_id,
+        reference: session.reference || ref,
+      };
+    }
+
+    return { success: false, error: 'Failed to create Bachs checkout session.' };
+  } catch (err: any) {
+    console.error('[initializeBachsCampaignCheckoutAction Error]:', err);
+    return { success: false, error: err?.message || 'Error connecting to Bachs payment gateway.' };
+  }
+}
+
 
