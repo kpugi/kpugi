@@ -38,8 +38,30 @@ export async function POST(req: Request) {
       null;
 
     const sessionId = data?.checkout_id || data?.session_id || payload?.checkout_id || null;
+    const metadata = data?.metadata || payload?.metadata || {};
+
+    const supabase = createAdminClient();
+
+    // Check if an existing transaction was pre-locked on Kpugi backend with exact inputted amount
+    let existingTx: any = null;
+    if (reference) {
+      const { data: tx } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('paystack_reference', reference)
+        .maybeSingle();
+      existingTx = tx;
+    }
+
     const rawAmount = data?.amount || data?.charge?.amount_paid || data?.charge?.amount || 0;
-    const amountInNaira = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount);
+    const grossAmount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount);
+
+    // Lock strictly onto Kpugi user input amount (ignoring customer processing fees added by Bachs)
+    const amountInNaira =
+      (existingTx?.amount && Number(existingTx.amount) > 0 ? Number(existingTx.amount) : null) ??
+      (metadata?.amount && Number(metadata.amount) > 0 ? Number(metadata.amount) : null) ??
+      (data?.settlement_amount && Number(data.settlement_amount) > 0 ? Number(data.settlement_amount) : null) ??
+      grossAmount;
 
     const customerEmail =
       data?.customer?.email ||
@@ -47,10 +69,6 @@ export async function POST(req: Request) {
       data?.charge?.customer?.email ||
       data?.email ||
       null;
-
-    const metadata = data?.metadata || payload?.metadata || {};
-
-    const supabase = createAdminClient();
 
     // 1. Audit Log incoming Bachs webhook event
     try {
@@ -230,6 +248,13 @@ export async function POST(req: Request) {
           }
         } else {
           // Standard Wallet Deposit flow
+          if (existingTx && existingTx.status === 'pending') {
+            await supabase
+              .from('wallet_transactions')
+              .delete()
+              .eq('id', existingTx.id);
+          }
+
           const { data: depositResult, error: depositErr } = await supabase.rpc(
             'atomic_deposit_advertiser_wallet',
             {

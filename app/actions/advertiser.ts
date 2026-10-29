@@ -1127,6 +1127,26 @@ export async function initializeBachsDepositAction(amount: number) {
   const successUrl = `${baseUrl}/b/wallet?reference=${reference}&processor=bachs`;
   const cancelUrl = `${baseUrl}/b/wallet?cancelled=true&processor=bachs`;
 
+  // 1. Lock exact transaction amount on our backend before redirecting to Bachs
+  const supabase = createAdminClient();
+  let { data: wallet } = await supabase
+    .from('wallets')
+    .select('id')
+    .eq('profile_id', userProfile.profile.id)
+    .eq('wallet_type', 'advertiser_funding')
+    .maybeSingle();
+
+  if (wallet) {
+    await supabase.from('wallet_transactions').insert({
+      wallet_id: wallet.id,
+      type: 'deposit',
+      amount: amount, // Locked to what the user inputted on Kpugi!
+      paystack_reference: reference,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    });
+  }
+
   try {
     const session = await createBachsCheckoutSession({
       amountInNaira: amount,
@@ -1199,8 +1219,21 @@ export async function verifyBachsDepositAction(
       session.payment_status === 'paid' ||
       session.charge?.status === 'successful';
 
-    const rawAmount = session.charge?.amount_paid || session.amount || 0;
-    const amountNGN = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount);
+    // Strictly lock amount to what user inputted on Kpugi backend, NOT Bachs customer gross fees
+    let amountNGN = 0;
+    if (existingTx && existingTx.status === 'pending' && Number(existingTx.amount) > 0) {
+      amountNGN = Number(existingTx.amount);
+    } else if (session.metadata?.amount && Number(session.metadata.amount) > 0) {
+      amountNGN = Number(session.metadata.amount);
+    } else if (session.settlement_amount && Number(session.settlement_amount) > 0) {
+      amountNGN = Number(session.settlement_amount);
+    } else if (session.charge?.settlement_amount && Number(session.charge.settlement_amount) > 0) {
+      amountNGN = Number(session.charge.settlement_amount);
+    } else {
+      const rawAmount = session.amount || session.charge?.amount || 0;
+      amountNGN = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount);
+    }
+
     const reference = session.reference || referenceOrSessionId;
 
     if (!isPaid) {
@@ -1213,6 +1246,11 @@ export async function verifyBachsDepositAction(
             ? 'Payment is still being processed by Bachs.'
             : 'Payment session expired or was cancelled.',
       };
+    }
+
+    // Clean up initial pending row if it exists before atomic RPC
+    if (existingTx && existingTx.status === 'pending') {
+      await supabase.from('wallet_transactions').delete().eq('id', existingTx.id);
     }
 
     const receiptNumber = `KPG-BCH-${reference.replace(/^KPG-BCH-/, '').slice(0, 6).toUpperCase()}`;

@@ -26,11 +26,14 @@ export interface BachsCheckoutSessionDetails {
   status: 'open' | 'complete' | 'expired';
   payment_status: 'paid' | 'requires_payment_method' | 'pending';
   amount: string;
+  settlement_amount?: string | number;
   currency: string;
   reference: string;
   charge?: {
     status: string;
     amount_paid: string;
+    amount?: string | number;
+    settlement_amount?: string | number;
     payment_id?: string;
     customer?: {
       email?: string;
@@ -162,16 +165,31 @@ export async function retrieveBachsCheckoutSession(idOrRef: string): Promise<Bac
 
 function normalizePaymentToSessionDetails(payment: any): BachsCheckoutSessionDetails {
   const isPaid = payment.status === 'succeeded' || payment.status === 'paid' || payment.status === 'complete';
+  const meta = payment.meta || payment.metadata || {};
+
+  // Lock amount strictly to what was inputted on Kpugi (via metadata or settlement_amount),
+  // ignoring customer processing fees added by Bachs (e.g. ₦1,500).
+  const lockedAmount = meta.amount
+    ? String(meta.amount)
+    : (payment.settlement_amount && Number(payment.settlement_amount) > 0)
+    ? String(payment.settlement_amount)
+    : (payment.charge?.settlement_amount && Number(payment.charge.settlement_amount) > 0)
+    ? String(payment.charge.settlement_amount)
+    : String(payment.amount || payment.amount_paid || '0');
+
   return {
     checkout_id: payment.source?.checkout_id || payment.checkout_id || payment.id,
     status: isPaid ? 'complete' : 'open',
     payment_status: isPaid ? 'paid' : 'pending',
-    amount: payment.amount_paid || payment.amount || '0',
+    amount: lockedAmount,
+    settlement_amount: payment.settlement_amount || lockedAmount,
     currency: payment.currency || 'NGN',
     reference: payment.reference,
     charge: {
       status: payment.status === 'succeeded' ? 'successful' : payment.status,
-      amount_paid: payment.amount_paid || payment.amount || '0',
+      amount_paid: lockedAmount,
+      amount: lockedAmount,
+      settlement_amount: payment.settlement_amount || payment.charge?.settlement_amount || lockedAmount,
       payment_id: payment.id || payment.payment_id,
       customer: {
         email: payment.customer_email || payment.customer?.email,
@@ -182,7 +200,7 @@ function normalizePaymentToSessionDetails(payment: any): BachsCheckoutSessionDet
       email: payment.customer_email || payment.customer?.email,
       name: payment.customer_name || payment.customer?.name,
     },
-    metadata: payment.meta || payment.metadata || {},
+    metadata: meta,
   };
 }
 

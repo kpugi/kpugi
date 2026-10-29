@@ -76,7 +76,12 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
               session.charge?.status === 'successful';
 
             if (isPaid) {
-              const paidAmount = Number(session.charge?.amount_paid || session.amount || draft.total_budget);
+              const expectedTotal = Number(draft.total_budget || 0) + (draft.is_featured ? 2500 : 0);
+              const paidAmount = Number(
+                session.metadata?.amount ||
+                session.settlement_amount ||
+                (expectedTotal > 0 ? expectedTotal : (session.charge?.amount_paid || session.amount || 0))
+              );
               const receiptNum = `KPG-BCH-${session.reference.replace(/^KPG-BCH-/, '').slice(0, 6).toUpperCase()}`;
 
               const receiptRes = await supabase.from('payment_receipts').upsert(
