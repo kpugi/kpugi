@@ -18,6 +18,9 @@ export interface AdvertiserCampaign {
   views_delivered: number;
   company_logo: string | null;
   cover_image_url?: string | null;
+  is_featured?: boolean;
+  min_view_threshold?: number;
+  required_live_duration_hours?: number;
   requirements?: any;
   platform_views?: Record<string, number>;
 }
@@ -90,6 +93,9 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
         spent_budget, 
         status, 
         channels,
+        is_featured,
+        min_view_threshold,
+        required_live_duration_hours,
         created_at, 
         updated_at,
         cover_image_url,
@@ -261,6 +267,9 @@ export async function getAdvertiserDashboardData(profileId: string): Promise<Adv
       views_delivered: campaignViews,
       company_logo: campaignImg,
       cover_image_url: c.cover_image_url || null,
+      is_featured: Boolean(c.is_featured),
+      min_view_threshold: c.min_view_threshold || 1000,
+      required_live_duration_hours: c.required_live_duration_hours || 72,
       requirements: c.requirements || {},
       platform_views: platformViews,
     };
@@ -313,6 +322,8 @@ export interface BrandCampaignDetails {
     campaign_code: string | null;
     description: string;
     ad_format: string;
+    cover_image_url?: string | null;
+    is_featured?: boolean;
     requirements: Record<string, any>;
     cpm_rate: number;
     total_budget: number;
@@ -409,6 +420,8 @@ export async function getBrandCampaignDetails(
       campaign_code,
       description,
       ad_format,
+      cover_image_url,
+      is_featured,
       requirements,
       cpm_rate,
       total_budget,
@@ -671,6 +684,8 @@ export async function getBrandCampaignDetails(
           campaign_code: campaign.campaign_code || null,
           description: campaign.description,
           ad_format: campaign.ad_format,
+          cover_image_url: campaign.cover_image_url || null,
+          is_featured: Boolean(campaign.is_featured),
           requirements: campaign.requirements as Record<string, any>,
           cpm_rate: cpmRate,
           total_budget: Number(campaign.total_budget),

@@ -211,12 +211,20 @@ export async function updateCampaignStatusAction(formData: FormData) {
 
   const liveSpentBudget = Math.max(Number(campaign.spent_budget || 0), totalAccruedSpent);
 
-  // If concluding/completing campaign, refund remaining unspent budget to brand wallet
-  if (newStatus === 'completed' && campaign.status !== 'completed') {
-    const unspentBudget = Math.max(0, Number(campaign.total_budget) - liveSpentBudget);
+  // If concluding/completing or archiving campaign, refund remaining unspent budget to brand wallet
+  if ((newStatus === 'completed' || newStatus === 'archived') && campaign.status !== newStatus) {
+    const { data: existingRefunds } = await supabase
+      .from('wallet_transactions')
+      .select('amount')
+      .eq('campaign_id', campaign.id)
+      .eq('type', 'budget_release_refund')
+      .eq('status', 'completed');
+
+    const totalAlreadyRefunded = existingRefunds?.reduce((sum, r) => sum + Number(r.amount || 0), 0) || 0;
+    const unspentBudget = Math.max(0, Number(campaign.total_budget) - liveSpentBudget - totalAlreadyRefunded);
 
     if (unspentBudget > 0) {
-      const refundRef = `KPG-PAY-RFD-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      const refundRef = `KPG-RFD-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       await supabase.rpc('atomic_refund_campaign_budget', {
         p_profile_id: userProfile.profile.id,
         p_campaign_id: campaign.id,
@@ -230,6 +238,7 @@ export async function updateCampaignStatusAction(formData: FormData) {
     .from('campaigns')
     .update({
       status: newStatus,
+      ...(newStatus === 'archived' || newStatus === 'completed' ? { reserved_budget: 0 } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq('id', campaignId);

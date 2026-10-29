@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Download, FileText, FileVideo, FileImage, Copy, Check, Loader2, ExternalLink } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
 import { getSafeExternalUrl } from '@/lib/utils/url';
@@ -42,6 +42,8 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
   const [postUrl, setPostUrl] = useState<string>('');
   const [screenshotUrl, setScreenshotUrl] = useState<string>('');
   const [mounted, setMounted] = useState<boolean>(false);
+  const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [reviewsSummary, setReviewsSummary] = useState<CampaignReviewsSummary | null>(null);
 
   useEffect(() => {
@@ -213,7 +215,47 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
   const handleCopyCaption = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Caption copied to clipboard!');
+    setCopiedCaption(true);
+    setTimeout(() => setCopiedCaption(false), 2000);
+  };
+
+  const normalizeMediaUrl = (url: string | null | undefined): string => {
+    if (!url) return '';
+    if (url.startsWith('/api/media/')) return url;
+    const match = url.match(/\/storage\/v1\/object\/public\/campaign-creatives\/(.+)$/);
+    if (match && match[1]) {
+      return `/api/media/${match[1]}`;
+    }
+    return url;
+  };
+
+  const handleDownloadAsset = async (rawUrl: string, suggestedName: string) => {
+    if (!rawUrl) return;
+    setIsDownloading(true);
+    try {
+      const normalizedUrl = normalizeMediaUrl(rawUrl);
+      const downloadUrl = normalizedUrl.includes('?') ? `${normalizedUrl}&download=1` : `${normalizedUrl}?download=1`;
+
+      const res = await fetch(downloadUrl);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = suggestedName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('[Download error]:', err);
+      // Fallback: direct navigation with ?download=1 to prompt native download dialog
+      const fallbackUrl = normalizeMediaUrl(rawUrl);
+      const directUrl = fallbackUrl.includes('?') ? `${fallbackUrl}&download=1` : `${fallbackUrl}?download=1`;
+      window.location.href = directUrl;
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Step 1: Join Campaign
@@ -373,8 +415,10 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
   // Find hero background image & external asset URLs
   const heroBackground = campaign.cover_image_url || creatives[0]?.file_url || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&auto=format&fit=crop&q=80';
-  const googleDocUrl = campaign.requirements?.google_doc_url || campaign.requirements?.doc_url || 'https://docs.google.com';
-  const googleDriveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.drive_url || 'https://drive.google.com';
+  const rawDocUrl = campaign.requirements?.google_doc_url || campaign.requirements?.doc_url || '';
+  const rawDriveUrl = campaign.requirements?.google_drive_url || campaign.requirements?.drive_url || '';
+  const hasDocUrl = Boolean(rawDocUrl && rawDocUrl.trim() !== '' && rawDocUrl.trim() !== 'https://docs.google.com');
+  const hasDriveUrl = Boolean(rawDriveUrl && rawDriveUrl.trim() !== '' && rawDriveUrl.trim() !== 'https://drive.google.com');
 
   return (
     <div className="min-h-screen bg-kpugi-paper dark:bg-[#08090D] text-kpugi-ink dark:text-white flex flex-col font-sans relative">
@@ -593,104 +637,6 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
                   <CampaignBriefRenderer content={campaign.description} />
                 </div>
 
-                {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                    🎬 BRAND CREATIVE ASSETS — shown prominently below description
-                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-                {(() => {
-                  // Gather asset data: prefer campaign_creatives table, fall back to requirements JSONB
-                  const dbCreative = creatives[0] || null;
-                  const reqFileUrl = (campaign as any).requirements?.creative_video_url || (campaign as any).requirements?.creative_image_url || null;
-                  const reqCopyText = (campaign as any).requirements?.creative_text_copy || null;
-                  const reqCaption = (campaign as any).requirements?.caption_suggestion || null;
-
-                  const fileUrl = dbCreative?.file_url || reqFileUrl || null;
-                  const copyText = dbCreative?.copy_text || reqCopyText || null;
-                  const captionText = dbCreative?.caption_suggestion || reqCaption || null;
-
-                  if (!fileUrl && !copyText && !captionText) return null;
-
-                  // Detect YouTube link
-                  const ytMatch = fileUrl?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-                  const isYouTube = !!ytMatch;
-                  const ytId = ytMatch?.[1];
-
-                  // Detect video file
-                  const isVideoFile = !isYouTube && !!fileUrl?.match(/\.(mp4|mov|webm|avi|mkv)(\?|$)/i);
-
-                  return (
-                    <div className="rounded-3xl overflow-hidden border border-kpugi-border dark:border-white/10 bg-white dark:bg-[#12141A] shadow-sm">
-                      {/* Header bar */}
-                      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03]">
-                        <div>
-                          <h3 className="font-display font-bold text-slate-900 dark:text-white text-base">Brand Asset</h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Use this asset in your post — it&apos;s required for campaign participation</p>
-                        </div>
-                        <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider">
-                          Required
-                        </span>
-                      </div>
-
-                      {/* Media preview */}
-                      {fileUrl && (
-                        <div className="bg-slate-950 flex items-center justify-center">
-                          {isYouTube ? (
-                            <div className="aspect-video w-full">
-                              <iframe
-                                src={`https://www.youtube.com/embed/${ytId}`}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="w-full h-full"
-                              />
-                            </div>
-                          ) : isVideoFile ? (
-                            <video
-                              src={fileUrl}
-                              controls
-                              className="w-full max-h-[480px] object-contain"
-                            />
-                          ) : (
-                            <img
-                              src={fileUrl}
-                              alt="Brand Creative"
-                              className="w-full max-h-[480px] object-contain"
-                            />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Caption + copy text */}
-                      {(captionText || copyText) && (
-                        <div className="p-6 space-y-4">
-                          {captionText && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Suggested Caption</span>
-                                <button
-                                  onClick={() => handleCopyCaption(captionText)}
-                                  className="text-xs text-kpugi-blue dark:text-blue-400 hover:underline font-sans font-bold"
-                                >
-                                  Copy Caption
-                                </button>
-                              </div>
-                              <p className="font-sans text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-xl p-4 leading-relaxed italic">
-                                &ldquo;{captionText}&rdquo;
-                              </p>
-                            </div>
-                          )}
-                          {copyText && copyText !== fileUrl && (
-                            <div className="space-y-2">
-                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Caption</span>
-                              <p className="font-sans text-xs text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-white/[0.01] p-3 rounded-lg border border-slate-200 dark:border-white/5 whitespace-pre-wrap">
-                                {copyText}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
                 {/* ⚡ AI-POWERED SYNC CARD (Only for creators & guests, hidden for advertisers) */}
                 {userRole !== 'advertiser' && (() => {
                   const dbMatchScore = campaign.match_score ?? 75;
@@ -844,36 +790,84 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
 
                 {/* Resources Attachment Section */}
                 <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-2xl p-5 space-y-3">
-                  <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Campaign Assets</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Campaign Resources</h4>
+                    {(!hasDocUrl && !hasDriveUrl) && (
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">None attached</span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href={getSafeExternalUrl(googleDocUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 rounded-xl transition-all group">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">📄</span>
-                        <div className="text-left">
-                          <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">Campaign Brief Guidelines</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Google Docs</div>
+                    {/* Google Docs Card */}
+                    {hasDocUrl ? (
+                      <a
+                        href={getSafeExternalUrl(rawDocUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 rounded-xl transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">📄</span>
+                          <div className="text-left">
+                            <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">Campaign Brief Guidelines</div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Google Docs • Active Link</div>
+                          </div>
                         </div>
-                      </div>
-                      <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                      </svg>
-                    </a>
-                    <a href={getSafeExternalUrl(googleDriveUrl)} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 rounded-xl transition-all group">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">📂</span>
-                        <div className="text-left">
-                          <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">Video Creative Asset Folder</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Google Drive</div>
+                        <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl opacity-60 cursor-not-allowed select-none">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl grayscale opacity-60">📄</span>
+                          <div className="text-left">
+                            <div className="text-xs font-medium text-slate-600 dark:text-slate-400">Campaign Brief Guidelines</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500">Not provided by brand</div>
+                          </div>
                         </div>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200/50 dark:bg-white/5">
+                          Inactive
+                        </span>
                       </div>
-                      <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                      </svg>
-                    </a>
+                    )}
+
+                    {/* Google Drive Card */}
+                    {hasDriveUrl ? (
+                      <a
+                        href={getSafeExternalUrl(rawDriveUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 rounded-xl transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">📂</span>
+                          <div className="text-left">
+                            <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-kpugi-blue dark:group-hover:text-blue-400 transition-colors">Video Creative Asset Folder</div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Google Drive • Active Link</div>
+                          </div>
+                        </div>
+                        <svg className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-between p-3.5 bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl opacity-60 cursor-not-allowed select-none">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl grayscale opacity-60">📂</span>
+                          <div className="text-left">
+                            <div className="text-xs font-medium text-slate-600 dark:text-slate-400">Creative Asset Folder</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500">Not provided by brand</div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200/50 dark:bg-white/5">
+                          Inactive
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -895,21 +889,199 @@ export default function CreatorCampaignDetailsView({ data, campaignId, userRole 
             {activeTab === 'instructions' && (
               <div className="space-y-6">
                 
-                {/* 1. Auditing & Safety Requirements Card */}
-                <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">
-                  <div>
-                    <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white flex items-center gap-2">
-                      Auditing Requirements
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Key rules enforced by our automated view verification and escrow settlement system.</p>
-                  </div>
-                  <ul className="space-y-4 font-sans text-sm text-slate-700 dark:text-slate-300 list-disc pl-5 leading-relaxed">
-                    <li>Your post must remain publicly visible and reachable for a minimum of <strong>{campaign.required_live_duration_hours} hours</strong> from the time of submission.</li>
-                    <li>Our verification auditor checks view count progress automatically hourly.</li>
-                    <li>A settlement window of <strong>{campaign.verification_grace_hours} hours</strong> is allocated for automated metric collation and final settling.</li>
-                    <li>Deleting, archiving, or restricting access to the post during the audit phase violates terms and results in immediate forfeiture of reserved escrow funds.</li>
-                  </ul>
-                </div>
+                {/* 1. Brand Asset & Caption Card */}
+                {(() => {
+                  const dbCreative = creatives[0] || null;
+                  const reqFileUrl = (campaign as any).requirements?.creative_video_url || (campaign as any).requirements?.creative_image_url || null;
+                  const reqCopyText = (campaign as any).requirements?.creative_text_copy || null;
+                  const reqCaption = (campaign as any).requirements?.caption_suggestion || null;
+
+                  const fileUrl = dbCreative?.file_url || reqFileUrl || null;
+                  const copyText = dbCreative?.copy_text || reqCopyText || null;
+                  const captionText = dbCreative?.caption_suggestion || reqCaption || null;
+
+                  const rawFileName = fileUrl ? (fileUrl.split('/').pop()?.split('?')[0] || 'brand_asset') : 'brand_asset';
+                  const fileExtension = rawFileName.includes('.') ? rawFileName.split('.').pop()?.toUpperCase() : (fileUrl?.match(/\.(mp4|mov|webm)/i) ? 'MP4' : 'ASSET');
+                  const isVideo = !!fileUrl?.match(/\.(mp4|mov|webm|avi|mkv)(\?|$)/i) || fileUrl?.toLowerCase().includes('video');
+                  const isImage = !!fileUrl?.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i) || fileUrl?.toLowerCase().includes('image');
+                  const cleanDisplayName = rawFileName.length > 36 ? `${rawFileName.slice(0, 22)}...${rawFileName.slice(-10)}` : rawFileName;
+
+                  return (
+                    <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/10 pb-4">
+                        <div>
+                          <h3 className="font-display font-bold text-xl text-slate-900 dark:text-white flex items-center gap-2">
+                            Brand Asset &amp; Caption
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Download the official creative asset and copy the required caption for your post.
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider shrink-0">
+                          Required
+                        </span>
+                      </div>
+
+                      {/* File Asset Attachment Card (File format with download icon - no full video/image display) */}
+                      {fileUrl ? (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-kpugi-blue dark:text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                              {isVideo ? (
+                                <FileVideo className="w-6 h-6" />
+                              ) : isImage ? (
+                                <FileImage className="w-6 h-6" />
+                              ) : (
+                                <FileText className="w-6 h-6" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-bold text-slate-900 dark:text-white truncate" title={rawFileName}>
+                                {cleanDisplayName}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                                  {fileExtension}
+                                </span>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  Official Creative Asset
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadAsset(fileUrl, rawFileName)}
+                              disabled={isDownloading}
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 disabled:opacity-60 text-white font-sans text-xs font-bold transition-all shadow-sm"
+                            >
+                              {isDownloading ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Downloading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-4 h-4" />
+                                  <span>Download Asset</span>
+                                </>
+                              )}
+                            </button>
+                            <a
+                              href={normalizeMediaUrl(fileUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors"
+                              title="Open asset via Kpugi link"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 flex items-center gap-3 text-slate-500 dark:text-slate-400 text-xs">
+                          <FileText className="w-5 h-5 text-slate-400 shrink-0" />
+                          <span>No direct creative file uploaded by the brand. Please check the Campaign Resources.</span>
+                        </div>
+                      )}
+
+                      {/* Caption & Copy Section */}
+                      {(captionText || copyText) && (
+                        <div className="space-y-4 pt-2">
+                          {captionText && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                  Suggested Caption
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCaption(captionText)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-kpugi-blue dark:text-blue-400 text-xs font-bold transition-colors"
+                                >
+                                  {copiedCaption ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                      <span className="text-emerald-600 dark:text-emerald-400">Copied!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3.5 h-3.5" />
+                                      <span>Copy Caption</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                              <div className="font-sans text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-2xl p-4 sm:p-5 leading-relaxed italic">
+                                &ldquo;{captionText}&rdquo;
+                              </div>
+                            </div>
+                          )}
+
+                          {copyText && copyText !== fileUrl && copyText !== captionText && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                  Brand Copy &amp; Instructions
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCaption(copyText)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold transition-colors"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy Text</span>
+                                </button>
+                              </div>
+                              <div className="font-sans text-xs text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-white/[0.01] p-4 rounded-2xl border border-slate-200 dark:border-white/5 whitespace-pre-wrap">
+                                {copyText}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Mandatory Mentions & Hashtags quick-copy pills */}
+                      {((campaign.requirements?.mentions && campaign.requirements.mentions.length > 0) ||
+                        (campaign.requirements?.hashtags && campaign.requirements.hashtags.length > 0)) && (
+                        <div className="pt-3 border-t border-slate-100 dark:border-white/10 space-y-3">
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                            Required Tags (Click to Copy)
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {campaign.requirements?.mentions?.map((mention: string, idx: number) => (
+                              <button
+                                key={`m-${idx}`}
+                                type="button"
+                                onClick={() => handleCopyCaption(mention)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/20 text-xs font-semibold transition-colors"
+                                title="Click to copy mention"
+                              >
+                                <span>{mention}</span>
+                                <Copy className="w-3 h-3 opacity-60" />
+                              </button>
+                            ))}
+                            {campaign.requirements?.hashtags?.map((hashtag: string, idx: number) => (
+                              <button
+                                key={`h-${idx}`}
+                                type="button"
+                                onClick={() => handleCopyCaption(hashtag)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-pink-50 dark:bg-pink-500/10 hover:bg-pink-100 dark:hover:bg-pink-500/20 text-pink-700 dark:text-pink-300 border border-pink-200/60 dark:border-pink-500/20 text-xs font-semibold transition-colors"
+                                title="Click to copy hashtag"
+                              >
+                                <span>{hashtag}</span>
+                                <Copy className="w-3 h-3 opacity-60" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* 2. Comprehensive Posting Rules & Step-by-Step Checklist Card */}
                 <div className="bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">

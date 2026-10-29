@@ -1209,7 +1209,7 @@ export async function archiveCampaignAction(campaignId: string) {
     // Check existing campaign status
     const { data: campaign, error: fetchErr } = await supabase
       .from('campaigns')
-      .select('id, title, status, is_featured, total_budget')
+      .select('id, title, status, is_featured, total_budget, spent_budget, reserved_budget')
       .eq('id', campaignId)
       .eq('advertiser_id', advertiserId)
       .single();
@@ -1218,11 +1218,61 @@ export async function archiveCampaignAction(campaignId: string) {
       return { success: false, error: 'Campaign not found or access denied.' };
     }
 
-    // Set status to 'archived' in database to preserve history
+    // 1. Calculate live accrued spent budget from submissions
+    const { data: campaignSubmissions } = await supabase
+      .from('submissions')
+      .select('payout_amount, pending_payout_amount')
+      .eq('campaign_id', campaign.id);
+
+    const totalAccruedSpent = campaignSubmissions?.reduce(
+      (sum, s) => sum + Number(s.payout_amount || 0) + Number(s.pending_payout_amount || 0),
+      0
+    ) || 0;
+
+    const liveSpentBudget = Math.max(Number(campaign.spent_budget || 0), totalAccruedSpent);
+
+    // 2. Check if any budget release refund has already been credited for this campaign
+    const { data: existingRefunds } = await supabase
+      .from('wallet_transactions')
+      .select('amount')
+      .eq('campaign_id', campaign.id)
+      .eq('type', 'budget_release_refund')
+      .eq('status', 'completed');
+
+    const totalAlreadyRefunded = existingRefunds?.reduce(
+      (sum, r) => sum + Number(r.amount || 0),
+      0
+    ) || 0;
+
+    const unspentBudget = Math.max(0, Number(campaign.total_budget || 0) - liveSpentBudget - totalAlreadyRefunded);
+
+    // 3. Atomically refund remaining unspent budget back to advertiser's wallet
+    let refundIssued = false;
+    if (unspentBudget > 0) {
+      const refundRef = `KPG-RFD-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      const { data: refundResult, error: refundErr } = await supabase.rpc(
+        'atomic_refund_campaign_budget',
+        {
+          p_profile_id: advertiserId,
+          p_campaign_id: campaign.id,
+          p_refund_amount: unspentBudget,
+          p_reference: refundRef,
+        }
+      );
+
+      if (refundErr || !refundResult?.success) {
+        console.error('[archiveCampaignAction] Failed to refund unspent budget:', refundErr || refundResult?.error);
+        return { success: false, error: 'Failed to refund unspent campaign budget to your wallet.' };
+      }
+      refundIssued = true;
+    }
+
+    // 4. Set status to 'archived' in database to preserve history and zero out reserved budget
     const { error: archiveErr } = await supabase
       .from('campaigns')
       .update({
         status: 'archived',
+        reserved_budget: 0,
         updated_at: new Date().toISOString(),
       })
       .eq('id', campaignId);
@@ -1239,21 +1289,25 @@ export async function archiveCampaignAction(campaignId: string) {
       actionCategory: 'campaign',
       targetTable: 'campaigns',
       targetId: campaignId,
-      details: `Archived campaign "${campaign.title || campaignId}"`,
+      details: `Archived campaign "${campaign.title || campaignId}"${refundIssued ? ` (Refunded ₦${unspentBudget.toLocaleString()} to wallet)` : ''}`,
       payload: {
         campaign_id: campaignId,
         previous_status: campaign.status,
         new_status: 'archived',
+        refund_amount: unspentBudget,
       },
     }).catch((e) => console.error('[Campaign Action] Error logging archive audit:', e));
 
     revalidatePath('/b/campaigns');
     revalidatePath('/b/dashboard');
+    revalidatePath('/b/wallet');
     revalidatePath('/browse');
 
     return {
       success: true,
-      message: 'Campaign archived successfully. History preserved on dashboard.',
+      message: refundIssued
+        ? `Campaign archived successfully. ₦${unspentBudget.toLocaleString()} unspent budget has been refunded to your wallet.`
+        : 'Campaign archived successfully. History preserved on dashboard.',
     };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Server error archiving campaign' };
@@ -1427,10 +1481,10 @@ export async function updateCampaignDetailsAction(payload: {
     const advertiserId = userProfile.profile.id;
     const supabase = createAdminClient();
 
-    // Fetch existing campaign status
+    // Fetch existing campaign status & featured state
     const { data: existingCampaign, error: fetchErr } = await supabase
       .from('campaigns')
-      .select('id, status, title, cpm_rate, total_budget, min_view_threshold')
+      .select('id, status, title, cpm_rate, total_budget, min_view_threshold, is_featured')
       .eq('id', payload.campaignId)
       .eq('advertiser_id', advertiserId)
       .single();
@@ -1471,11 +1525,34 @@ export async function updateCampaignDetailsAction(payload: {
       }
     }
 
-    if (payload.ad_format) updateData.ad_format = payload.ad_format;
+    if (payload.ad_format) {
+      const lower = payload.ad_format.toLowerCase();
+      if (lower.includes('image') || lower.includes('photo') || lower.includes('banner')) {
+        updateData.ad_format = 'image';
+      } else if (lower.includes('text') || lower.includes('copy') || lower.includes('caption')) {
+        updateData.ad_format = 'text';
+      } else {
+        updateData.ad_format = 'video';
+      }
+    }
+
     if (payload.required_live_duration_hours !== undefined) updateData.required_live_duration_hours = Number(payload.required_live_duration_hours);
     if (payload.channels) updateData.channels = payload.channels;
-    if (payload.is_featured !== undefined) updateData.is_featured = Boolean(payload.is_featured);
-    if (payload.requirements) updateData.requirements = payload.requirements;
+
+    // Security & Anti-Fraud: featured status is a paid service (₦2,500).
+    // Never allow upgrading is_featured from false to true for free via regular edit!
+    if (existingCampaign.is_featured) {
+      if (payload.is_featured !== undefined) updateData.is_featured = Boolean(payload.is_featured);
+    } else {
+      updateData.is_featured = false;
+    }
+
+    if (payload.requirements) {
+      updateData.requirements = {
+        ...payload.requirements,
+        display_ad_format: payload.ad_format || (updateData.ad_format === 'image' ? 'Image Banner' : updateData.ad_format === 'text' ? 'Text Caption' : 'Video Asset'),
+      };
+    }
 
     const { error: updateErr } = await supabase
       .from('campaigns')
@@ -1744,5 +1821,244 @@ export async function initializeBachsCampaignCheckoutAction(params: {
     return { success: false, error: err?.message || 'Error connecting to Bachs payment gateway.' };
   }
 }
+
+/**
+ * Quick server action to get advertiser wallet balance for in-app upgrade checks
+ */
+export async function getAdvertiserWalletBalanceAction(): Promise<{ balance: number }> {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+    if (!userProfile || !userProfile.profile) return { balance: 0 };
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from('wallets')
+      .select('balance')
+      .eq('profile_id', userProfile.profile.id)
+      .eq('wallet_type', 'advertiser_funding')
+      .maybeSingle();
+    return { balance: Number(data?.balance || 0) };
+  } catch {
+    return { balance: 0 };
+  }
+}
+
+/**
+ * Dedicated Upgrade Flow: Upgrade an existing campaign to Featured status (₦2,500 one-time fee)
+ */
+export async function upgradeCampaignToFeaturedAction(params: {
+  campaignId: string;
+  paymentMethod: 'wallet' | 'bachs' | 'paystack';
+  paystackReference?: string;
+}): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+  checkout_url?: string;
+}> {
+  try {
+    const userProfile = await getOrCreateUserProfile();
+    if (!userProfile || !userProfile.profile) {
+      return { success: false, error: 'Unauthorized: Please sign in.' };
+    }
+
+    const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+    if (isSuspended) {
+      return { success: false, error: `Account suspended (${reason || 'Read-Only Mode'}). Upgrades are disabled.` };
+    }
+
+    const profileId = userProfile.profile.id;
+    const supabase = createAdminClient();
+
+    // 1. Fetch campaign and verify ownership
+    const { data: campaign, error: campErr } = await supabase
+      .from('campaigns')
+      .select('id, title, is_featured, requirements')
+      .eq('id', params.campaignId)
+      .eq('advertiser_id', profileId)
+      .single();
+
+    if (campErr || !campaign) {
+      return { success: false, error: 'Campaign not found or access denied.' };
+    }
+
+    if (campaign.is_featured) {
+      return { success: true, message: 'Campaign is already featured.' };
+    }
+
+    const featuredFee = 2500;
+
+    // A. Wallet Payment Flow
+    if (params.paymentMethod === 'wallet') {
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('id, balance')
+        .eq('profile_id', profileId)
+        .eq('wallet_type', 'advertiser_funding')
+        .maybeSingle();
+
+      if (!wallet) {
+        return { success: false, error: 'Advertiser wallet not found.' };
+      }
+
+      const balance = Number(wallet.balance || 0);
+      if (balance < featuredFee) {
+        return {
+          success: false,
+          error: `Insufficient wallet balance (Available: ₦${balance.toLocaleString()}). Required: ₦${featuredFee.toLocaleString()}.`,
+        };
+      }
+
+      // Atomic balance deduction
+      const { error: deductErr } = await supabase
+        .from('wallets')
+        .update({ balance: balance - featuredFee })
+        .eq('id', wallet.id)
+        .gte('balance', featuredFee);
+
+      if (deductErr) {
+        return { success: false, error: 'Failed to debit wallet balance. Please try again.' };
+      }
+
+      const ref = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+      // Insert wallet transaction
+      await supabase.from('wallet_transactions').insert({
+        wallet_id: wallet.id,
+        type: 'campaign_funding',
+        amount: featuredFee,
+        status: 'completed',
+        campaign_id: campaign.id,
+        paystack_reference: ref,
+        created_at: new Date().toISOString(),
+      });
+
+      // Update campaign to featured
+      const updatedReqs = {
+        ...(campaign.requirements || {}),
+        featured_fee: featuredFee,
+        featured_upgraded_at: new Date().toISOString(),
+        featured_payment_ref: ref,
+        featured_payment_method: 'wallet',
+      };
+
+      await supabase
+        .from('campaigns')
+        .update({
+          is_featured: true,
+          requirements: updatedReqs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', campaign.id);
+
+      // Create payment receipt
+      await supabase.from('payment_receipts').insert({
+        receipt_number: ref,
+        advertiser_id: profileId,
+        campaign_id: campaign.id,
+        campaign_title: campaign.title,
+        total_amount: featuredFee,
+        escrow_budget: 0,
+        featured_fee: featuredFee,
+        is_featured: true,
+        payment_method: 'wallet',
+        paystack_reference: ref,
+        transaction_type: 'featured_upgrade',
+        advertiser_email: userProfile.profile.email,
+        status: 'paid',
+      });
+
+      logAuditEvent({
+        profileId,
+        actorRole: 'advertiser',
+        action: AUDIT_ACTIONS.CAMPAIGN_UPDATED,
+        actionCategory: 'campaign',
+        targetTable: 'campaigns',
+        targetId: campaign.id,
+        details: `Upgraded campaign "${campaign.title}" to Featured (₦2,500 via Wallet)`,
+      }).catch(console.error);
+
+      revalidatePath('/b/campaigns');
+      revalidatePath(`/b/campaigns/${campaign.id}`);
+      revalidatePath('/browse');
+      revalidatePath('/b/wallet');
+
+      return { success: true, message: 'Campaign upgraded to Featured successfully!' };
+    }
+
+    // B. Bachs Payment Flow
+    if (params.paymentMethod === 'bachs') {
+      const { createBachsCheckoutSession, generateBachsReference } = await import('@/lib/bachs/checkout');
+      const ref = generateBachsReference('KPG-BCH');
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+      const session = await createBachsCheckoutSession({
+        amountInNaira: featuredFee,
+        customerEmail: userProfile.profile.email || 'advertiser@kpugi.com',
+        reference: ref,
+        successUrl: `${appUrl}/b/campaigns/${campaign.id}?featured_upgraded=true&reference=${ref}`,
+        cancelUrl: `${appUrl}/b/campaigns/${campaign.id}?cancelled=true`,
+        metadata: {
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          isFeatured: true,
+          isFeaturedUpgrade: true,
+          amount: featuredFee,
+          processor: 'bachs',
+        },
+      });
+
+      if (session && session.checkout_url) {
+        return { success: true, checkout_url: session.checkout_url };
+      }
+      return { success: false, error: 'Could not create Bachs checkout session.' };
+    }
+
+    // C. Paystack Verification
+    if (params.paymentMethod === 'paystack') {
+      if (!params.paystackReference) {
+        return { success: false, error: 'Paystack reference required.' };
+      }
+
+      const verifyRes = await verifyPaystackTransactionAction(params.paystackReference, {
+        campaignId: campaign.id,
+        campaignTitle: campaign.title,
+        isFeatured: true,
+        featuredFee,
+        amount: featuredFee,
+      });
+
+      if (!verifyRes.success) {
+        return { success: false, error: verifyRes.error || 'Payment verification failed.' };
+      }
+
+      await supabase
+        .from('campaigns')
+        .update({
+          is_featured: true,
+          requirements: {
+            ...(campaign.requirements || {}),
+            featured_fee: featuredFee,
+            featured_upgraded_at: new Date().toISOString(),
+            featured_payment_ref: params.paystackReference,
+            featured_payment_method: 'paystack',
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', campaign.id);
+
+      revalidatePath('/b/campaigns');
+      revalidatePath(`/b/campaigns/${campaign.id}`);
+      revalidatePath('/browse');
+
+      return { success: true, message: 'Campaign successfully upgraded to Featured!' };
+    }
+
+    return { success: false, error: 'Invalid payment method.' };
+  } catch (err: any) {
+    console.error('[upgradeCampaignToFeaturedAction Error]:', err);
+    return { success: false, error: err?.message || 'Server error upgrading campaign' };
+  }
+}
+
 
 
