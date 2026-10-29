@@ -561,9 +561,15 @@ export default function FinancesDashboardManager({
             <h1 className="text-xl font-bold font-display text-gray-900 dark:text-white sm:text-2xl">
               Platform Finances
             </h1>
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Paystack Connected
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Paystack Connected
+              </div>
+              <div className="flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+                Bachs.io Connected {initialMetrics.bachsMode === 'sandbox' ? '(Sandbox)' : ''}
+              </div>
             </div>
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -582,7 +588,7 @@ export default function FinancesDashboardManager({
             className="flex items-center gap-1.5 text-xs font-sans"
           >
             <ShieldCheck className="h-4 w-4 text-cyan-600" />
-            <span>Check Paystack Ref</span>
+            <span>Verify Reference</span>
           </Button>
 
           <Button
@@ -714,34 +720,45 @@ export default function FinancesDashboardManager({
           </div>
         </div>
 
-        {/* Card 3: Paystack Bank Balance */}
+        {/* Card 3: Gateway Reserves (Paystack & Bachs.io) */}
         <div className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/60">
           <div className="flex items-start justify-between">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition-colors group-hover:bg-cyan-100/80 dark:bg-cyan-950/50 dark:text-cyan-400">
               <Landmark className="h-5 w-5" />
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
+                Bachs ${(initialMetrics.bachsBalanceUsd || 0).toFixed(2)}
+              </span>
+            </div>
           </div>
           <div className="mt-4">
             <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Paystack Account Balance
+              Gateway Account Reserves
             </span>
             <h3 className="mt-1 text-2xl sm:text-3xl font-bold font-display text-gray-900 dark:text-white">
-              ₦{initialMetrics.paystackBalanceNgn.toLocaleString()}
+              ₦{(initialMetrics.paystackBalanceNgn + (initialMetrics.bachsBalanceNgn || 0)).toLocaleString()}
             </h3>
           </div>
-          <div className="mt-4 space-y-2 border-t border-gray-100 pt-3 dark:border-gray-800/80">
+          <div className="mt-4 space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800/80">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 dark:text-gray-400">Deposits Received:</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                ₦{initialMetrics.lifetimeDepositsVolume.toLocaleString()}
+              <span className="text-gray-500 dark:text-gray-400">Paystack (NGN):</span>
+              <span className="font-semibold text-gray-800 dark:text-gray-200">
+                ₦{initialMetrics.paystackBalanceNgn.toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 dark:text-gray-400">Reserve Status:</span>
+              <span className="text-gray-500 dark:text-gray-400">Bachs.io (USD/NGN):</span>
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                ${(initialMetrics.bachsBalanceUsd || 0).toFixed(2)} USD (~₦{(initialMetrics.bachsBalanceNgn || 0).toLocaleString()})
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 dark:border-gray-800/50">
+              <span className="text-gray-500 dark:text-gray-400">Reserve Coverage:</span>
               <span className="font-semibold text-cyan-700 dark:text-cyan-300">
                 {initialMetrics.totalCustodialLiquidity > 0
                   ? `${(
-                      (initialMetrics.paystackBalanceNgn /
+                      ((initialMetrics.paystackBalanceNgn + (initialMetrics.bachsBalanceNgn || 0)) /
                         initialMetrics.totalCustodialLiquidity) *
                       100
                     ).toFixed(1)}% Funded`
@@ -1601,7 +1618,7 @@ export default function FinancesDashboardManager({
       )}
 
       {/* ========================================================= */}
-      {/* TAB 3: PAYSTACK GATEWAY DEPOSITS                          */}
+      {/* TAB 3: GATEWAY DEPOSITS (Paystack & Bachs.io)             */}
       {/* ========================================================= */}
       {activeTab === "deposits" && (
         <div className="space-y-4">
@@ -1629,7 +1646,7 @@ export default function FinancesDashboardManager({
                     isHeader
                     className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500"
                   >
-                    Paystack Reference
+                    Gateway Reference
                   </TableCell>
                   <TableCell
                     isHeader
@@ -1671,20 +1688,38 @@ export default function FinancesDashboardManager({
                       colSpan={6}
                       className="py-12 text-center text-xs text-gray-500 dark:text-gray-400"
                     >
-                      No Paystack deposits recorded yet.
+                      No gateway deposits recorded yet.
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedDeposits.map((d) => {
                     const formattedDate = new Date(d.created_at);
+                    const isBachsDeposit = Boolean(
+                      d.paystack_reference?.startsWith('KPG-BCH-') ||
+                      d.paystack_reference?.startsWith('chk_') ||
+                      d.paystack_reference?.startsWith('ch_')
+                    );
 
                     return (
                       <TableRow
                         key={d.id}
                         className="border-b border-gray-100 transition-colors hover:bg-gray-50/50 dark:border-gray-800/60 dark:hover:bg-gray-800/30"
                       >
-                        <TableCell className="py-3 px-4 font-mono text-xs font-semibold text-brand-600 dark:text-brand-400">
-                          {d.paystack_reference || d.id}
+                        <TableCell className="py-3 px-4 font-mono text-xs font-semibold">
+                          <div className="flex items-center gap-1.5">
+                            {isBachsDeposit ? (
+                              <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
+                                Bachs.io
+                              </span>
+                            ) : (
+                              <span className="rounded bg-cyan-50 px-1.5 py-0.5 text-[9px] font-bold text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-300">
+                                Paystack
+                              </span>
+                            )}
+                            <span className={isBachsDeposit ? "text-indigo-600 dark:text-indigo-400" : "text-brand-600 dark:text-brand-400"}>
+                              {d.paystack_reference || d.id}
+                            </span>
+                          </div>
                         </TableCell>
 
                         <TableCell className="py-3 px-4">
@@ -1733,8 +1768,8 @@ export default function FinancesDashboardManager({
                             }}
                             className="text-xs flex items-center gap-1 ml-auto"
                           >
-                            <ShieldCheck className="h-3.5 w-3.5 text-cyan-600" />
-                            <span>Verify Paystack</span>
+                            <ShieldCheck className={`h-3.5 w-3.5 ${isBachsDeposit ? "text-indigo-600" : "text-cyan-600"}`} />
+                            <span>Verify {isBachsDeposit ? "Bachs.io" : "Paystack"}</span>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -1934,18 +1969,18 @@ export default function FinancesDashboardManager({
       {/* ========================================================= */}
       {activeTab === "reconciliation" && (
         <div className="space-y-4">
-          {/* Paystack Reserves vs User Balances Card */}
+          {/* Gateway Reserves vs User Balances Card */}
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-gray-900 font-sans">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 pb-4 dark:border-gray-800">
               <div>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-emerald-600" />
                   <h3 className="text-sm font-bold font-display text-gray-900 dark:text-white">
-                    Paystack Reserves vs User Balances
+                    Gateway Reserves vs User Balances
                   </h3>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Verifies that the money in our Paystack business account covers 100% of all user wallet balances
+                  Verifies that live balances in our Paystack and Bachs.io accounts cover 100% of all user wallet balances
                 </p>
               </div>
 
@@ -1956,29 +1991,37 @@ export default function FinancesDashboardManager({
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
-                <span className="text-xs text-gray-500">Paystack Account Balance:</span>
-                <p className="mt-1 text-xl font-bold font-display text-gray-900 dark:text-white">
+                <span className="text-xs text-gray-500">Paystack Balance:</span>
+                <p className="mt-1 text-lg font-bold font-display text-gray-900 dark:text-white">
                   ₦{initialMetrics.paystackBalanceNgn.toLocaleString()}
                 </p>
-                <p className="text-[11px] text-gray-400">Live Bank Balance</p>
+                <p className="text-[11px] text-gray-400">Live NGN Account</p>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
+                <span className="text-xs text-gray-500">Bachs.io Balance:</span>
+                <p className="mt-1 text-lg font-bold font-display text-indigo-600 dark:text-indigo-400">
+                  ${(initialMetrics.bachsBalanceUsd || 0).toFixed(2)} USD
+                </p>
+                <p className="text-[11px] text-gray-400">~₦{(initialMetrics.bachsBalanceNgn || 0).toLocaleString()} NGN</p>
               </div>
 
               <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
                 <span className="text-xs text-gray-500">Total User Balances:</span>
-                <p className="mt-1 text-xl font-bold font-display text-gray-900 dark:text-white">
+                <p className="mt-1 text-lg font-bold font-display text-gray-900 dark:text-white">
                   ₦{initialMetrics.totalCustodialLiquidity.toLocaleString()}
                 </p>
                 <p className="text-[11px] text-gray-400">Combined User Wallets</p>
               </div>
 
               <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
-                <span className="text-xs text-gray-500">Balance Coverage:</span>
-                <p className="mt-1 text-xl font-bold font-display text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs text-gray-500">Total Coverage:</span>
+                <p className="mt-1 text-lg font-bold font-display text-emerald-600 dark:text-emerald-400">
                   {initialMetrics.totalCustodialLiquidity > 0
                     ? (
-                        (initialMetrics.paystackBalanceNgn /
+                        ((initialMetrics.paystackBalanceNgn + (initialMetrics.bachsBalanceNgn || 0)) /
                           initialMetrics.totalCustodialLiquidity) *
                         100
                       ).toFixed(1)

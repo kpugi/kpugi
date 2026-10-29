@@ -28,13 +28,18 @@ export default async function BrandWalletPage({ searchParams }: PageProps) {
   }
 
   const resolvedParams = await searchParams;
+  const rawSessionId = resolvedParams?.session_id;
+  const validSessionId = rawSessionId && !rawSessionId.includes('{CHECKOUT_SESSION_ID}') && !rawSessionId.includes('%7BCHECKOUT_SESSION_ID%7D') ? rawSessionId : null;
+  const rawRef = resolvedParams?.reference;
+  const isBachsRef = Boolean(rawRef?.startsWith('KPG-BCH-'));
+
   const isBachs =
     resolvedParams?.processor === 'bachs' ||
-    Boolean(resolvedParams?.session_id) ||
-    Boolean(resolvedParams?.reference?.startsWith('KPG-BCH-'));
+    Boolean(validSessionId) ||
+    isBachsRef;
 
-  const bachsRef = resolvedParams?.session_id || resolvedParams?.reference || null;
-  const paystackRef = resolvedParams?.reference || resolvedParams?.trxref || null;
+  const bachsRef = rawRef || validSessionId || null;
+  const paystackRef = !isBachs ? (rawRef || resolvedParams?.trxref || null) : null;
   let verificationNotice: { text: string; type: 'success' | 'error' } | null = null;
 
   if (resolvedParams?.cancelled) {

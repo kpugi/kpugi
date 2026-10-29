@@ -37,6 +37,12 @@ export default function PaystackVerifyModal({
   const [copied, setCopied] = useState<boolean>(false);
   const [showJson, setShowJson] = useState<boolean>(false);
 
+  const isBachs = Boolean(
+    reference.trim().startsWith('KPG-BCH-') ||
+    reference.trim().startsWith('chk_') ||
+    reference.trim().startsWith('ch_')
+  );
+
   useEffect(() => {
     if (initialReference) {
       setReference(initialReference);
@@ -51,7 +57,7 @@ export default function PaystackVerifyModal({
   const handleVerify = async (refToVerify?: string) => {
     const targetRef = (refToVerify || reference).trim();
     if (!targetRef) {
-      setError("Please enter a Paystack reference to verify.");
+      setError("Please enter a transaction reference to verify.");
       return;
     }
 
@@ -64,7 +70,7 @@ export default function PaystackVerifyModal({
       if (res.success && res.data) {
         setResult(res.data);
       } else {
-        setError(res.message || "Failed to verify transaction with Paystack.");
+        setError(res.message || "Failed to verify transaction with gateway.");
       }
     } catch (err: any) {
       setError(err?.message || "An unexpected network or gateway error occurred.");
@@ -83,15 +89,21 @@ export default function PaystackVerifyModal({
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-xl p-6">
       <div className="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400">
+          <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+            isBachs
+              ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400"
+              : "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400"
+          }`}>
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-base font-bold text-gray-900 dark:text-white">
-              Live Paystack Gateway Verification
+              {isBachs ? "Live Bachs.io Gateway Verification" : "Live Paystack Gateway Verification"}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Direct cryptographic verification query against Paystack Core API
+              {isBachs
+                ? "Direct cryptographic verification query against Bachs.io Core API"
+                : "Direct cryptographic verification query against Paystack Core API"}
             </p>
           </div>
         </div>
@@ -105,7 +117,7 @@ export default function PaystackVerifyModal({
               type="text"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              placeholder="Enter reference (e.g. KPG-..., T123456789)..."
+              placeholder="Enter reference (e.g. KPG-BCH-..., KPG-PAY-..., T123456789)..."
               className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-3.5 pr-4 text-xs font-mono text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
             />
           </div>
@@ -130,7 +142,7 @@ export default function PaystackVerifyModal({
           <div className="flex items-start gap-2.5 rounded-xl bg-rose-50 p-3.5 text-xs text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
             <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Paystack Verification Error</p>
+              <p className="font-semibold">{isBachs ? "Bachs.io Verification Error" : "Paystack Verification Error"}</p>
               <p className="mt-0.5 text-[11px] opacity-90">{error}</p>
             </div>
           </div>
@@ -141,10 +153,10 @@ export default function PaystackVerifyModal({
           <div className="space-y-3.5 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
             <div className="flex items-center justify-between border-b border-gray-200/70 pb-3 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                {result.status === "success" ? (
+                {result.status === "success" || result.status === "succeeded" ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Paystack Success
+                    {isBachs ? "Bachs.io Success" : "Paystack Success"}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">

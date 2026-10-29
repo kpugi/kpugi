@@ -15,6 +15,9 @@ import { revalidatePath } from 'next/cache';
 
 export interface TreasuryMetrics {
   paystackBalanceNgn: number;
+  bachsBalanceUsd: number;
+  bachsBalanceNgn: number;
+  bachsMode: 'sandbox' | 'live';
   totalCustodialLiquidity: number;
   advertiserLiquidity: number;
   creatorLiquidity: number;
@@ -31,13 +34,13 @@ export interface TreasuryMetrics {
 
 /**
  * fetchPlatformTreasuryMetricsAction
- * Fetches real-time Paystack gateway balance and aggregates all internal balances
+ * Fetches real-time Paystack and Bachs gateway balances and aggregates all internal balances
  */
 export async function fetchPlatformTreasuryMetricsAction(): Promise<TreasuryMetrics> {
   await requireAdminSession();
   const supabase = createAdminClient();
 
-  // 1. Fetch live Paystack Gateway Balance
+  // 1a. Fetch live Paystack Gateway Balance
   let paystackBalanceNgn = 0;
   try {
     const paystackRes = await paystackFetch('/balance');
@@ -47,6 +50,29 @@ export async function fetchPlatformTreasuryMetricsAction(): Promise<TreasuryMetr
     }
   } catch (err) {
     console.warn('[fetchPlatformTreasuryMetricsAction] Paystack balance fetch failed:', err);
+  }
+
+  // 1b. Fetch live Bachs Gateway Balance
+  let bachsBalanceUsd = 0;
+  let bachsBalanceNgn = 0;
+  let bachsMode: 'sandbox' | 'live' = 'live';
+  try {
+    const { bachsFetch, getBachsBaseUrl } = await import('@/lib/bachs/client');
+    const baseUrl = getBachsBaseUrl();
+    bachsMode = baseUrl.includes('sandbox') ? 'sandbox' : 'live';
+    const bachsRes = await bachsFetch<any>('/v1/balances');
+    if (bachsRes) {
+      bachsBalanceUsd = parseFloat(bachsRes.total_balance_usd || '0') || 0;
+      const ngnBalanceObj = (bachsRes.balances || []).find((b: any) => b.currency === 'NGN');
+      if (ngnBalanceObj) {
+        bachsBalanceNgn = parseFloat(ngnBalanceObj.available_balance || '0') || 0;
+      } else {
+        // Approximate standard FX (₦1,500/USD) for platform reserve aggregation
+        bachsBalanceNgn = Math.round(bachsBalanceUsd * 1500);
+      }
+    }
+  } catch (err) {
+    console.warn('[fetchPlatformTreasuryMetricsAction] Bachs balance fetch failed:', err);
   }
 
   // 2. Fetch Supabase Wallets, Campaigns, Transactions, and Submissions
@@ -116,6 +142,9 @@ export async function fetchPlatformTreasuryMetricsAction(): Promise<TreasuryMetr
 
   return {
     paystackBalanceNgn,
+    bachsBalanceUsd,
+    bachsBalanceNgn,
+    bachsMode,
     totalCustodialLiquidity,
     advertiserLiquidity,
     creatorLiquidity,
@@ -132,30 +161,76 @@ export async function fetchPlatformTreasuryMetricsAction(): Promise<TreasuryMetr
 }
 
 /**
- * verifyPaystackTransactionAction
- * Live query to verify any transaction reference directly with Paystack API
+ * verifyGatewayTransactionAction
+ * Live query to verify any transaction reference directly with Paystack or Bachs.io API
  */
-export async function verifyPaystackTransactionAction(reference: string) {
+export async function verifyGatewayTransactionAction(reference: string) {
   await requireAdminSession();
 
   if (!reference || !reference.trim()) {
     throw new Error('Transaction reference is required.');
   }
 
+  const cleanRef = reference.trim();
+  const isBachs = cleanRef.startsWith('KPG-BCH-') || cleanRef.startsWith('chk_') || cleanRef.startsWith('ch_');
+
+  if (isBachs) {
+    try {
+      const { retrieveBachsCheckoutSession } = await import('@/lib/bachs/checkout');
+      const session = await retrieveBachsCheckoutSession(cleanRef);
+      return {
+        success: true,
+        processor: 'bachs' as const,
+        data: {
+          id: session.charge?.payment_id || session.checkout_id,
+          reference: session.reference,
+          status: session.payment_status === 'paid' || session.status === 'complete' ? 'success' : session.status,
+          amount: Math.round(parseFloat(session.amount) * 100), // in kobo format for consistency
+          currency: session.currency || 'NGN',
+          customer: {
+            email: session.customer?.email || session.charge?.customer?.email,
+            name: session.customer?.name || session.charge?.customer?.name,
+          },
+          channel: session.charge?.status || 'card_transfer_crypto',
+          created_at: (session as any).created_at || new Date().toISOString(),
+          gateway_response: session.charge?.status || 'Approved via Bachs.io',
+          raw: session,
+        },
+        message: 'Bachs.io transaction verified successfully',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        processor: 'bachs' as const,
+        data: null,
+        message: err.message || 'Failed to verify transaction with Bachs.io',
+      };
+    }
+  }
+
   try {
-    const res = await paystackFetch(`/transaction/verify/${encodeURIComponent(reference.trim())}`);
+    const res = await paystackFetch(`/transaction/verify/${encodeURIComponent(cleanRef)}`);
     return {
       success: true,
+      processor: 'paystack' as const,
       data: res.data,
       message: res.message || 'Transaction verified successfully',
     };
   } catch (err: any) {
     return {
       success: false,
+      processor: 'paystack' as const,
       data: null,
       message: err.message || 'Failed to verify transaction with Paystack',
     };
   }
+}
+
+/**
+ * verifyPaystackTransactionAction (Backward-compatible alias)
+ */
+export async function verifyPaystackTransactionAction(reference: string) {
+  return verifyGatewayTransactionAction(reference);
 }
 
 /**

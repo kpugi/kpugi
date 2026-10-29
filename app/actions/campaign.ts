@@ -1704,7 +1704,7 @@ export async function initializeBachsCampaignCheckoutAction(params: {
       amountInNaira: params.totalPayableAmount,
       customerEmail: params.advertiserEmail || userProfile.profile.email || 'advertiser@kpugi.com',
       reference: ref,
-      successUrl: `${appUrl}/b/campaigns/new?draftId=${params.campaignId || ''}&session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs&step=5`,
+      successUrl: `${appUrl}/b/campaigns/new?draftId=${params.campaignId || ''}&reference=${ref}&processor=bachs&step=5`,
       cancelUrl: `${appUrl}/b/campaigns/new?draftId=${params.campaignId || ''}&cancelled=true`,
       metadata: {
         campaignId: params.campaignId,

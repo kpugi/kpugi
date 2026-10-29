@@ -82,8 +82,8 @@ export async function createBachsCheckoutSession({
   const ref = reference || generateBachsReference();
   
   const resolvedSuccessUrl = sanitizeBachsUrl(
-    successUrl || `${appUrl}/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs`,
-    `/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${ref}&processor=bachs`
+    successUrl || `${appUrl}/b/wallet?reference=${ref}&processor=bachs`,
+    `/b/wallet?reference=${ref}&processor=bachs`
   );
   const resolvedCancelUrl = sanitizeBachsUrl(
     cancelUrl || `${appUrl}/b/wallet?cancelled=true&processor=bachs`,
@@ -117,11 +117,72 @@ export async function createBachsCheckoutSession({
 }
 
 /**
- * Retrieve a Checkout Session by Checkout ID
+ * Retrieve a Checkout Session or Payment by Checkout ID (chk_...), Charge ID (ch_...), or Reference (KPG-BCH-...)
  */
-export async function retrieveBachsCheckoutSession(checkoutId: string): Promise<BachsCheckoutSessionDetails> {
-  return bachsFetch<BachsCheckoutSessionDetails>(`/v1/checkout-sessions/${encodeURIComponent(checkoutId)}`, {
+export async function retrieveBachsCheckoutSession(idOrRef: string): Promise<BachsCheckoutSessionDetails> {
+  const cleanId = (idOrRef || '').trim();
+  if (!cleanId || cleanId.includes('{CHECKOUT_SESSION_ID}')) {
+    throw new Error('Invalid checkout session ID or reference.');
+  }
+
+  // 1. If it's a checkout session ID (starts with chk_)
+  if (cleanId.startsWith('chk_')) {
+    try {
+      return await bachsFetch<BachsCheckoutSessionDetails>(`/v1/checkout-sessions/${encodeURIComponent(cleanId)}`, {
+        method: 'GET',
+      });
+    } catch (err: any) {
+      console.warn(`[Bachs API] Direct checkout-session lookup failed for ${cleanId}, trying payment lookup:`, err.message);
+    }
+  }
+
+  // 2. If it's a charge/payment ID (starts with ch_)
+  if (cleanId.startsWith('ch_')) {
+    const payment = await bachsFetch<any>(`/v1/payments/${encodeURIComponent(cleanId)}`, {
+      method: 'GET',
+    });
+    return normalizePaymentToSessionDetails(payment);
+  }
+
+  // 3. Look up by reference via /v1/payments?reference=...
+  const res = await bachsFetch<any>(`/v1/payments?reference=${encodeURIComponent(cleanId)}`, {
     method: 'GET',
   });
+
+  const payment = Array.isArray(res?.items) ? res.items[0] : (Array.isArray(res) ? res[0] : res);
+  if (payment) {
+    return normalizePaymentToSessionDetails(payment);
+  }
+
+  // Fallback: try direct checkout-sessions lookup
+  return bachsFetch<BachsCheckoutSessionDetails>(`/v1/checkout-sessions/${encodeURIComponent(cleanId)}`, {
+    method: 'GET',
+  });
+}
+
+function normalizePaymentToSessionDetails(payment: any): BachsCheckoutSessionDetails {
+  const isPaid = payment.status === 'succeeded' || payment.status === 'paid' || payment.status === 'complete';
+  return {
+    checkout_id: payment.source?.checkout_id || payment.checkout_id || payment.id,
+    status: isPaid ? 'complete' : 'open',
+    payment_status: isPaid ? 'paid' : 'pending',
+    amount: payment.amount_paid || payment.amount || '0',
+    currency: payment.currency || 'NGN',
+    reference: payment.reference,
+    charge: {
+      status: payment.status === 'succeeded' ? 'successful' : payment.status,
+      amount_paid: payment.amount_paid || payment.amount || '0',
+      payment_id: payment.id || payment.payment_id,
+      customer: {
+        email: payment.customer_email || payment.customer?.email,
+        name: payment.customer_name || payment.customer?.name,
+      },
+    },
+    customer: {
+      email: payment.customer_email || payment.customer?.email,
+      name: payment.customer_name || payment.customer?.name,
+    },
+    metadata: payment.meta || payment.metadata || {},
+  };
 }
 

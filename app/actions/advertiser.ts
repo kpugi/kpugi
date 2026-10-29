@@ -1124,7 +1124,7 @@ export async function initializeBachsDepositAction(amount: number) {
   const { createBachsCheckoutSession, generateBachsReference } = await import('@/lib/bachs/checkout');
   const reference = generateBachsReference();
   const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
-  const successUrl = `${baseUrl}/b/wallet?session_id={CHECKOUT_SESSION_ID}&reference=${reference}&processor=bachs`;
+  const successUrl = `${baseUrl}/b/wallet?reference=${reference}&processor=bachs`;
   const cancelUrl = `${baseUrl}/b/wallet?cancelled=true&processor=bachs`;
 
   try {

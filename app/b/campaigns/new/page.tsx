@@ -62,10 +62,12 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
       let payMethod = draft.requirements?.payment_method || draft.payment_method || 'wallet';
 
       // Verify returning Bachs checkout session
-      if (resolvedParams?.processor === 'bachs' && (resolvedParams?.session_id || resolvedParams?.reference)) {
-        const incomingRef = resolvedParams?.session_id || resolvedParams?.reference;
-        if (incomingRef) {
-          try {
+      const rawSession = resolvedParams?.session_id;
+      const validSession = rawSession && !rawSession.includes('{CHECKOUT_SESSION_ID}') && !rawSession.includes('%7BCHECKOUT_SESSION_ID%7D') ? rawSession : null;
+      const incomingRef = resolvedParams?.reference || validSession;
+
+      if (resolvedParams?.processor === 'bachs' && incomingRef) {
+        try {
             const { retrieveBachsCheckoutSession } = await import('@/lib/bachs/checkout');
             const session = await retrieveBachsCheckoutSession(incomingRef);
             const isPaid =
@@ -190,7 +192,6 @@ export default async function BrandNewCampaignPage({ searchParams }: PageProps) 
             console.error('[BrandNewCampaignPage] Error verifying Bachs session:', e);
           }
         }
-      }
 
       initialData = {
         id: draft.id,
