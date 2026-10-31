@@ -47,6 +47,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import { CampaignReviewModal } from '@/components/reviews/CampaignReviewModal';
 import { CampaignReviewsDisplay } from '@/components/reviews/CampaignReviewsDisplay';
 import { getCampaignReviewStatusAction } from '@/app/actions/reviews';
+import { FRESHDESK_LINKS } from '@/lib/support/freshdesk-constants';
 
 interface CreatorCampaignWorkspaceViewProps {
   data: CampaignDetailsForCreator;
@@ -948,9 +949,20 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
             </div>
             <ul className="space-y-1.5 text-rose-900/80 dark:text-rose-200/80 text-[11px] list-disc list-inside font-medium leading-relaxed">
               <li>Payout starts only after reaching minimum verified views threshold ({targetThreshold.toLocaleString()}).</li>
-              <li>Post must remain public for at least 30 days without deletion.</li>
+              <li>Post must remain public for at least 72 hours without deletion or archival.</li>
               <li>Bots or artificial engagement leads to immediate disqualification.</li>
             </ul>
+            <div className="pt-1 border-t border-rose-200/60 dark:border-rose-900/40">
+              <a
+                href={FRESHDESK_LINKS.rules}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:underline"
+              >
+                <span>Read Full Compliance Manual</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
 
           {/* Quick Links */}

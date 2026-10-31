@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import { FreshdeskSupportProvider } from '@/components/support/FreshdeskSupportProvider';
+import { TawkToChat } from '@/components/support/TawkToChat';
 import './globals.css';
 import '@/styles/kpugi-tour.css';
 import Script from 'next/script';
@@ -157,6 +158,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               <KnockProviderWrapper>
                 <FreshdeskSupportProvider>
                   {children}
+                  <TawkToChat />
                 </FreshdeskSupportProvider>
               </KnockProviderWrapper>
             </ThemeProvider>

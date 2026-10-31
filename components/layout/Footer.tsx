@@ -111,7 +111,8 @@ export function Footer2({
       links: [
         { label: 'CPM Calculator', href: '/calculator' },
         { label: 'ROI Estimator', href: '/roiestimator' },
-        { label: 'Help & Support', href: 'https://support.kpugi.com', isExternal: true },
+        { label: 'Community Forum', href: FRESHDESK_LINKS.communityForums, isExternal: true },
+        { label: 'Help & Support', href: 'https://hub.kpugi.com', isExternal: true },
         { label: 'System Status', href: STATUS_PAGE_URL, isExternal: true },
       ],
     },

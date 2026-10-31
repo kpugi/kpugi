@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FRESHDESK_LINKS } from '@/lib/support/freshdesk-constants';
 
 export default function OnboardingAdvertiserPage() {
   const router = useRouter();
@@ -144,7 +145,16 @@ export default function OnboardingAdvertiserPage() {
                 required
               />
               <span className="text-xs text-kpugi-ink font-medium">
-                I agree to the platform-wide campaign rules and escrow terms.
+                I agree to the platform-wide{' '}
+                <a
+                  href={FRESHDESK_LINKS.brandRules}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-kpugi-blue hover:underline font-semibold"
+                >
+                  campaign rules and escrow terms
+                </a>
+                .
               </span>
             </label>
 
