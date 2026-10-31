@@ -148,3 +148,4 @@ k6/
 3. **Smoke Test (Phase 1):** Run 30s smoke pass with 5 VUs to verify HTTP 200 responses and header bypass.
 4. **Load Test (Phase 2):** Execute the 8-minute 100-VU test.
 5. **Report & Review (Phase 3):** Open `reports/k6-load-test-report.html` and review Supabase & Upstash performance graphs.
+

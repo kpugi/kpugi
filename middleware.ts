@@ -93,8 +93,13 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  // 2. Rate limiter for public API endpoints (exclude health check probes)
-  if (ratelimit && req.nextUrl.pathname.startsWith('/api/') && !req.nextUrl.pathname.startsWith('/api/health')) {
+  // 2. Rate limiter for public API endpoints (exclude health check probes and authorized load test runner)
+  const loadTestSecret = process.env.LOAD_TEST_SECRET;
+  const isLoadTestAuthorized =
+    Boolean(loadTestSecret) &&
+    req.headers.get('x-load-test-token') === loadTestSecret;
+
+  if (ratelimit && !isLoadTestAuthorized && req.nextUrl.pathname.startsWith('/api/') && !req.nextUrl.pathname.startsWith('/api/health')) {
     const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
     const { success, limit, remaining, reset } = await ratelimit.limit(`ratelimit_${ip}`);
     

@@ -48,6 +48,11 @@ scratch/
 .scraper/.venv/
 .scraper/__pycache__/
 .scraper/*.pyc
+
+# k6 load testing binary & test reports
+k6/bin/
+k6/reports/*.html
+
 .scraper/.env
 .scraper/*.log
 .scraper/cookies.txt

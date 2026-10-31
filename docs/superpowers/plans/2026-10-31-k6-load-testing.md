@@ -195,3 +195,4 @@ middleware.ts                 # Add x-load-test-token bypass for LOAD_TEST_SECRE
   - Open `k6/reports/k6-load-test-report.html` in browser for visual audit.
   - Check Supabase Dashboard connection pool status during peak 100 VUs.
   - Document findings and recommendations in `k6/reports/load-test-results.md`.
+
