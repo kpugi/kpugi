@@ -103,7 +103,7 @@ export default clerkMiddleware(async (auth, req) => {
     Boolean(loadTestSecret) &&
     req.headers.get('x-load-test-token') === loadTestSecret;
 
-  if (ratelimit && !isLoadTestAuthorized && req.nextUrl.pathname.startsWith('/api/') && !req.nextUrl.pathname.startsWith('/api/health')) {
+  if (ratelimit && !isLoadTestAuthorized && req.nextUrl.pathname.startsWith('/api/') && !req.nextUrl.pathname.startsWith('/api/health') && !req.nextUrl.pathname.startsWith('/api/webhooks')) {
     const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? '127.0.0.1';
     const { success, limit, remaining, reset } = await ratelimit.limit(`ratelimit_${ip}`);
     
