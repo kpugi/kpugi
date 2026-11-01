@@ -37,3 +37,4 @@ CREATE POLICY "Admin read all didit_webhook_events"
 ALTER TABLE creator_profiles
   ADD COLUMN IF NOT EXISTS kyc_decision JSONB,
   ADD COLUMN IF NOT EXISTS kyc_decision_warnings JSONB;
+
