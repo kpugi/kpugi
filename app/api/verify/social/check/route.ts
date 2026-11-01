@@ -13,6 +13,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { scrapeProfile } from '@/lib/verification/scraper';
 import { notifyCreatorSocialConnected } from '@/lib/notifications/creator';
+import { sanitizeSocialHandle } from '@/lib/utils/social-url';
 
 import { randomBytes } from 'crypto';
 
@@ -38,9 +39,9 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
     const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
-    const cleanHandle = (handle || '').replace(/^@/, '').toLowerCase();
+    const cleanHandle = sanitizeSocialHandle(handle, platformKey);
 
-    // Load the social account matching this specific handle/id
+    // Load the social accounts matching this specific user & platform
     const { data: accounts } = await supabase
       .from('social_accounts')
       .select('*')
@@ -58,8 +59,8 @@ export async function POST(request: Request) {
       (accountId ? accounts.find((a) => a.id === accountId) : null) ||
       accounts.find(
         (a) =>
-          a.handle.toLowerCase() === cleanHandle ||
-          (a.display_name && a.display_name.toLowerCase() === cleanHandle) ||
+          sanitizeSocialHandle(a.handle, platformKey) === cleanHandle ||
+          (a.display_name && sanitizeSocialHandle(a.display_name, platformKey) === cleanHandle) ||
           (cleanId && (a.platform_user_id === cleanId || a.handle.includes(cleanId))) ||
           (a.platform_user_id && a.platform_user_id.toLowerCase() === cleanHandle)
       ) ||
@@ -169,7 +170,19 @@ export async function POST(request: Request) {
     }
 
     const bioText = scrapedProfile.bio || '';
-    const codeFound = bioText.toLowerCase().includes(account.verification_code.toLowerCase());
+    let matchingAccount = account;
+    let codeFound = account.verification_code ? bioText.toLowerCase().includes(account.verification_code.toLowerCase()) : false;
+
+    // Fallback: If not found on the primary account, check if another pending record for this creator + platform matches the code in the bio
+    if (!codeFound) {
+      const alternateAccount = accounts.find(
+        (a) => a.verification_code && bioText.toLowerCase().includes(a.verification_code.toLowerCase())
+      );
+      if (alternateAccount) {
+        matchingAccount = alternateAccount;
+        codeFound = true;
+      }
+    }
 
     if (!codeFound) {
       return NextResponse.json({
@@ -181,6 +194,8 @@ export async function POST(request: Request) {
 
     // ✅ Code found — mark as verified and save stats
     const updatePayload: Record<string, any> = {
+      handle: cleanHandle,
+      platform_user_id: cleanId || cleanHandle,
       verification_status: 'verified',
       verification_method: 'code_in_bio',
       verified_at: new Date().toISOString(),
@@ -194,7 +209,16 @@ export async function POST(request: Request) {
     if (scrapedProfile.followerCount !== null) updatePayload.follower_count = scrapedProfile.followerCount;
     if (scrapedProfile.avatarUrl) updatePayload.avatar_url = scrapedProfile.avatarUrl;
 
-    await supabase.from('social_accounts').update(updatePayload).eq('id', account.id);
+    await supabase.from('social_accounts').update(updatePayload).eq('id', matchingAccount.id);
+
+    // Clean up any other obsolete pending records for this creator on this platform
+    await supabase
+      .from('social_accounts')
+      .delete()
+      .eq('creator_id', userProfile.profile.id)
+      .eq('platform', platformKey)
+      .eq('verification_status', 'pending')
+      .neq('id', matchingAccount.id);
 
     // 🔔 Fire non-blocking notifications: Knock in-app notification + Resend email
     notifyCreatorSocialConnected({

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 
 import CreatorLevelBadge from '@/components/creator/CreatorLevelBadge';
+import { sanitizeSocialHandle } from '@/lib/utils/social-url';
 import CreatorAccountsListView from './CreatorAccountsListView';
 
 interface CreatorAccountsViewProps {
@@ -116,18 +117,12 @@ function formatCompactNumber(num: number | null | undefined): string {
   return num.toLocaleString();
 }
 
-function getDisplayHandle(handle: string): string {
-  const clean = handle.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+function getDisplayHandle(handle: string, platform?: string): string {
+  const clean = sanitizeSocialHandle(handle, platform);
   if (!clean) return '';
   const idMatch = clean.match(/id=(\d+)/i) || clean.match(/^(\d+)$/);
   if (idMatch) {
     return `Facebook Profile (${idMatch[1]})`;
-  }
-  if (clean.includes('?') || clean.includes('/') || clean.toLowerCase().startsWith('profile.php')) {
-    return clean;
-  }
-  if (clean.includes(' ')) {
-    return clean;
   }
   return `@${clean}`;
 }
@@ -248,7 +243,7 @@ export default function CreatorAccountsView({
     setSuccessMsg('');
     setStartLoading(true);
 
-    const cleanHandle = handleInput.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+    const cleanHandle = sanitizeSocialHandle(handleInput, selectedPlatform.key);
     if (!cleanHandle) {
       setErrorMsg('Please enter a valid username/handle');
       setStartLoading(false);
@@ -385,7 +380,8 @@ export default function CreatorAccountsView({
 
   // Trigger verification check via bio
   async function runVerificationCheck(platformKey: string, handle: string, accountId?: string) {
-    setCheckLoading(handle);
+    const cleanHandle = sanitizeSocialHandle(handle, platformKey);
+    setCheckLoading(cleanHandle);
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -393,7 +389,7 @@ export default function CreatorAccountsView({
       const res = await fetch('/api/verify/social/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform: platformKey, handle, accountId }),
+        body: JSON.stringify({ platform: platformKey, handle: cleanHandle, accountId }),
       });
 
       const data = await res.json();
@@ -457,7 +453,7 @@ export default function CreatorAccountsView({
     setSuccessMsg('');
 
     const platformKey = selectedPlatform.key === 'twitter' ? 'x' : selectedPlatform.key;
-    const cleanHandle = handleInput.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+    const cleanHandle = sanitizeSocialHandle(handleInput, platformKey);
 
     try {
       const res = await fetch('/api/verify/social/check-post', {
@@ -1140,7 +1136,7 @@ export default function CreatorAccountsView({
                         </button>
                         <button
                           type="button"
-                          onClick={() => runVerificationCheck(selectedPlatform.key, handleInput.trim().replace(/^@/, ''))}
+                          onClick={() => runVerificationCheck(selectedPlatform.key, sanitizeSocialHandle(handleInput, selectedPlatform.key))}
                           disabled={!!checkLoading}
                           className="w-2/3 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
                         >

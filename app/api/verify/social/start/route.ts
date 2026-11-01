@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
+import { sanitizeSocialHandle } from '@/lib/utils/social-url';
 import { randomBytes } from 'crypto';
 
 function generateVerificationCode(): string {
@@ -49,9 +50,9 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
 
-    // Resolve platform key
+    // Resolve platform key and sanitize handle
     const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
-    const cleanHandle = handle.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '').toLowerCase();
+    const cleanHandle = sanitizeSocialHandle(handle, platformKey);
 
     if (!cleanHandle) {
       return NextResponse.json({ error: 'Please enter a valid handle' }, { status: 400 });
@@ -75,13 +76,15 @@ export async function POST(request: Request) {
     }
 
     // Find if current user already has this platform + handle record
-    const { data: existingAccount } = await supabase
+    const { data: userAccounts } = await supabase
       .from('social_accounts')
-      .select('id, verification_status')
+      .select('id, handle, verification_status')
       .eq('creator_id', userProfile.profile.id)
-      .eq('platform', platformKey)
-      .ilike('handle', cleanHandle)
-      .maybeSingle();
+      .eq('platform', platformKey);
+
+    const existingAccount = (userAccounts || []).find(
+      (a) => sanitizeSocialHandle(a.handle, platformKey) === cleanHandle
+    );
 
     if (existingAccount && existingAccount.verification_status === 'verified') {
       return NextResponse.json({ error: 'This account is already verified.' }, { status: 409 });
@@ -92,16 +95,27 @@ export async function POST(request: Request) {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
     if (existingAccount) {
-      // Update existing record with new verification code
+      // Update existing record with new verification code and clean handle
       await supabase
         .from('social_accounts')
         .update({
+          handle: cleanHandle,
+          platform_user_id: cleanHandle,
           verification_code: code,
           verification_code_expires_at: expiresAt,
           verification_method: 'code_in_bio',
           verification_status: 'pending',
         })
         .eq('id', existingAccount.id);
+
+      // Clean up any stale duplicate pending records for this creator on this platform
+      await supabase
+        .from('social_accounts')
+        .delete()
+        .eq('creator_id', userProfile.profile.id)
+        .eq('platform', platformKey)
+        .eq('verification_status', 'pending')
+        .neq('id', existingAccount.id);
     } else {
       // Insert new pending social account record
       await supabase.from('social_accounts').insert({

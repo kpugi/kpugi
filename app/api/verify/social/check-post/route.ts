@@ -15,6 +15,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { getOrCreateUserProfile, checkProfileSuspension } from '@/lib/clerk/auth';
 import { extractPostForVerification } from '@/lib/verification/post-verifier';
 import { notifyCreatorSocialConnected } from '@/lib/notifications/creator';
+import { sanitizeSocialHandle } from '@/lib/utils/social-url';
 
 export async function POST(request: Request) {
   try {
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
     const platformKey = platform.toLowerCase() === 'twitter' ? 'x' : platform.toLowerCase();
-    const cleanHandle = handle.replace(/^@/, '').toLowerCase().trim();
+    const cleanHandle = sanitizeSocialHandle(handle, platformKey);
 
     // 1. Load pending social account
     const { data: accounts } = await supabase
@@ -57,11 +58,11 @@ export async function POST(request: Request) {
 
     const cleanId = cleanHandle.match(/id=(\d+)/i)?.[1] || (cleanHandle.match(/^\d+$/) ? cleanHandle : null);
 
-    // Match by exact handle, cleanId, or latest pending account with a verification code
+    // Match by sanitized handle, cleanId, or latest pending account with a verification code
     const account =
       accounts.find(
         (a) =>
-          a.handle.toLowerCase() === cleanHandle ||
+          sanitizeSocialHandle(a.handle, platformKey) === cleanHandle ||
           (cleanId && (a.platform_user_id === cleanId || a.handle.includes(cleanId)))
       ) ||
       accounts.find((a) => a.verification_status === 'pending' && a.verification_code) ||
@@ -177,17 +178,31 @@ export async function POST(request: Request) {
 
     // 6. Verification Code or Official Verification Copy Match in Post Text/Caption
     const combinedText = `${postDetails.postText || ''} ${postDetails.title || ''}`.toLowerCase();
-    const codeExpected = account.verification_code.toLowerCase().trim();
-    const hasCode = combinedText.includes(codeExpected);
+    let matchingAccount = account;
+    let codeExpected = account.verification_code ? account.verification_code.toLowerCase().trim() : '';
+    let hasCode = codeExpected ? combinedText.includes(codeExpected) : false;
+
+    if (!hasCode) {
+      const alternate = accounts.find((a) => a.verification_code && combinedText.includes(a.verification_code.toLowerCase().trim()));
+      if (alternate) {
+        matchingAccount = alternate;
+        hasCode = true;
+      }
+    }
+
     const hasOfficialCopy =
       combinedText.includes('creator economy is changing') ||
       combinedText.includes('kpugi brings both together') ||
-      (combinedText.includes('#kpugi') && (combinedText.includes('creator') || combinedText.includes('brand')));
+      combinedText.includes('creators × brands') ||
+      combinedText.includes('creators x brands') ||
+      combinedText.includes('more opportunities. more connections') ||
+      combinedText.includes('creators are the new media') ||
+      (combinedText.includes('#kpugi') && (combinedText.includes('creator') || combinedText.includes('brand') || combinedText.includes('build')));
 
     if (!hasCode && !hasOfficialCopy) {
       return NextResponse.json({
         verified: false,
-        error: `Your post caption is missing the verification code "${account.verification_code}" or the official Kpugi caption. Make sure your post text includes the required caption and try again.`,
+        error: `Your post caption is missing the verification code "${matchingAccount.verification_code}" or the official Kpugi caption. Make sure your post text includes the required caption and try again.`,
         postSnippet: postDetails.postText ? postDetails.postText.slice(0, 150) + '...' : null,
       });
     }
@@ -198,7 +213,7 @@ export async function POST(request: Request) {
     const isIdString = cleanHandle.includes('profile.php') || /^\d+$/.test(cleanHandle) || cleanHandle.includes('?');
     const resolvedDisplayName = authorDisplayName || (cleanId ? `Facebook User` : cleanHandle);
     const resolvedHandle = isIdString && authorDisplayName ? authorDisplayName : cleanHandle;
-    const finalPlatformUserId = cleanId || account.platform_user_id || account.id;
+    const finalPlatformUserId = cleanId || matchingAccount.platform_user_id || matchingAccount.id;
 
     // Prevent duplicate key error on (platform, platform_user_id) if an obsolete row exists
     if (finalPlatformUserId) {
@@ -207,7 +222,7 @@ export async function POST(request: Request) {
         .delete()
         .eq('platform', platformKey)
         .eq('platform_user_id', finalPlatformUserId)
-        .neq('id', account.id);
+        .neq('id', matchingAccount.id);
     }
 
     // ✅ Post verified successfully — update social account
@@ -228,7 +243,16 @@ export async function POST(request: Request) {
       updatePayload.follower_count = postDetails.followerCount;
     }
 
-    await supabase.from('social_accounts').update(updatePayload).eq('id', account.id);
+    await supabase.from('social_accounts').update(updatePayload).eq('id', matchingAccount.id);
+
+    // Clean up any other obsolete pending records for this creator on this platform
+    await supabase
+      .from('social_accounts')
+      .delete()
+      .eq('creator_id', userProfile.profile.id)
+      .eq('platform', platformKey)
+      .eq('verification_status', 'pending')
+      .neq('id', matchingAccount.id);
 
     // 🔔 Fire non-blocking notifications
     notifyCreatorSocialConnected({

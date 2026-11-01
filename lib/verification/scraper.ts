@@ -17,6 +17,8 @@
  *   - handle
  */
 
+import { sanitizeSocialHandle } from '@/lib/utils/social-url';
+
 export interface ScrapedProfile {
   displayName: string | null;
   bio: string | null;
@@ -81,7 +83,7 @@ async function fetchHtml(
 // ─── 1. Twitter / X Scraper ───────────────────────────────────────────────────
 
 export async function scrapeTwitterProfile(handle: string): Promise<ScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim();
+  const username = sanitizeSocialHandle(handle, 'x');
 
   // Method 1: FixTweet Open User API (Zero login wall, exact bio & followers)
   try {
@@ -127,7 +129,7 @@ export async function scrapeTwitterProfile(handle: string): Promise<ScrapedProfi
 // ─── 2. TikTok Scraper ────────────────────────────────────────────────────────
 
 export async function scrapeTikTokProfile(handle: string): Promise<ScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim();
+  const username = sanitizeSocialHandle(handle, 'tiktok');
 
   // Method 1: Mobile iOS Safari UA — bypasses desktop bot wall, returns full universal hydration JSON
   try {
@@ -205,7 +207,7 @@ export async function scrapeTikTokProfile(handle: string): Promise<ScrapedProfil
 // ─── 3. YouTube Scraper ───────────────────────────────────────────────────────
 
 export async function scrapeYouTubeProfile(handle: string): Promise<ScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim();
+  const username = sanitizeSocialHandle(handle, 'youtube');
 
   // Try YouTube Data API if key available in environment
   const apiKey = process.env.YOUTUBE_DATA_API_KEY;
@@ -335,7 +337,7 @@ export async function scrapeYouTubeProfile(handle: string): Promise<ScrapedProfi
 // ─── 4. Instagram Scraper ─────────────────────────────────────────────────────
 
 export async function scrapeInstagramProfile(handle: string): Promise<ScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim();
+  const username = sanitizeSocialHandle(handle, 'instagram');
 
   // ─── Phase 0: Self-Hosted Playwright Browser Extractor (Fetches exact live hydrated follower count, bio & avatar)
   try {
@@ -484,6 +486,46 @@ export async function scrapeInstagramProfile(handle: string): Promise<ScrapedPro
     // fall through
   }
 
+  // ─── Phase 4: Apify Instagram Profile Scraper (100% Reliable Datacenter / Cloud Fallback)
+  const apifyTokens = (process.env.APIFY_API_TOKENS || process.env.APIFY_API_TOKEN || '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  if (apifyTokens.length > 0) {
+    try {
+      const { ApifyClient } = await import('apify-client');
+      const profileActorId = process.env.APIFY_INSTAGRAM_PROFILE_ACTOR || 'apify/instagram-profile-scraper';
+
+      for (const token of apifyTokens) {
+        try {
+          const client = new ApifyClient({ token });
+          const run = await client.actor(profileActorId).call({
+            usernames: [username],
+          });
+          if (run?.defaultDatasetId) {
+            const { items } = await client.dataset(run.defaultDatasetId).listItems();
+            if (items && items.length > 0) {
+              const item = items[0] as any;
+              return {
+                displayName: item.fullName || item.username || username,
+                bio: item.biography || null,
+                followerCount: typeof item.followersCount === 'number' ? item.followersCount : null,
+                avatarUrl: item.profilePicUrlHD || item.profilePicUrl || null,
+                handle: item.username || username,
+              };
+            }
+          }
+        } catch (tokenErr) {
+          console.warn(`[scrapeInstagramProfile] Apify token attempt failed:`, tokenErr);
+          continue;
+        }
+      }
+    } catch (apifyErr) {
+      console.error(`[scrapeInstagramProfile] Apify profile scraper error:`, apifyErr);
+    }
+  }
+
   // Fallback ScrapedProfile so verification process does not break
   return {
     displayName: username,
@@ -497,7 +539,7 @@ export async function scrapeInstagramProfile(handle: string): Promise<ScrapedPro
 // ─── 5. Facebook Scraper ──────────────────────────────────────────────────────
 
 export async function scrapeFacebookProfile(handle: string): Promise<ScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim();
+  const username = sanitizeSocialHandle(handle, 'facebook');
   const idMatch = username.match(/id=(\d+)/i) || username.match(/^(\d+)$/);
   const targetUrl = idMatch
     ? `https://www.facebook.com/profile.php?id=${idMatch[1]}`
@@ -549,7 +591,7 @@ export async function scrapeFacebookProfile(handle: string): Promise<ScrapedProf
 // ─── 6. LinkedIn Scraper ──────────────────────────────────────────────────────
 
 export async function scrapeLinkedInProfile(handle: string): Promise<ScrapedProfile> {
-  const username = handle.replace(/^@/, '').trim();
+  const username = sanitizeSocialHandle(handle, 'linkedin');
 
   try {
     const html = await fetchHtml(`https://www.linkedin.com/in/${encodeURIComponent(username)}/`, 5_000);

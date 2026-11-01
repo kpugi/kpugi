@@ -29,6 +29,66 @@ export function normalizeHandle(handle?: string | null): string {
 }
 
 /**
+ * Universal Social Handle Sanitizer
+ * Strips URLs, domain names, query strings (?igsh=..., ?rpxt=...), trailing slashes,
+ * leading '@' symbols, and special characters, returning the clean social username/handle.
+ */
+export function sanitizeSocialHandle(rawInput?: string | null, platform?: string): string {
+  if (!rawInput || typeof rawInput !== 'string') return '';
+  let cleaned = rawInput.trim();
+
+  // If it's a full URL, parse it
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+    try {
+      const url = new URL(cleaned);
+      const host = url.hostname.toLowerCase();
+      const path = url.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+
+      // Facebook profile.php?id=...
+      if ((host.includes('facebook.com') || host.includes('fb.com')) && url.searchParams.has('id')) {
+        return url.searchParams.get('id') || cleaned;
+      }
+
+      // If path has segments, take the first relevant user segment
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length > 0) {
+        cleaned = segments[0].replace(/^@/, '');
+      } else {
+        cleaned = '';
+      }
+    } catch {
+      cleaned = cleaned.replace(/^https?:\/\/[^\/]+\/?/, '');
+    }
+  }
+
+  // Handle cases where user pastes partial URL or handle with query string e.g. "makyia0?rpxt=..."
+  if (cleaned.includes('?')) {
+    const fbIdMatch = cleaned.match(/[?&]id=(\d+)/i);
+    if (fbIdMatch && (platform === 'facebook' || cleaned.includes('facebook') || cleaned.includes('profile.php'))) {
+      return fbIdMatch[1];
+    }
+    cleaned = cleaned.split('?')[0];
+  }
+
+  // Strip trailing slashes
+  cleaned = cleaned.replace(/\/+$/, '');
+
+  // Strip domain names if user pasted without protocol (e.g. "instagram.com/makyia0")
+  cleaned = cleaned.replace(/^(?:www\.)?(?:instagram\.com|tiktok\.com|twitter\.com|x\.com|youtube\.com|facebook\.com|linkedin\.com\/in)\//i, '');
+
+  // Strip leading '@'
+  cleaned = cleaned.replace(/^@+/, '').trim();
+
+  // Clean path separators for handles
+  const p = (platform || '').toLowerCase();
+  if (p === 'instagram' || p === 'x' || p === 'twitter' || p === 'tiktok') {
+    cleaned = cleaned.split('/')[0].trim();
+  }
+
+  return cleaned.toLowerCase();
+}
+
+/**
  * Parses any social media post URL and extracts the platform and author handle.
  */
 export function parseSocialPostUrl(rawUrl: string): ParsedSocialUrl {

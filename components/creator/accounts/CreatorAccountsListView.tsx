@@ -15,6 +15,7 @@ import {
   Check,
   Key,
 } from 'lucide-react';
+import { sanitizeSocialHandle } from '@/lib/utils/social-url';
 
 interface CreatorAccountsListViewProps {
   platforms: PlatformConfig[];
@@ -29,17 +30,11 @@ interface CreatorAccountsListViewProps {
 }
 
 function formatDisplayHandle(handle: string, displayName?: string | null) {
-  const clean = handle.trim().replace(/^@/, '').replace(/^https?:\/\/[^\/]+\//, '');
+  const clean = sanitizeSocialHandle(handle);
   if (!clean) return '';
   const idMatch = clean.match(/id=(\d+)/i) || clean.match(/^(\d+)$/);
   if (idMatch) {
     return `Facebook Profile (${idMatch[1]})`;
-  }
-  if (clean.includes('?') || clean.includes('/') || clean.toLowerCase().startsWith('profile.php')) {
-    return clean;
-  }
-  if (clean.includes(' ')) {
-    return clean;
   }
   return `@${clean}`;
 }
