@@ -74,21 +74,49 @@ export async function POST(req: Request) {
       }
 
       const supabase = createAdminClient();
-      const { error } = await supabase.from('profiles').upsert(
-        {
-          clerk_id: id,
-          email: primaryEmail,
-          full_name: fullName || null,
-          avatar_url: image_url || null,
-          role: 'creator', // default fallback, chosen in /onboarding/role
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'clerk_id' }
-      );
 
-      if (error) {
-        console.error('[Clerk Webhook] Profile sync error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      // Check if profile exists by email (pre-migration / instance port)
+      const { data: existingProfileByEmail } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', primaryEmail)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingProfileByEmail) {
+        // Re-link existing profile to new Clerk ID without wiping role, admin flag, or relations
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            clerk_id: id,
+            full_name: fullName || undefined,
+            avatar_url: image_url || undefined,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingProfileByEmail.id);
+
+        if (updateError) {
+          console.error('[Clerk Webhook] Profile relink error:', updateError);
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
+        }
+      } else {
+        const { error } = await supabase.from('profiles').upsert(
+          {
+            clerk_id: id,
+            email: primaryEmail,
+            full_name: fullName || null,
+            avatar_url: image_url || null,
+            role: 'creator', // default fallback, chosen in /onboarding/role
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'clerk_id' }
+        );
+
+        if (error) {
+          console.error('[Clerk Webhook] Profile sync error:', error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
       }
     }
 

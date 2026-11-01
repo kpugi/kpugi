@@ -78,32 +78,62 @@ export const getOrCreateUserProfile = cache(async () => {
       }
     }
 
-    // 2. If profile doesn't exist, fetch Clerk user details and create it
+    // 2. If profile doesn't exist by clerk_id, fetch Clerk user details
     if (!profile) {
       const realUser = await resolveRealClerkUser();
       const primaryEmail = realUser?.email || `clerk_${userId}@kpugi.com`;
       const fullName = realUser?.fullName || 'Creator';
       const avatarUrl = realUser?.avatarUrl || null;
 
-      const { data: newProfile, error } = await supabase
+      // 2b. Check if an existing profile exists with this email (e.g. pre-migration / dev instance port)
+      const { data: existingByEmail } = await supabase
         .from('profiles')
-        .upsert(
-          {
-            clerk_id: userId,
-            email: primaryEmail,
-            full_name: fullName || null,
-            avatar_url: avatarUrl,
-            role: 'creator', // default pending role selection
-          },
-          { onConflict: 'clerk_id' }
-        )
         .select('*')
+        .eq('email', primaryEmail)
+        .order('created_at', { ascending: true })
+        .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('[getOrCreateUserProfile] Error creating profile:', error);
+      if (existingByEmail) {
+        // Re-link existing profile to new production Clerk ID preserving all wallet, KYC, submissions, and role data
+        const { data: updatedProfile, error: relinkErr } = await supabase
+          .from('profiles')
+          .update({
+            clerk_id: userId,
+            full_name: fullName || existingByEmail.full_name,
+            avatar_url: avatarUrl || existingByEmail.avatar_url,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingByEmail.id)
+          .select('*')
+          .single();
+
+        if (relinkErr) {
+          console.error('[getOrCreateUserProfile] Error re-linking profile:', relinkErr);
+        } else {
+          profile = updatedProfile;
+        }
       } else {
-        profile = newProfile;
+        const { data: newProfile, error } = await supabase
+          .from('profiles')
+          .upsert(
+            {
+              clerk_id: userId,
+              email: primaryEmail,
+              full_name: fullName || null,
+              avatar_url: avatarUrl,
+              role: 'creator', // default pending role selection
+            },
+            { onConflict: 'clerk_id' }
+          )
+          .select('*')
+          .maybeSingle();
+
+        if (error) {
+          console.error('[getOrCreateUserProfile] Error creating profile:', error);
+        } else {
+          profile = newProfile;
+        }
       }
     }
 
