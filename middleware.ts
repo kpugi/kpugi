@@ -54,10 +54,13 @@ export default clerkMiddleware(async (auth, req) => {
   if (isAdminSubdomain) {
     const { userId } = await auth();
 
-    // Unauthenticated → redirect to main site sign-in
+    // Unauthenticated → redirect to main site sign-in with clean public redirect URL
     if (!userId) {
+      const publicUrl = isDev
+        ? req.url
+        : `https://${hostname}${req.nextUrl.pathname}${req.nextUrl.search}`;
       const signInUrl = new URL(`${mainOrigin}/sign-in`);
-      signInUrl.searchParams.set('redirect_url', req.url);
+      signInUrl.searchParams.set('redirect_url', publicUrl);
       return NextResponse.redirect(signInUrl);
     }
 
@@ -77,9 +80,10 @@ export default clerkMiddleware(async (auth, req) => {
     return rewriteResponse;
   }
 
-  // If in production someone visits kpugi.com/admin directly, redirect to admin.kpugi.com
+  // If in production someone visits kpugi.com/admin directly, seamlessly redirect to admin.kpugi.com
   if (!isAdminSubdomain && !isDev && req.nextUrl.pathname.startsWith('/admin')) {
-    const adminUrl = new URL(req.nextUrl.pathname + req.nextUrl.search, 'https://admin.kpugi.com');
+    const pathAfterAdmin = req.nextUrl.pathname.replace(/^\/admin/, '') || '/';
+    const adminUrl = new URL(pathAfterAdmin + req.nextUrl.search, 'https://admin.kpugi.com');
     return NextResponse.redirect(adminUrl);
   }
 
