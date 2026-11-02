@@ -100,23 +100,93 @@ export async function POST(req: Request) {
       }),
     ]);
 
-    if (idUpload.error) {
-      console.error('[KpugiSync Storage Error - ID]:', idUpload.error);
-    }
-    if (selfieUpload.error) {
-      console.error('[KpugiSync Storage Error - Selfie]:', selfieUpload.error);
+    if (idUpload.error || selfieUpload.error) {
+      console.error('[KpugiSync Storage Error]:', idUpload.error || selfieUpload.error);
+      return NextResponse.json(
+        { error: 'Failed to securely store identity documents. Please try again.' },
+        { status: 500 }
+      );
     }
 
-    // 5. Call Multimodal Gemini Vision
+    const submissionId = `sync_${timestamp.toString(36)}`;
+    const submittedAt = new Date().toISOString();
+    const existingNotifs = userProfile.creatorProfile.notification_preferences || {};
+
+    // 4.1 IMMEDIATE PERSISTENCE (Fail-Safe Step):
+    // Save documents to database IMMEDIATELY before running AI.
+    // This ensures that even if external AI latency spikes or times out,
+    // the user's files are safely saved, visible to admin, and never lost!
+    await supabase
+      .from('creator_profiles')
+      .update({
+        kyc_status: 'pending',
+        kyc_didit_session_id: submissionId,
+        notification_preferences: {
+          ...existingNotifs,
+          kpugisync_submission: {
+            id: submissionId,
+            document_type: documentType,
+            id_number: idNumber,
+            bank_account_name: bankAccountName,
+            extracted_name: null,
+            match_score: 0,
+            face_confidence: 0,
+            decision: 'pending_admin',
+            id_path: idStoragePath,
+            selfie_path: selfieStoragePath,
+            submitted_at: submittedAt,
+            reason: 'Documents uploaded successfully. Pending verification review.',
+          },
+        },
+      })
+      .eq('profile_id', creatorId);
+
+    // Also persist initial record in kyc_submissions table
+    try {
+      await supabase.from('kyc_submissions').insert({
+        id: crypto.randomUUID(),
+        creator_id: creatorId,
+        document_type: documentType,
+        id_number: idNumber,
+        id_front_path: idStoragePath,
+        selfie_path: selfieStoragePath,
+        bank_account_name: bankAccountName,
+        ai_extracted_name: null,
+        ai_confidence_score: 0,
+        ai_match_score: 0,
+        ai_face_score: 0,
+        ai_reason: 'Documents uploaded, running verification check.',
+        ai_raw_response: {},
+        decision: 'pending',
+      });
+    } catch (e: any) {
+      console.warn('[KpugiSync] kyc_submissions initial insert skipped:', e.message);
+    }
+
+    // 5. Call Multimodal Gemini Vision (Sub-5s direct perception mode)
     console.log(`[KpugiSync] Analyzing submission for creator ${creatorId} against bank name "${bankAccountName}"...`);
-    const aiResult = await verifyIdentityWithGemini({
-      idImageBase64: idBuffer.toString('base64'),
-      idMimeType: idImageFile.type || 'image/jpeg',
-      selfieBase64: selfieBuffer.toString('base64'),
-      selfieMimeType: selfieFile.type || 'image/jpeg',
-      bankAccountName,
-      documentType,
-    });
+    let aiResult;
+    try {
+      aiResult = await verifyIdentityWithGemini({
+        idImageBase64: idBuffer.toString('base64'),
+        idMimeType: idImageFile.type || 'image/jpeg',
+        selfieBase64: selfieBuffer.toString('base64'),
+        selfieMimeType: selfieFile.type || 'image/jpeg',
+        bankAccountName,
+        documentType,
+      });
+    } catch (aiErr: any) {
+      console.warn('[KpugiSync] Gemini call timed out or failed, falling back to manual review:', aiErr.message);
+      aiResult = {
+        is_valid_id: true,
+        id_type_detected: documentType,
+        extracted_name: '',
+        extracted_id_number: null,
+        is_face_matched: false,
+        face_confidence: 0,
+        summary_reason: 'Automated analysis queued for compliance review.',
+      };
+    }
 
     // 6. Run Permutation-Invariant Name Matcher
     const extractedName = aiResult.extracted_name || '';
@@ -142,31 +212,28 @@ export async function POST(req: Request) {
     const decision = isAutoApproved ? 'auto_approved' : 'pending_admin';
     const newStatus = isAutoApproved ? 'verified' : 'pending';
     const verifiedAt = isAutoApproved ? new Date().toISOString() : null;
-    const submissionId = `sync_${timestamp.toString(36)}`;
 
-    // 8. Update Creator Profile in Supabase
+    // 8. Update Creator Profile in Supabase with Final Enriched Result
     const profileUpdate: Record<string, any> = {
       kyc_status: newStatus,
-      kyc_didit_session_id: submissionId, // Reuse existing column to track KpugiSync submission ID
+      kyc_didit_session_id: submissionId,
       kyc_verified_at: verifiedAt,
-    };
-
-    // Store rich submission metadata in notification_preferences
-    const existingNotifs = userProfile.creatorProfile.notification_preferences || {};
-    profileUpdate.notification_preferences = {
-      ...existingNotifs,
-      kpugisync_submission: {
-        id: submissionId,
-        document_type: documentType,
-        id_number: idNumber || aiResult.extracted_id_number,
-        bank_account_name: bankAccountName,
-        extracted_name: extractedName,
-        match_score: nameMatch.score,
-        face_confidence: aiResult.face_confidence,
-        decision,
-        id_path: idStoragePath,
-        selfie_path: selfieStoragePath,
-        submitted_at: new Date().toISOString(),
+      notification_preferences: {
+        ...existingNotifs,
+        kpugisync_submission: {
+          id: submissionId,
+          document_type: documentType,
+          id_number: idNumber || aiResult.extracted_id_number,
+          bank_account_name: bankAccountName,
+          extracted_name: extractedName,
+          match_score: nameMatch.score,
+          face_confidence: aiResult.face_confidence,
+          decision,
+          id_path: idStoragePath,
+          selfie_path: selfieStoragePath,
+          submitted_at: submittedAt,
+          reason: aiResult.summary_reason || nameMatch.reason,
+        },
       },
     };
 
@@ -175,26 +242,24 @@ export async function POST(req: Request) {
       .update(profileUpdate)
       .eq('profile_id', creatorId);
 
-    // 9. Record in kyc_submissions table (gracefully handles if table pending migration)
+    // 9. Update kyc_submissions table
     try {
-      await supabase.from('kyc_submissions').insert({
-        id: crypto.randomUUID(),
-        creator_id: creatorId,
-        document_type: documentType,
-        id_number: idNumber || aiResult.extracted_id_number,
-        id_front_path: idStoragePath,
-        selfie_path: selfieStoragePath,
-        bank_account_name: bankAccountName,
-        ai_extracted_name: extractedName,
-        ai_confidence_score: aiResult.face_confidence,
-        ai_match_score: nameMatch.score,
-        ai_face_score: aiResult.face_confidence,
-        ai_reason: aiResult.summary_reason,
-        ai_raw_response: aiResult.raw_analysis || {},
-        decision,
-      });
+      await supabase
+        .from('kyc_submissions')
+        .update({
+          id_number: idNumber || aiResult.extracted_id_number,
+          ai_extracted_name: extractedName,
+          ai_confidence_score: aiResult.face_confidence,
+          ai_match_score: nameMatch.score,
+          ai_face_score: aiResult.face_confidence,
+          ai_reason: aiResult.summary_reason,
+          ai_raw_response: aiResult.raw_analysis || {},
+          decision,
+        })
+        .eq('creator_id', creatorId)
+        .eq('decision', 'pending');
     } catch (e: any) {
-      console.warn('[KpugiSync] kyc_submissions insert skipped (table pending):', e.message);
+      console.warn('[KpugiSync] kyc_submissions update skipped:', e.message);
     }
 
     return NextResponse.json({
@@ -206,7 +271,7 @@ export async function POST(req: Request) {
       bankAccountName,
       message: isAutoApproved
         ? 'Identity verified successfully! Instant earnings payouts are now enabled.'
-        : 'Your documents have been submitted for quick verification review.',
+        : 'Your documents have been submitted and are under review by our compliance team.',
       reason: aiResult.summary_reason || nameMatch.reason,
     });
   } catch (error: any) {

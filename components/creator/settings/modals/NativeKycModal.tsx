@@ -91,6 +91,20 @@ export default function NativeKycModal({
     setErrorMessage(null);
     setSubmitPhase('Encrypting & uploading documents...');
 
+    const abortController = new AbortController();
+    const clientTimeout = setTimeout(() => {
+      abortController.abort();
+    }, 25000); // 25s client timeout safety guard
+
+    // Rotate progress messages for feedback
+    const progressTimer = setTimeout(() => {
+      setSubmitPhase('Analyzing document & face biometrics with KpugiSync AI...');
+    }, 1800);
+
+    const crossCheckTimer = setTimeout(() => {
+      setSubmitPhase(`Cross-referencing with payout name: ${bankAccountName}...`);
+    }, 3800);
+
     try {
       const formData = new FormData();
       formData.append('id_image', idFile);
@@ -98,49 +112,101 @@ export default function NativeKycModal({
       formData.append('document_type', docType);
       formData.append('id_number', idNumber);
 
-      // Rotate progress messages for feedback
-      const progressTimer = setTimeout(() => {
-        setSubmitPhase('Analyzing document & face biometrics with KpugiSync AI...');
-      }, 1800);
-
-      const crossCheckTimer = setTimeout(() => {
-        setSubmitPhase(`Cross-referencing with payout name: ${bankAccountName}...`);
-      }, 3800);
-
       const res = await fetch('/api/kyc/native/submit', {
         method: 'POST',
         body: formData,
+        signal: abortController.signal,
       });
 
+      clearTimeout(clientTimeout);
       clearTimeout(progressTimer);
       clearTimeout(crossCheckTimer);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Identity verification failed.');
+      let data: any = null;
+      try {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          data = await res.json();
+        }
+      } catch (e) {
+        console.warn('[KpugiSync] Failed to parse JSON response:', e);
       }
 
-      const status = data.status as 'verified' | 'pending';
-      setResultStatus(status);
-      setResultMessage(data.message || 'Verification submitted.');
+      if (res.ok && data?.status) {
+        const status = data.status as 'verified' | 'pending';
+        setResultStatus(status);
+        setResultMessage(data.message || 'Verification submitted.');
 
-      if (status === 'verified') {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
+        if (status === 'verified') {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+          });
+        }
+
+        // Auto close and notify parent after short celebration
+        setTimeout(() => {
+          onSuccess(status);
+          onClose();
+        }, status === 'verified' ? 2400 : 3000);
+        return;
       }
 
-      // Auto close and notify parent after short celebration
-      setTimeout(() => {
-        onSuccess(status);
-        onClose();
-      }, status === 'verified' ? 2400 : 3000);
+      // If response was not 200 OK or JSON was missing, check if the server already persisted it
+      try {
+        const statusCheck = await fetch('/api/kyc/status').then((r) => r.json());
+        if (statusCheck?.status === 'verified' || statusCheck?.status === 'pending') {
+          const fallbackStatus = statusCheck.status;
+          setResultStatus(fallbackStatus);
+          setResultMessage(
+            fallbackStatus === 'verified'
+              ? 'Identity verified successfully! Payouts enabled.'
+              : 'Documents submitted successfully and queued for review.'
+          );
+          setTimeout(() => {
+            onSuccess(fallbackStatus);
+            onClose();
+          }, 2600);
+          return;
+        }
+      } catch (e) {
+        // Fall through to error handler
+      }
+
+      throw new Error(data?.error || 'Identity verification failed. Please try again.');
     } catch (err: any) {
+      clearTimeout(clientTimeout);
+      clearTimeout(progressTimer);
+      clearTimeout(crossCheckTimer);
       console.error('[KpugiSync Submit Error]:', err);
-      setErrorMessage(err.message || 'Something went wrong during verification. Please try again.');
+
+      // Final check: did the submission save before timeout?
+      try {
+        const finalCheck = await fetch('/api/kyc/status').then((r) => r.json());
+        if (finalCheck?.status === 'verified' || finalCheck?.status === 'pending') {
+          const finalStatus = finalCheck.status;
+          setResultStatus(finalStatus);
+          setResultMessage(
+            finalStatus === 'verified'
+              ? 'Identity verified successfully! Payouts enabled.'
+              : 'Documents received and queued for review.'
+          );
+          setTimeout(() => {
+            onSuccess(finalStatus);
+            onClose();
+          }, 2600);
+          return;
+        }
+      } catch (e) {}
+
+      if (err.name === 'AbortError') {
+        setErrorMessage(
+          'Verification took longer than expected. Your documents may have been uploaded — please refresh the page to check your status.'
+        );
+      } else {
+        setErrorMessage(err.message || 'Something went wrong during verification. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

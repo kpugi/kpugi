@@ -67,24 +67,64 @@ export async function getCreatorKycInspection(creatorId: string): Promise<KycIns
 
   // 3. Extract KpugiSync submission metadata
   const notifs = (creator?.notification_preferences as any) || {};
-  const meta = notifs.kpugisync_submission || null;
+  let meta = notifs.kpugisync_submission || null;
+
+  let idPath = meta?.id_path || null;
+  let selfiePath = meta?.selfie_path || null;
+
+  // Storage Fallback: If metadata paths are missing, check creator's storage folder directly
+  if (!idPath || !selfiePath) {
+    try {
+      const { data: files } = await supabase.storage
+        .from('kyc-documents')
+        .list(creatorId, { limit: 10, sortBy: { column: 'created_at', order: 'desc' } });
+
+      if (files && files.length > 0) {
+        if (!idPath) {
+          const idFile = files.find((f) => f.name.startsWith('id_front_') || f.name.includes('id_'));
+          if (idFile) idPath = `${creatorId}/${idFile.name}`;
+        }
+        if (!selfiePath) {
+          const selfieFile = files.find((f) => f.name.startsWith('selfie_') || f.name.includes('selfie'));
+          if (selfieFile) selfiePath = `${creatorId}/${selfieFile.name}`;
+        }
+      }
+    } catch (e: any) {
+      console.warn('[Admin KYC] Storage fallback list error:', e.message);
+    }
+  }
 
   let idSignedUrl: string | null = null;
   let selfieSignedUrl: string | null = null;
 
-  if (meta?.id_path) {
+  if (idPath) {
     const { data: idSigned } = await supabase.storage
       .from('kyc-documents')
-      .createSignedUrl(meta.id_path, 900); // 15 mins
+      .createSignedUrl(idPath, 900); // 15 mins
     idSignedUrl = idSigned?.signedUrl || null;
   }
 
-  if (meta?.selfie_path) {
+  if (selfiePath) {
     const { data: selfieSigned } = await supabase.storage
       .from('kyc-documents')
-      .createSignedUrl(meta.selfie_path, 900); // 15 mins
+      .createSignedUrl(selfiePath, 900); // 15 mins
     selfieSignedUrl = selfieSigned?.signedUrl || null;
   }
+
+  // Construct submission data, falling back to files on disk if meta was pending
+  const submission = (meta || idPath) ? {
+    id: meta?.id || creator?.kyc_didit_session_id || 'sync',
+    documentType: meta?.document_type || 'Government ID',
+    idNumber: meta?.id_number || null,
+    extractedName: meta?.extracted_name || null,
+    matchScore: Number(meta?.match_score) || 0,
+    faceConfidence: Number(meta?.face_confidence) || 0,
+    submittedAt: meta?.submitted_at || creator?.kyc_verified_at || new Date().toISOString(),
+    reason: meta?.decision === 'auto_approved'
+      ? 'Matched with high confidence'
+      : (meta?.reason || 'Queued for human verification'),
+    decision: meta?.decision || (creator?.kyc_status === 'verified' ? 'auto_approved' : 'pending'),
+  } : null;
 
   return {
     creatorId,
@@ -93,17 +133,7 @@ export async function getCreatorKycInspection(creatorId: string): Promise<KycIns
     kycStatus: creator?.kyc_status || 'unverified',
     verifiedAt: creator?.kyc_verified_at || null,
     bankAccount,
-    submission: meta ? {
-      id: meta.id || creator?.kyc_didit_session_id || 'sync',
-      documentType: meta.document_type || 'Government ID',
-      idNumber: meta.id_number || null,
-      extractedName: meta.extracted_name || null,
-      matchScore: Number(meta.match_score) || 0,
-      faceConfidence: Number(meta.face_confidence) || 0,
-      submittedAt: meta.submitted_at || new Date().toISOString(),
-      reason: meta.decision === 'auto_approved' ? 'Matched with high confidence' : 'Queued for human verification',
-      decision: meta.decision || 'pending',
-    } : null,
+    submission,
     idSignedUrl,
     selfieSignedUrl,
   };
