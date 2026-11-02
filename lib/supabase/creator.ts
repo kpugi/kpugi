@@ -1171,7 +1171,7 @@ export async function getCreatorProfileSettings(profileId: string): Promise<Crea
     { id: 'niches', label: 'Content Niches Selected', isComplete: hasNiches },
     { id: 'social', label: 'Connect Social Media Account', isComplete: hasConnectedSocial, shortcutUrl: '/accounts' },
     { id: 'bank', label: 'Add Nigerian Bank Payout Account', isComplete: hasBank, shortcutUrl: '/earnings' },
-    { id: 'kyc', label: 'Identity Verification (Didit KYC)', isComplete: isKycVerified },
+    { id: 'kyc', label: 'Identity Verification (KpugiSync KYC)', isComplete: isKycVerified },
   ];
 
   const completedCount = steps.filter((s) => s.isComplete).length;

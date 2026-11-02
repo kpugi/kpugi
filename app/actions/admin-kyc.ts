@@ -1,7 +1,7 @@
 'use server';
 
 import { requireAdminSession } from '@/lib/admin/auth';
-import { logAuditEvent, AUDIT_ACTIONS } from '@/lib/audit';
+import { logAuditEvent } from '@/lib/audit';
 import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
@@ -145,13 +145,14 @@ export async function approveKpugiSyncSubmission(creatorId: string) {
   }
 
   await logAuditEvent({
-    adminId,
-    action: AUDIT_ACTIONS.KYC_OVERRIDE,
-    targetType: 'creator_profile',
+    profileId: adminId,
+    actorRole: 'admin',
+    action: 'user.kyc.override',
+    targetTable: 'creator_profiles',
     targetId: creatorId,
-    details: {
+    details: 'Admin approved via KpugiSync review panel',
+    payload: {
       new_status: 'verified',
-      reason: 'Admin approved via KpugiSync review panel',
     },
   });
 
@@ -199,11 +200,13 @@ export async function rejectKpugiSyncSubmission(creatorId: string, reason: strin
   }
 
   await logAuditEvent({
-    adminId,
-    action: AUDIT_ACTIONS.KYC_OVERRIDE,
-    targetType: 'creator_profile',
+    profileId: adminId,
+    actorRole: 'admin',
+    action: 'user.kyc.override',
+    targetTable: 'creator_profiles',
     targetId: creatorId,
-    details: {
+    details: `Admin rejected via KpugiSync: ${reason.trim()}`,
+    payload: {
       new_status: 'rejected',
       reason: reason.trim(),
     },
@@ -212,3 +215,4 @@ export async function rejectKpugiSyncSubmission(creatorId: string, reason: strin
   revalidatePath('/admin/users');
   return { success: true };
 }
+
