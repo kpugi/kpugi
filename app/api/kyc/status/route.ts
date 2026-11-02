@@ -22,8 +22,17 @@ export async function GET() {
 
     let currentStatus = (creator?.kyc_status as any) || 'unverified';
 
-    // If status is pending and we have a session ID, check live decision API
-    if (currentStatus === 'pending' && creator?.kyc_didit_session_id) {
+    // Auto-heal any legacy mock session IDs from earlier sandbox fallback
+    if (creator?.kyc_didit_session_id?.startsWith('didit_sess_')) {
+      currentStatus = 'unverified';
+      await supabase
+        .from('creator_profiles')
+        .update({
+          kyc_status: 'unverified',
+          kyc_didit_session_id: null,
+        })
+        .eq('profile_id', creatorId);
+    } else if (currentStatus === 'pending' && creator?.kyc_didit_session_id) {
       const decisionData = await getDiditSessionDecision(creator.kyc_didit_session_id);
       if (decisionData.status === 'approved') {
         currentStatus = 'verified';

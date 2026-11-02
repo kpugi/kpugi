@@ -42,9 +42,11 @@ export async function createDiditKycSession({
 
   const endpoints = [
     `${DIDIT_API_BASE}/session/`,
-    'https://apx.didit.me/v1/session/',
-    'https://api.didit.me/v1/session/',
+    'https://verification.didit.me/v3/session/',
+    'https://verification.didit.me/v2/session/',
   ];
+
+  let lastError = '';
 
   for (const endpoint of endpoints) {
     try {
@@ -61,13 +63,16 @@ export async function createDiditKycSession({
           callback: callbackUrl,
           email,
         }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (res.ok) {
         const data = await res.json();
-        const sessionId = data.session_id || data.id || data.session_token || `session_${Date.now()}`;
-        const url = data.url || data.session_url || `https://verify.didit.me/session/${data.session_token || sessionId}`;
+        const sessionId = data.session_id || data.id || data.session_token;
+        const url = data.url || data.session_url || (data.session_token ? `https://verify.didit.me/session/${data.session_token}` : null);
+        if (!url) {
+          throw new Error('Didit session created but no verification URL was returned.');
+        }
         return {
           sessionId,
           url,
@@ -76,19 +81,16 @@ export async function createDiditKycSession({
       }
 
       const errJson = await res.json().catch(() => ({}));
-      console.warn(`[Didit API ${endpoint} Warning]:`, res.status, errJson);
-    } catch (err) {
+      const errorDetail = errJson.detail || errJson.message || `HTTP ${res.status}`;
+      console.warn(`[Didit API ${endpoint} Warning]:`, res.status, errorDetail);
+      lastError = errorDetail;
+    } catch (err: any) {
       console.error(`[Didit API ${endpoint} Error]:`, err);
+      lastError = err?.message || 'Network error';
     }
   }
 
-  // Graceful fallback session generation for sandbox testing
-  const fallbackSessionId = `didit_sess_${Date.now().toString(36)}`;
-  return {
-    sessionId: fallbackSessionId,
-    url: `https://verify.didit.me/session/${fallbackSessionId}?vendor=${creatorId}`,
-    status: 'created',
-  };
+  throw new Error(`Didit KYC verification session failed: ${lastError || 'Unable to connect to Didit verification service.'}`);
 }
 
 /**
@@ -97,7 +99,7 @@ export async function createDiditKycSession({
 export async function getDiditSessionDecision(sessionId: string): Promise<DiditDecisionResponse> {
   const apiKey = process.env.DIDIT_API_KEY;
 
-  if (!apiKey || !sessionId) {
+  if (!apiKey || !sessionId || sessionId.startsWith('didit_sess_')) {
     return { sessionId, status: 'pending' };
   }
 

@@ -72,6 +72,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
   // Live Identity Verification (KYC) State
   const [kycStatus, setKycStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>(creator.kyc_status);
   const [startingKyc, setStartingKyc] = useState(false);
+  const [checkingKyc, setCheckingKyc] = useState(false);
 
   // Calculate Creator Rank Level Info
   const levelData = getCreatorLevel(creator.total_earned || 0);
@@ -239,6 +240,30 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
       alert(`Error starting verification: ${err.message}`);
     } finally {
       setStartingKyc(false);
+    }
+  }
+
+  async function handleCheckKycStatus() {
+    setCheckingKyc(true);
+    try {
+      const res = await fetch('/api/kyc/status');
+      const data = await res.json();
+      if (data.success && data.status) {
+        setKycStatus(data.status);
+        if (data.status === 'verified') {
+          router.refresh();
+        } else if (data.status === 'rejected') {
+          alert('Verification was not approved. You can start a new verification session.');
+        } else if (data.status === 'unverified') {
+          alert('Your session has reset. Click "Verify Identity" to start a new verification session.');
+        } else {
+          alert('Your verification is currently under review by Didit. You will receive an update as soon as the decision is ready.');
+        }
+      }
+    } catch (err: any) {
+      alert(`Could not check status: ${err?.message || 'Network error'}`);
+    } finally {
+      setCheckingKyc(false);
     }
   }
 
@@ -493,7 +518,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
             {kycStatus === 'verified' ? (
               <button
                 type="button"
@@ -502,6 +527,29 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               >
                 <span>Identity Verified ✓</span>
               </button>
+            ) : kycStatus === 'pending' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCheckKycStatus}
+                  disabled={checkingKyc}
+                  className="w-full py-3 rounded-xl bg-kpugi-blue hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {checkingKyc ? (
+                    <span>Checking Decision...</span>
+                  ) : (
+                    <span>Check Verification Status ⏳</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStartVerification}
+                  disabled={startingKyc}
+                  className="w-full py-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink dark:text-slate-400 dark:hover:text-white font-bold text-[11px] transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>Restart or Re-open Verification Window</span>
+                </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -511,8 +559,6 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
               >
                 {startingKyc ? (
                   <span>Launching Verification...</span>
-                ) : kycStatus === 'pending' ? (
-                  <span>Check Verification Status ⏳</span>
                 ) : (
                   <span>Verify Identity 🛡️</span>
                 )}
