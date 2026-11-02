@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import NativeKycModal from './modals/NativeKycModal';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { CreatorSettingsPayload } from '@/lib/supabase/creator';
@@ -73,6 +74,9 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
   const [kycStatus, setKycStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>(creator.kyc_status);
   const [startingKyc, setStartingKyc] = useState(false);
   const [checkingKyc, setCheckingKyc] = useState(false);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [bankWarning, setBankWarning] = useState(false);
+  const bankCardRef = React.useRef<HTMLDivElement>(null);
 
   // Calculate Creator Rank Level Info
   const levelData = getCreatorLevel(creator.total_earned || 0);
@@ -225,22 +229,15 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
     }
   }
 
-  async function handleStartVerification() {
-    setStartingKyc(true);
-    try {
-      const res = await fetch('/api/kyc/didit/session', { method: 'POST' });
-      const data = await res.json();
-      if (data.success && data.sessionUrl) {
-        setKycStatus('pending');
-        window.open(data.sessionUrl, '_blank', 'width=520,height=720');
-      } else {
-        alert(`Verification Notice: ${data.error || 'Could not initiate identity verification session.'}`);
-      }
-    } catch (err: any) {
-      alert(`Error starting verification: ${err.message}`);
-    } finally {
-      setStartingKyc(false);
+  function handleStartVerification() {
+    const bankAccName = (primaryBank as any)?.accountName || (primaryBank as any)?.account_name;
+    if (!primaryBank || !bankAccName) {
+      setBankWarning(true);
+      bankCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => setBankWarning(false), 6000);
+      return;
     }
+    setIsKycModalOpen(true);
   }
 
   async function handleCheckKycStatus() {
@@ -429,7 +426,14 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
         </div>
 
         {/* Bank Account Details Card */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+        <div
+          ref={bankCardRef}
+          className={`p-5 rounded-3xl bg-white dark:bg-[#12141A] border shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 ${
+            bankWarning
+              ? 'border-amber-400 ring-2 ring-amber-400/30 dark:border-amber-500 animate-pulse'
+              : 'border-kpugi-border dark:border-white/10'
+          }`}
+        >
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
@@ -444,6 +448,12 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
             <p className="text-slate-600 dark:text-slate-400 text-xs mt-2 leading-relaxed">
               Verified bank account where campaign view earnings are transferred directly.
             </p>
+
+            {bankWarning && (
+              <div className="mt-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-500/40 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                ⚠️ Required: Link your Payout Bank Account below first to unlock identity verification.
+              </div>
+            )}
 
             <div className="mt-3">
               {primaryBank ? (
@@ -469,7 +479,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
           </Link>
         </div>
 
-        {/* Clean Identity Verification Card */}
+        {/* Clean Identity Verification Card (KpugiSync) */}
         <div className="p-5 rounded-3xl bg-white dark:bg-[#12141A] border border-kpugi-border dark:border-white/10 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
@@ -482,14 +492,16 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                   ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                   : kycStatus === 'pending'
                   ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 animate-pulse'
+                  : kycStatus === 'rejected'
+                  ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
                   : 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
               }`}>
-                {kycStatus === 'verified' ? '✓ Verified' : kycStatus === 'pending' ? '⏳ Under Review' : 'Required'}
+                {kycStatus === 'verified' ? '✓ Verified' : kycStatus === 'pending' ? '⏳ Under Review' : kycStatus === 'rejected' ? '✕ Action Required' : 'Required'}
               </span>
             </div>
 
             <p className="text-slate-600 dark:text-slate-400 text-xs mt-2 leading-relaxed">
-              Verify your official government ID (NIN, Voter Card, or Passport) to enable instant earnings withdrawals.
+              Verify your official government ID (NIN, Voter Card, or Passport) with KpugiSync to enable instant earnings withdrawals.
             </p>
 
             <div className="mt-4">
@@ -504,7 +516,16 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                     <span>⏳ Verification Under Review</span>
                   </div>
                   <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                    Your verification submission is being checked. This card will update automatically.
+                    Your verification submission is being checked. Most reviews complete within 15–30 minutes.
+                  </p>
+                </div>
+              ) : kycStatus === 'rejected' ? (
+                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-500/30 text-rose-900 dark:text-rose-300 text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+                    <span>✕ Action Required</span>
+                  </div>
+                  <p className="text-[11px] text-rose-800 dark:text-rose-300">
+                    Your previous submission was not approved. Please upload clear documents matching your bank account.
                   </p>
                 </div>
               ) : (
@@ -536,7 +557,7 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                   className="w-full py-3 rounded-xl bg-kpugi-blue hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {checkingKyc ? (
-                    <span>Checking Decision...</span>
+                    <span>Checking Status...</span>
                   ) : (
                     <span>Check Verification Status ⏳</span>
                   )}
@@ -544,29 +565,44 @@ export default function CreatorSettingsView({ payload }: CreatorSettingsViewProp
                 <button
                   type="button"
                   onClick={handleStartVerification}
-                  disabled={startingKyc}
                   className="w-full py-2 rounded-xl text-kpugi-slate hover:text-kpugi-ink dark:text-slate-400 dark:hover:text-white font-bold text-[11px] transition-all flex items-center justify-center gap-1.5"
                 >
-                  <span>Restart or Re-open Verification Window</span>
+                  <span>Re-upload or Update Documents</span>
                 </button>
               </>
+            ) : kycStatus === 'rejected' ? (
+              <button
+                type="button"
+                onClick={handleStartVerification}
+                className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-all shadow-md shadow-rose-600/20 flex items-center justify-center gap-2"
+              >
+                <span>Re-submit Verification 🔄</span>
+              </button>
             ) : (
               <button
                 type="button"
                 onClick={handleStartVerification}
-                disabled={startingKyc}
-                className="w-full py-3 rounded-xl bg-kpugi-blue hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-kpugi-blue hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-md shadow-kpugi-blue/20 flex items-center justify-center gap-2"
               >
-                {startingKyc ? (
-                  <span>Launching Verification...</span>
-                ) : (
-                  <span>Verify Identity 🛡️</span>
-                )}
+                <span>Verify Identity 🛡️</span>
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* KpugiSync Native Identity Verification Modal */}
+      <NativeKycModal
+        isOpen={isKycModalOpen}
+        onClose={() => setIsKycModalOpen(false)}
+        bankAccountName={(primaryBank as any)?.accountName || (primaryBank as any)?.account_name || ''}
+        bankName={(primaryBank as any)?.bankName || (primaryBank as any)?.bank_name || ''}
+        accountNumber={(primaryBank as any)?.accountNumber || (primaryBank as any)?.account_number || ''}
+        onSuccess={(newStatus) => {
+          setKycStatus(newStatus);
+          router.refresh();
+        }}
+      />
 
       {/* Main Settings Sections: Public Profile & Live DB Notification Toggles */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
