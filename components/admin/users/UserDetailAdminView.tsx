@@ -341,13 +341,12 @@ export default function UserDetailAdminView({
                   </span>
                 )}
                 <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                    user.role === "advertiser"
+                  className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${user.role === "advertiser"
                       ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60"
                       : user.role === "both"
-                      ? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60"
-                      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                  }`}
+                        ? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60"
+                        : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    }`}
                 >
                   {user.role}
                 </span>
@@ -361,11 +360,10 @@ export default function UserDetailAdminView({
                 )}
 
                 <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-semibold font-mono uppercase ${
-                    isSuspended
+                  className={`px-2 py-0.5 rounded-full text-xs font-semibold font-mono uppercase ${isSuspended
                       ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60"
                       : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60"
-                  }`}
+                    }`}
                 >
                   {user.account_status}
                 </span>
@@ -466,11 +464,10 @@ export default function UserDetailAdminView({
               <button
                 type="button"
                 onClick={() => setIsSuspensionModalOpen(true)}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  isSuspended
+                className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer flex items-center gap-1.5 ${isSuspended
                     ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
                     : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60 hover:bg-rose-100"
-                }`}
+                  }`}
               >
                 {isSuspended ? (
                   <>
@@ -538,12 +535,12 @@ export default function UserDetailAdminView({
             </span>
           </div>
 
-          {/* Card 3: KpugiSync Identity & KYC */}
+          {/* Card 3: KpugiSync & KYC */}
           <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-white/5 border border-gray-100 dark:border-white/5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block">
-                  KpugiSync Identity
+                  KpugiSync
                 </span>
                 <span className="text-[9px] font-extrabold text-brand-500 bg-brand-500/10 px-1.5 py-0.5 rounded">
                   IN-HOUSE
@@ -587,9 +584,8 @@ export default function UserDetailAdminView({
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span
-                className={`text-lg font-bold capitalize ${
-                  isSuspended ? "text-rose-500" : "text-gray-900 dark:text-white"
-                }`}
+                className={`text-lg font-bold capitalize ${isSuspended ? "text-rose-500" : "text-gray-900 dark:text-white"
+                  }`}
               >
                 {user.account_status}
               </span>
@@ -598,8 +594,8 @@ export default function UserDetailAdminView({
               {isSuspended
                 ? `Reason: ${user.suspended_reason || "Administrative block"}`
                 : user.is_admin
-                ? "Full Administrator Clearance"
-                : "Standard Platform Clearance"}
+                  ? "Full Administrator Clearance"
+                  : "Standard Platform Clearance"}
             </span>
           </div>
         </div>
@@ -626,21 +622,19 @@ export default function UserDetailAdminView({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 text-xs font-semibold transition-colors cursor-pointer ${
-                isActive
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 border-b-2 text-xs font-semibold transition-colors cursor-pointer ${isActive
                   ? "border-brand-500 text-brand-600 dark:text-brand-400"
                   : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
               {typeof tab.count === "number" && tab.count > 0 && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none ${
-                    isActive
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none ${isActive
                       ? "bg-brand-500 text-white"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                  }`}
+                    }`}
                 >
                   {tab.count}
                 </span>
@@ -1333,33 +1327,30 @@ export default function UserDetailAdminView({
               <button
                 type="button"
                 onClick={() => setAuditFilter("all")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  auditFilter === "all"
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${auditFilter === "all"
                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-2xs"
                     : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 All ({auditTrail.length})
               </button>
               <button
                 type="button"
                 onClick={() => setAuditFilter("admin")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  auditFilter === "admin"
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${auditFilter === "admin"
                     ? "bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-2xs"
                     : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 Admin Interventions ({adminEventsCount})
               </button>
               <button
                 type="button"
                 onClick={() => setAuditFilter("user")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  auditFilter === "user"
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${auditFilter === "user"
                     ? "bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 shadow-2xs"
                     : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 User Activity ({userEventsCount})
               </button>
@@ -1367,11 +1358,10 @@ export default function UserDetailAdminView({
                 <button
                   type="button"
                   onClick={() => setAuditFilter("system")}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                    auditFilter === "system"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${auditFilter === "system"
                       ? "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-2xs"
                       : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-                  }`}
+                    }`}
                 >
                   System ({systemEventsCount})
                 </button>
@@ -1503,7 +1493,7 @@ export default function UserDetailAdminView({
         }}
       />
 
-      {/* KpugiSync Identity Inspection Modal */}
+      {/* KpugiSync Inspection Modal */}
       <KycInspectionModal
         isOpen={isKycInspectModalOpen}
         onClose={() => setIsKycInspectModalOpen(false)}

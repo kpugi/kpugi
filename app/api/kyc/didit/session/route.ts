@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST() {
   return NextResponse.json(
     {
-      error: 'Didit KYC has been deprecated in favor of native KpugiSync identity verification.',
+      error: 'Didit KYC has been deprecated in favor of native KpugiSync verification.',
       deprecated: true,
     },
     { status: 410 }

@@ -379,19 +379,17 @@ export default function UsersTableManager({
                       setRoleFilter(st.id as any);
                       setCurrentPage(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                      isActive
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${isActive
                         ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
+                      }`}
                   >
                     <span>{st.label}</span>
                     <span
-                      className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
-                        isActive
+                      className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${isActive
                           ? "bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400"
                           : "bg-gray-200/70 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-                      }`}
+                        }`}
                     >
                       {st.count}
                     </span>
@@ -642,13 +640,12 @@ export default function UsersTableManager({
                       <TableCell className="px-5 py-3.5 text-start whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
-                              u.role === "advertiser"
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${u.role === "advertiser"
                                 ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60"
                                 : u.role === "both"
-                                ? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60"
-                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                            }`}
+                                  ? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60"
+                                  : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                              }`}
                           >
                             {u.role}
                           </span>
@@ -685,7 +682,7 @@ export default function UsersTableManager({
                         {kycStatus === "verified" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
                             <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                            <span>Didit Verified</span>
+                            <span>KpugiSync Verified</span>
                           </span>
                         ) : kycStatus === "pending" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
@@ -729,11 +726,10 @@ export default function UsersTableManager({
                                 });
                                 setIsSuspensionModalOpen(true);
                               }}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer ${
-                                isSuspended
+                              className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer ${isSuspended
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60 hover:bg-emerald-100"
                                   : "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
-                              }`}
+                                }`}
                             >
                               {isSuspended ? "Reactivate" : "Suspend"}
                             </button>
