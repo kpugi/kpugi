@@ -16,6 +16,7 @@ import Button from "@/components/admin/components/ui/button/Button";
 import UserSuspensionModal from "./modals/UserSuspensionModal";
 import WalletAdjustmentModal from "./modals/WalletAdjustmentModal";
 import UserRoleKycModal from "./modals/UserRoleKycModal";
+import KycInspectionModal from "./modals/KycInspectionModal";
 import { toggleUserAdminStatus } from "@/app/actions/admin";
 import {
   Users,
@@ -187,6 +188,7 @@ export default function UserDetailAdminView({
   const [isSuspensionModalOpen, setIsSuspensionModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isRoleKycModalOpen, setIsRoleKycModalOpen] = useState(false);
+  const [isKycInspectModalOpen, setIsKycInspectModalOpen] = useState(false);
   const [payloadModalContent, setPayloadModalContent] = useState<any | null>(null);
 
   // Operator Action Loading State
@@ -536,31 +538,46 @@ export default function UserDetailAdminView({
             </span>
           </div>
 
-          {/* Card 3: Didit Identity & KYC */}
-          <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-white/5 border border-gray-100 dark:border-white/5">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block">
-              Didit KYC Identity
-            </span>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              {creatorProfile?.kyc_status === "verified" ? (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Fully Verified</span>
+          {/* Card 3: KpugiSync Identity & KYC */}
+          <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-white/5 border border-gray-100 dark:border-white/5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block">
+                  KpugiSync Identity
                 </span>
-              ) : creatorProfile?.kyc_status === "pending" ? (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                  <Clock className="w-4 h-4" />
-                  <span>Under Review</span>
+                <span className="text-[9px] font-extrabold text-brand-500 bg-brand-500/10 px-1.5 py-0.5 rounded">
+                  IN-HOUSE
                 </span>
-              ) : (
-                <span className="text-xs font-medium text-gray-500">Unverified</span>
-              )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                {creatorProfile?.kyc_status === "verified" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Fully Verified</span>
+                  </span>
+                ) : creatorProfile?.kyc_status === "pending" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                    <Clock className="w-4 h-4 animate-pulse" />
+                    <span>Under Review</span>
+                  </span>
+                ) : creatorProfile?.kyc_status === "rejected" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Rejected</span>
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium text-gray-500">Unverified</span>
+                )}
+              </div>
             </div>
-            <span className="text-[10px] text-gray-400 font-mono mt-0.5 block truncate">
-              {creatorProfile?.kyc_didit_session_id
-                ? `Session: ${creatorProfile.kyc_didit_session_id.slice(0, 16)}...`
-                : "No Didit session recorded"}
-            </span>
+            <button
+              type="button"
+              onClick={() => setIsKycInspectModalOpen(true)}
+              className="mt-2 w-full py-1.5 px-2 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 hover:border-brand-500 text-[11px] font-bold text-gray-700 dark:text-gray-200 hover:text-brand-500 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-500" />
+              <span>Inspect Documents</span>
+            </button>
           </div>
 
           {/* Card 4: Account Clearance */}
@@ -1481,6 +1498,16 @@ export default function UserDetailAdminView({
           role: user.role,
           kycStatus: creatorProfile?.kyc_status || "unverified",
         }}
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
+
+      {/* KpugiSync Identity Inspection Modal */}
+      <KycInspectionModal
+        isOpen={isKycInspectModalOpen}
+        onClose={() => setIsKycInspectModalOpen(false)}
+        creatorId={user.id}
         onSuccess={() => {
           router.refresh();
         }}
