@@ -109,22 +109,33 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
 
     # 3.5 Author Handle Ownership Verification (Anti-Fraud)
     connected_handle = sub.get('social_account_handle')
-    if connected_handle:
+    connected_display_name = sub.get('social_account_display_name')
+    connected_platform_user_id = sub.get('social_account_platform_user_id')
+
+    if connected_handle or connected_display_name:
         import re
+        import html as html_lib
+
         def clean_handle(val: Any) -> str:
             if not val:
                 return ""
-            return re.sub(r'[\s\-_\.@]+', '', str(val).lower().strip())
+            unescaped = html_lib.unescape(str(val))
+            return re.sub(r'[\s\-_\.@\'\"&#;]+', '', unescaped.lower().strip())
 
-        norm_handle = clean_handle(connected_handle)
+        # Expected tokens for this creator account (handle, channel title, channel ID)
+        expected_tokens = []
+        for val in [connected_handle, connected_display_name, connected_platform_user_id]:
+            cleaned = clean_handle(val)
+            if cleaned and cleaned not in expected_tokens:
+                expected_tokens.append(cleaned)
 
         # Collect all candidate author identifiers returned by scraper
         candidates = []
         for cand_val in [result.uploader, result.uploader_id, result.channel]:
             if cand_val is not None:
-                cand_raw = str(cand_val).strip().lstrip('@')
-                if cand_raw and cand_raw not in candidates:
-                    candidates.append(cand_raw)
+                cand_clean = html_lib.unescape(str(cand_val)).strip().lstrip('@')
+                if cand_clean and cand_clean not in candidates:
+                    candidates.append(cand_clean)
 
         # Extract handle from channel_url if available
         if result.channel_url:
@@ -134,24 +145,34 @@ def process_submission(db: DatabaseClient, sub: Dict[str, Any]) -> Dict[str, Any
                 if url_handle not in candidates:
                     candidates.append(url_handle)
 
-        if candidates:
+        if candidates and expected_tokens:
             # Separate text usernames from purely numeric internal platform IDs (e.g. '100084729182')
             text_candidates = [c for c in candidates if not c.isdigit()]
 
             # Only evaluate mismatch if we have text usernames (avoid false positives on raw numeric IDs)
             if text_candidates:
-                # Strict normalized equality (handles case, spaces, dots, underscores, but prevents substring spoofing)
-                matched = any(norm_handle == clean_handle(c) for c in text_candidates)
+                # Check if any candidate matches ANY expected token (handle, display name, or platform ID)
+                matched = any(
+                    any(
+                        exp == clean_handle(c)
+                        or (len(exp) >= 4 and exp in clean_handle(c))
+                        or (len(clean_handle(c)) >= 4 and clean_handle(c) in exp)
+                        for exp in expected_tokens
+                    )
+                    for c in text_candidates
+                )
 
                 if not matched:
-                    primary_author = text_candidates[0]
+                    raw_primary = text_candidates[0]
+                    primary_author = html_lib.unescape(raw_primary).lstrip('@')
+                    display_connected = connected_handle or connected_display_name
                     logger.warning(
-                        f"Author mismatch for sub {sub_id[:8]}: scraped author '@{primary_author}' != connected handle '@{connected_handle}'"
+                        f"Author mismatch for sub {sub_id[:8]}: scraped author '@{primary_author}' != connected account '@{display_connected}'"
                     )
                     updates = {
                         "last_scraped_at": now_iso,
                         "status": "verified_fail",
-                        "failure_reason": f"Author ownership mismatch: This post was published by @{primary_author}, but your connected account is @{connected_handle}. You may only submit posts from your own account.",
+                        "failure_reason": f"Author ownership mismatch: This post was published by @{primary_author}, but your connected account is @{display_connected}. You may only submit posts from your own account.",
                     }
                     db.update_submission(sub_id, updates)
                     return {

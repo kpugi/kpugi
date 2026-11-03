@@ -4,6 +4,7 @@ import logging
 import urllib.request
 import urllib.parse
 import urllib.error
+import html as html_lib
 from typing import Optional, Dict, Any
 
 try:
@@ -212,12 +213,14 @@ def extract_youtube_fallback(url: str) -> Optional[ScrapeResult]:
     uploader = None
     duration = None
     channel_id = None
+    channel_handle = None
     channel_url = None
     subscribers = None
     description = None
 
     # 1. Innertube Web Player API (Fast, Reliable, Zero-Auth)
     player_url = 'https://www.youtube.com/youtubei/v1/player'
+    next_url = 'https://www.youtube.com/youtubei/v1/next'
     payload = {
         'context': {
             'client': {
@@ -252,71 +255,128 @@ def extract_youtube_fallback(url: str) -> Optional[ScrapeResult]:
         vdetails = player_data.get('videoDetails', {})
         if vdetails:
             view_count = _parse_compact_number(vdetails.get('viewCount'))
-            title = vdetails.get('title')
-            uploader = vdetails.get('author')
+            title = html_lib.unescape(vdetails.get('title') or '')
+            raw_author = vdetails.get('author')
+            uploader = html_lib.unescape(raw_author).strip() if raw_author else None
             duration = float(vdetails.get('lengthSeconds', 0)) if vdetails.get('lengthSeconds') else None
             channel_id = vdetails.get('channelId')
             description = vdetails.get('shortDescription')
             if channel_id:
                 channel_url = f"https://www.youtube.com/channel/{channel_id}"
 
-    # 2. Public YouTube Watch HTML (for Likes, Comments, Channel Handle, Subscribers)
-    watch_url = f"https://www.youtube.com/watch?v={video_id}"
-    html = _http_get_text(watch_url) or _http_get_text(url)
-
-    if html:
-        # View count fallback
-        if view_count is None:
-            view_match = re.search(r'"viewCount":"(\d+)"', html) or re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+views', html, re.I)
-            if view_match:
-                view_count = _parse_compact_number(view_match.group(1))
-
-        # Likes extraction (multiple schema representations)
-        m_likes = (
-            re.search(r'"likeCount":"(\d+)"', html) or
-            re.search(r'itemprop="userInteractionCount"\s+content="(\d+)"', html) or
-            re.search(r'"iconName":"LIKE","title":"([\d,]+(?:\.\d+)?[KMBkmb]?)"', html) or
-            re.search(r'"factoidRenderer":\{"value":\{"simpleText":"([\d,]+(?:\.\d+)?[KMBkmb]?)"\},"label":\{"simpleText":"Likes"\}', html) or
-            re.search(r'accessibilityText":"(?:like this video along with )?([\d,]+(?:\.\d+)?[KMBkmb]?)\s+other people', html) or
-            re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+likes', html, re.I)
+    # 2. Innertube Next API (For Channel Handle, Likes & Scoped Comments)
+    try:
+        req_next = urllib.request.Request(
+            next_url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': DEFAULT_USER_AGENT,
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+            method='POST'
         )
-        if m_likes:
-            like_count = _parse_compact_number(m_likes.group(1))
+        with urllib.request.urlopen(req_next, timeout=REQUEST_TIMEOUT) as resp:
+            if resp.getcode() == 200:
+                next_data = json.loads(resp.read().decode('utf-8', errors='ignore'))
+                next_str = json.dumps(next_data)
 
-        # Comments extraction
-        m_comments = (
-            re.search(r'"title":\{"runs":\[\{"text":"Comments"\}\]\},"contextualInfo":\{"runs":\[\{"text":"([\d,]+(?:\.\d+)?[KMBkmb]?)"\}\]', html) or
-            re.search(r'"totalComments":"(\d+)"', html) or
-            re.search(r'"commentCount":\s*\{\s*"simpleText":\s*"([\d,]+)"', html) or
-            re.search(r'"commentsCount":\s*\{\s*"text":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"([\d,]+)"', html) or
-            re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+Comments?', html, re.I)
-        )
-        if m_comments:
-            comment_count = _parse_compact_number(m_comments.group(1))
+                # Extract canonical handle (e.g. /@maya_jayy)
+                m_handle = re.search(r'"canonicalBaseUrl":\s*"/(?:@)?([a-zA-Z0-9_.\-]+)"', next_str)
+                if m_handle:
+                    channel_handle = m_handle.group(1).lstrip('@')
+                    channel_url = f"https://www.youtube.com/@{channel_handle}"
 
-        # Subscribers extraction
-        m_subs = (
-            re.search(r'"subscriberCountText":\s*\{\s*"simpleText":\s*"([^"]+)"', html) or
-            re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+subscribers?', html, re.I)
-        )
-        if m_subs:
-            subscribers = _parse_compact_number(m_subs.group(1))
+                # Extract comments count strictly from comments engagement panel
+                for ep in next_data.get('engagementPanels', []):
+                    panel = ep.get('engagementPanelSectionListRenderer', {})
+                    if panel.get('panelIdentifier') == 'engagement-panel-comments-section':
+                        header = panel.get('header', {}).get('engagementPanelTitleHeaderRenderer', {})
+                        ctx = header.get('contextualInfo', {}).get('runs', [])
+                        if ctx and 'text' in ctx[0]:
+                            comment_count = _parse_compact_number(ctx[0]['text'])
+                        break
 
-        # Canonical Channel Handle (e.g. /@tuazorcyberkeed)
-        m_handle = re.search(r'"canonicalBaseUrl":"(/@[^"]+)"', html)
-        if m_handle:
-            channel_url = f"https://www.youtube.com{m_handle.group(1)}"
+                # Extract likes if available in next response
+                if like_count is None:
+                    m_like_next = re.search(r'"iconName":"LIKE".*?"title":"([\d,]+(?:\.\d+)?[KMBkmb]?)"', next_str)
+                    if m_like_next:
+                        like_count = _parse_compact_number(m_like_next.group(1))
+    except Exception as e:
+        logger.debug(f"Innertube next request failed: {e}")
 
-        # Title & Uploader fallback
-        if not title:
-            t_match = re.search(r'<meta\s+name="title"\s+content="([^"]+)"', html, re.I) or re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html, re.I)
-            if t_match:
-                title = t_match.group(1)
+    # 3. Public YouTube Watch HTML Fallback
+    if view_count is None or like_count is None or channel_handle is None:
+        watch_url = f"https://www.youtube.com/watch?v={video_id}"
+        html = _http_get_text(watch_url) or _http_get_text(url)
 
-        if not uploader:
-            u_match = re.search(r'"owner":\s*\{\s*"videoOwnerRenderer":\s*\{\s*"title":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"([^"]+)"', html) or re.search(r'<link\s+itemprop="name"\s+content="([^"]+)"', html)
-            if u_match:
-                uploader = u_match.group(1)
+        if html:
+            # View count fallback
+            if view_count is None:
+                view_match = re.search(r'"viewCount":"(\d+)"', html) or re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+views', html, re.I)
+                if view_match:
+                    view_count = _parse_compact_number(view_match.group(1))
+
+            # Likes extraction
+            if like_count is None:
+                m_likes = (
+                    re.search(r'"likeCount":"(\d+)"', html) or
+                    re.search(r'itemprop="userInteractionCount"\s+content="(\d+)"', html) or
+                    re.search(r'"iconName":"LIKE","title":"([\d,]+(?:\.\d+)?[KMBkmb]?)"', html) or
+                    re.search(r'"factoidRenderer":\{"value":\{"simpleText":"([\d,]+(?:\.\d+)?[KMBkmb]?)"\},"label":\{"simpleText":"Likes"\}', html) or
+                    re.search(r'accessibilityText":"(?:like this video along with )?([\d,]+(?:\.\d+)?[KMBkmb]?)\s+other people', html) or
+                    re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+likes', html, re.I)
+                )
+                if m_likes:
+                    like_count = _parse_compact_number(m_likes.group(1))
+
+            # Scoped Comments extraction (Do NOT match broad "X Comments" which matches sidebar/suggested videos)
+            if comment_count is None:
+                m_comments = (
+                    re.search(r'"panelIdentifier":"engagement-panel-comments-section".*?"contextualInfo":\{"runs":\[\{"text":"([\d,]+(?:\.\d+)?[KMBkmb]?)"\}\]', html) or
+                    re.search(r'"title":\{"runs":\[\{"text":"Comments"\}\]\},"contextualInfo":\{"runs":\[\{"text":"([\d,]+(?:\.\d+)?[KMBkmb]?)"\}\]', html) or
+                    re.search(r'"totalComments":"(\d+)"', html) or
+                    re.search(r'"commentCount":\s*\{\s*"simpleText":\s*"([\d,]+)"', html) or
+                    re.search(r'"commentsCount":\s*\{\s*"text":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"([\d,]+)"', html)
+                )
+                if m_comments:
+                    comment_count = _parse_compact_number(m_comments.group(1))
+
+            # Canonical Channel Handle (e.g. /@maya_jayy)
+            if not channel_handle:
+                m_handle = (
+                    re.search(r'"canonicalBaseUrl":"/(@[a-zA-Z0-9_.\-]+)"', html) or
+                    re.search(r'href="https?://(?:www\.)?youtube\.com/(@[a-zA-Z0-9_.\-]+)"', html) or
+                    re.search(r'"ownerProfileUrl":"https?://(?:www\.)?youtube\.com/(@[a-zA-Z0-9_.\-]+)"', html) or
+                    re.search(r'"vanityChannelUrl":"https?://(?:www\.)?youtube\.com/(@[a-zA-Z0-9_.\-]+)"', html)
+                )
+                if m_handle:
+                    channel_handle = m_handle.group(1).lstrip('@')
+                    channel_url = f"https://www.youtube.com/@{channel_handle}"
+
+            # Subscribers extraction
+            if subscribers is None:
+                m_subs = (
+                    re.search(r'"subscriberCountText":\s*\{\s*"simpleText":\s*"([^"]+)"', html) or
+                    re.search(r'([\d,]+(?:\.\d+)?[KMBkmb]?)\s+subscribers?', html, re.I)
+                )
+                if m_subs:
+                    subscribers = _parse_compact_number(m_subs.group(1))
+
+            # Title & Uploader fallback
+            if not title:
+                t_match = re.search(r'<meta\s+name="title"\s+content="([^"]+)"', html, re.I) or re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html, re.I)
+                if t_match:
+                    title = html_lib.unescape(t_match.group(1))
+
+            if not uploader:
+                u_match = re.search(r'"owner":\s*\{\s*"videoOwnerRenderer":\s*\{\s*"title":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"([^"]+)"', html) or re.search(r'<link\s+itemprop="name"\s+content="([^"]+)"', html)
+                if u_match:
+                    uploader = html_lib.unescape(u_match.group(1)).strip()
+
+    # Reachable videos default to 0 comments if no comments section was found
+    if comment_count is None:
+        comment_count = 0
 
     if view_count is not None or title:
         return ScrapeResult(
@@ -327,6 +387,7 @@ def extract_youtube_fallback(url: str) -> Optional[ScrapeResult]:
             share_count=None,
             duration=duration,
             uploader=uploader,
+            uploader_id=channel_handle or channel_id,
             channel=uploader,
             channel_url=channel_url,
             title=title,
@@ -335,6 +396,8 @@ def extract_youtube_fallback(url: str) -> Optional[ScrapeResult]:
             extractor="youtube_innertube_parser",
             raw={
                 'video_id': video_id,
+                'channel_handle': channel_handle,
+                'channel_id': channel_id,
                 'subscribers': subscribers,
                 'view_count': view_count,
                 'like_count': like_count,

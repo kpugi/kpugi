@@ -123,10 +123,25 @@ export async function POST(request: Request) {
     // 5. Anti-Fraud Author Ownership Match
     // Must recognize both the account name (e.g. "Kpugi Kpugi") and profile ID (e.g. "61592632807693")
     if (postDetails.authorHandle || postDetails.authorName) {
-      const normalize = (val: string) => val.toLowerCase().replace(/[\s\-_\.@]+/g, '').trim();
+      const unescapeEntities = (str: string) => {
+        return (str || '')
+          .replace(/&#39;/g, "'")
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>');
+      };
+
+      const normalize = (val: string) => {
+        if (!val) return '';
+        const unescaped = unescapeEntities(val);
+        return unescaped.toLowerCase().replace(/[\s\-_\.@'"]+/g, '').trim();
+      };
+
       const normScrapedHandle = postDetails.authorHandle ? normalize(postDetails.authorHandle) : '';
       const normScrapedName = postDetails.authorName ? normalize(postDetails.authorName) : '';
-      const normExpected = normalize(cleanHandle);
+      const normExpectedHandle = normalize(cleanHandle);
+      const normExpectedName = account.display_name ? normalize(account.display_name) : '';
 
       // Check numeric/profile ID match for Facebook / profile URLs (e.g. profile.php?id=61592632807693 or 61592632807693)
       const postUrlId = postUrl.match(/[?&]id=(\d+)/i)?.[1] || postUrl.match(/\/(?:posts|photos)\/(\d+)/i)?.[1] || null;
@@ -153,23 +168,24 @@ export async function POST(request: Request) {
           Boolean(idMatch) ||
           cleanHandle.includes('profile.php') ||
           /^\d+$/.test(cleanHandle) ||
-          (normScrapedName && normExpected && (normScrapedName.includes(normExpected) || normExpected.includes(normScrapedName))) ||
-          (normScrapedHandle && normExpected && (normScrapedHandle.includes(normExpected) || normExpected.includes(normScrapedHandle)))
+          (normScrapedName && normExpectedHandle && (normScrapedName.includes(normExpectedHandle) || normExpectedHandle.includes(normScrapedName))) ||
+          (normScrapedHandle && normExpectedHandle && (normScrapedHandle.includes(normExpectedHandle) || normExpectedHandle.includes(normScrapedHandle)))
         );
 
       const isMatch =
-        normScrapedHandle === normExpected ||
-        normScrapedName === normExpected ||
-        (normScrapedHandle && (normScrapedHandle.includes(normExpected) || normExpected.includes(normScrapedHandle))) ||
-        (normScrapedName && (normScrapedName.includes(normExpected) || normExpected.includes(normScrapedName))) ||
+        (normScrapedHandle && (normScrapedHandle === normExpectedHandle || (normExpectedName && normScrapedHandle === normExpectedName))) ||
+        (normScrapedName && (normScrapedName === normExpectedHandle || (normExpectedName && normScrapedName === normExpectedName))) ||
+        (normScrapedHandle && normExpectedHandle && (normScrapedHandle.includes(normExpectedHandle) || normExpectedHandle.includes(normScrapedHandle))) ||
+        (normScrapedName && normExpectedName && (normScrapedName.includes(normExpectedName) || normExpectedName.includes(normScrapedName))) ||
         Boolean(idMatch) ||
         Boolean(isFacebookProfileMatch);
 
       if (!isMatch) {
+        const rawAuthor = unescapeEntities(postDetails.authorName || postDetails.authorHandle || '');
         return NextResponse.json(
           {
             verified: false,
-            error: `Author ownership mismatch: This post was published by "${postDetails.authorName || postDetails.authorHandle}", but your connected account is "${cleanHandle}". You may only verify your own posts.`,
+            error: `Author ownership mismatch: This post was published by "${rawAuthor}", but your connected account is "${cleanHandle}". You may only verify your own posts.`,
           },
           { status: 403 }
         );

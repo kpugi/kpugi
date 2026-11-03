@@ -194,6 +194,8 @@ class DatabaseClient:
             sub['campaign'] = camp
             social_acc = social_map.get(sub.get('social_account_id'), {})
             sub['social_account_handle'] = social_acc.get('handle')
+            sub['social_account_display_name'] = social_acc.get('display_name')
+            sub['social_account_platform_user_id'] = social_acc.get('platform_user_id')
             sub['social_account_platform'] = social_acc.get('platform')
             active_submissions.append(sub)
 
@@ -222,7 +224,7 @@ class DatabaseClient:
         url = f"{self.rest_url}/social_accounts"
         params = {
             "id": f"in.({','.join(social_ids)})",
-            "select": "id,platform,handle,display_name",
+            "select": "id,platform,handle,display_name,platform_user_id",
         }
 
         resp = self._http_request("GET", url, params=params)
