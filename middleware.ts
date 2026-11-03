@@ -123,7 +123,44 @@ export default clerkMiddleware(async (auth, req) => {
     await auth.protect();
   }
 
+  // 3. Pre-launch Countdown Mode & Public Gate
+  const isPrelaunchMode = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === 'true';
+  const hasVipCookie = req.cookies.get('kpugi_vip_access')?.value === 'true';
+  const codeParam = req.nextUrl.searchParams.get('code')?.toUpperCase();
+  const isVipCode = codeParam === 'KPUGI-VIP-20NOV' || codeParam === 'KPUGI-LAUNCH-2026';
+
+  const isPublicMarketingRoute =
+    req.nextUrl.pathname.startsWith('/browse') ||
+    req.nextUrl.pathname.startsWith('/brands') ||
+    req.nextUrl.pathname.startsWith('/creators') ||
+    req.nextUrl.pathname.startsWith('/creator') ||
+    req.nextUrl.pathname.startsWith('/how-it-works') ||
+    req.nextUrl.pathname.startsWith('/pricing') ||
+    req.nextUrl.pathname.startsWith('/advertise') ||
+    req.nextUrl.pathname.startsWith('/calculator') ||
+    req.nextUrl.pathname.startsWith('/roiestimator');
+
+  if (isPrelaunchMode && isPublicMarketingRoute && !hasVipCookie && !isVipCode) {
+    const { userId } = await auth();
+    // If not signed in and has no VIP code, redirect directly to countdown landing page
+    if (!userId) {
+      const countdownUrl = new URL('/', req.url);
+      countdownUrl.searchParams.set('redirect', req.nextUrl.pathname);
+      return NextResponse.redirect(countdownUrl);
+    }
+  }
+
   const response = NextResponse.next();
+
+  // If VIP access code provided in query param, persist VIP access cookie
+  if (isVipCode && !hasVipCookie) {
+    response.cookies.set('kpugi_vip_access', 'true', {
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+    });
+  }
   response.headers.set('ngrok-skip-browser-warning', 'true');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');

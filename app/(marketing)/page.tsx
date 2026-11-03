@@ -11,6 +11,7 @@ import HomeCalculatorSection from '@/components/marketing/HomeCalculatorSection'
 import HomeTelemetryPulse from '@/components/marketing/HomeTelemetryPulse';
 import HomeWallOfLove from '@/components/marketing/HomeWallOfLove';
 import PerformanceOverviewCTA from '@/components/marketing/PerformanceOverviewCTA';
+import PrelaunchCountdownView from '@/components/marketing/PrelaunchCountdownView';
 import {
   ArrowRight,
   ShieldCheck,
@@ -237,6 +238,24 @@ export default async function HomePage() {
       },
     })),
   };
+
+  const isPrelaunch = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === 'true';
+
+  if (isPrelaunch) {
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+        />
+        <PrelaunchCountdownView />
+      </>
+    );
+  }
 
   return (
     <>

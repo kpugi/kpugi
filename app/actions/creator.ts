@@ -221,13 +221,38 @@ export async function submitCampaignVideoAction(formData: FormData) {
 
   const socialAccountId = matchedAcc.id;
 
+  // Process optional screenshot proof if attached during submission
+  let uploadedScreenshotUrl: string | null = null;
+  const screenshotFile = formData.get('screenshot') as File | null;
+  if (screenshotFile && typeof screenshotFile === 'object' && screenshotFile.size > 0) {
+    try {
+      const ext = screenshotFile.name.split('.').pop() || 'jpg';
+      const storagePath = `${campaignId}/${userProfile.profile.id}-${Date.now()}.${ext}`;
+      const buffer = Buffer.from(await screenshotFile.arrayBuffer());
+      const { error: uploadErr } = await supabase.storage
+        .from('submission-proofs')
+        .upload(storagePath, buffer, {
+          contentType: screenshotFile.type || 'image/jpeg',
+          upsert: true,
+        });
+      if (!uploadErr) {
+        const { data: pubData } = supabase.storage
+          .from('submission-proofs')
+          .getPublicUrl(storagePath);
+        uploadedScreenshotUrl = pubData.publicUrl;
+      }
+    } catch (sErr) {
+      console.warn('[submitCampaignVideoAction] Screenshot upload note:', sErr);
+    }
+  }
+
   const { error } = await supabase.from('submissions').upsert(
     {
       campaign_id: campaignId,
       creator_id: userProfile.profile.id,
       social_account_id: socialAccountId,
       post_url: parsedUrl.toString(),
-      screenshot_url: null,
+      screenshot_url: uploadedScreenshotUrl,
       reserved_amount: Number(campaign.cpm_rate || 0),
       status: 'pending',
       submitted_at: new Date().toISOString(),
@@ -274,7 +299,110 @@ export async function submitCampaignVideoAction(formData: FormData) {
   revalidatePath('/dashboard');
   revalidatePath('/c/submissions');
   revalidatePath('/submissions');
-  return { success: true };
+  return { success: true, screenshotUrl: uploadedScreenshotUrl };
+}
+
+// ─── 1b. Upload Submission Proof Screenshot Action ────────────────────────────
+
+export async function uploadSubmissionProofAction(formData: FormData) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile?.creatorProfile) {
+    return { success: false, error: 'Unauthorized: Creator profile required' };
+  }
+
+  const { isSuspended, reason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${reason || 'Read-Only Mode'}). Upload is disabled.`,
+    };
+  }
+
+  const campaignId = (formData.get('campaignId') as string)?.trim();
+  const file = formData.get('screenshot') as File | null;
+
+  if (!campaignId) {
+    return { success: false, error: 'Campaign ID is required' };
+  }
+
+  if (!file || typeof file !== 'object' || file.size === 0) {
+    return { success: false, error: 'Please select an image file to upload.' };
+  }
+
+  // Validate MIME type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+  if (!allowedTypes.includes(file.type.toLowerCase())) {
+    return { success: false, error: 'File format must be JPG, PNG, or WebP.' };
+  }
+
+  // Max 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    return { success: false, error: 'Screenshot file size exceeds 10MB limit.' };
+  }
+
+  try {
+    const supabase = createAdminClient();
+    const ext = file.name.split('.').pop() || 'jpg';
+    const storagePath = `${campaignId}/${userProfile.profile.id}-${Date.now()}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    const { error: uploadError } = await supabase.storage
+      .from('submission-proofs')
+      .upload(storagePath, buffer, {
+        contentType: file.type || 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[uploadSubmissionProofAction] Storage error:', uploadError);
+      return { success: false, error: 'Failed to upload screenshot to storage. Please try again.' };
+    }
+
+    const { data: pubData } = supabase.storage
+      .from('submission-proofs')
+      .getPublicUrl(storagePath);
+
+    const publicUrl = pubData.publicUrl;
+
+    // Update submissions table
+    const creatorProfileId = userProfile.creatorProfile?.id;
+    const creatorIds = [userProfile.profile.id, creatorProfileId].filter(Boolean) as string[];
+    const creatorFilter = creatorIds.map((id) => `creator_id.eq.${id}`).join(',');
+
+    const { error: updateError } = await supabase
+      .from('submissions')
+      .update({
+        screenshot_url: publicUrl,
+      })
+      .eq('campaign_id', campaignId)
+      .or(creatorFilter);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    logAuditEvent({
+      profileId: userProfile.profile.id,
+      actorRole: 'creator',
+      action: AUDIT_ACTIONS.SUBMISSION_UPDATED,
+      actionCategory: 'submission',
+      targetId: campaignId,
+      details: 'Uploaded post stats screenshot proof',
+      payload: {
+        campaign_id: campaignId,
+        screenshot_url: publicUrl,
+      },
+    }).catch((err) => console.error('[uploadSubmissionProofAction] Audit log note:', err));
+
+    revalidatePath(`/c/campaigns/${campaignId}`);
+    revalidatePath(`/campaigns/${campaignId}`);
+    revalidatePath('/c/submissions');
+
+    return { success: true, screenshotUrl: publicUrl };
+  } catch (err: any) {
+    console.error('[uploadSubmissionProofAction] Error:', err);
+    return { success: false, error: err.message || 'Failed to upload screenshot.' };
+  }
 }
 
 // ─── 2. Zero-Trust Atomic Payout Action ────────────────────────────────────────

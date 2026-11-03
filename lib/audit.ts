@@ -227,6 +227,8 @@ export const AUDIT_ACTIONS = {
 
   // Submission
   SUBMISSION_CREATED:        'submission.created',
+  SUBMISSION_UPDATED:        'submission.updated',
+  SUBMISSION_PROOF_UPLOADED: 'submission.proof.uploaded',
   SUBMISSION_FORFEITED:      'submission.forfeited',
   SUBMISSION_DELETED:        'submission.deleted',
   SUBMISSION_VERIFIED_PASS:  'submission.verified.pass',

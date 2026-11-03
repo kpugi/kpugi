@@ -95,22 +95,25 @@ export function Footer2({
     },
   ];
 
+  const isPrelaunch = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === 'true';
+  const prelaunchTarget = isPrelaunch ? '/#waitlist-form' : null;
+
   // Industry Standard Link Groups: Explore, Resources & Tools, Company, Legal
   const defaultLinkGroups: FooterLinkGroup[] = linkGroups || [
     {
       title: 'Explore',
       links: [
-        { label: 'For Brands', href: '/brands' },
-        { label: 'For Creators', href: '/creators' },
-        { label: 'Browse', href: '/browse' },
-        { label: 'How It Works', href: '/how-it-works' },
+        { label: 'For Brands', href: prelaunchTarget || '/brands' },
+        { label: 'For Creators', href: prelaunchTarget || '/creators' },
+        { label: 'Browse', href: prelaunchTarget || '/browse' },
+        { label: 'How It Works', href: prelaunchTarget || '/how-it-works' },
       ],
     },
     {
       title: 'Resources & Tools',
       links: [
-        { label: 'CPM Calculator', href: '/calculator' },
-        { label: 'ROI Estimator', href: '/roiestimator' },
+        { label: 'CPM Calculator', href: prelaunchTarget || '/calculator' },
+        { label: 'ROI Estimator', href: prelaunchTarget || '/roiestimator' },
         { label: 'Community Forum', href: FRESHDESK_LINKS.communityForums, isExternal: true },
         { label: 'Help & Support', href: 'https://hub.kpugi.com', isExternal: true },
         { label: 'System Status', href: STATUS_PAGE_URL, isExternal: true },
@@ -119,9 +122,9 @@ export function Footer2({
     {
       title: 'Company',
       links: [
-        { label: 'About Us', href: '/about' },
-        { label: 'Contact Us', href: '/contact' },
-        { label: 'Advertise', href: '/advertise' },
+        { label: 'About Us', href: prelaunchTarget || '/about' },
+        { label: 'Contact Us', href: prelaunchTarget || '/contact' },
+        { label: 'Advertise', href: prelaunchTarget || '/advertise' },
         { label: 'Blog', href: 'https://blog.kpugi.com'}
       ],
     },

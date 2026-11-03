@@ -37,9 +37,17 @@ import {
   Share2,
   TrendingUp,
   Activity,
+  Image as ImageIcon,
+  UploadCloud,
+  Maximize2,
 } from 'lucide-react';
 import { CampaignDetailsForCreator } from '@/lib/supabase/dashboard';
-import { submitCampaignVideoAction, unjoinCampaignAction, deleteSubmissionLinkAction } from '@/app/actions/creator';
+import {
+  submitCampaignVideoAction,
+  unjoinCampaignAction,
+  deleteSubmissionLinkAction,
+  uploadSubmissionProofAction,
+} from '@/app/actions/creator';
 import { validatePostUrlOwnership, parseSocialPostUrl } from '@/lib/utils/social-url';
 import { PlatformBadge } from '@/components/ui/SocialIcons';
 import { formatCompactCurrency, formatCompactNumber } from '@/lib/utils/format';
@@ -112,6 +120,40 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
   const [auditPage, setAuditPage] = useState(1);
   const auditPageSize = 8;
   const [msg, setMsg] = useState('');
+
+  // Post Stats Screenshot Proof Upload State
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [proofUploadMsg, setProofUploadMsg] = useState('');
+  const [isScreenshotPreviewOpen, setIsScreenshotPreviewOpen] = useState(false);
+  const [selectedProofFile, setSelectedProofFile] = useState<File | null>(null);
+
+  async function handleDirectScreenshotUpload(file: File) {
+    if (!file) return;
+    setIsUploadingProof(true);
+    setProofUploadMsg('');
+
+    try {
+      const fd = new FormData();
+      fd.append('campaignId', campaignId);
+      fd.append('screenshot', file);
+
+      const res = await uploadSubmissionProofAction(fd);
+      if (res.success && res.screenshotUrl) {
+        setSubmissionState((prev: any) =>
+          prev ? { ...prev, screenshot_url: res.screenshotUrl } : null
+        );
+        setSelectedProofFile(null);
+        setProofUploadMsg('Screenshot proof uploaded successfully!');
+        router.refresh();
+      } else {
+        setProofUploadMsg(`Error: ${res.error || 'Failed to upload screenshot'}`);
+      }
+    } catch (err: any) {
+      setProofUploadMsg(`Error: ${err.message || 'Upload failed'}`);
+    } finally {
+      setIsUploadingProof(false);
+    }
+  }
 
   async function handleConfirmDeleteLink() {
     setIsDeletingLink(true);
@@ -259,6 +301,7 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
       setSubmissionState((prev: any) => prev ? {
         ...prev,
         post_url: videoUrl,
+        screenshot_url: res.screenshotUrl || prev.screenshot_url,
         social_account_id: matchingAccount?.id || prev.social_account_id,
         status: 'pending',
         submitted_at: new Date().toISOString(),
@@ -885,6 +928,123 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                           </span>
                         </div>
                       </div>
+
+                      {/* ─────────────────────────────────────────────
+                         CREATOR SCREENSHOT PROOF (POST STATS)
+                      ───────────────────────────────────────────── */}
+                      <div className="p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-kpugi-border dark:border-white/10 space-y-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4 text-kpugi-blue dark:text-blue-400" />
+                              <h4 className="font-display font-bold text-sm text-kpugi-ink dark:text-white">
+                                Creator Screenshot Proof
+                              </h4>
+                            </div>
+                            <p className="text-xs text-kpugi-slate dark:text-slate-400 mt-0.5">
+                              Upload an analytics screenshot from TikTok, Instagram, or YouTube Studio verifying your post statistics.
+                            </p>
+                          </div>
+
+                          {submissionState.screenshot_url && (
+                            <button
+                              type="button"
+                              onClick={() => setIsScreenshotPreviewOpen(true)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-kpugi-border dark:border-white/15 bg-slate-50 dark:bg-white/5 text-xs font-bold text-kpugi-ink dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>Expand Image</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Existing Screenshot Preview */}
+                        {submissionState.screenshot_url ? (
+                          <div className="space-y-3">
+                            <div
+                              onClick={() => setIsScreenshotPreviewOpen(true)}
+                              className="relative rounded-2xl overflow-hidden bg-black/5 dark:bg-black/40 border border-kpugi-border dark:border-white/10 flex items-center justify-center max-h-[320px] cursor-pointer hover:opacity-95 transition-opacity group"
+                            >
+                              <img
+                                src={submissionState.screenshot_url}
+                                alt="Creator Post Stats Screenshot"
+                                className="max-h-[300px] w-auto object-contain mx-auto rounded-xl p-1"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
+                                <Maximize2 className="w-4 h-4" />
+                                <span>Click to view full resolution</span>
+                              </div>
+                            </div>
+
+                            {/* Replace Screenshot Form */}
+                            <div className="pt-2 border-t border-kpugi-border/60 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                              <label className="cursor-pointer text-xs font-bold text-kpugi-blue dark:text-blue-400 hover:underline inline-flex items-center gap-1.5">
+                                <UploadCloud className="w-4 h-4" />
+                                <span>{isUploadingProof ? 'Uploading...' : 'Replace screenshot with updated stats'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp"
+                                  disabled={isUploadingProof}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleDirectScreenshotUpload(file);
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+
+                              {proofUploadMsg && (
+                                <span
+                                  className={`text-xs font-bold ${
+                                    proofUploadMsg.startsWith('Error')
+                                      ? 'text-rose-600 dark:text-rose-400'
+                                      : 'text-emerald-600 dark:text-emerald-400'
+                                  }`}
+                                >
+                                  {proofUploadMsg}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          /* Empty Upload Dropzone */
+                          <div className="space-y-3">
+                            <label className="border-2 border-dashed border-kpugi-border dark:border-white/10 hover:border-kpugi-blue dark:hover:border-blue-400 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-white/[0.02]">
+                              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-kpugi-blue dark:text-blue-400 flex items-center justify-center mb-2">
+                                <UploadCloud className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-bold text-kpugi-ink dark:text-white">
+                                {isUploadingProof ? 'Uploading screenshot...' : 'Click or drag screenshot here to upload proof'}
+                              </span>
+                              <span className="text-[11px] text-kpugi-slate dark:text-slate-400 mt-0.5">
+                                PNG, JPG, or WebP up to 10MB
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                disabled={isUploadingProof}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleDirectScreenshotUpload(file);
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+
+                            {proofUploadMsg && (
+                              <div
+                                className={`p-2.5 rounded-xl text-xs font-bold ${
+                                  proofUploadMsg.startsWith('Error')
+                                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40'
+                                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40'
+                                }`}
+                              >
+                                {proofUploadMsg}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
@@ -1216,6 +1376,21 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-kpugi-slate dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                  Post Stats Screenshot (Optional Proof)
+                </label>
+                <input
+                  type="file"
+                  name="screenshot"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs text-slate-700 dark:text-slate-300 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-kpugi-blue file:text-white hover:file:bg-blue-600 cursor-pointer"
+                />
+                <span className="text-[10px] text-kpugi-slate dark:text-slate-400 mt-1 block">
+                  Attach an analytics screenshot from TikTok, Instagram, or YouTube Studio to fast-track manual review.
+                </span>
+              </div>
+
               {msg && (
                 <div className={`p-3 rounded-xl text-xs font-bold ${msg.startsWith('Error') ? 'bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-300 border border-red-200 dark:border-rose-500/30' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'}`}>
                   {msg}
@@ -1436,6 +1611,45 @@ export default function CreatorCampaignWorkspaceView({ data, campaignId }: Creat
                   <span>Go to Wallet</span>
                 </Link>
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ─────────────────────────────────────────────────────
+         FULL-RESOLUTION SCREENSHOT PREVIEW MODAL
+      ───────────────────────────────────────────────────── */}
+      {isScreenshotPreviewOpen && submissionState?.screenshot_url && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setIsScreenshotPreviewOpen(false)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-white dark:bg-[#0c0f1d] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-kpugi-blue dark:text-blue-400" />
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Post Stats Screenshot Proof
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsScreenshotPreviewOpen(false)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-2 overflow-auto flex items-center justify-center bg-slate-950/20 max-h-[calc(90vh-70px)]">
+              <img
+                src={submissionState.screenshot_url}
+                alt="Full Resolution Post Stats"
+                className="max-h-[80vh] w-auto object-contain rounded-lg"
+              />
             </div>
           </div>
         </div>,

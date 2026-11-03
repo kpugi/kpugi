@@ -20,6 +20,8 @@ import { Menu, ArrowRight, LayoutDashboard } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const isPrelaunch = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === 'true';
+  const prelaunchTarget = isPrelaunch ? '/#waitlist-form' : null;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-2xl backdrop-saturate-200 bg-white/80 dark:bg-[#050811]/85 border-b border-slate-200/80 dark:border-white/[0.12] shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_12px_45px_rgba(0,0,0,0.6)] transition-all duration-300">
@@ -55,7 +57,7 @@ export default function Navbar() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href="/brands"
+                    href={prelaunchTarget || "/brands"}
                     className={cn(
                       'px-3.5 py-2 text-sm font-semibold transition-colors duration-200 rounded-xl',
                       pathname === '/brands'
@@ -72,7 +74,7 @@ export default function Navbar() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href="/creators"
+                    href={prelaunchTarget || "/creators"}
                     className={cn(
                       'px-3.5 py-2 text-sm font-semibold transition-colors duration-200 rounded-xl',
                       pathname === '/creators' || pathname === '/creator'
@@ -85,11 +87,11 @@ export default function Navbar() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-              {/* Browse Drops with LIVE Badge */}
+              {/* Browse Drops with LIVE / NOV 20 Badge */}
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href="/browse"
+                    href={prelaunchTarget || "/browse"}
                     className={cn(
                       'flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold transition-colors duration-200 rounded-xl',
                       pathname === '/browse'
@@ -100,9 +102,14 @@ export default function Navbar() {
                     Browse
                     <Badge
                       variant="secondary"
-                      className="h-4.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 text-[9px] font-extrabold border border-emerald-500/30 animate-pulse"
+                      className={cn(
+                        "h-4.5 rounded-full px-1.5 text-[9px] font-extrabold border animate-pulse",
+                        isPrelaunch
+                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                          : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                      )}
                     >
-                      LIVE
+                      {isPrelaunch ? 'NOV 20' : 'LIVE'}
                     </Badge>
                   </Link>
                 </NavigationMenuLink>
@@ -112,7 +119,7 @@ export default function Navbar() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href="/how-it-works"
+                    href={prelaunchTarget || "/how-it-works"}
                     className={cn(
                       'px-3.5 py-2 text-sm font-semibold transition-colors duration-200 rounded-xl',
                       pathname === '/how-it-works'
@@ -207,7 +214,7 @@ export default function Navbar() {
                 {/* Mobile Navigation Links */}
                 <div className="flex flex-col gap-1.5">
                   <Link
-                    href="/brands"
+                    href={prelaunchTarget || "/brands"}
                     className={cn(
                       'block py-2.5 px-3.5 rounded-xl text-base font-bold transition-all',
                       pathname === '/brands'
@@ -219,7 +226,7 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/creators"
+                    href={prelaunchTarget || "/creators"}
                     className={cn(
                       'block py-2.5 px-3.5 rounded-xl text-base font-bold transition-all',
                       pathname === '/creators' || pathname === '/creator'
@@ -231,7 +238,7 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/browse"
+                    href={prelaunchTarget || "/browse"}
                     className={cn(
                       'flex items-center justify-between py-2.5 px-3.5 rounded-xl text-base font-bold transition-all',
                       pathname === '/browse'
@@ -242,14 +249,19 @@ export default function Navbar() {
                     <span>Browse Campaigns</span>
                     <Badge
                       variant="secondary"
-                      className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold border border-emerald-500/30"
+                      className={cn(
+                        "font-extrabold border",
+                        isPrelaunch
+                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                          : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                      )}
                     >
-                      LIVE
+                      {isPrelaunch ? 'NOV 20' : 'LIVE'}
                     </Badge>
                   </Link>
 
                   <Link
-                    href="/how-it-works"
+                    href={prelaunchTarget || "/how-it-works"}
                     className={cn(
                       'block py-2.5 px-3.5 rounded-xl text-base font-bold transition-all',
                       pathname === '/how-it-works'
