@@ -10,9 +10,7 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  CreditCard,
   Percent,
-  Truck,
   Zap,
   Building2,
   TrendingUp,
@@ -20,17 +18,12 @@ import {
   Check,
   Users,
   KeyRound,
-  FileCheck,
+  Award,
+  Flame,
+  BarChart3,
+  CheckCheck,
 } from 'lucide-react';
 import { submitWaitlistAction, verifyVipPasscodeAction } from '@/app/actions/waitlist';
-
-const TICKER_EVENTS = [
-  { name: 'Chioma A.', text: 'joined 3 mins ago from Lagos' },
-  { name: 'FitLife NG', text: 'secured ₦3.5M brand escrow spot 5 mins ago' },
-  { name: 'Emeka Clips', text: 'claimed +₦15k early creator bonus from Abuja' },
-  { name: 'PayZen Africa', text: 'registered ad account 8 mins ago' },
-  { name: 'Tunde_Viral', text: 'verified TikTok handle from Ibadan' },
-];
 
 export default function PrelaunchCountdownView() {
   const router = useRouter();
@@ -74,23 +67,7 @@ export default function PrelaunchCountdownView() {
     return () => clearInterval(interval);
   }, []);
 
-  // ─── 2. Social Proof Ticker Rotation ──────────────────────────────────
-  const [tickerIndex, setTickerIndex] = useState(0);
-  const [tickerFade, setTickerFade] = useState(true);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTickerFade(false);
-      setTimeout(() => {
-        setTickerIndex((prev) => (prev + 1) % TICKER_EVENTS.length);
-        setTickerFade(true);
-      }, 300);
-    }, 4500);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // ─── 3. Dual-Role Form State ──────────────────────────────────────────
+  // ─── 2. Dual-Role Form State ──────────────────────────────────────────
   const [role, setRole] = useState<'creator' | 'brand'>('creator');
   const [fullName, setFullName] = useState('');
   const [workEmail, setWorkEmail] = useState('');
@@ -196,17 +173,24 @@ export default function PrelaunchCountdownView() {
         
         {/* ─── TOP ANNOUNCEMENT CHIP ─────────────────────────────────────── */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 shadow-sm mb-6 hover:border-[#2F49E8]/40 transition-colors">
-         
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2F49E8] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#2F49E8]" />
+          </span>
+          <span className="text-[12px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            Early Access Waitlist Open • Launching November 20th
+          </span>
+          <CheckCircle2 className="h-4 w-4 text-[#2F49E8] ml-0.5 shrink-0" />
         </div>
 
         {/* ─── HERO HEADLINE ────────────────────────────────────────────── */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 dark:text-white max-w-4xl leading-[1.12] mb-5">
-          The High-Trust Ad Marketplace for Nigerian Creators & Brands.
+          Where Creators Get Paid to Post &amp; Brands Buy Verified Reach.
         </h1>
 
         {/* ─── VALUE PROPOSITION SUBTITLE ───────────────────────────────── */}
         <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed mb-10">
-          Guaranteed Stanbic IBTC custodial payouts, automated view auditing for TikTok & Instagram Reels, and zero bank delays. Reserve your early access spot before public launch on{' '}
+          Automated view auditing for TikTok, Instagram Reels &amp; YouTube Shorts with guaranteed escrow protection and direct bank settlements. Reserve your spot for the early rollout on{' '}
           <span className="font-bold text-[#2F49E8] dark:text-blue-400">November 20th</span>.
         </p>
 
@@ -214,7 +198,13 @@ export default function PrelaunchCountdownView() {
         <div className="w-full max-w-2xl bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 md:p-7 shadow-xl shadow-slate-200/40 dark:shadow-black/50 mb-12 flex flex-col items-center">
           
           <div className="flex flex-col sm:flex-row items-center justify-between w-full pb-4 border-b border-slate-100 dark:border-white/10 mb-6 gap-2">
-            
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider">
+              <Timer className="h-4 w-4 text-[#2F49E8]" />
+              <span>Public Launch Countdown</span>
+            </div>
+            <span className="font-mono text-xs font-bold text-[#2F49E8] bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/60 px-2.5 py-1 rounded-md">
+              Nov 20, 2026 • 09:00 WAT
+            </span>
           </div>
 
           {/* 4-Box Countdown Grid */}
@@ -260,22 +250,37 @@ export default function PrelaunchCountdownView() {
             </div>
           </div>
 
-         
+          {/* Escrow Protection Strip */}
+          <div className="w-full mt-6 pt-4 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                100% Guaranteed Escrow: <strong className="text-slate-900 dark:text-white font-bold">Campaign funds reserved before creators post</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[#2F49E8] dark:text-blue-400 font-semibold">
+              <Lock className="h-3.5 w-3.5" />
+              <span>Automated Payout Protection</span>
+            </div>
+          </div>
         </div>
 
         {/* ─── DUAL-ROLE VIP WAITLIST FORM ──────────────────────────────── */}
         <div
           id="waitlist-form"
-          className="w-full max-w-xl text-left bg-white dark:bg-[#0c0f1d] border border-slate-200/90 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl relative mb-12 scroll-mt-24"
+          className="w-full max-w-xl text-left bg-white dark:bg-[#0c0f1d] border border-slate-200/90 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl relative mb-16 scroll-mt-24"
         >
-         
+          {/* Priority Badge */}
+          <div className="absolute -top-3.5 right-6 bg-[#2F49E8] text-white text-[11px] font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md">
+            VIP Early Access
+          </div>
 
           <div className="flex flex-col gap-1.5 mb-6">
             <h2 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white">
-              Reserve Your VIP Waitlist Spot
+              Reserve Your Priority Waitlist Spot
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Receive early invite credentials via SMS & email on Nov 19th. First 100 verified creators claim guaranteed bonuses.
+              Receive your early access invitation on Nov 19th. Early members unlock fee waivers and exclusive founder privileges.
             </p>
           </div>
 
@@ -334,7 +339,7 @@ export default function PrelaunchCountdownView() {
               {/* Work Email */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Official Email Address
+                  Email Address
                 </label>
                 <input
                   type="email"
@@ -407,7 +412,7 @@ export default function PrelaunchCountdownView() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Company Domain
+                        Company Domain / Website
                       </label>
                       <input
                         type="text"
@@ -430,7 +435,7 @@ export default function PrelaunchCountdownView() {
                         <option value="tier_b1">₦500,000 – ₦2,000,000</option>
                         <option value="tier_b2">₦2,000,000 – ₦5,000,000</option>
                         <option value="tier_b3">₦5,000,000 – ₦15,000,000</option>
-                        <option value="tier_b4">₦15,000,000+ (Enterprise Escrow)</option>
+                        <option value="tier_b4">₦15,000,000+ (High Volume Scale)</option>
                       </select>
                     </div>
                   </div>
@@ -444,26 +449,26 @@ export default function PrelaunchCountdownView() {
                       onChange={(e) => setCampaignGoals(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#151928] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#2F49E8] transition-all"
                     >
-                      <option value="brand_reach">Viral Consumer Reach & Conversions</option>
-                      <option value="app_installs">Fintech App Installs & KYC</option>
-                      <option value="event_ticketing">Event Ticket Sales & Hype</option>
+                      <option value="brand_reach">Viral Consumer Reach &amp; Conversions</option>
+                      <option value="app_installs">Fintech App Installs &amp; Signups</option>
+                      <option value="event_ticketing">Event Ticket Sales &amp; Hype</option>
                       <option value="ecom_sales">Direct E-commerce Product GMV</option>
                     </select>
                   </div>
                 </div>
               )}
 
-              {/* VIP Early Bird Incentive Callout */}
+              {/* VIP Early Bird Platform Perks Callout */}
               <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-[#2F49E8]/10 border border-blue-200/60 dark:border-[#2F49E8]/20 flex items-start gap-3 text-left">
                 <Sparkles className="h-5 w-5 text-[#2F49E8] dark:text-blue-400 shrink-0 mt-0.5" />
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    VIP Early Bird Incentive Applied
+                    Early Member Launch Advantage
                   </span>
                   <span className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
                     {role === 'creator'
-                      ? 'Guaranteed +₦15,000 Escrow Payout Bounty on your first audited video submission.'
-                      : 'Zero platform transaction fees on first ₦5M advertising spend + dedicated account strategist.'}
+                      ? '0% commission for 90 days (keep 100% of your earnings) + permanent Founding Creator profile badge.'
+                      : '0% platform clearing fee on ad spend for 90 days + dedicated creator onboarding strategist.'}
                   </span>
                 </div>
               </div>
@@ -478,8 +483,8 @@ export default function PrelaunchCountdownView() {
                   {isSubmitting
                     ? 'Securing Your Priority Spot...'
                     : role === 'creator'
-                    ? 'Join VIP Waitlist — Claim Creator Bounty'
-                    : 'Join VIP Waitlist — Claim 0% Fee Tier'}
+                    ? 'Join VIP Waitlist — Claim Creator Perks'
+                    : 'Join VIP Waitlist — Claim Brand Perks'}
                 </span>
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -487,7 +492,7 @@ export default function PrelaunchCountdownView() {
               {/* Trust statement */}
               <div className="flex items-center justify-center gap-1.5 pt-1 text-slate-500 dark:text-slate-400 text-xs">
                 <ShieldCheck className="h-3.5 w-3.5 text-[#2F49E8]" />
-                <span>Zero spam. Early access link sent Nov 19th. Held under Stanbic IBTC Trustees.</span>
+                <span>Zero spam. Early access credentials sent Nov 19th. Direct bank settlements.</span>
               </div>
             </form>
           ) : (
@@ -502,7 +507,7 @@ export default function PrelaunchCountdownView() {
               </span>
 
               <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm mb-6 leading-relaxed">
-                Your verification pass has been queued. We've locked your VIP allocation and early payout bonus for November 20th.
+                Your priority pass has been queued. We&apos;ve locked your VIP allocation and early access privileges for November 20th.
               </p>
 
               {/* VIP Passcode Pill */}
@@ -586,199 +591,178 @@ export default function PrelaunchCountdownView() {
           )}
         </div>
 
-        {/* ─── SOCIAL MOMENTUM TICKER & AVATARS ──────────────────────────── */}
-        <div className="w-full max-w-3xl flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-sm mb-16">
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-3 overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces"
-                alt="Creator avatar"
-                className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-[#0c0f1d] object-cover"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces"
-                alt="Creator avatar"
-                className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-[#0c0f1d] object-cover"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=faces"
-                alt="Creator avatar"
-                className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-[#0c0f1d] object-cover"
-              />
-              <div className="h-10 w-10 rounded-full bg-[#2F49E8] text-white flex items-center justify-center text-xs font-black ring-2 ring-white dark:ring-[#0c0f1d]">
-                +2.8k
-              </div>
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                2,840+ creators and 110+ Nigerian brands
-              </span>
-              <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
-                already secured VIP access allocations
-              </span>
-            </div>
-          </div>
-
-          {/* Rotating Live Ticker */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] text-xs text-slate-700 dark:text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-[#2F49E8] animate-pulse shrink-0" />
-            <span
-              className={`font-medium transition-opacity duration-300 ${
-                tickerFade ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              <strong className="text-slate-950 dark:text-white font-bold">
-                {TICKER_EVENTS[tickerIndex].name}
-              </strong>{' '}
-              {TICKER_EVENTS[tickerIndex].text}
-            </span>
-          </div>
-        </div>
-
-        {/* ─── VIP WAITLIST PERKS GRID ───────────────────────────────────── */}
-        <div className="w-full max-w-5xl text-left mb-16">
-          <div className="flex flex-col items-center text-center mb-8">
+        {/* ─── PLATFORM-WISE BENEFITS SECTION (CREATORS & BRANDS) ─────────── */}
+        <div className="w-full max-w-5xl text-left space-y-12 mb-16">
+          <div className="flex flex-col items-center text-center">
             <span className="text-xs font-black tracking-widest text-[#2F49E8] dark:text-blue-400 uppercase mb-1">
-              Launch Member Advantage
+              Launch Member Privileges
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white">
-              Exclusive VIP Waitlist Perks
+              Exclusive Platform Perks for Early Members
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mt-1">
-              Built specifically to solve payment delays, view inflation, and agency middleman fees in Nigeria.
+              Platform-level advantages designed to empower creators and help brands scale high-performing campaigns.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1 */}
-            <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-center text-[#2F49E8] mb-1">
-                <CreditCard className="h-5 w-5" />
+          {/* ── ROW 1: FOR CREATORS & CLIPPERS ───────────────────────────── */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-[#2F49E8] flex items-center justify-center">
+                <Flame className="w-4 h-4" />
               </div>
-              <span className="text-base font-bold text-slate-950 dark:text-white">
-                +₦15,000 Escrow Bonus
+              <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
+                For Creators &amp; Clippers
+              </h3>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 ml-1">
+                (Early Access Benefits)
               </span>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Awarded directly into your wallet upon approval of your first verified 5k-view TikTok or Reels clipping submission.
-              </p>
-              <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-[#2F49E8] dark:text-blue-400">
-                First 500 Qualified Creators
-              </div>
             </div>
 
-            {/* Card 2 */}
-            <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-1">
-                <Percent className="h-5 w-5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Creator Perk 1 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-center text-[#2F49E8] mb-1">
+                  <Percent className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  0% Commission (Keep 100%)
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  All platform clearing fees waived for your first 90 days. Keep 100% of your earnings on every verified view milestone.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-[#2F49E8] dark:text-blue-400">
+                  90-Day Fee Holiday
+                </div>
               </div>
-              <span className="text-base font-bold text-slate-950 dark:text-white">
-                0% Platform Clearing Fee
-              </span>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Advertisers and creators keep 100% of their campaign budget and gross payouts for the entire first 90 days.
-              </p>
-              <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-[#2F49E8] dark:text-blue-400">
-                90-Day Fee Holiday
-              </div>
-            </div>
 
-            {/* Card 3 */}
-            <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-1">
-                <Truck className="h-5 w-5" />
+              {/* Creator Perk 2 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-1">
+                  <Award className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  Founding Creator Badge
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Permanent &apos;Founding Creator&apos; badge displayed on your public media kit and prioritized ranking in creator discovery searches.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                  Permanent VIP Profile Flair
+                </div>
               </div>
-              <span className="text-base font-bold text-slate-950 dark:text-white">
-                GIG Creator Kit Delivery
-              </span>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Priority free logistics delivery across Nigeria for studio ring lights and Rode wireless clip mic kits to top 100 waitlisters.
-              </p>
-              <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-[#2F49E8] dark:text-blue-400">
-                Nationwide Fulfillment
-              </div>
-            </div>
 
-            {/* Card 4 */}
-            <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1">
-                <Zap className="h-5 w-5" />
+              {/* Creator Perk 3 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-1">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  Priority Campaign Slots
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Early 24-hour notification window on brand campaign drops. Claim limited high-CPM slots before general creator allocation.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-purple-600 dark:text-purple-400">
+                  First-Look Drop Access
+                </div>
               </div>
-              <span className="text-base font-bold text-slate-950 dark:text-white">
-                Instant Direct Settlements
-              </span>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Real-time bank credit alerts direct to all Nigerian banks. Zero Sunday maintenance lockups or delayed net-30 agency invoices.
-              </p>
-              <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-[#2F49E8] dark:text-blue-400">
-                Sub-2-Minute Bank Rails
+
+              {/* Creator Perk 4 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1">
+                  <CheckCheck className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  Fast-Track View Audits
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Priority telemetry queue for TikTok, Instagram Reels, and YouTube Shorts. Sub-30-minute verification on your submissions.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  Priority Scraper Queue
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ─── TRUST INFRASTRUCTURE & REGULATORY STRIP ───────────────────── */}
-        <div className="w-full max-w-5xl rounded-2xl bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-white/10">
-            <div className="flex flex-col text-left">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Nigeria Financial Trust Standard
+          {/* ── ROW 2: FOR BRANDS & ADVERTISERS ──────────────────────────── */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
+                For Brands &amp; Advertisers
+              </h3>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 ml-1">
+                (Early Access Benefits)
               </span>
-              <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                Institutional Grade Advertising Settlement Infrastructure
-              </span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/10 text-[#2F49E8] text-xs font-semibold">
-              <Building2 className="h-4 w-4" />
-              <span>Stanbic IBTC Trustees Limited</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-            <div className="flex items-start gap-2.5">
-              <ShieldCheck className="h-5 w-5 text-[#2F49E8] shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Tripartite Custody
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Brand Perk 1 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-center text-[#2F49E8] mb-1">
+                  <Percent className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  0% Clearing Fees
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
-                  Client funds segregated in trustee bank vaults.
-                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Zero platform transaction surcharges on your first ₦5,000,000 in campaign budget allocations. 100% of spend goes to creator reach.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-[#2F49E8] dark:text-blue-400">
+                  Zero Platform Surcharges
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-2.5">
-              <FileCheck className="h-5 w-5 text-[#2F49E8] shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  NDPR & BVN Compliant
+              {/* Brand Perk 2 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-1">
+                  <Users className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  Top 1% Creator Roster
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
-                  Automated Nigerian data privacy protocols.
-                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Exclusive first-look access to Nigeria&apos;s most consistent, verified clip creators with verified organic engagement track records.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                  Pre-Vetted Creator Matching
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-2.5">
-              <TrendingUp className="h-5 w-5 text-[#2F49E8] shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Automated View Audit
+              {/* Brand Perk 3 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-1">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  Dedicated Growth Strategist
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
-                  Anti-bot crawler verifies genuine engagement.
-                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  1-on-1 creative brief optimization and campaign setup assistance from our performance marketing team for your first 3 drops.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-purple-600 dark:text-purple-400">
+                  Personalized Onboarding
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start gap-2.5">
-              <Zap className="h-5 w-5 text-[#2F49E8] shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Direct Bank Clearing
+              {/* Brand Perk 4 */}
+              <div className="p-5 bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl flex flex-col gap-2 shadow-sm hover:-translate-y-1 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+                <span className="text-base font-bold text-slate-950 dark:text-white">
+                  Automated Anti-Bot Audits
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
-                  Instant direct clearing to all Nigerian banks.
-                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Real-time algorithmic checks filter out bot traffic and inflated metrics. Pay only for authentic Nigerian viewers who watch your content.
+                </p>
+                <div className="mt-auto pt-3 font-mono text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  Bot-Proof View Guarantee
+                </div>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
+import { createClerkClient } from '@clerk/nextjs/server';
 import { sendEmail, renderReusableEmailTemplate, resend } from '@/lib/resend/send-email';
 
 export interface WaitlistSubmissionInput {
@@ -53,7 +54,20 @@ export async function submitWaitlistAction(input: WaitlistSubmissionInput) {
       console.warn('[submitWaitlistAction] DB insert warning (table might need migration):', dbError.message);
     }
 
-    // 2. Add to Resend Audience if configured
+    // 2. Connect directly to Clerk Waitlist Entries
+    try {
+      const clerkSecret = process.env.CLERK_SECRET_KEY;
+      if (clerkSecret) {
+        const clerkClient = createClerkClient({ secretKey: clerkSecret });
+        await clerkClient.waitlistEntries.create({
+          emailAddress: cleanEmail,
+        });
+      }
+    } catch (clerkErr: any) {
+      console.warn('[submitWaitlistAction] Clerk waitlist registration note:', clerkErr?.message || clerkErr);
+    }
+
+    // 3. Add to Resend Audience if configured
     if (resend) {
       const audienceId = process.env.RESEND_AUDIENCE_ID || '';
       if (audienceId) {
@@ -71,7 +85,7 @@ export async function submitWaitlistAction(input: WaitlistSubmissionInput) {
       }
     }
 
-    // 3. Send VIP Confirmation Email with Launch Passcode & Link
+    // 4. Send VIP Confirmation Email with Launch Passcode & Link
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
     const accessUrl = `${appUrl}/browse?code=${VIP_PASSCODE}`;
 
@@ -80,7 +94,7 @@ export async function submitWaitlistAction(input: WaitlistSubmissionInput) {
         to: cleanEmail,
         subject: `🎟️ VIP ACCESS CONFIRMED: Your Kpugi Launch Pass #${Math.floor(2800 + Math.random() * 150)}`,
         headline: 'YOUR VIP LAUNCH PASS IS ACTIVE! ⚡',
-        subtitle: `Welcome aboard, ${cleanName}. You are prioritized in Tier-1 for the official November 20th launch.`,
+        subtitle: `Welcome aboard, ${cleanName}. You are prioritized for early platform access on November 19th.`,
         cardTitle: 'Early Access Credentials',
         details: [
           { label: 'Role Profile', value: role === 'brand' ? 'Brand / Advertiser' : 'Verified Creator / Clipper' },
@@ -90,13 +104,13 @@ export async function submitWaitlistAction(input: WaitlistSubmissionInput) {
             label: 'Launch Perk',
             value:
               role === 'brand'
-                ? '0% Platform Fees for 90 Days'
-                : '+₦15,000 Escrow Payout Bounty',
+                ? '0% Platform Fee (90 Days) + Dedicated Strategist'
+                : '0% Commission (Keep 100%) + Founding Creator Badge',
           },
-          { label: 'Custody Rail', value: 'Stanbic IBTC Tripartite Custody' },
+          { label: 'Settlement Rail', value: 'Automated Escrow & Direct Bank Clearings' },
         ],
         noticeText:
-          'Your credentials grant priority invite rights on Nov 19th before public mainnet opening. To preview the live environment immediately, use your exclusive unlock link below.',
+          'Your credentials grant early access on Nov 19th before the public opening on Nov 20th. You can also unlock an instant preview using the link below.',
         cta: {
           label: 'Unlock Early Preview →',
           url: accessUrl,
@@ -112,7 +126,7 @@ export async function submitWaitlistAction(input: WaitlistSubmissionInput) {
       console.warn('[submitWaitlistAction] Email dispatch note:', emailErr);
     }
 
-    // 4. Set VIP access cookie so the submitter can browse early if they choose
+    // 5. Set VIP access cookie so the submitter can browse early if they choose
     try {
       const cookieStore = await cookies();
       cookieStore.set('kpugi_vip_access', 'true', {
@@ -141,7 +155,7 @@ export async function submitWaitlistAction(input: WaitlistSubmissionInput) {
 
 export async function verifyVipPasscodeAction(code: string) {
   const cleanCode = code?.trim().toUpperCase();
-  const VALID_CODES = ['KPUGI-VIP-20NOV', 'KPUGI-LAUNCH-2026', 'STANBIC-ESCROW-VIP'];
+  const VALID_CODES = ['KPUGI-VIP-20NOV', 'KPUGI-LAUNCH-2026', 'KPUGI-FOUNDER', 'KPUGI-VIP'];
 
   if (VALID_CODES.includes(cleanCode)) {
     try {
@@ -160,3 +174,4 @@ export async function verifyVipPasscodeAction(code: string) {
 
   return { success: false, error: 'Invalid VIP access code. Please check your invitation email.' };
 }
+

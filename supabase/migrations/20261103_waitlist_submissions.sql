@@ -45,3 +45,4 @@ create policy "Allow service role full access to waitlist"
   for all
   using (true)
   with check (true);
+
