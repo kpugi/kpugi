@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Lock,
   Sparkles,
@@ -41,7 +41,13 @@ export function CampaignStep4Payment({
   const isFeatured = Boolean(formData.is_featured);
   const featuredFee = isFeatured ? 2500 : 0;
   const totalPayable = totalBudget + featuredFee;
-  const paymentMethod = formData.payment_method || 'wallet';
+  const paymentMethod = formData.payment_method === 'paystack' ? 'wallet' : (formData.payment_method || 'wallet');
+
+  useEffect(() => {
+    if (formData.payment_method === 'paystack') {
+      updateFormData({ payment_method: 'wallet' });
+    }
+  }, [formData.payment_method, updateFormData]);
 
   const isAlreadyPaid = Boolean(formData.paystack_reference || formData.is_paid);
 
@@ -480,50 +486,31 @@ export function CampaignStep4Payment({
             </div>
           </div>
 
-          {/* Option 3: Paystack Checkout */}
+          {/* Option 3: Paystack Checkout (Disabled) */}
           <div
-            onClick={() => updateFormData({ payment_method: 'paystack' })}
-            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all space-y-3 ${
-              paymentMethod === 'paystack'
-                ? 'bg-[#eeedfd] dark:bg-indigo-950/40 border-2 border-[#4338ca] dark:border-indigo-500 text-[#4338ca] dark:text-indigo-300 shadow-sm'
-                : 'bg-[#f8f7ff] dark:bg-white/[0.03] border border-[#e2e0fb] dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
-            }`}
+            aria-disabled="true"
+            className="p-4 rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-100/50 dark:bg-white/[0.02] space-y-3 opacity-40 cursor-not-allowed select-none pointer-events-none transition-all"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 p-1.5 border shadow-xs ${
-                    paymentMethod === 'paystack'
-                      ? 'bg-white dark:bg-white/10 border-indigo-200 dark:border-white/20'
-                      : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10'
-                  }`}
-                >
-                  <img src="/icons/paystack.png" alt="Paystack" className="w-full h-full object-contain" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 p-1.5 border shadow-xs bg-white dark:bg-white/5 border-slate-200/50 dark:border-white/5">
+                  <img src="/icons/paystack.png" alt="Paystack" className="w-full h-full object-contain opacity-50 grayscale" />
                 </div>
                 <div>
-                  <h4 className="font-display font-extrabold text-xs text-slate-900 dark:text-white">
+                  <h4 className="font-display font-extrabold text-xs text-slate-400 dark:text-slate-500">
                     Paystack
                   </h4>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                     Cards, Transfer & USSD
                   </p>
                 </div>
               </div>
-              <div
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                  paymentMethod === 'paystack'
-                    ? 'border-[#4338ca] bg-[#4338ca] text-white'
-                    : 'border-slate-300 dark:border-white/20 bg-white dark:bg-white/5'
-                }`}
-              >
-                {paymentMethod === 'paystack' && <CheckCircle2 className="w-3 h-3" />}
-              </div>
             </div>
 
-            <div className="pt-2 border-t border-[#dcd8fc]/60 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 font-medium">
               <span>Paystack Rail</span>
-              <span className="font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30">
-                Local
+              <span className="font-mono text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-200/50 dark:bg-white/5 px-1.5 py-0.5 rounded">
+                Unavailable
               </span>
             </div>
           </div>

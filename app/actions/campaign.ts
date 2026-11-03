@@ -448,6 +448,12 @@ export async function verifyPaystackTransactionAction(
 
     const profileId = userProfile.profile.id;
     const supabase = createAdminClient();
+
+    // HARD STOP: Paystack checkout is disabled platform-wide
+    return {
+      success: false,
+      error: 'Paystack payment rail is currently disabled. Please use Bachs.io or Kpugi Wallet.',
+    };
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
     let verifiedAmount = metadata?.amount || 0;
     let customerEmail = userProfile.profile.email;
@@ -1868,6 +1874,13 @@ export async function upgradeCampaignToFeaturedAction(params: {
 
     const profileId = userProfile.profile.id;
     const supabase = createAdminClient();
+
+    if (params.paymentMethod === 'paystack') {
+      return {
+        success: false,
+        error: 'Paystack payment rail is currently disabled. Please use Bachs.io or Kpugi Wallet.',
+      };
+    }
 
     // 1. Fetch campaign and verify ownership
     const { data: campaign, error: campErr } = await supabase

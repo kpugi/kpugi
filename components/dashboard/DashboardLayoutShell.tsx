@@ -20,6 +20,7 @@ import {
   IconChartBar,
   IconUsers,
   IconGift,
+  IconSparkles,
 } from '@tabler/icons-react';
 import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
@@ -126,6 +127,15 @@ export default function DashboardLayoutShell({
       href: '/b/creators',
       icon: <IconUsers className="w-5 h-5 shrink-0" />,
       active: pathname.startsWith('/b/creators'),
+      disabled: true,
+      badge: 'Soon',
+    },
+    {
+      id: 'tour-brand-studio-nav',
+      label: 'Brand Studio',
+      href: '/b/studio',
+      icon: <IconSparkles className="w-5 h-5 shrink-0" />,
+      active: pathname.startsWith('/b/studio'),
       disabled: true,
       badge: 'Soon',
     },

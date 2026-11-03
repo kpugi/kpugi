@@ -74,6 +74,9 @@ function getHeaderTitle(pathname: string, passedTitle?: string, role: string = '
     if (cleanPath.startsWith('/b/creators')) {
       return 'CREATOR DIRECTORY';
     }
+    if (cleanPath.startsWith('/b/studio')) {
+      return 'BRAND STUDIO';
+    }
     if (cleanPath.startsWith('/b/analytics')) {
       return 'ROI ANALYTICS';
     }
@@ -108,6 +111,7 @@ function formatMobileTitle(title: string): { mobile: string; desktop: string } {
     case 'ACCOUNT SETTINGS': return { mobile: 'SETTINGS', desktop: 'ACCOUNT SETTINGS' };
     case 'BRAND SETTINGS': return { mobile: 'SETTINGS', desktop: 'BRAND SETTINGS' };
     case 'CREATOR DIRECTORY': return { mobile: 'CREATORS', desktop: 'CREATOR DIRECTORY' };
+    case 'BRAND STUDIO': return { mobile: 'STUDIO', desktop: 'BRAND STUDIO' };
     case 'ROI ANALYTICS': return { mobile: 'ANALYTICS', desktop: 'ROI ANALYTICS' };
     default: return { mobile: title, desktop: title };
   }

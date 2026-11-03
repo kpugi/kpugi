@@ -98,85 +98,11 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 2. ROUTE VIA PAYSTACK CHECKOUT
+    // 2. ROUTE VIA PAYSTACK CHECKOUT (DISABLED PLATFORM-WIDE)
     // ─────────────────────────────────────────────────────────────
-    setIsSubmitting(true);
-    const initRes = await initializePaystackDepositAction(amtNum);
-    if (!initRes.success || !initRes.reference) {
-      setIsSubmitting(false);
-      setErrorMsg(initRes.error || 'Failed to initialize Paystack checkout.');
-      return;
-    }
-
-    const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
-    const paystackRef = initRes.reference;
-
-    const onPaymentSuccess = async (ref: string) => {
-      setIsSubmitting(true);
-      const verifyRes = await verifyPaystackDepositAction(ref);
-      setIsSubmitting(false);
-
-      if (verifyRes.success) {
-        onClose();
-        if (onSuccess) onSuccess(amtNum);
-      } else {
-        setErrorMsg(verifyRes.error || 'Paystack payment verification failed.');
-      }
-    };
-
-    const onPaymentCancel = async () => {
-      setIsSubmitting(false);
-      await logCancelledPaystackDepositAction(paystackRef, amtNum);
-      setErrorMsg("Oops!🤭...that payment didn't go through now, did it?");
-    };
-
-    await loadPaystackScript();
-
-    try {
-      if ((window as any).PaystackPop) {
-        const paystack = new (window as any).PaystackPop();
-        paystack.newTransaction({
-          key: paystackPublicKey,
-          email: advertiserEmail || 'advertiser@kpugi.com',
-          amount: amtNum * 100,
-          currency: 'NGN',
-          ref: paystackRef,
-          metadata: {
-            amount: amtNum,
-            deposit_amount: amtNum,
-          },
-          onSuccess: (transaction: any) => onPaymentSuccess(transaction.reference || paystackRef),
-          onCancel: onPaymentCancel,
-          onClose: onPaymentCancel,
-        });
-        return;
-      }
-    } catch (e: any) {
-      if (typeof (window as any).PaystackPop?.setup === 'function') {
-        const handler = (window as any).PaystackPop.setup({
-          key: paystackPublicKey,
-          email: advertiserEmail || 'advertiser@kpugi.com',
-          amount: amtNum * 100,
-          currency: 'NGN',
-          ref: paystackRef,
-          metadata: {
-            amount: amtNum,
-            deposit_amount: amtNum,
-          },
-          callback: (response: any) => onPaymentSuccess(response.reference || paystackRef),
-          onClose: onPaymentCancel,
-        });
-        handler.openIframe();
-        return;
-      }
-    }
-
-    if (initRes.authorization_url) {
-      window.location.href = initRes.authorization_url;
-    } else {
-      setIsSubmitting(false);
-      setErrorMsg(initRes.error || 'Failed to launch Paystack checkout.');
-    }
+    setIsSubmitting(false);
+    setErrorMsg('Paystack deposit option is currently disabled. Please use Bachs.io.');
+    return;
   };
 
   const modalContent = (
@@ -282,31 +208,24 @@ export function FundWalletModal({ isOpen, onClose, advertiserEmail, onSuccess }:
                 </span>
               </div>
 
-              {/* Option B: Paystack */}
+              {/* Option B: Paystack (Disabled) */}
               <div
-                onClick={() => setSelectedProcessor('paystack')}
-                className={`p-3 rounded-2xl border-2 cursor-pointer transition-all text-left space-y-1 ${
-                  selectedProcessor === 'paystack'
-                    ? 'border-[#4338ca] dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 shadow-xs'
-                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300'
-                }`}
+                aria-disabled="true"
+                className="p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] text-left space-y-1 opacity-40 cursor-not-allowed select-none pointer-events-none transition-all"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-white">
-                    <div className="w-5 h-5 rounded-md bg-white dark:bg-white/10 flex items-center justify-center shrink-0 p-0.5 border border-slate-200/80 dark:border-white/10 shadow-xs">
-                      <img src="/icons/paystack.png" alt="Paystack" className="w-full h-full object-contain" />
+                  <div className="flex items-center gap-2 font-bold text-xs text-slate-400 dark:text-slate-500">
+                    <div className="w-5 h-5 rounded-md bg-white dark:bg-white/5 flex items-center justify-center shrink-0 p-0.5 border border-slate-200/50 dark:border-white/5">
+                      <img src="/icons/paystack.png" alt="Paystack" className="w-full h-full object-contain opacity-50 grayscale" />
                     </div>
                     <span>Paystack</span>
                   </div>
-                  {selectedProcessor === 'paystack' && (
-                    <CheckCircle2 className="w-4 h-4 text-[#4338ca] dark:text-indigo-400" />
-                  )}
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                   Nigerian Cards, Transfer & USSD
                 </p>
-                <span className="inline-block text-[9px] font-bold text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 rounded">
-                  Local Rail
+                <span className="inline-block text-[9px] font-bold text-slate-400 dark:text-slate-500 bg-slate-200/50 dark:bg-white/5 px-1.5 py-0.5 rounded">
+                  Unavailable
                 </span>
               </div>
             </div>

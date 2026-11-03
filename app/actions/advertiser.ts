@@ -318,81 +318,11 @@ export async function updateCampaignStatusAction(formData: FormData) {
  * 1. Initialize Paystack Deposit Checkout
  */
 export async function initializePaystackDepositAction(amount: number) {
-  const userProfile = await getOrCreateUserProfile();
-  if (!userProfile || !userProfile.profile) {
-    return { success: false, error: "Hol' up ✋... You gotta sign in first to get access!" };
-  }
-
-  if (amount < 5000) {
-    return { success: false, error: "Hold on now 🛑... Minimum top-up is ₦5,000! Let's get them numbers up." };
-  }
-
-  const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
-  if (!paystackSecret) {
-    return { success: false, error: 'Paystack Secret Key is missing in environment variables.' };
-  }
-
-  const reference = `KPG-PAY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const callbackUrl = `${baseUrl}/b/wallet`;
-
-  // 1. Lock exact transaction amount on our backend before launching Paystack
-  const supabase = createAdminClient();
-  let { data: wallet } = await supabase
-    .from('wallets')
-    .select('id')
-    .eq('profile_id', userProfile.profile.id)
-    .eq('wallet_type', 'advertiser_funding')
-    .maybeSingle();
-
-  if (wallet) {
-    await supabase.from('wallet_transactions').insert({
-      wallet_id: wallet.id,
-      type: 'deposit',
-      amount: amount, // Locked to what the user inputted on Kpugi!
-      paystack_reference: reference,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    });
-  }
-
-  try {
-    const res = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${paystackSecret}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: userProfile.profile.email || 'brand@kpugi.com',
-        amount: Math.round(amount * 100), // convert NGN to kobo
-        reference: reference,
-        callback_url: callbackUrl,
-        metadata: {
-          profile_id: userProfile.profile.id,
-          wallet_type: 'advertiser_funding',
-          deposit_amount: amount,
-          amount: amount,
-        },
-      }),
-    });
-
-    const json = await res.json();
-    if (!res.ok || !json.status) {
-      console.error('[Paystack Initialize] Error:', json);
-      return { success: false, error: json.message || 'Paystack initialization failed.' };
-    }
-
-    return {
-      success: true,
-      authorization_url: json.data.authorization_url,
-      access_code: json.data.access_code,
-      reference: json.data.reference,
-    };
-  } catch (err: any) {
-    console.error('[Paystack Initialize] Exception:', err);
-    return { success: false, error: err?.message || 'Network error connecting to Paystack.' };
-  }
+  // HARD STOP: Paystack deposit rail is disabled platform-wide
+  return {
+    success: false,
+    error: 'Paystack deposit rail is currently disabled. Please use Bachs.io for all deposits.',
+  };
 }
 
 /**
@@ -427,6 +357,12 @@ export async function verifyPaystackDepositAction(reference: string, shouldReval
       status: 'completed',
     };
   }
+
+  // HARD STOP: Paystack deposit rail is disabled platform-wide
+  return {
+    success: false,
+    error: 'Paystack deposit rail is currently disabled. Please use Bachs.io for all deposits.',
+  };
 
   try {
     // 2. Verify with Paystack API

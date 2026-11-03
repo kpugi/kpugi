@@ -56,7 +56,7 @@ export function BrandCampaignWizardView({
     ad_format: initialData?.ad_format || 'Video Asset',
     channels: initialData?.channels || ['TikTok', 'Instagram'],
     is_featured: Boolean(initialData?.is_featured),
-    payment_method: (initialData?.payment_method || 'wallet') as 'wallet' | 'paystack' | 'bachs',
+    payment_method: (initialData?.payment_method === 'paystack' ? 'wallet' : (initialData?.payment_method || 'wallet')) as 'wallet' | 'paystack' | 'bachs',
     paystack_reference: initialRef,
     is_paid: Boolean(initialRef || initialData?.is_paid),
     requirements: {
@@ -306,6 +306,12 @@ export function BrandCampaignWizardView({
 
     const totalPayableAmount = Number(formData.total_budget || 100000) + (formData.is_featured ? 2500 : 0);
     const method = formData.payment_method || 'wallet';
+
+    if (method === 'paystack') {
+      setErrorMessage('Paystack checkout is currently disabled. Please select Bachs.io or Kpugi Wallet.');
+      setIsSubmitting(false);
+      return;
+    }
 
     if (method === 'wallet') {
       if (walletBalance < totalPayableAmount) {
