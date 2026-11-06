@@ -36,12 +36,35 @@ import { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS, STATUS_PAGE_URL } from './freshd
 export { FRESHDESK_PORTAL_URL, FRESHDESK_LINKS, STATUS_PAGE_URL };
 
 /**
- * Opens the Freshdesk / Freshchat AI widget programmatically.
+ * Opens the Live Support chat widget programmatically (Tawk.to, with Freshdesk fallback).
  */
 export function openFreshdeskWidget() {
   if (typeof window === 'undefined') return;
   try {
     const w = window as any;
+
+    // 1. Prioritize Tawk.to if available
+    if (w.Tawk_API && typeof w.Tawk_API.maximize === 'function') {
+      try {
+        if (typeof w.Tawk_API.showWidget === 'function') {
+          w.Tawk_API.showWidget();
+        }
+        w.Tawk_API.maximize();
+        return;
+      } catch (err) {
+        console.warn('[Support] Failed to open Tawk chat:', err);
+      }
+    }
+
+    if (typeof w.openKpugiLiveChat === 'function') {
+      w.openKpugiLiveChat();
+      return;
+    }
+
+    // If Tawk is script-injected but still loading, queue it and fire custom event
+    w.__openTawkOnLoad = true;
+    window.dispatchEvent(new CustomEvent('kpugi:open-chat'));
+
     const widget = w.fdWidget || w.fcWidget || w.fwWidget;
 
     if (widget) {
@@ -69,19 +92,30 @@ export function openFreshdeskWidget() {
       return;
     }
 
-    window.open(FRESHDESK_LINKS.home, '_blank', 'noopener,noreferrer');
+    // Only fallback to external URL if Tawk script is not present
+    if (!document.getElementById('tawk-script')) {
+      window.open(FRESHDESK_LINKS.home, '_blank', 'noopener,noreferrer');
+    }
   } catch (err) {
-    console.warn('[Freshdesk] Failed to open widget:', err);
-    window.open(FRESHDESK_LINKS.home, '_blank', 'noopener,noreferrer');
+    console.warn('[Support] Failed to open widget:', err);
   }
 }
 
+export const openLiveChat = openFreshdeskWidget;
+
 /**
- * Hides the floating launcher bubble of the Freshdesk in-app widget.
+ * Hides the floating launcher bubble of the support widget (Tawk / Freshdesk).
  */
 export function hideFreshdeskWidget() {
   if (typeof window === 'undefined') return;
   try {
+    const w = window as any;
+    if (w.Tawk_API && typeof w.Tawk_API.hideWidget === 'function') {
+      w.Tawk_API.hideWidget();
+    }
+    if (typeof w.hideKpugiLiveChat === 'function') {
+      w.hideKpugiLiveChat();
+    }
     if (window.fdWidget && typeof window.fdWidget.hide === 'function') {
       window.fdWidget.hide();
     } else if (typeof window.FreshworksWidget === 'function') {
@@ -91,6 +125,8 @@ export function hideFreshdeskWidget() {
     console.warn('[Freshdesk] Failed to hide widget:', err);
   }
 }
+
+export const hideLiveChat = hideFreshdeskWidget;
 
 /**
  * Closes the Freshdesk in-app widget window.

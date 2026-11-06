@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Megaphone,
@@ -22,6 +22,13 @@ import {
   Play,
   Activity,
   Zap,
+  MoreHorizontal,
+  Settings,
+  Pin,
+  TriangleAlert,
+  ArrowUp,
+  ArrowDown,
+  Check,
 } from "lucide-react";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";
@@ -53,6 +60,29 @@ export const ExecutiveKpiStrip: React.FC<ExecutiveKpiStripProps> = ({
   totalLiquidity,
   campaignPool,
 }) => {
+  const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (activeMenuIndex === null) return;
+    const handleClose = () => setActiveMenuIndex(null);
+    document.addEventListener("click", handleClose);
+    return () => document.removeEventListener("click", handleClose);
+  }, [activeMenuIndex]);
+
+  const handleShare = (index: number, path: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(`${window.location.origin}${path}`);
+      setCopiedIndex(index);
+      setTimeout(() => {
+        setCopiedIndex(null);
+        setActiveMenuIndex(null);
+      }, 1500);
+    }
+  };
+
   const formatCompact = (val: number) => {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(1)}k`;
@@ -67,135 +97,250 @@ export const ExecutiveKpiStrip: React.FC<ExecutiveKpiStripProps> = ({
     }).format(val);
   };
 
+  const stats = [
+    {
+      title: "Active Campaigns",
+      value: liveCampaigns,
+      subValue: `/ ${totalCampaigns} total`,
+      badge: (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-xs">
+          {liveCampaigns > 0 ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <ArrowUp className="w-3 h-3" />
+              {liveCampaigns} Live
+            </>
+          ) : (
+            <>0 Live</>
+          )}
+        </span>
+      ),
+      footerSubtitle: "CPM Escrow Backed",
+      actionText: "Manage",
+      href: "/admin/campaigns",
+      bg: "bg-zinc-950",
+      svg: (
+        <svg
+          className="absolute right-0 top-0 h-full w-2/3 pointer-events-none"
+          viewBox="0 0 300 200"
+          fill="none"
+          style={{ zIndex: 0 }}
+        >
+          <circle cx="220" cy="100" r="90" fill="#fff" fillOpacity="0.08" />
+          <circle cx="260" cy="60" r="60" fill="#fff" fillOpacity="0.10" />
+          <circle cx="200" cy="160" r="50" fill="#fff" fillOpacity="0.07" />
+          <circle cx="270" cy="150" r="30" fill="#fff" fillOpacity="0.12" />
+        </svg>
+      ),
+    },
+    {
+      title: "Verification Queue",
+      value: pendingSubmissions,
+      subValue: `(${totalSubmissions} submitted)`,
+      badge: (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-xs">
+          {pendingSubmissions > 0 ? (
+            <>
+              <TriangleAlert className="w-3 h-3 text-amber-300" />
+              {pendingSubmissions} In Review
+            </>
+          ) : (
+            <>
+              <Check className="w-3 h-3 text-emerald-300" />
+              Clear
+            </>
+          )}
+        </span>
+      ),
+      footerSubtitle: `${automatedPassRate}% auto-pass rate`,
+      actionText: "Audit",
+      href: "/admin/submissions",
+      bg: "bg-fuchsia-600",
+      svg: (
+        <svg
+          className="absolute right-0 top-0 w-48 h-48 pointer-events-none"
+          viewBox="0 0 200 200"
+          fill="none"
+          style={{ zIndex: 0 }}
+        >
+          <defs>
+            <filter id="kpi-blur2" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="10" />
+            </filter>
+          </defs>
+          <ellipse cx="170" cy="60" rx="40" ry="18" fill="#fff" fillOpacity="0.13" filter="url(#kpi-blur2)" />
+          <rect x="120" y="20" width="60" height="20" rx="8" fill="#fff" fillOpacity="0.10" />
+          <polygon points="150,0 200,0 200,50" fill="#fff" fillOpacity="0.07" />
+          <circle cx="180" cy="100" r="14" fill="#fff" fillOpacity="0.16" />
+        </svg>
+      ),
+    },
+    {
+      title: "Audience Reach",
+      value: formatCompact(totalAudienceReach),
+      subValue: "followers",
+      badge: (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-xs">
+          <Users className="w-3 h-3" />
+          {totalSocialAccounts} Accounts
+        </span>
+      ),
+      footerSubtitle: "TikTok • IG • YT • X",
+      actionText: "Registry",
+      href: "/admin/accounts",
+      bg: "bg-blue-600",
+      svg: (
+        <svg
+          className="absolute right-0 top-0 w-48 h-48 pointer-events-none"
+          viewBox="0 0 200 200"
+          fill="none"
+          style={{ zIndex: 0 }}
+        >
+          <defs>
+            <filter id="kpi-blur3" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="12" />
+            </filter>
+          </defs>
+          <rect x="120" y="0" width="70" height="70" rx="35" fill="#fff" fillOpacity="0.09" filter="url(#kpi-blur3)" />
+          <ellipse cx="170" cy="80" rx="28" ry="12" fill="#fff" fillOpacity="0.12" />
+          <polygon points="200,0 200,60 140,0" fill="#fff" fillOpacity="0.07" />
+          <circle cx="150" cy="30" r="10" fill="#fff" fillOpacity="0.15" />
+        </svg>
+      ),
+    },
+    {
+      title: "Custodial Liquidity",
+      value: formatNaira(totalLiquidity),
+      subValue: "",
+      badge: (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-xs">
+          <ShieldCheck className="w-3 h-3" />
+          Double-Entry
+        </span>
+      ),
+      footerSubtitle: `Pool: ${formatNaira(campaignPool)}`,
+      actionText: "Treasury",
+      href: "/admin/finances",
+      bg: "bg-teal-600",
+      svg: (
+        <svg
+          className="absolute right-0 top-0 w-48 h-48 pointer-events-none"
+          viewBox="0 0 200 200"
+          fill="none"
+          style={{ zIndex: 0 }}
+        >
+          <defs>
+            <filter id="kpi-blur4" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="16" />
+            </filter>
+          </defs>
+          <polygon points="200,0 200,100 100,0" fill="#fff" fillOpacity="0.09" />
+          <ellipse cx="170" cy="40" rx="30" ry="18" fill="#fff" fillOpacity="0.13" filter="url(#kpi-blur4)" />
+          <rect x="140" y="60" width="40" height="18" rx="8" fill="#fff" fillOpacity="0.10" />
+          <circle cx="150" cy="30" r="14" fill="#fff" fillOpacity="0.18" />
+          <line x1="120" y1="0" x2="200" y2="80" stroke="#fff" strokeOpacity="0.08" strokeWidth="6" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 font-sans">
-      {/* Metric 1: Live Campaigns */}
-      <Link
-        href="/admin/campaigns"
-        className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-500/30 dark:border-gray-800 dark:bg-gray-900/60"
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400">
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <Badge color={liveCampaigns > 0 ? "success" : "light"}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
-            {liveCampaigns} Live
-          </Badge>
-        </div>
-        <div className="mt-4">
-          <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Active Campaigns
-          </span>
-          <h3 className="mt-1 text-2xl font-bold font-display text-gray-900 dark:text-white">
-            {liveCampaigns}{" "}
-            <span className="text-sm font-sans font-normal text-gray-400">
-              / {totalCampaigns} total
-            </span>
-          </h3>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-800/80 pt-2.5">
-          <span>CPM Escrow Backed</span>
-          <span className="font-semibold text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-            Manage <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
-      </Link>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 font-sans">
+      {stats.map((stat, index) => {
+        const isMenuOpen = activeMenuIndex === index;
+        return (
+          <div
+            key={index}
+            className={`relative overflow-hidden rounded-2xl ${stat.bg} text-white shadow-md p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl group`}
+          >
+            {stat.svg}
 
-      {/* Metric 2: Submissions Queue */}
-      <Link
-        href="/admin/submissions"
-        className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-amber-500/30 dark:border-gray-800 dark:bg-gray-900/60"
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-colors group-hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400">
-            <Layers className="h-5 w-5" />
-          </div>
-          <Badge color={pendingSubmissions > 0 ? "warning" : "success"}>
-            {pendingSubmissions > 0 ? `${pendingSubmissions} In Review` : "Clear"}
-          </Badge>
-        </div>
-        <div className="mt-4">
-          <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Verification Queue
-          </span>
-          <h3 className="mt-1 text-2xl font-bold font-display text-gray-900 dark:text-white">
-            {pendingSubmissions}{" "}
-            <span className="text-sm font-sans font-normal text-gray-400">
-              ({totalSubmissions} submitted)
-            </span>
-          </h3>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-800/80 pt-2.5">
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-            {automatedPassRate}% auto-pass rate
-          </span>
-          <span className="font-semibold text-amber-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-            Audit <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
-      </Link>
+            {/* Header: Title and Options Toolbar */}
+            <div className="relative z-10 flex items-center justify-between pb-3">
+              <span className="text-white/90 text-sm font-medium tracking-tight">
+                {stat.title}
+              </span>
 
-      {/* Metric 3: Connected Social Reach */}
-      <Link
-        href="/admin/accounts"
-        className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-purple-500/30 dark:border-gray-800 dark:bg-gray-900/60"
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition-colors group-hover:bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400">
-            <Share2 className="h-5 w-5" />
-          </div>
-          <Badge color="primary">
-            {totalSocialAccounts} Accounts
-          </Badge>
-        </div>
-        <div className="mt-4">
-          <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Audience Reach
-          </span>
-          <h3 className="mt-1 text-2xl font-bold font-display text-gray-900 dark:text-white">
-            {formatCompact(totalAudienceReach)}{" "}
-            <span className="text-sm font-sans font-normal text-gray-400">
-              followers
-            </span>
-          </h3>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-800/80 pt-2.5">
-          <span>TikTok • IG • YT • X</span>
-          <span className="font-semibold text-purple-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-            Registry <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
-      </Link>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveMenuIndex(isMenuOpen ? null : index);
+                  }}
+                  className="p-1 -mr-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none"
+                  aria-label={`Options for ${stat.title}`}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
 
-      {/* Metric 4: Platform Custodial Treasury */}
-      <Link
-        href="/admin/finances"
-        className="group relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-500/30 dark:border-gray-800 dark:bg-gray-900/60"
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400">
-            <ShieldCheck className="h-5 w-5" />
+                {isMenuOpen && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full mt-1.5 w-48 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-1.5 shadow-xl text-gray-700 dark:text-gray-200 text-xs font-medium z-30 animate-in fade-in zoom-in-95 duration-100"
+                  >
+                    <Link
+                      href={stat.href}
+                      onClick={() => setActiveMenuIndex(null)}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Manage {stat.title}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={(e) => handleShare(index, stat.href, e)}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Share2 className="w-3.5 h-3.5 text-gray-500" />
+                        <span>{copiedIndex === index ? "Link Copied!" : "Share Link"}</span>
+                      </span>
+                      {copiedIndex === index && <Check className="w-3 h-3 text-emerald-500" />}
+                    </button>
+                    <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+                    <Link
+                      href="/admin/settings"
+                      onClick={() => setActiveMenuIndex(null)}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <Pin className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Platform Settings</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Content: Value, Subtitle and Badge */}
+            <div className="relative z-10 space-y-2 mt-1">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-2xl font-bold tracking-tight text-white font-display">
+                  {stat.value}
+                </span>
+                {stat.subValue && (
+                  <span className="text-xs font-normal text-white/75 font-sans">
+                    {stat.subValue}
+                  </span>
+                )}
+                <div className="ml-auto">{stat.badge}</div>
+              </div>
+            </div>
+
+            {/* Footer: Metadata & Action Link */}
+            <div className="relative z-10 text-xs text-white/80 mt-4 border-t border-white/20 pt-2.5 flex items-center justify-between">
+              <span className="truncate max-w-[65%]">{stat.footerSubtitle}</span>
+              <Link
+                href={stat.href}
+                className="font-semibold text-white hover:text-white/90 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform shrink-0"
+              >
+                <span>{stat.actionText}</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
-          <Badge color="success">
-            Double-Entry
-          </Badge>
-        </div>
-        <div className="mt-4">
-          <span className="text-xs font-bold font-display uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Custodial Liquidity
-          </span>
-          <h3 className="mt-1 text-2xl font-bold font-display text-gray-900 dark:text-white">
-            {formatNaira(totalLiquidity)}
-          </h3>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-800/80 pt-2.5">
-          <span>Pool: {formatNaira(campaignPool)}</span>
-          <span className="font-semibold text-emerald-600 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-            Treasury <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
-      </Link>
+        );
+      })}
     </div>
   );
 };
