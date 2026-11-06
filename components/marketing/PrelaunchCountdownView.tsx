@@ -170,8 +170,25 @@ export default function PrelaunchCountdownView() {
 
       {/* Main Container */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 flex flex-col items-center text-center">
-        
-           <br />
+
+        {/* ─── PRODUCT HUNT FEATURED BADGE ──────────────────────────────── */}
+        <div className="mb-6 flex items-center justify-center">
+          <a
+            href="https://www.producthunt.com/products/kpugi?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-kpugi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-transform duration-200 hover:scale-105 inline-block"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1305865&theme=light&t=1793956646894"
+              alt="Kpugi - Performance-based advertising for brands and creators. | Product Hunt"
+              width={250}
+              height={54}
+              className="h-[54px] w-[250px]"
+            />
+          </a>
+        </div>
 
         {/* ─── HERO HEADLINE ────────────────────────────────────────────── */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 dark:text-white max-w-4xl leading-[1.12] mb-5">
@@ -186,8 +203,8 @@ export default function PrelaunchCountdownView() {
 
         {/* ─── INTERACTIVE COUNTDOWN UNIT ───────────────────────────────── */}
         <div className="w-full max-w-2xl bg-white dark:bg-[#0c0f1d] border border-slate-200/80 dark:border-white/10 rounded-2xl p-5 md:p-7 shadow-xl shadow-slate-200/40 dark:shadow-black/50 mb-12 flex flex-col items-center">
-          
-         
+
+
 
           {/* 4-Box Countdown Grid */}
           <div className="grid grid-cols-4 gap-2 sm:gap-4 w-full">
@@ -234,8 +251,8 @@ export default function PrelaunchCountdownView() {
 
           {/* Escrow Protection Strip */}
           <div className="w-full mt-6 pt-4 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
-           
-            
+
+
           </div>
         </div>
 
@@ -263,22 +280,20 @@ export default function PrelaunchCountdownView() {
             <button
               type="button"
               onClick={() => setRole('creator')}
-              className={`py-2.5 text-center text-xs sm:text-sm font-bold rounded-lg transition-all ${
-                role === 'creator'
+              className={`py-2.5 text-center text-xs sm:text-sm font-bold rounded-lg transition-all ${role === 'creator'
                   ? 'bg-white dark:bg-[#151928] text-[#2F49E8] dark:text-white shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               Creator / Influencer
             </button>
             <button
               type="button"
               onClick={() => setRole('brand')}
-              className={`py-2.5 text-center text-xs sm:text-sm font-bold rounded-lg transition-all ${
-                role === 'brand'
+              className={`py-2.5 text-center text-xs sm:text-sm font-bold rounded-lg transition-all ${role === 'brand'
                   ? 'bg-white dark:bg-[#151928] text-[#2F49E8] dark:text-white shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+                }`}
             >
               Brand / Advertiser
             </button>
@@ -294,7 +309,7 @@ export default function PrelaunchCountdownView() {
           {/* Form */}
           {!isSuccess ? (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              
+
               {/* Full Name */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
@@ -432,7 +447,7 @@ export default function PrelaunchCountdownView() {
                 </div>
               )}
 
-              
+
 
               {/* Submit CTA */}
               <button
@@ -444,14 +459,14 @@ export default function PrelaunchCountdownView() {
                   {isSubmitting
                     ? 'Securing Your Priority Spot...'
                     : role === 'creator'
-                    ? 'Join'
-                    : 'Join'}
+                      ? 'Join'
+                      : 'Join'}
                 </span>
                 <ArrowRight className="h-4 w-4" />
               </button>
 
               {/* Trust statement */}
-             
+
             </form>
           ) : (
             /* ─── DYNAMIC SUCCESS CARD ──────────────────────────────────── */
@@ -552,7 +567,8 @@ export default function PrelaunchCountdownView() {
         {/* ─── PLATFORM-WISE BENEFITS SECTION (CREATORS & BRANDS) ─────────── */}
         <div className="w-full max-w-5xl text-left space-y-12 mb-16">
           <div className="flex flex-col items-center text-center">
-           
+
+
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white">
               Exclusive Platform Perks for Early Members
             </h2>
@@ -587,7 +603,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   All platform clearing fees waived for your first 90 days. Keep 100% of your earnings on every verified view milestone.
                 </p>
-              
+
               </div>
 
               {/* Creator Perk 2 */}
@@ -601,7 +617,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Permanent &apos;Founding Creator&apos; badge displayed on your public media kit and prioritized ranking in creator discovery searches.
                 </p>
-             
+
               </div>
 
               {/* Creator Perk 3 */}
@@ -615,7 +631,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Early 24-hour notification window on brand campaign drops. Claim limited high-CPM slots before general creator allocation.
                 </p>
-              
+
               </div>
 
               {/* Creator Perk 4 */}
@@ -629,7 +645,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Priority telemetry queue for TikTok, Instagram Reels, and YouTube Shorts. Sub-30-minute verification on your submissions.
                 </p>
-                
+
               </div>
             </div>
           </div>
@@ -660,7 +676,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Zero platform transaction surcharges on your first ₦5,000,000 in campaign budget allocations. 100% of spend goes to creator reach.
                 </p>
-                
+
               </div>
 
               {/* Brand Perk 2 */}
@@ -674,7 +690,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Exclusive first-look access to Nigeria&apos;s most consistent, verified clip creators with verified organic engagement track records.
                 </p>
-              
+
               </div>
 
               {/* Brand Perk 3 */}
@@ -688,7 +704,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   1-on-1 creative brief optimization and campaign setup assistance from our performance marketing team for your first 3 drops.
                 </p>
-              
+
               </div>
 
               {/* Brand Perk 4 */}
@@ -702,7 +718,7 @@ export default function PrelaunchCountdownView() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Real-time algorithmic checks filter out bot traffic and inflated metrics. Pay only for authentic Nigerian viewers who watch your content.
                 </p>
-               
+
               </div>
             </div>
           </div>

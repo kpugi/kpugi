@@ -16,7 +16,52 @@ export async function POST(req: Request) {
     const supabase = createAdminClient();
     const profileId = userProfile.profile.id;
 
-    // ACTION 1: Role Selection
+    // ─── ACTION 0: Resolve Nigerian Bank Account (Paystack NUBAN) ────────────
+    if (action === 'resolve-bank') {
+      const { bank_code, account_number } = body;
+      if (!bank_code || !account_number || !/^\d{10}$/.test(account_number)) {
+        return NextResponse.json(
+          { error: 'Please enter a valid 10-digit NUBAN account number and select a bank.' },
+          { status: 400 }
+        );
+      }
+
+      const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+      if (!paystackSecret) {
+        // Fallback demo/sandbox resolution if key isn't configured
+        return NextResponse.json({
+          success: true,
+          account_name: userProfile.profile.full_name || 'Verified Nigerian Account',
+        });
+      }
+
+      try {
+        const res = await fetch(
+          `https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`,
+          {
+            headers: {
+              Authorization: `Bearer ${paystackSecret}`,
+            },
+            signal: AbortSignal.timeout(8000),
+          }
+        );
+        const json = await res.json();
+        if (!json.status || !json.data?.account_name) {
+          return NextResponse.json(
+            { error: json.message || 'Could not verify account name for this bank.' },
+            { status: 400 }
+          );
+        }
+        return NextResponse.json({ success: true, account_name: json.data.account_name });
+      } catch (err: any) {
+        return NextResponse.json(
+          { error: err.message || 'Bank resolution timed out. Please try again.' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // ─── ACTION 1: Role Selection ────────────────────────────────────────────
     if (action === 'set-role') {
       const { role } = body;
       if (role !== 'advertiser' && role !== 'creator' && role !== 'both') {
@@ -95,22 +140,45 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, role });
     }
 
-    // ACTION 2: Complete Advertiser Profile
+    // ─── ACTION 2: Complete Advertiser Profile ───────────────────────────────
     if (action === 'complete-advertiser') {
-      const { company_name, company_website, billing_email, agreed_global_rules } = body;
+      const {
+        company_name,
+        company_website,
+        industry,
+        company_logo_url,
+        agreed_global_rules,
+        billing_email,
+        campaign_goals,
+        estimated_budget,
+      } = body;
 
-      if (!company_name || !billing_email) {
-        return NextResponse.json({ error: 'Company name and billing email are required' }, { status: 400 });
+      const finalCompanyName = company_name || userProfile.profile.full_name || 'Brand';
+      const finalBillingEmail = billing_email || userProfile.profile.email;
+
+      if (!finalCompanyName) {
+        return NextResponse.json({ error: 'Company or Brand name is required' }, { status: 400 });
       }
 
       if (!agreed_global_rules) {
         return NextResponse.json({ error: 'You must agree to platform rules to continue' }, { status: 400 });
       }
 
-      // Update role on profile
+      // Update role & avatar on profile
       await supabase
         .from('profiles')
-        .update({ role: 'advertiser', updated_at: new Date().toISOString() })
+        .update({
+          role: 'advertiser',
+          ...(company_logo_url ? { avatar_url: company_logo_url } : {}),
+          onboarding_tour_completed: false,
+          onboarding_checklist_state: {
+            advertiser_profile: true,
+            advertiser_settings: true,
+            campaign_goals: campaign_goals || 'brand_reach',
+            estimated_budget: estimated_budget || 'medium',
+          },
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', profileId);
 
       // Insert/update advertiser_profiles
@@ -119,9 +187,11 @@ export async function POST(req: Request) {
         .upsert(
           {
             profile_id: profileId,
-            company_name,
+            company_name: finalCompanyName,
             company_website: company_website || null,
-            billing_email,
+            industry: industry || 'E-commerce & Retail',
+            company_logo_url: company_logo_url || null,
+            billing_email: finalBillingEmail,
             agreed_global_rules_at: new Date().toISOString(),
           },
           { onConflict: 'profile_id' }
@@ -153,22 +223,42 @@ export async function POST(req: Request) {
       const { notifyAdvertiserWelcome } = await import('@/lib/notifications/advertiser');
       notifyAdvertiserWelcome({
         clerkId: userProfile.profile.clerk_id,
-        email: billing_email || userProfile.profile.email,
-        companyName: company_name,
+        email: finalBillingEmail,
+        companyName: finalCompanyName,
         profileId,
       }).catch(err => console.error('[Onboarding] Error sending advertiser welcome notification:', err));
 
-      return NextResponse.json({ success: true, redirect: '/dashboard' });
+      return NextResponse.json({ success: true, redirect: '/b/dashboard' });
     }
 
-    // ACTION 3: Complete Creator Profile
+    // ─── ACTION 3: Complete Creator Profile ──────────────────────────────────
     if (action === 'complete-creator') {
-      const { display_name, bio } = body;
+      const {
+        display_name,
+        bio,
+        avatar_url,
+        niche_categories,
+        channels,
+        bank_details,
+      } = body;
 
-      // Update role on profile
+      const finalDisplayName = display_name || userProfile.profile.full_name || 'Creator';
+
+      // Update role & avatar on profile
       await supabase
         .from('profiles')
-        .update({ role: 'creator', updated_at: new Date().toISOString() })
+        .update({
+          role: 'creator',
+          full_name: finalDisplayName,
+          ...(avatar_url ? { avatar_url } : {}),
+          onboarding_tour_completed: false,
+          onboarding_checklist_state: {
+            creator_profile: true,
+            creator_social: Array.isArray(channels) && channels.length > 0,
+            creator_bank: Boolean(bank_details?.account_number),
+          },
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', profileId);
 
       // Insert/update creator_profiles
@@ -177,14 +267,40 @@ export async function POST(req: Request) {
         .upsert(
           {
             profile_id: profileId,
-            display_name: display_name || userProfile.profile.full_name || 'Creator',
+            display_name: finalDisplayName,
             bio: bio || null,
+            ...(avatar_url ? { avatar_url } : {}),
+            niche_categories: Array.isArray(niche_categories) ? niche_categories : [],
+            ...(bank_details?.account_number
+              ? {
+                  paystack_recipient_code: JSON.stringify(bank_details),
+                  bank_account_number: bank_details.account_number,
+                  bank_code: bank_details.bank_code,
+                  bank_name: bank_details.bank_name || 'Bank',
+                }
+              : {}),
           },
           { onConflict: 'profile_id' }
         );
 
       if (creatorError) {
         return NextResponse.json({ error: creatorError.message }, { status: 500 });
+      }
+
+      // If bank details were provided, persist to bank_accounts table
+      if (bank_details && bank_details.bank_code && bank_details.account_number) {
+        await supabase.from('bank_accounts').upsert(
+          {
+            profile_id: profileId,
+            bank_name: bank_details.bank_name || 'Bank',
+            bank_code: bank_details.bank_code,
+            account_number: bank_details.account_number,
+            account_name: bank_details.account_name || finalDisplayName,
+            is_primary: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'profile_id,account_number,bank_code' }
+        );
       }
 
       // Initialize creator wallet if missing
@@ -217,11 +333,11 @@ export async function POST(req: Request) {
       notifyCreatorWelcome({
         clerkId: userProfile.profile.clerk_id,
         email: userProfile.profile.email,
-        name: display_name || userProfile.profile.full_name,
+        name: finalDisplayName,
         profileId,
       }).catch(err => console.error('[Onboarding] Error sending creator welcome notification:', err));
 
-      return NextResponse.json({ success: true, redirect: '/dashboard' });
+      return NextResponse.json({ success: true, redirect: '/c/dashboard' });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

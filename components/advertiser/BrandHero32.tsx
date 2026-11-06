@@ -131,26 +131,19 @@ export default function BrandHero32() {
           >
             {/* Product Hunt Widget */}
             <a
-              href="https://www.producthunt.com"
+              href="https://www.producthunt.com/products/kpugi?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-kpugi"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] backdrop-blur-md rounded-xl px-3.5 py-2 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#FF6154]/40"
+              className="inline-block transition-transform duration-200 hover:scale-105"
             >
-              <div className="w-6 h-6 rounded-full bg-[#FF6154] flex items-center justify-center font-black text-xs text-white flex-shrink-0 shadow-[0_2px_8px_rgba(255,97,84,0.35)]">
-                P
-              </div>
-              <div className="text-left flex flex-col">
-                <span className="text-[10px] font-satoshi font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider leading-none">
-                  Product Hunt
-                </span>
-                <span className="text-xs font-clash font-semibold text-slate-900 dark:text-white mt-0.5 leading-tight">
-                  #1 Product of the Day
-                </span>
-              </div>
-              <div className="flex items-center gap-1 bg-[#FF6154]/10 dark:bg-[#FF6154]/15 border border-[#FF6154]/25 rounded-md px-1.5 py-0.5 text-[11px] font-mono font-bold text-[#E03A2A] dark:text-[#FF7B70] ml-1">
-                <span>▲</span>
-                <span>348</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1305865&theme=light&t=1793956646894"
+                alt="Kpugi - Performance-based advertising for brands and creators. | Product Hunt"
+                width={250}
+                height={54}
+                className="h-[54px] w-[250px]"
+              />
             </a>
 
             {/* Dynamic Trustpilot TrustBox Widget */}

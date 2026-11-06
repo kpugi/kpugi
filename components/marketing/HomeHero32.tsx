@@ -161,26 +161,19 @@ export default function HomeHero32({
           >
             {/* Product Hunt Widget */}
             <a
-              href="https://www.producthunt.com"
+              href="https://www.producthunt.com/products/kpugi?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-kpugi"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 bg-white/20 border border-white/30 backdrop-blur-md rounded-2xl px-3.5 py-2 no-underline text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/30"
+              className="inline-block transition-transform duration-200 hover:scale-105"
             >
-              <div className="w-6 h-6 rounded-full bg-[#FF6154] flex items-center justify-center font-black text-xs text-white flex-shrink-0 shadow-[0_2px_8px_rgba(255,97,84,0.4)]">
-                P
-              </div>
-              <div className="text-left flex flex-col">
-                <span className="text-[10px] font-satoshi font-bold text-white/70 uppercase tracking-wider leading-none">
-                  Product Hunt
-                </span>
-                <span className="text-xs font-clash font-semibold text-white mt-0.5 leading-tight">
-                  #1 Product of the Day
-                </span>
-              </div>
-              <div className="flex items-center gap-1 bg-white/20 border border-white/30 rounded-md px-1.5 py-0.5 text-[11px] font-mono font-bold text-white ml-1">
-                <span>▲</span>
-                <span>348</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1305865&theme=light&t=1793956646894"
+                alt="Kpugi - Performance-based advertising for brands and creators. | Product Hunt"
+                width={250}
+                height={54}
+                className="h-[54px] w-[250px]"
+              />
             </a>
 
             {/* Dynamic Trustpilot TrustBox Widget */}
