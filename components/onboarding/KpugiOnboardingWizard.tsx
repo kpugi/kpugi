@@ -154,6 +154,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
   ]);
   const [selectedBankCode, setSelectedBankCode] = useState('058'); // Default GTBank
   const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [resolvedAccountName, setResolvedAccountName] = useState<string | null>(null);
   const [isResolvingBank, setIsResolvingBank] = useState(false);
   const [bankResolveError, setBankResolveError] = useState<string | null>(null);
@@ -218,6 +219,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
         throw new Error(data.error || 'Could not verify account name.');
       }
       setResolvedAccountName(data.account_name);
+      setAccountName(data.account_name);
     } catch (err: any) {
       setResolvedAccountName(null);
       setBankResolveError(err.message || 'Verification failed. Please check digits.');
@@ -343,11 +345,11 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
           bank_details:
             accountNumber.length === 10
               ? {
-                  bank_code: selectedBankCode,
-                  bank_name: selectedBankObj?.name || 'Bank',
-                  account_number: accountNumber,
-                  account_name: resolvedAccountName || displayName,
-                }
+                bank_code: selectedBankCode,
+                bank_name: selectedBankObj?.name || 'Bank',
+                account_number: accountNumber,
+                account_name: resolvedAccountName || displayName,
+              }
               : null,
         };
 
@@ -401,38 +403,11 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[720px] h-[360px] bg-gradient-to-b from-[#2F49E8]/10 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-1/3 -right-24 w-80 h-80 bg-emerald-500/10 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* ─── TOP BRAND BAR ─────────────────────────────────────────────────── */}
-      <header className="max-w-4xl mx-auto w-full flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-white/10 flex items-center justify-center bg-white dark:bg-[#0c0f1d]">
-            <Image
-              src="/kpugi_favicon.png"
-              alt="Kpugi Logo"
-              width={28}
-              height={28}
-              className="object-contain"
-            />
-          </div>
-          <div>
-            <span className="font-clash font-extrabold text-xl tracking-tight text-slate-950 dark:text-white">
-              Kpugi
-            </span>
-            <span className="text-[10px] font-bold text-[#2F49E8] dark:text-blue-400 uppercase tracking-wider block leading-none">
-              Onboarding
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Verified Session</span>
-        </div>
-      </header>
 
       {/* ─── MAIN WIZARD CARD ──────────────────────────────────────────────── */}
       <main className="max-w-3xl mx-auto w-full flex-1 flex flex-col justify-center mb-8">
         <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0f1d] p-6 sm:p-8 md:p-10 shadow-xl shadow-slate-200/50 dark:shadow-black/60 flex flex-col gap-8 transition-colors">
-          
+
           {/* ── STEPPER PROGRESS BAR ─────────────────────────────────────── */}
           <div className="relative pt-2">
             {/* Background track line */}
@@ -570,7 +545,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
           {/* ── STEP CONTENT AREA ────────────────────────────────────────── */}
           <div className="min-h-[380px]">
             <AnimatePresence mode="wait">
-              
+
               {/* ════════════════════════════════════════════════════════════
                   STEP 1: ROLE SELECTION ("Who are you?")
                  ════════════════════════════════════════════════════════════ */}
@@ -584,10 +559,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                   className="space-y-6"
                 >
                   <div className="text-center space-y-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#2F49E8] dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Step 1 of 4 — Account Type
-                    </span>
+
                     <h2 className="font-clash font-extrabold text-2xl sm:text-3xl tracking-tight text-slate-950 dark:text-white">
                       Who are{' '}
                       <span className="bg-gradient-to-r from-[#2F49E8] via-blue-500 to-[#17A75B] bg-clip-text text-transparent">
@@ -705,9 +677,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                   className="space-y-6"
                 >
                   <div className="text-center space-y-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#2F49E8] dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">
-                      Step 2 of 4 — {role === 'creator' ? 'Creator Identity' : 'Brand Identity'}
-                    </span>
+
                     <h2 className="font-clash font-extrabold text-2xl sm:text-3xl tracking-tight text-slate-950 dark:text-white">
                       {role === 'creator' ? 'Set Up Your Creator Profile' : 'Brand & Organization Details'}
                     </h2>
@@ -900,11 +870,9 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                   className="space-y-6"
                 >
                   <div className="text-center space-y-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#17A75B] dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
-                      Step 3 of 4 — {role === 'creator' ? 'Payouts & Niches' : 'Goals & Escrow Protection'}
-                    </span>
+
                     <h2 className="font-clash font-extrabold text-2xl sm:text-3xl tracking-tight text-slate-950 dark:text-white">
-                      {role === 'creator' ? 'Direct Bank Settlements' : 'Campaign Objectives & Escrow'}
+                      {role === 'creator' ? 'Payout Setup' : 'Campaign Objectives'}
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                       {role === 'creator'
@@ -950,7 +918,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                         <div className="flex items-center gap-2">
                           <CreditCard className="w-5 h-5 text-[#17A75B]" />
                           <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                            Nigerian Bank Account (NUBAN)
+                            Bank Account
                           </h4>
                         </div>
 
@@ -1000,6 +968,7 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                                     handleVerifyBank(digits, selectedBankCode);
                                   } else {
                                     setResolvedAccountName(null);
+                                    setAccountName('');
                                     setBankResolveError(null);
                                   }
                                 }}
@@ -1015,20 +984,60 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                           </div>
                         </div>
 
-                        {/* Resolved Status Notification */}
-                        {resolvedAccountName && (
-                          <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                            <span>Verified Account: {resolvedAccountName}</span>
+                        {/* Dedicated Auto-Resolving Account Name Field */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              Account Name
+                            </label>
+                            {resolvedAccountName && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Verified
+                              </span>
+                            )}
                           </div>
-                        )}
-
-                        {bankResolveError && (
-                          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-xs font-semibold text-red-700 dark:text-red-300">
-                            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                            <span>{bankResolveError}</span>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={
+                                isResolvingBank
+                                  ? 'Resolving account name...'
+                                  : resolvedAccountName || accountName
+                              }
+                              onChange={(e) => setAccountName(e.target.value)}
+                              readOnly={isResolvingBank}
+                              placeholder="Account name will automatically resolve here"
+                              className={cn(
+                                'w-full px-4 py-2.5 rounded-xl border text-xs font-semibold tracking-wide transition-all',
+                                resolvedAccountName
+                                  ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200 font-bold'
+                                  : isResolvingBank
+                                    ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-800 text-[#2F49E8] dark:text-blue-400 italic'
+                                    : 'bg-white dark:bg-[#121626] border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300'
+                              )}
+                            />
+                            <div className="absolute right-3 top-2.5">
+                              {isResolvingBank ? (
+                                <Loader2 className="w-4 h-4 text-[#2F49E8] animate-spin" />
+                              ) : resolvedAccountName ? (
+                                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+                              ) : null}
+                            </div>
                           </div>
-                        )}
+                          {bankResolveError ? (
+                            <p className="text-[11px] text-red-600 dark:text-red-400 mt-1.5 font-medium flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span>{bankResolveError}</span>
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                              {resolvedAccountName
+                                ? '✓ Verified with NIBSS. Payouts will transfer directly to this account every Friday.'
+                                : 'Select your bank and enter your 10-digit account number to auto-resolve your official name.'}
+                            </p>
+                          )}
+                        </div>
 
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">
                           🛡️ Automated escrow transfers happen every Friday once verified views cross 1,000 threshold. You can also edit bank details in your settings anytime.

@@ -120,7 +120,12 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   if (isProtectedRoute(req)) {
-    await auth.protect();
+    // In local dev, allow accessing /onboarding without blocking when live Clerk keys are present
+    if (isDev && req.nextUrl.pathname.startsWith('/onboarding')) {
+      // Allow through for local development and testing
+    } else {
+      await auth.protect();
+    }
   }
 
   // 3. Pre-launch Countdown Mode & Public Gate

@@ -4,17 +4,69 @@ import { createAdminClient } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   try {
-    const userProfile = await getOrCreateUserProfile();
+    let userProfile: any = null;
+    try {
+      userProfile = await getOrCreateUserProfile();
+    } catch (authErr) {
+      console.warn('[Onboarding API] Auth warning in local dev:', authErr);
+    }
 
+    const isDev = process.env.NODE_ENV === 'development';
     if (!userProfile || !userProfile.profile) {
-      return NextResponse.json({ error: 'Unauthorized or profile missing' }, { status: 401 });
+      if (isDev) {
+        userProfile = {
+          profile: {
+            id: 'dev-preview-user',
+            full_name: 'Alex Rivera',
+            email: 'creator@kpugi.com',
+            role: 'creator',
+          },
+        };
+      } else {
+        return NextResponse.json({ error: 'Unauthorized or profile missing' }, { status: 401 });
+      }
     }
 
     const body = await req.json();
     const { action } = body;
+    const profileId = userProfile.profile.id;
+
+    // ─── DEV SIMULATION BYPASS ────────────────────────────────────────────────
+    if (isDev && profileId === 'dev-preview-user') {
+      if (action === 'resolve-bank') {
+        const { bank_code, account_number } = body;
+        const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+        if (paystackSecret && bank_code && account_number?.length === 10) {
+          try {
+            const res = await fetch(
+              `https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`,
+              {
+                headers: { Authorization: `Bearer ${paystackSecret}` },
+                signal: AbortSignal.timeout(8000),
+              }
+            );
+            const json = await res.json();
+            if (json.status && json.data?.account_name) {
+              return NextResponse.json({ success: true, account_name: json.data.account_name });
+            }
+          } catch (e) {
+            // fallback below
+          }
+        }
+        return NextResponse.json({ success: true, account_name: 'ALEX RIVERA (VERIFIED TEST ACCOUNT)' });
+      }
+      if (action === 'set-role') {
+        return NextResponse.json({ success: true, role: body.role });
+      }
+      if (action === 'complete-creator') {
+        return NextResponse.json({ success: true, redirect: '/c/dashboard' });
+      }
+      if (action === 'complete-advertiser') {
+        return NextResponse.json({ success: true, redirect: '/b/dashboard' });
+      }
+    }
 
     const supabase = createAdminClient();
-    const profileId = userProfile.profile.id;
 
     // ─── ACTION 0: Resolve Nigerian Bank Account (Paystack NUBAN) ────────────
     if (action === 'resolve-bank') {
@@ -244,6 +296,14 @@ export async function POST(req: Request) {
 
       const finalDisplayName = display_name || userProfile.profile.full_name || 'Creator';
 
+      // Generate a clean creator_handle for public profile lookup (e.g. @alex or alex_creatives)
+      let creatorHandle = null;
+      if (finalDisplayName.startsWith('@')) {
+        creatorHandle = finalDisplayName.replace('@', '').toLowerCase().trim();
+      } else {
+        creatorHandle = finalDisplayName.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 30);
+      }
+
       // Update role & avatar on profile
       await supabase
         .from('profiles')
@@ -255,7 +315,9 @@ export async function POST(req: Request) {
           onboarding_checklist_state: {
             creator_profile: true,
             creator_social: Array.isArray(channels) && channels.length > 0,
-            creator_bank: Boolean(bank_details?.account_number),
+            creator_bank: Boolean(bank_details?.account_number && bank_details?.account_name),
+            channels: Array.isArray(channels) ? channels : [],
+            niches: Array.isArray(niche_categories) ? niche_categories : [],
           },
           updated_at: new Date().toISOString(),
         })
@@ -268,6 +330,7 @@ export async function POST(req: Request) {
           {
             profile_id: profileId,
             display_name: finalDisplayName,
+            creator_handle: creatorHandle,
             bio: bio || null,
             ...(avatar_url ? { avatar_url } : {}),
             niche_categories: Array.isArray(niche_categories) ? niche_categories : [],

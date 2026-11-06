@@ -10,9 +10,30 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingRolePage() {
-  const userProfile = await getOrCreateUserProfile();
+  let userProfile = null;
+  try {
+    userProfile = await getOrCreateUserProfile();
+  } catch (err) {
+    console.warn('[OnboardingRolePage] Clerk auth error in local env:', err);
+  }
 
+  // In local development, if live Clerk keys prevent sign-in on localhost,
+  // provide a mock user session so the onboarding wizard can be fully tested!
+  const isDev = process.env.NODE_ENV === 'development';
   if (!userProfile || !userProfile.profile) {
+    if (isDev) {
+      return (
+        <KpugiOnboardingWizard
+          initialUser={{
+            id: 'dev-preview-user',
+            fullName: 'Alex Rivera',
+            email: 'creator@kpugi.com',
+            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+            role: 'creator',
+          }}
+        />
+      );
+    }
     redirect('/sign-in');
   }
 
