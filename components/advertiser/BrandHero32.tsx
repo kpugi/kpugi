@@ -1,14 +1,53 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
-import { Play, ArrowRight, X, Volume2, Maximize2, Star } from 'lucide-react';
+import { Play, ArrowRight, X } from 'lucide-react';
 import TrustBoxWidget from '@/components/common/TrustBoxWidget';
 
 export default function BrandHero32() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Auto-play when modal opens, pause when modal closes, and handle Escape key
+  useEffect(() => {
+    if (isVideoModalOpen) {
+      document.body.style.overflow = 'hidden';
+      const timer = setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+          videoRef.current.play().catch(() => {
+            // Autoplay with sound might be blocked by browser policy until user interacts
+          });
+        }
+      }, 100);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsVideoModalOpen(false);
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = '';
+      };
+    } else {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    }
+  }, [isVideoModalOpen]);
+
+  const handleCloseModal = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    setIsVideoModalOpen(false);
+  };
 
   const titleVariants: Variants = {
     hidden: { opacity: 0, y: 36, filter: 'blur(10px)' },
@@ -112,13 +151,15 @@ export default function BrandHero32() {
             </Link>
 
             <button
+              type="button"
               onClick={() => setIsVideoModalOpen(true)}
               className="inline-flex items-center justify-center gap-2 flex-1 min-h-[46px] bg-white/80 dark:bg-white/[0.06] text-slate-900 dark:text-white font-satoshi font-semibold text-[clamp(0.8125rem,2.5vw,0.9375rem)] px-4 rounded-full border border-slate-200 dark:border-white/[0.12] backdrop-blur-md cursor-pointer whitespace-nowrap shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-white dark:hover:bg-white/10"
+              aria-label="See how it works video demo"
             >
               <div className="w-[22px] h-[22px] rounded-full bg-[#2F49E8] text-white dark:bg-white dark:text-[#2F49E8] flex items-center justify-center flex-shrink-0 shadow-sm">
                 <Play className="h-2.5 w-2.5 fill-current ml-0.5" />
               </div>
-              <span>Watch Demo</span>
+              <span>See how it works</span>
             </button>
           </motion.div>
 
@@ -159,74 +200,47 @@ export default function BrandHero32() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6"
-            onClick={() => setIsVideoModalOpen(false)}
+            className="fixed inset-0 z-[1000] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6"
+            onClick={handleCloseModal}
           >
             <motion.div
               initial={{ scale: 0.94, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.94, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-[840px] bg-white dark:bg-[#0B0F1A] border border-slate-200 dark:border-[#2F49E8]/35 rounded-3xl overflow-hidden shadow-2xl"
+              className="relative w-full max-w-[920px] bg-white dark:bg-[#0B0F1A] border border-slate-200 dark:border-[#2F49E8]/40 rounded-3xl overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Top Bar */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#080A12]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-2 h-2 rounded-full bg-[#17A75B] shadow-[0_0_10px_#17A75B]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#17A75B] shadow-[0_0_10px_#17A75B]" />
                   <span className="font-clash font-semibold text-sm text-slate-900 dark:text-white">
-                    Kpugi Platform Walkthrough
+                    Kpugi for Brands — See How It Works
                   </span>
                 </div>
 
                 <button
-                  onClick={() => setIsVideoModalOpen(false)}
-                  className="bg-slate-200/60 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center text-slate-600 dark:text-white/70 transition-colors"
+                  type="button"
+                  onClick={handleCloseModal}
+                  aria-label="Close video modal"
+                  className="bg-slate-200/70 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center text-slate-600 dark:text-white/80 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {/* Video Player Display Container */}
-              <div className="relative w-full aspect-video bg-slate-900 dark:bg-[#04060A] flex flex-col items-center justify-center">
-                <div
-                  aria-hidden
-                  className="absolute inset-0 bg-[radial-gradient(circle,rgba(47,73,232,0.15)_1px,transparent_1px)] bg-[size:24px_24px]"
+              <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+                <video
+                  ref={videoRef}
+                  src="/videos/kpugi-brand-video.mp4"
+                  controls
+                  autoPlay
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-contain bg-black"
                 />
-
-                <button
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="relative z-10 w-[72px] h-[72px] rounded-full bg-[#2F49E8] border-[3px] border-white/20 flex items-center justify-center text-white shadow-[0_0_35px_rgba(47,73,232,0.7)] cursor-pointer transition-transform duration-200 hover:scale-110"
-                >
-                  <Play className="h-7 w-7 fill-current ml-1" />
-                </button>
-
-                <div className="relative z-10 mt-4 text-center px-5">
-                  <p className="font-clash font-semibold text-lg text-white mb-1.5">
-                    How Brands Launch & Verify Campaigns on Kpugi
-                  </p>
-                  <p className="font-satoshi text-xs text-white/50 m-0">
-                    Duration: 2 mins · Automated view audit demonstration
-                  </p>
-                </div>
-
-                {/* Player Bottom Control Bar Mockup */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent flex flex-col gap-2 z-10">
-                  <div className="h-1 w-full bg-white/20 rounded-full overflow-hidden cursor-pointer">
-                    <div className="h-full w-[38%] bg-[#2F49E8] rounded-full" />
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs font-mono text-white/60">
-                    <span>00:48 / 02:14</span>
-                    <div className="flex items-center gap-3 text-white/60">
-                      <span className="text-[10px] font-satoshi font-bold bg-white/10 px-1.5 py-0.5 rounded text-[#5B7CFF]">
-                        1080p HD
-                      </span>
-                      <Volume2 className="h-4 w-4 cursor-pointer hover:text-white" />
-                      <Maximize2 className="h-4 w-4 cursor-pointer hover:text-white" />
-                    </div>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </motion.div>

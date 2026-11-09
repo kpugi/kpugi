@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Hero9, type Hero9Avatar } from '@/components/watermelon-ui/hero-9';
+import CreatorHero01 from '@/components/creator/CreatorHero01';
 import { SlideDeck } from '@/components/watermelon-ui/slide-deck';
 import { AiMatchingShowcase } from '@/components/marketing/AiMatchingShowcase';
 import { Integrations5 } from '@/components/watermelon-ui/integrations-5';
@@ -123,19 +123,14 @@ export function CreatorsPageClient({
 
   return (
     <div className="min-h-screen bg-[#F0F4FD] dark:bg-[#050811] text-slate-900 dark:text-white font-sans antialiased overflow-x-hidden">
-      {/* ─── MODERN HERO SECTION (DYNAMIC METRICS & REAL AVATARS) ──────────── */}
-      <Hero9
-        showNav={false}
-        logoText="Kpugi"
+      {/* ─── MODERN HERO SECTION (HERO-01 DESIGN) ────────────────────────── */}
+      <CreatorHero01
         avatars={realAvatars}
-        eyebrowText={eyebrow}
-        title={`Turn Every 1,000 Views\nInto Direct Cash.`}
-        description={`Pick a brand campaign drop. Post on TikTok, Instagram, YouTube, X, or LinkedIn.\nWatch your verified views stack up and receive direct deposits into your Nigerian bank account every Friday.`}
-        emailPlaceholder="Enter your email to start earning"
-        submitText="Start for Free"
-        formAction="/sign-up"
-        ctaText="Browse Active Drops"
-        ctaHref="/browse"
+        title="Turn Every 1,000 Views into"
+        italicWord="direct cash"
+        description="Pick a brand campaign drop. Post on TikTok, Instagram, YouTube, X, or Facebook. Watch your verified views stack up and receive guaranteed direct deposits into your Nigerian bank account every Friday."
+        ctaText="Start Earning Free"
+        ctaHref="/sign-up"
       />
 
       {/* ─── LIVE PAYOUT TICKER (FROM REAL DB SUBMISSIONS) ───────────────────── */}
