@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, isRedisConfigured } from '@/lib/redis/client';
 
@@ -24,7 +24,7 @@ const isProtectedRoute = createRouteMatcher([
   '/settings(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+const clerkHandler = clerkMiddleware(async (auth, req) => {
   const hostname = req.headers.get('host') || '';
 
   // Determine base origin (production vs local development)
@@ -145,7 +145,7 @@ export default clerkMiddleware(async (auth, req) => {
     req.nextUrl.pathname.startsWith('/calculator') ||
     req.nextUrl.pathname.startsWith('/roiestimator');
 
-  if (isPrelaunchMode && isPublicMarketingRoute && !hasVipCookie && !isVipCode) {
+  if (!isDev && isPrelaunchMode && isPublicMarketingRoute && !hasVipCookie && !isVipCode) {
     const { userId } = await auth();
     // If not signed in and has no VIP code, redirect directly to countdown landing page
     if (!userId) {
@@ -178,6 +178,41 @@ export default clerkMiddleware(async (auth, req) => {
 
   return response;
 });
+
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  const hostname = req.headers.get('host') || '';
+  const isDev = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+
+  // In local development, bypass clerkMiddleware for all public & marketing routes
+  // to avoid Clerk production handshake redirects (where clerk.kpugi.com rejects localhost:3000)
+  if (isDev) {
+    const pathname = req.nextUrl.pathname;
+    const isPublic =
+      pathname === '/' ||
+      pathname.startsWith('/creators') ||
+      pathname.startsWith('/creator') ||
+      pathname.startsWith('/brands') ||
+      pathname.startsWith('/browse') ||
+      pathname.startsWith('/preview') ||
+      pathname.startsWith('/how-it-works') ||
+      pathname.startsWith('/pricing') ||
+      pathname.startsWith('/about') ||
+      pathname.startsWith('/advertise') ||
+      pathname.startsWith('/calculator') ||
+      pathname.startsWith('/roiestimator') ||
+      pathname.startsWith('/onboarding') ||
+      pathname.startsWith('/sign-in') ||
+      pathname.startsWith('/sign-up');
+
+    if (isPublic) {
+      const res = NextResponse.next();
+      res.headers.set('ngrok-skip-browser-warning', 'true');
+      return res;
+    }
+  }
+
+  return clerkHandler(req, event);
+}
 
 export const config = {
   matcher: [

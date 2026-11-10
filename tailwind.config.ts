@@ -67,7 +67,9 @@ const config: Config = {
       },
       fontFamily: {
         display: ["Clash Display", "sans-serif"],
+        clash: ["Clash Display", "sans-serif"],
         sans: ["Satoshi", "sans-serif"],
+        satoshi: ["Satoshi", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       fontSize: {
