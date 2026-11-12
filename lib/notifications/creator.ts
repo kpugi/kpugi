@@ -1,6 +1,10 @@
 import { triggerNotification } from '@/lib/knock/notify';
 import { sendEmail, renderReusableEmailTemplate } from '@/lib/resend/send-email';
 import { createAdminClient } from '@/lib/supabase/server';
+import {
+  shouldSendTrustpilotBccForCreatorPayout,
+  embedTrustpilotJsonLd,
+} from '@/lib/trustpilot/trustpilot-bcc';
 
 export async function notifyCreatorWelcome({
   clerkId,
@@ -365,7 +369,7 @@ export async function notifyCreatorPayoutReleased({
   const formattedAmount = `₦${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   const formattedBalance = `₦${newBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-  const html = renderReusableEmailTemplate({
+  let html = renderReusableEmailTemplate({
     to: email,
     subject: 'Funds Hit Different 🤑 Wallet Credited!',
     previewText: `${formattedAmount} added to your creator wallet!`,
@@ -383,10 +387,23 @@ export async function notifyCreatorPayoutReleased({
     },
   });
 
+  // Evaluate Trustpilot Automatic Feedback Service (AFS) BCC eligibility
+  const tpDecision = await shouldSendTrustpilotBccForCreatorPayout({ profileId });
+  if (tpDecision.shouldBcc && tpDecision.bccAddress) {
+    html = embedTrustpilotJsonLd({
+      html,
+      recipientEmail: email,
+      recipientName: 'Verified Creator',
+      referenceId: campaignId || `payout-wallet-${Date.now()}`,
+      tags: ['creator', 'earnings-received', tpDecision.reason === 'first_payout' ? 'first-payout' : 'repeat-payout'],
+    });
+  }
+
   await sendEmail({
     to: email,
     subject: 'Funds Hit Different 🤑 Wallet Credited!',
     html,
+    bcc: tpDecision.shouldBcc ? tpDecision.bccAddress : undefined,
   });
 }
 
@@ -423,7 +440,7 @@ export async function notifyCreatorWithdrawalCompleted({
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
   const formattedAmount = `₦${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-  const html = renderReusableEmailTemplate({
+  let html = renderReusableEmailTemplate({
     to: email,
     subject: 'Yoo! You got paid💸',
     previewText: `Your withdrawal of ${formattedAmount} is on its way.`,
@@ -441,10 +458,23 @@ export async function notifyCreatorWithdrawalCompleted({
     },
   });
 
+  // Evaluate Trustpilot Automatic Feedback Service (AFS) BCC eligibility
+  const tpDecision = await shouldSendTrustpilotBccForCreatorPayout({ profileId });
+  if (tpDecision.shouldBcc && tpDecision.bccAddress) {
+    html = embedTrustpilotJsonLd({
+      html,
+      recipientEmail: email,
+      recipientName: 'Verified Creator',
+      referenceId: reference || `withdrawal-${Date.now()}`,
+      tags: ['creator', 'withdrawal-completed', tpDecision.reason === 'first_payout' ? 'first-payout' : 'repeat-payout'],
+    });
+  }
+
   await sendEmail({
     to: email,
     subject: 'Yoo! you got paid 💸!',
     html,
+    bcc: tpDecision.shouldBcc ? tpDecision.bccAddress : undefined,
   });
 }
 

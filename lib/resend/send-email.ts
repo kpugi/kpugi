@@ -237,11 +237,13 @@ export async function sendEmail({
   subject,
   html,
   previewText,
+  bcc,
 }: {
   to: string;
   subject: string;
   html: string;
   previewText?: string;
+  bcc?: string | string[];
 }): Promise<{ success: boolean; data?: unknown; error?: unknown }> {
   if (!resend) {
     console.warn('[Resend] RESEND_API_KEY is missing. Email skipped:', { to, subject });
@@ -254,19 +256,36 @@ export async function sendEmail({
       process.env.EMAIL_FROM ||
       'Tuazor From Kpugi <hello@kpugi.com>';
 
-    const result = await resend.emails.send({
+    const emailPayload: {
+      from: string;
+      to: string;
+      subject: string;
+      html: string;
+      bcc?: string | string[];
+    } = {
       from: fromAddress,
       to,
       subject,
       html,
-    });
+    };
+
+    if (bcc) {
+      emailPayload.bcc = bcc;
+    }
+
+    const result = await resend.emails.send(emailPayload);
 
     if (result.error) {
       console.error('[Resend Error Response]:', { to, subject, error: result.error });
       return { success: false, error: result.error };
     }
 
-    console.log('[Resend Email Sent Successfully]:', { to, subject, id: result.data?.id });
+    console.log('[Resend Email Sent Successfully]:', {
+      to,
+      subject,
+      id: result.data?.id,
+      hasBcc: Boolean(bcc),
+    });
     return { success: true, data: result.data };
   } catch (error) {
     console.error('[Resend Exception Sending Email]:', error);

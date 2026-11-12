@@ -1,5 +1,9 @@
 import { triggerNotification } from '@/lib/knock/notify';
 import { sendEmail, renderReusableEmailTemplate } from '@/lib/resend/send-email';
+import {
+  shouldSendTrustpilotBccForBrandCampaign,
+  embedTrustpilotJsonLd,
+} from '@/lib/trustpilot/trustpilot-bcc';
 
 export async function notifyAdvertiserWelcome({
   clerkId,
@@ -445,7 +449,7 @@ export async function notifyAdvertiserCampaignCompleted({
     profileId,
   });
 
-  const html = renderReusableEmailTemplate({
+  let html = renderReusableEmailTemplate({
     to: email,
     subject: 'Campaign Wrap Up 📊 Final Scoreboard Inside!',
     previewText: `Your campaign "${campaignTitle}" delivered ${totalViews.toLocaleString()} verified views. Rate your experience!`,
@@ -462,9 +466,22 @@ export async function notifyAdvertiserCampaignCompleted({
     },
   });
 
+  // Evaluate Trustpilot Automatic Feedback Service (AFS) BCC eligibility
+  const tpDecision = await shouldSendTrustpilotBccForBrandCampaign({ profileId });
+  if (tpDecision.shouldBcc && tpDecision.bccAddress) {
+    html = embedTrustpilotJsonLd({
+      html,
+      recipientEmail: email,
+      recipientName: 'Verified Brand',
+      referenceId: campaignId || `campaign-${Date.now()}`,
+      tags: ['brand', 'campaign-completed', tpDecision.reason === 'first_campaign_completed' ? 'first-campaign' : 'repeat-campaign'],
+    });
+  }
+
   await sendEmail({
     to: email,
     subject: 'Campaign Wrap Up 📊 Final Scoreboard Inside!',
     html,
+    bcc: tpDecision.shouldBcc ? tpDecision.bccAddress : undefined,
   });
 }
