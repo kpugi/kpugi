@@ -41,6 +41,7 @@
     "@types/ua-parser-js": "^0.7.39",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "@vercel/speed-insights": "^2.1.0",
     "ai": "^7.0.42",
     "apify-client": "^2.25.0",
     "canvas-confetti": "^1.9.4",
