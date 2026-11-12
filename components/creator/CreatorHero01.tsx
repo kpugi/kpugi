@@ -103,16 +103,16 @@ export default function CreatorHero01({
       <section className="relative w-full overflow-hidden">
         <div className="w-full h-full relative">
           {/* Subtle gradient background blur from hero-01 */}
-          <div className="relative w-full pt-8 md:pt-20 pb-12 md:pb-20 before:absolute before:w-full before:h-full before:bg-gradient-to-r before:from-sky-100 before:via-white before:to-amber-100 before:rounded-full before:top-24 before:blur-3xl before:-z-10 dark:before:from-slate-800 dark:before:via-black dark:before:to-stone-700 dark:before:rounded-full dark:before:blur-3xl dark:before:-z-10">
-            <div className="container mx-auto px-4 relative z-10">
-              <div className="flex flex-col max-w-5xl mx-auto gap-8">
+          <div className="relative w-full pt-28 sm:pt-36 md:pt-40 lg:pt-44 pb-16 sm:pb-20 md:pb-28 before:absolute before:w-full before:h-full before:bg-gradient-to-r before:from-sky-100 before:via-white before:to-amber-100 before:rounded-full before:top-28 sm:before:top-36 md:before:top-40 before:blur-3xl before:-z-10 dark:before:from-slate-800 dark:before:via-black dark:before:to-stone-700 dark:before:rounded-full dark:before:blur-3xl dark:before:-z-10">
+            <div className="container mx-auto px-5 sm:px-6 md:px-8 relative z-10">
+              <div className="flex flex-col max-w-5xl mx-auto gap-8 sm:gap-10">
                 {/* Headline & Description with Kpugi brand fonts */}
                 <div className="relative flex flex-col text-center items-center sm:gap-6 gap-4">
                   <motion.h1
                     initial={{ opacity: 0, y: 32 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1, ease: 'easeInOut' }}
-                    className="font-display font-bold lg:text-8xl md:text-7xl text-5xl tracking-tight leading-[1.08] text-slate-950 dark:text-white [text-wrap:balance]"
+                    className="font-display font-bold text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight leading-[1.1] text-slate-950 dark:text-white [text-wrap:balance]"
                   >
                     {title}{' '}
                     <span className="font-display italic text-[#2F49E8] dark:text-[#7B96FF]">
@@ -124,7 +124,7 @@ export default function CreatorHero01({
                     initial={{ opacity: 0, y: 32 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1, delay: 0.1, ease: 'easeInOut' }}
-                    className="font-sans text-base sm:text-lg font-normal max-w-2xl text-slate-600 dark:text-slate-300 leading-relaxed [text-wrap:pretty]"
+                    className="font-sans text-base sm:text-lg font-normal max-w-2xl text-slate-600 dark:text-slate-300 leading-relaxed [text-wrap:pretty] px-2 sm:px-0"
                   >
                     {description}
                   </motion.p>
@@ -135,9 +135,9 @@ export default function CreatorHero01({
                   initial={{ opacity: 0, y: 32 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1, delay: 0.2, ease: 'easeInOut' }}
-                  className="flex items-center flex-col md:flex-row justify-center gap-8"
+                  className="flex items-center flex-col md:flex-row justify-center gap-8 md:gap-10 pt-2 sm:pt-4"
                 >
-                  <div className="flex items-center gap-4 flex-wrap justify-center">
+                  <div className="flex items-center flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto justify-center">
                     {/* The Sliding Animated Button from hero-01 with Kpugi font */}
                     <Button
                       asChild
@@ -158,7 +158,7 @@ export default function CreatorHero01({
                       <button
                         type="button"
                         onClick={() => setIsVideoModalOpen(true)}
-                        className="inline-flex items-center gap-2 font-sans text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white px-3.5 py-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
+                        className="inline-flex items-center justify-center gap-2 font-sans text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white px-4 py-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
                         title="See how it works video demo"
                       >
                         <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
@@ -170,7 +170,7 @@ export default function CreatorHero01({
                   </div>
 
                   {/* Tiny Overlapping 40px Avatars + 5-Star Rating */}
-                  <div className="flex items-center sm:gap-7 gap-3">
+                  <div className="flex items-center justify-center sm:gap-7 gap-3.5 pt-1 sm:pt-0">
                     <ul className="avatar flex flex-row items-center">
                       {activeAvatars.slice(0, 4).map((avatar, index) => (
                         <li key={index} className="-mr-2 z-1 hover:z-10 transition-transform">
