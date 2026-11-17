@@ -6,6 +6,8 @@ import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import { FreshdeskSupportProvider } from '@/components/support/FreshdeskSupportProvider';
 import { TawkToChat } from '@/components/support/TawkToChat';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import '@/styles/kpugi-tour.css';
 import Script from 'next/script';
@@ -163,6 +165,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </KnockProviderWrapper>
             </ThemeProvider>
           </AnalyticsProvider>
+          <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
