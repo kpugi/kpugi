@@ -49,6 +49,7 @@ import { Modal } from "@/components/admin/components/ui/modal";
 import Button from "@/components/admin/components/ui/button/Button";
 import Label from "@/components/admin/components/form/Label";
 import InputField from "@/components/admin/components/form/input/InputField";
+import TextArea from "@/components/admin/components/form/input/TextArea";
 import Pagination from "@/components/admin/components/tables/Pagination";
 import {
   toggleCampaignHeroPinned,
@@ -58,6 +59,7 @@ import {
   updateCampaignBudget,
   overrideSubmissionStatus,
   triggerManualScraperRunAction,
+  adminUpdateCampaignDetails,
 } from "@/app/actions/admin";
 
 export interface VerificationCheckItem {
@@ -92,7 +94,9 @@ export interface CampaignDetailProps {
     campaign_code?: string | null;
     title: string;
     description: string;
+    cover_image_url?: string | null;
     ad_format?: string | null;
+    channels?: string[] | null;
     requirements?: any;
     cpm_rate: number;
     total_budget: number;
@@ -231,6 +235,133 @@ export default function CampaignDetailAdminView({
     targetStatus: "verified_pass" | "verified_fail";
   } | null>(null);
   const [subOverrideReason, setSubOverrideReason] = useState("");
+
+  // Full Campaign Edit Modal State
+  const [isFullEditModalOpen, setIsFullEditModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState(campaign.title || "");
+  const [editDescription, setEditDescription] = useState(campaign.description || "");
+  const [editCoverImageUrl, setEditCoverImageUrl] = useState(campaign.cover_image_url || "");
+  const [editAdFormat, setEditAdFormat] = useState(campaign.ad_format || "video");
+  const [editCpmRate, setEditCpmRate] = useState(String(campaign.cpm_rate || 2000));
+  const [editTotalBudget, setEditTotalBudget] = useState(String(campaign.total_budget || 0));
+  const [editMinViews, setEditMinViews] = useState(String(campaign.min_view_threshold || 1000));
+  const [editDurationHours, setEditDurationHours] = useState(String(campaign.required_live_duration_hours || 72));
+  const [editChannels, setEditChannels] = useState<string[]>(
+    campaign.channels && campaign.channels.length > 0
+      ? campaign.channels
+      : ["TikTok", "Instagram", "YouTube", "Facebook", "X"]
+  );
+  const [editHashtags, setEditHashtags] = useState<string>(
+    Array.isArray(campaign.requirements?.hashtags)
+      ? campaign.requirements.hashtags.join(", ")
+      : ""
+  );
+  const [editMentions, setEditMentions] = useState<string>(
+    Array.isArray(campaign.requirements?.mentions)
+      ? campaign.requirements.mentions.join(", ")
+      : ""
+  );
+  const [editCaption, setEditCaption] = useState<string>(
+    campaign.requirements?.creative_caption || campaign.requirements?.caption_suggestion || ""
+  );
+  const [editGuidelines, setEditGuidelines] = useState<string>(
+    Array.isArray(campaign.requirements?.guidelines)
+      ? campaign.requirements.guidelines.join("\n")
+      : ""
+  );
+  const [isPendingFullEdit, setIsPendingFullEdit] = useState(false);
+  const [fullEditError, setFullEditError] = useState<string | null>(null);
+  const [fullEditSuccess, setFullEditSuccess] = useState<string | null>(null);
+
+  const handleOpenFullEdit = () => {
+    setEditTitle(campaign.title || "");
+    setEditDescription(campaign.description || "");
+    setEditCoverImageUrl(campaign.cover_image_url || "");
+    setEditAdFormat(campaign.ad_format || "video");
+    setEditCpmRate(String(campaign.cpm_rate || 2000));
+    setEditTotalBudget(String(campaign.total_budget || 0));
+    setEditMinViews(String(campaign.min_view_threshold || 1000));
+    setEditDurationHours(String(campaign.required_live_duration_hours || 72));
+    setEditChannels(
+      campaign.channels && campaign.channels.length > 0
+        ? campaign.channels
+        : ["TikTok", "Instagram", "YouTube", "Facebook", "X"]
+    );
+    setEditHashtags(Array.isArray(campaign.requirements?.hashtags) ? campaign.requirements.hashtags.join(", ") : "");
+    setEditMentions(Array.isArray(campaign.requirements?.mentions) ? campaign.requirements.mentions.join(", ") : "");
+    setEditCaption(campaign.requirements?.creative_caption || campaign.requirements?.caption_suggestion || "");
+    setEditGuidelines(Array.isArray(campaign.requirements?.guidelines) ? campaign.requirements.guidelines.join("\n") : "");
+    setFullEditError(null);
+    setFullEditSuccess(null);
+    setIsFullEditModalOpen(true);
+  };
+
+  const handleToggleChannel = (chan: string) => {
+    setEditChannels((prev) =>
+      prev.includes(chan) ? prev.filter((c) => c !== chan) : [...prev, chan]
+    );
+  };
+
+  const handleExecuteFullEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTitle.trim()) {
+      setFullEditError("Campaign title is required.");
+      return;
+    }
+
+    setIsPendingFullEdit(true);
+    setFullEditError(null);
+
+    try {
+      const hashtagsArray = editHashtags
+        .split(",")
+        .map((h) => h.trim())
+        .filter(Boolean);
+
+      const mentionsArray = editMentions
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean);
+
+      const guidelinesArray = editGuidelines
+        .split("\n")
+        .map((g) => g.trim())
+        .filter(Boolean);
+
+      const updatedRequirements = {
+        ...(campaign.requirements || {}),
+        hashtags: hashtagsArray,
+        mentions: mentionsArray,
+        guidelines: guidelinesArray,
+        creative_caption: editCaption.trim(),
+        caption_suggestion: editCaption.trim(),
+      };
+
+      await adminUpdateCampaignDetails({
+        campaignId: campaign.id,
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        cover_image_url: editCoverImageUrl.trim() || null,
+        ad_format: editAdFormat,
+        cpm_rate: Math.max(100, Number(editCpmRate) || 2000),
+        total_budget: Math.max(0, Number(editTotalBudget) || 0),
+        min_view_threshold: Math.max(100, Number(editMinViews) || 1000),
+        required_live_duration_hours: Math.max(1, Number(editDurationHours) || 72),
+        channels: editChannels,
+        requirements: updatedRequirements,
+      });
+
+      setFullEditSuccess("Campaign updated successfully!");
+      setTimeout(() => {
+        setIsFullEditModalOpen(false);
+        router.refresh();
+      }, 700);
+    } catch (err: any) {
+      setFullEditError(err.message || "Failed to update campaign details.");
+    } finally {
+      setIsPendingFullEdit(false);
+    }
+  };
 
   // Raw Scrape Modal State
   const [inspectScrapeCheck, setInspectScrapeCheck] = useState<VerificationCheckItem | null>(null);
@@ -813,6 +944,16 @@ export default function CampaignDetailAdminView({
 
           {/* Quick Admin Action Toolbar using TailAdmin Buttons */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Full Campaign Edit Trigger */}
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={handleOpenFullEdit}
+              startIcon={<Edit3 className="w-3.5 h-3.5" />}
+            >
+              Edit Campaign
+            </Button>
+
             {/* Status Override Trigger */}
             <Button
               size="sm"
@@ -2479,6 +2620,286 @@ export default function CampaignDetailAdminView({
           )}
         </div>
       )}
+
+      {/* ---------------------------------------------------- */}
+      {/* TAILADMIN MODAL: Full Campaign Editor */}
+      {/* ---------------------------------------------------- */}
+      <Modal
+        isOpen={isFullEditModalOpen}
+        onClose={() => setIsFullEditModalOpen(false)}
+        className="max-w-[840px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto"
+      >
+        <form onSubmit={handleExecuteFullEdit} className="space-y-6">
+          <div className="flex items-start justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+            <div>
+              <h4 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-brand-500" />
+                <span>Edit Campaign Details</span>
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Admin-level override for &ldquo;{campaign.title}&rdquo;. Updates are applied immediately to production.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsFullEditModalOpen(false)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {fullEditError && (
+            <div className="p-3 text-xs bg-error-50 dark:bg-error-900/20 text-error-600 dark:text-error-400 rounded-lg flex items-center gap-2 border border-error-200 dark:border-error-800/30">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{fullEditError}</span>
+            </div>
+          )}
+
+          {fullEditSuccess && (
+            <div className="p-3 text-xs bg-success-50 dark:bg-success-900/20 text-success-600 dark:text-success-400 rounded-lg flex items-center gap-2 border border-success-200 dark:border-success-800/30">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{fullEditSuccess}</span>
+            </div>
+          )}
+
+          {/* Title */}
+          <div>
+            <Label htmlFor="editTitle" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Campaign Title *
+            </Label>
+            <InputField
+              id="editTitle"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="e.g. Kpugi Official Platform Launch"
+              required
+            />
+          </div>
+
+          {/* Cover Banner URL */}
+          <div>
+            <Label htmlFor="editCoverImage" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Cover Banner Image URL
+            </Label>
+            <InputField
+              id="editCoverImage"
+              value={editCoverImageUrl}
+              onChange={(e) => setEditCoverImageUrl(e.target.value)}
+              placeholder="/images/kpugi_promo_banner.png or https://..."
+            />
+            {editCoverImageUrl && (
+              <div className="mt-2 relative w-full h-28 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={editCoverImageUrl}
+                  alt="Cover Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Ad Format */}
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Ad Format
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["video", "image", "text"] as const).map((format) => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => setEditAdFormat(format)}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold capitalize border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    editAdFormat === format
+                      ? "bg-brand-500/10 border-brand-500 text-brand-600 dark:text-brand-400 font-bold"
+                      : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="capitalize">{format}</span>
+                  {editAdFormat === format && <Check className="w-3.5 h-3.5 text-brand-500" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Budget & Economics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <Label htmlFor="editCpmRate" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                CPM Rate (₦)
+              </Label>
+              <InputField
+                id="editCpmRate"
+                type="number"
+                min={100}
+                value={editCpmRate}
+                onChange={(e) => setEditCpmRate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editTotalBudget" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Total Budget (₦)
+              </Label>
+              <InputField
+                id="editTotalBudget"
+                type="number"
+                min={0}
+                value={editTotalBudget}
+                onChange={(e) => setEditTotalBudget(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editMinViews" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Min View Gate
+              </Label>
+              <InputField
+                id="editMinViews"
+                type="number"
+                min={100}
+                value={editMinViews}
+                onChange={(e) => setEditMinViews(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editDurationHours" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Live Hours Gate
+              </Label>
+              <InputField
+                id="editDurationHours"
+                type="number"
+                min={1}
+                value={editDurationHours}
+                onChange={(e) => setEditDurationHours(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Social Channels */}
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Eligible Social Platforms
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {["TikTok", "Instagram", "YouTube", "Facebook", "X", "LinkedIn"].map((platform) => {
+                const isSelected = editChannels.includes(platform);
+                return (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => handleToggleChannel(platform)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-brand-50 border-brand-500 text-brand-600 dark:bg-brand-950/30 dark:border-brand-500 dark:text-brand-400 font-semibold"
+                        : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                    {platform}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Hashtags and Mentions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="editHashtags" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Required Hashtags (comma separated)
+              </Label>
+              <InputField
+                id="editHashtags"
+                value={editHashtags}
+                onChange={(e) => setEditHashtags(e.target.value)}
+                placeholder="#Kpugi, #EarnWithViews"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editMentions" className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Required Mentions (comma separated)
+              </Label>
+              <InputField
+                id="editMentions"
+                value={editMentions}
+                onChange={(e) => setEditMentions(e.target.value)}
+                placeholder="@kpugi, @kpugihq"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Campaign Description / Public Brief
+            </Label>
+            <TextArea
+              rows={4}
+              value={editDescription}
+              onChange={(val) => setEditDescription(val)}
+              placeholder="Describe the campaign objectives, target audience, and talking points..."
+            />
+          </div>
+
+          {/* Suggested Creator Caption */}
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Suggested Creator Caption
+            </Label>
+            <TextArea
+              rows={3}
+              value={editCaption}
+              onChange={(val) => setEditCaption(val)}
+              placeholder="Copy-paste ready caption suggestion for participating creators..."
+            />
+          </div>
+
+          {/* Creator Guidelines */}
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              Creator Guidelines / Rules (One per line)
+            </Label>
+            <TextArea
+              rows={4}
+              value={editGuidelines}
+              onChange={(val) => setEditGuidelines(val)}
+              placeholder="Tag @kpugi in your caption&#10;Post must remain active for at least 72 hours&#10;Include #Kpugi in the video description"
+            />
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isPendingFullEdit}
+              onClick={() => setIsFullEditModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isPendingFullEdit}
+            >
+              {isPendingFullEdit ? (
+                <div className="flex items-center gap-1.5">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </div>
+              ) : (
+                "Save Campaign Details"
+              )}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* ---------------------------------------------------- */}
       {/* TAILADMIN MODAL: Status Override (Form In Modal) */}

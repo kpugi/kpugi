@@ -46,6 +46,7 @@ export default async function AdminCampaignDetailPage({
       description,
       cover_image_url,
       ad_format,
+      channels,
       requirements,
       cpm_rate,
       total_budget,

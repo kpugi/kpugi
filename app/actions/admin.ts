@@ -370,3 +370,118 @@ export async function triggerManualScraperRunAction(campaignId?: string) {
 
   return result;
 }
+
+/**
+ * adminUpdateCampaignDetails
+ * Full administrative campaign update (title, description, cover image, format, CPM, budget, channels, requirements)
+ */
+export async function adminUpdateCampaignDetails(payload: {
+  campaignId: string;
+  title: string;
+  description: string;
+  cover_image_url?: string | null;
+  ad_format?: string;
+  cpm_rate?: number;
+  total_budget?: number;
+  min_view_threshold?: number;
+  required_live_duration_hours?: number;
+  channels?: string[];
+  is_featured?: boolean;
+  is_hero_pinned?: boolean;
+  requirements?: any;
+  status?: string;
+}) {
+  const { supabase, profileId } = await requireAdminSession();
+
+  if (!payload.title || !payload.title.trim()) {
+    throw new Error('Campaign title is required.');
+  }
+
+  const { data: current, error: fetchErr } = await supabase
+    .from('campaigns')
+    .select('*')
+    .eq('id', payload.campaignId)
+    .single();
+
+  if (fetchErr || !current) {
+    throw new Error('Campaign not found.');
+  }
+
+  const updateData: any = {
+    title: payload.title.trim(),
+    description: payload.description,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.cover_image_url !== undefined) {
+    updateData.cover_image_url = payload.cover_image_url;
+  }
+  if (payload.ad_format !== undefined) {
+    updateData.ad_format = payload.ad_format;
+  }
+  if (payload.cpm_rate !== undefined && Number(payload.cpm_rate) > 0) {
+    updateData.cpm_rate = Number(payload.cpm_rate);
+  }
+  if (payload.total_budget !== undefined && Number(payload.total_budget) >= 0) {
+    updateData.total_budget = Number(payload.total_budget);
+  }
+  if (payload.min_view_threshold !== undefined && Number(payload.min_view_threshold) > 0) {
+    updateData.min_view_threshold = Number(payload.min_view_threshold);
+  }
+  if (payload.required_live_duration_hours !== undefined) {
+    updateData.required_live_duration_hours = Number(payload.required_live_duration_hours);
+  }
+  if (payload.channels !== undefined && Array.isArray(payload.channels)) {
+    updateData.channels = payload.channels;
+  }
+  if (payload.is_featured !== undefined) {
+    updateData.is_featured = Boolean(payload.is_featured);
+  }
+  if (payload.is_hero_pinned !== undefined) {
+    updateData.is_hero_pinned = Boolean(payload.is_hero_pinned);
+  }
+  if (payload.requirements !== undefined) {
+    updateData.requirements = payload.requirements;
+  }
+  if (payload.status !== undefined) {
+    updateData.status = payload.status;
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from('campaigns')
+    .update(updateData)
+    .eq('id', payload.campaignId)
+    .select('*')
+    .single();
+
+  if (updateErr) {
+    throw new Error(`Failed to update campaign: ${updateErr.message}`);
+  }
+
+  await logAuditEvent({
+    profileId,
+    actorRole: 'admin',
+    action: AUDIT_ACTIONS.CAMPAIGN_UPDATED,
+    targetTable: 'campaigns',
+    targetId: payload.campaignId,
+    details: `Admin updated full details for campaign "${payload.title}"`,
+    payload: { previous: current, current: updated },
+  });
+
+  try {
+    const { deleteRedisCache } = await import('@/lib/redis/client');
+    await deleteRedisCache('campaigns:public').catch(() => {});
+    await deleteRedisCache('campaigns:creator').catch(() => {});
+  } catch {
+    // Redis optional in local dev
+  }
+
+  revalidatePath('/admin');
+  revalidatePath('/admin/campaigns');
+  revalidatePath(`/admin/campaigns/${payload.campaignId}`);
+  revalidatePath('/browse');
+  revalidatePath(`/browse/${payload.campaignId}`);
+
+  return { success: true, campaign: updated };
+}
+
