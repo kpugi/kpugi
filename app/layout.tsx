@@ -6,6 +6,8 @@ import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import { FreshdeskSupportProvider } from '@/components/support/FreshdeskSupportProvider';
 import { TawkToChat } from '@/components/support/TawkToChat';
+import { DynamicHeaderScripts } from '@/components/common/DynamicHeaderScripts';
+import { getPlatformSettings, CustomHeaderScript } from '@/lib/admin/platform-settings-service';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
@@ -16,61 +18,80 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-NLS2FH5C';
 const trustpilotKey = process.env.NEXT_PUBLIC_TRUSTPILOT_INTEGRATION_KEY || 'dT6PBJ5gQ0ZiEkPY';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: 'Kpugi — Where a Post Turns into a Payout',
-    template: '%s | Kpugi',
-  },
- description: "Kpugi connects Nigerian brands with creators for paid ad placements on Instagram, TikTok, Facebook & more. Launch a campaign or get paid to post.",
-keywords: [
-  'Kpugi',
-  'Creator Marketplace Nigeria',
-  'Influencer Marketplace Nigeria',
-  'Nigeria Creators',
-  'Paid Ad Placements',
-  'WhatsApp Status Monetization',
-  'TikTok Influencer Marketing Nigeria',
-  'Instagram Creators Nigeria',
-  'Find Influencers Nigeria',
-  'Get Paid to Post',
-  'Brand Creator Collaboration Nigeria',
-  'Micro Influencer Marketing Nigeria',
-],
-  authors: [{ name: 'Kpugi' }],
-  creator: 'Kpugi',
-  openGraph: {
-    type: 'website',
-    locale: 'en_NG',
-    url: siteUrl,
-    title: 'Kpugi — Where a Post Turns into a Payout',
-    description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
-    siteName: 'Kpugi',
-    images: [
-      {
-        url: '/kpugi_logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'Kpugi Marketplace',
-      },
+export async function generateMetadata(): Promise<Metadata> {
+  const otherMeta: Record<string, string> = {
+    'profiton-domain-verification': 'c5f35696abf43999a5d813c1cba8b4fc6de687f7f9a3bd5942b315c54007cdfb',
+  };
+
+  try {
+    const settings = await getPlatformSettings();
+    const metaTags = settings.siteVerification?.metaTags || [];
+    for (const tag of metaTags) {
+      if (tag.enabled && tag.name && tag.content) {
+        otherMeta[tag.name] = tag.content;
+      }
+    }
+  } catch (error) {
+    console.warn('[RootLayout] Failed to load site verification meta tags:', error);
+  }
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: 'Kpugi — Where a Post Turns into a Payout',
+      template: '%s | Kpugi',
+    },
+    description: "Kpugi connects Nigerian brands with creators for paid ad placements on Instagram, TikTok, Facebook & more. Launch a campaign or get paid to post.",
+    keywords: [
+      'Kpugi',
+      'Creator Marketplace Nigeria',
+      'Influencer Marketplace Nigeria',
+      'Nigeria Creators',
+      'Paid Ad Placements',
+      'WhatsApp Status Monetization',
+      'TikTok Influencer Marketing Nigeria',
+      'Instagram Creators Nigeria',
+      'Find Influencers Nigeria',
+      'Get Paid to Post',
+      'Brand Creator Collaboration Nigeria',
+      'Micro Influencer Marketing Nigeria',
     ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Kpugi — Where a Post Turns into a Payout',
-    description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
-    images: ['/kpugi_logo.png'],
-    creator: '@kpugi_hq'
-  },
-  icons: {
-    icon: '/kpugi_favicon.png',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Kpugi',
-  },
-};
+    authors: [{ name: 'Kpugi' }],
+    creator: 'Kpugi',
+    openGraph: {
+      type: 'website',
+      locale: 'en_NG',
+      url: siteUrl,
+      title: 'Kpugi — Where a Post Turns into a Payout',
+      description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
+      siteName: 'Kpugi',
+      images: [
+        {
+          url: '/kpugi_logo.png',
+          width: 1200,
+          height: 630,
+          alt: 'Kpugi Marketplace',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Kpugi — Where a Post Turns into a Payout',
+      description: 'Nigeria-first marketplace connecting advertisers with creators for paid ad placements.',
+      images: ['/kpugi_logo.png'],
+      creator: '@kpugi_hq',
+    },
+    icons: {
+      icon: '/kpugi_favicon.png',
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: 'Kpugi',
+    },
+    other: otherMeta,
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: '#090A0F',
@@ -79,15 +100,24 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let customScripts: CustomHeaderScript[] = [];
+  try {
+    const settings = await getPlatformSettings();
+    customScripts = settings.siteVerification?.customScripts || [];
+  } catch (error) {
+    console.warn('[RootLayout] Failed to load custom scripts:', error);
+  }
+
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <head>
+          <DynamicHeaderScripts scripts={customScripts} placement="head" />
           {/* Google Tag Manager */}
           <Script
             id="google-tag-manager"
@@ -111,6 +141,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </head>
         <body className="min-h-screen bg-kpugi-paper text-kpugi-ink dark:bg-[#090A0F] dark:text-white antialiased overflow-x-hidden">
+          <DynamicHeaderScripts scripts={customScripts} placement="body_start" />
           {/* Google Tag Manager (noscript) */}
           <noscript>
             <iframe
@@ -167,6 +198,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </AnalyticsProvider>
           <Analytics />
           <SpeedInsights />
+          <DynamicHeaderScripts scripts={customScripts} placement="body_end" />
         </body>
       </html>
     </ClerkProvider>
