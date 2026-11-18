@@ -259,6 +259,10 @@ export async function updatePlatformSettingsAction<K extends keyof PlatformSetti
   revalidatePath('/admin/settings');
   revalidatePath('/browse');
 
+  if (category === 'siteVerification') {
+    revalidatePath('/', 'layout');
+  }
+
   return {
     success: true,
     category,
@@ -287,6 +291,10 @@ export async function resetCategoryDefaultsAction<K extends keyof PlatformSettin
   });
 
   revalidatePath('/admin/settings');
+
+  if (category === 'siteVerification') {
+    revalidatePath('/', 'layout');
+  }
 
   return {
     success: true,

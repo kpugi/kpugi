@@ -51,11 +51,35 @@ export interface CreatorUserPolicySettings {
   blockDuplicateBankAccounts: boolean;
 }
 
+export interface VerificationMetaTag {
+  id: string;
+  name: string;
+  content: string;
+  serviceLabel: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CustomHeaderScript {
+  id: string;
+  label: string;
+  code: string;
+  placement: 'head' | 'body_start' | 'body_end';
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface SiteVerificationSettings {
+  metaTags: VerificationMetaTag[];
+  customScripts: CustomHeaderScript[];
+}
+
 export interface PlatformSettings {
   marketplace: MarketplaceSettings;
   browse: BrowseDiscoverySettings;
   campaigns: CampaignGovernanceSettings;
   users: CreatorUserPolicySettings;
+  siteVerification: SiteVerificationSettings;
 }
 
 export const DEFAULT_SETTINGS: PlatformSettings = {
@@ -116,5 +140,18 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
     requireOnboardingChecklist: true,
     flagViewVelocitySpikes: true,
     blockDuplicateBankAccounts: true,
+  },
+  siteVerification: {
+    metaTags: [
+      {
+        id: 'profiton',
+        name: 'profiton-domain-verification',
+        content: 'c5f35696abf43999a5d813c1cba8b4fc6de687f7f9a3bd5942b315c54007cdfb',
+        serviceLabel: 'Profiton',
+        enabled: true,
+        createdAt: new Date().toISOString(),
+      },
+    ],
+    customScripts: [],
   },
 };

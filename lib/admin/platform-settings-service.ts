@@ -89,6 +89,11 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
       ...(localSettings.users || {}),
       ...(dbSettings.users || {}),
     },
+    siteVerification: {
+      ...DEFAULT_SETTINGS.siteVerification,
+      ...(localSettings.siteVerification || {}),
+      ...(dbSettings.siteVerification || {}),
+    },
   };
 }
 
