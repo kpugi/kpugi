@@ -56,5 +56,18 @@
     "requireOnboardingChecklist": true,
     "flagViewVelocitySpikes": true,
     "blockDuplicateBankAccounts": true
+  },
+  "siteVerification": {
+    "metaTags": [
+      {
+        "id": "profiton",
+        "name": "profiton-domain-verification",
+        "content": "c5f35696abf43999a5d813c1cba8b4fc6de687f7f9a3bd5942b315c54007cdfb",
+        "serviceLabel": "Profiton",
+        "enabled": true,
+        "createdAt": "2026-11-18T20:09:18.467Z"
+      }
+    ],
+    "customScripts": []
   }
 }
