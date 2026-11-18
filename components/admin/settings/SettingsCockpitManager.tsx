@@ -45,6 +45,7 @@ import {
 } from "@/app/actions/admin-settings";
 import ApiKeyUpdateModal from "./modals/ApiKeyUpdateModal";
 import CronRunResultModal, { CronRunResult } from "./modals/CronRunResultModal";
+import SiteVerificationTab from "./tabs/SiteVerificationTab";
 
 interface SettingsCockpitProps {
   initialSettings: PlatformSettings;
@@ -61,6 +62,7 @@ type TabKey =
   | "browse"
   | "campaigns"
   | "users"
+  | "verification"
   | "integrations"
   | "crons"
   | "system";
@@ -81,6 +83,7 @@ export default function SettingsCockpitManager({
   const [isBrowseDirty, setIsBrowseDirty] = useState(false);
   const [isCampaignsDirty, setIsCampaignsDirty] = useState(false);
   const [isUsersDirty, setIsUsersDirty] = useState(false);
+  const [isVerificationDirty, setIsVerificationDirty] = useState(false);
 
   // Feedback banner state
   const [feedback, setFeedback] = useState<{
@@ -121,6 +124,7 @@ export default function SettingsCockpitManager({
         if (category === "browse") setIsBrowseDirty(false);
         if (category === "campaigns") setIsCampaignsDirty(false);
         if (category === "users") setIsUsersDirty(false);
+        if (category === "siteVerification") setIsVerificationDirty(false);
         showToast("success", `Platform ${category} settings saved successfully.`);
       } catch (err: any) {
         showToast("error", err?.message || "Failed to update settings.");
@@ -149,6 +153,7 @@ export default function SettingsCockpitManager({
         if (category === "browse") setIsBrowseDirty(false);
         if (category === "campaigns") setIsCampaignsDirty(false);
         if (category === "users") setIsUsersDirty(false);
+        if (category === "siteVerification") setIsVerificationDirty(false);
         showToast(
           "success",
           `${category.toUpperCase()} parameters reset to system defaults.`
@@ -421,6 +426,21 @@ export default function SettingsCockpitManager({
           <Users className="w-3.5 h-3.5" />
           <span>Creator & User Policies</span>
           {isUsersDirty && (
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("verification")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap ${
+            activeTab === "verification"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50"
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Site Verification & Tags</span>
+          {isVerificationDirty && (
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
           )}
         </button>
@@ -1899,6 +1919,26 @@ export default function SettingsCockpitManager({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 8: SITE VERIFICATION & HEADER TAGS */}
+      {/* ========================================================================= */}
+      {activeTab === "verification" && (
+        <SiteVerificationTab
+          settings={settings.siteVerification || { metaTags: [], customScripts: [] }}
+          onChange={(updated) => {
+            setSettings((prev) => ({
+              ...prev,
+              siteVerification: updated,
+            }));
+            setIsVerificationDirty(true);
+          }}
+          onSave={() => handleSaveSection("siteVerification")}
+          onReset={() => handleResetSection("siteVerification")}
+          isDirty={isVerificationDirty}
+          isPending={isPending}
+        />
       )}
 
       {/* Modals */}
