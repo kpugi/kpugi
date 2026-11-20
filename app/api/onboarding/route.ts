@@ -337,9 +337,6 @@ export async function POST(req: Request) {
             ...(bank_details?.account_number
               ? {
                   paystack_recipient_code: JSON.stringify(bank_details),
-                  bank_account_number: bank_details.account_number,
-                  bank_code: bank_details.bank_code,
-                  bank_name: bank_details.bank_name || 'Bank',
                 }
               : {}),
           },

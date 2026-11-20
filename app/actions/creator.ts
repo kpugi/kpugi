@@ -765,9 +765,6 @@ export async function resolveAndSaveBankAccountAction(formData: FormData) {
         .from('creator_profiles')
         .update({
           paystack_recipient_code: bankDetailsJson,
-          bank_account_number: accountNumber,
-          bank_code: bankCode,
-          bank_name: bankName || 'Bank',
         })
         .eq('profile_id', profileId);
     }
@@ -869,9 +866,6 @@ export async function deleteBankAccountAction(accountId: string) {
         .from('creator_profiles')
         .update({
           paystack_recipient_code: bankDetailsJson,
-          bank_account_number: nextPrimary.account_number,
-          bank_code: nextPrimary.bank_code,
-          bank_name: nextPrimary.bank_name,
         })
         .eq('profile_id', profileId);
     } else {
@@ -880,9 +874,6 @@ export async function deleteBankAccountAction(accountId: string) {
         .from('creator_profiles')
         .update({
           paystack_recipient_code: null,
-          bank_account_number: null,
-          bank_code: null,
-          bank_name: null,
         })
         .eq('profile_id', profileId);
     }
@@ -960,9 +951,6 @@ export async function setDefaultBankAccountAction(accountId: string) {
     .from('creator_profiles')
     .update({
       paystack_recipient_code: bankDetailsJson,
-      bank_account_number: targetAccount.account_number,
-      bank_code: targetAccount.bank_code,
-      bank_name: targetAccount.bank_name,
     })
     .eq('profile_id', profileId);
 
