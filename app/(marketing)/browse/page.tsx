@@ -1,5 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
+import { createAdminClient } from '@/lib/supabase/server';
 import BrowseCampaignsClientView from '@/components/browse/BrowseCampaignsClientView';
 
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
@@ -67,8 +68,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BrowsePage() {
-  // 1. Breadcrumb Schema
+export default async function BrowsePage() {
+  // 1. Fetch live campaigns on the server for ItemList schema
+  let campaigns: Array<{ id: string; title: string }> = [];
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from('campaigns')
+      .select('id, title')
+      .in('status', ['live', 'completed'])
+      .eq('deleted', false)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (data) {
+      campaigns = data;
+    }
+  } catch (err) {
+    console.warn('[BrowsePage] Failed to fetch campaigns for ItemList schema:', err);
+  }
+
+  // 2. Breadcrumb Schema (Google Rich Results verified)
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -88,7 +107,38 @@ export default function BrowsePage() {
     ],
   };
 
-  // 2. CollectionPage & ItemList Schema
+  // 3. ItemList (Summary Page Carousel / List - Google Rich Results supported)
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Verified Creator Campaigns on Kpugi',
+    description:
+      'Live performance-based brand campaigns with verified CPM payouts for Nigerian creators.',
+    url: pageUrl,
+    numberOfItems: campaigns.length,
+    itemListElement: campaigns.map((c, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: `${appUrl}/browse/${c.id}`,
+      name: c.title,
+    })),
+  };
+
+  // 4. Organization Schema (Google Rich Results verified for Brand/Logo)
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Kpugi Technologies',
+    url: appUrl,
+    logo: `${appUrl}/kpugi_logo.png`,
+    description: 'Nigeria-first creator advertising platform with escrow-backed CPM payouts.',
+    sameAs: [
+      'https://x.com/kpugi_hq',
+      'https://instagram.com/kpugi_hq',
+    ],
+  };
+
+  // 5. CollectionPage Schema
   const collectionJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -96,53 +146,9 @@ export default function BrowsePage() {
     description:
       'Verified performance-based creator campaigns in Nigeria across TikTok, Instagram, YouTube, and X.',
     url: pageUrl,
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: [
-        {
-          '@type': 'ListItem',
-          position: 1,
-          name: 'Tech & SaaS Campaigns',
-          description: 'Monetize tech product reviews, app launches, and software tutorials.',
-        },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: 'Fintech & Finance Campaigns',
-          description: 'Promote banking apps, savings tools, and investment platforms at competitive CPM rates.',
-        },
-        {
-          '@type': 'ListItem',
-          position: 3,
-          name: 'Lifestyle, Fashion & Beauty Campaigns',
-          description: 'Partner with top consumer brands for video reviews and lifestyle placements.',
-        },
-        {
-          '@type': 'ListItem',
-          position: 4,
-          name: 'Food & FMCG Campaigns',
-          description: 'Create engaging short-form video content for culinary and restaurant brands.',
-        },
-      ],
-    },
   };
 
-  // 3. WebSite with SearchAction Schema
-  const websiteSearchJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    url: appUrl,
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${pageUrl}?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
-  };
-
-  // 4. FAQ Schema for Google Rich Snippets
+  // 6. FAQ Schema
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -191,13 +197,19 @@ export default function BrowsePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
+      {campaigns.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        />
+      )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSearchJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
       <script
         type="application/ld+json"
