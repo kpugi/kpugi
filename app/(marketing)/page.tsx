@@ -194,29 +194,43 @@ export default async function HomePage() {
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
     name: 'Kpugi',
     url: siteUrl,
     description:
       'Where posts turn into payouts and brands buy verified reach. Nigeria’s verified creator performance marketplace.',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${siteUrl}/browse?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
+    publisher: {
+      '@id': `${siteUrl}/#organization`,
     },
+    inLanguage: 'en-NG',
   };
 
   const orgSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Kpugi',
+    '@id': `${siteUrl}/#organization`,
+    name: 'Kpugi Technologies',
+    alternateName: 'Kpugi',
     url: siteUrl,
     logo: `${siteUrl}/kpugi_logo.png`,
+    image: `${siteUrl}/kpugi_logo.png`,
+    description:
+      'Nigeria’s performance creator network connecting brands with creators for escrow-backed CPM advertising.',
     sameAs: [
       'https://x.com/Kpugi_hq',
       'https://instagram.com/Kpugi_hq',
       'https://facebook.com/Kpugi_hq',
       'https://linkedin.com/company/Kpugi_hq',
       'https://youtube.com/@Kpugi_hq',
+      'https://www.trustpilot.com/review/kpugi.com',
+    ],
+    knowsAbout: [
+      'Creator Economy',
+      'Influencer Marketing Nigeria',
+      'CPM Advertising',
+      'Escrow Settlements',
+      'Automated View Verification',
+      'Paystack Creator Payouts',
     ],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -224,6 +238,108 @@ export default async function HomePage() {
       email: 'support@kpugi.com',
       availableLanguage: ['en'],
     },
+  };
+
+  const webAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    '@id': `${siteUrl}/#webapp`,
+    name: 'Kpugi Creator Marketplace',
+    url: siteUrl,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'All',
+    browserRequirements: 'Requires JavaScript and modern web browser',
+    offers: {
+      '@type': 'Offer',
+      price: 0,
+      priceCurrency: 'NGN',
+      availability: 'https://schema.org/InStock',
+    },
+    description:
+      'Web-based creator performance advertising platform. Brands launch escrow-backed CPM campaigns and creators receive automated bank payouts for verified post views.',
+    featureList: [
+      'Automated Multi-Platform View Auditing',
+      'Escrow Protected Brand Campaign Budgets',
+      'Guaranteed Paystack Creator Payouts',
+      'Gamified Creator Tier Progression',
+      'AI-Powered Creator-Campaign Matching',
+    ],
+    provider: {
+      '@id': `${siteUrl}/#organization`,
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: siteUrl,
+      },
+    ],
+  };
+
+  const serviceSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'Performance Creator Advertising & Escrow Settlements',
+    serviceType: 'Influencer Marketing & CPM Advertising',
+    description:
+      'Performance-based creator campaign placement network in Nigeria. Brands fund campaigns into escrow and pay creators per 1,000 verified views on TikTok, Instagram, and YouTube.',
+    provider: {
+      '@id': `${siteUrl}/#organization`,
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: 'Nigeria',
+    },
+  };
+
+  const siteNavSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Site Navigation',
+    itemListElement: [
+      {
+        '@type': 'SiteNavigationElement',
+        position: 1,
+        name: 'Browse Campaigns',
+        url: `${siteUrl}/browse`,
+      },
+      {
+        '@type': 'SiteNavigationElement',
+        position: 2,
+        name: 'For Brands & Advertisers',
+        url: `${siteUrl}/brands`,
+      },
+      {
+        '@type': 'SiteNavigationElement',
+        position: 3,
+        name: 'For Creators',
+        url: `${siteUrl}/creators`,
+      },
+      {
+        '@type': 'SiteNavigationElement',
+        position: 4,
+        name: 'How It Works',
+        url: `${siteUrl}/how-it-works`,
+      },
+      {
+        '@type': 'SiteNavigationElement',
+        position: 5,
+        name: 'Pricing & CPM',
+        url: `${siteUrl}/pricing`,
+      },
+      {
+        '@type': 'SiteNavigationElement',
+        position: 6,
+        name: 'Earnings Calculator',
+        url: `${siteUrl}/calculator`,
+      },
+    ],
   };
 
   const faqSchema = {
@@ -267,6 +383,22 @@ export default async function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavSchema) }}
       />
       <script
         type="application/ld+json"
