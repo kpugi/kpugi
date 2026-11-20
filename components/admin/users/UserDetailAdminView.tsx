@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -190,6 +190,34 @@ export default function UserDetailAdminView({
   const [activeTab, setActiveTab] = useState<
     "overview" | "footprint" | "activity" | "finances" | "audits"
   >("overview");
+
+  // Resolve bank accounts (with fallback to parsing JSON from paystack_recipient_code)
+  const resolvedBankAccounts = useMemo(() => {
+    if (bankAccounts && bankAccounts.length > 0) {
+      return bankAccounts;
+    }
+    if (creatorProfile?.paystack_recipient_code) {
+      try {
+        const parsed = JSON.parse(creatorProfile.paystack_recipient_code);
+        if (parsed && typeof parsed === "object" && (parsed.account_number || parsed.bank_code)) {
+          return [
+            {
+              id: "fallback-paystack",
+              bank_name: parsed.bank_name || "Bank",
+              bank_code: parsed.bank_code || "",
+              account_number: parsed.account_number || "",
+              account_name: parsed.account_name || user.full_name || "Creator",
+              is_primary: true,
+              recipient_code: parsed.recipient_code || null,
+            },
+          ];
+        }
+      } catch {
+        // Not JSON
+      }
+    }
+    return [];
+  }, [bankAccounts, creatorProfile?.paystack_recipient_code, user.full_name]);
 
   // Audit Ledger Filter State
   const [auditFilter, setAuditFilter] = useState<"all" | "admin" | "user" | "system">("all");
@@ -785,7 +813,16 @@ export default function UserDetailAdminView({
                 <div className="py-2.5 flex justify-between">
                   <span className="text-gray-500">Paystack Recipient</span>
                   <span className="font-mono text-gray-800 dark:text-gray-200">
-                    {creatorProfile?.paystack_recipient_code || "None configured"}
+                    {(() => {
+                      if (!creatorProfile?.paystack_recipient_code) return "None configured";
+                      try {
+                        const parsed = JSON.parse(creatorProfile.paystack_recipient_code);
+                        if (parsed && typeof parsed === "object") {
+                          return `${parsed.bank_name || "Bank"} (${parsed.account_number || ""})`;
+                        }
+                      } catch {}
+                      return creatorProfile.paystack_recipient_code;
+                    })()}
                   </span>
                 </div>
                 <div className="py-2.5 flex justify-between">
@@ -799,7 +836,7 @@ export default function UserDetailAdminView({
           </div>
 
           {/* Payout & Settlement Bank Accounts Card */}
-          {(isCreator || bankAccounts.length > 0) && (
+          {(isCreator || resolvedBankAccounts.length > 0) && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/3 space-y-4 md:col-span-2 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-white/5">
                 <div className="flex items-center gap-2.5">
@@ -809,9 +846,9 @@ export default function UserDetailAdminView({
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white text-base flex items-center gap-2">
                       <span>Payout &amp; Settlement Bank Account</span>
-                      {bankAccounts.length > 0 ? (
+                      {resolvedBankAccounts.length > 0 ? (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
-                          {bankAccounts.length} Verified
+                          {resolvedBankAccounts.length} Verified
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">
@@ -826,9 +863,9 @@ export default function UserDetailAdminView({
                 </div>
               </div>
 
-              {bankAccounts.length > 0 ? (
+              {resolvedBankAccounts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bankAccounts.map((account) => (
+                  {resolvedBankAccounts.map((account) => (
                     <div
                       key={account.id}
                       className={`p-4 rounded-xl border transition-all ${

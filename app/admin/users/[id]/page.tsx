@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { requireAdminSession } from '@/lib/admin/auth';
+import { createAdminClient } from '@/lib/supabase/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import UserDetailAdminView from '@/components/admin/users/UserDetailAdminView';
 
@@ -13,8 +14,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const { supabase } = await requireAdminSession();
-  const { data: user } = await supabase
+  await requireAdminSession();
+  const db = createAdminClient();
+  const { data: user } = await db
     .from('profiles')
     .select('full_name, email')
     .eq('id', id)
@@ -33,10 +35,11 @@ export default async function AdminUserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: targetUserId } = await params;
-  const { supabase, profileId: currentAdminId } = await requireAdminSession();
+  const { profileId: currentAdminId } = await requireAdminSession();
+  const db = createAdminClient();
 
   // 1. Query the target user profile
-  const { data: profile, error: profileErr } = await supabase
+  const { data: profile, error: profileErr } = await db
     .from('profiles')
     .select('*')
     .eq('id', targetUserId)
@@ -56,31 +59,31 @@ export default async function AdminUserDetailPage({
     submissionsRes,
     bankAccountsRes,
   ] = await Promise.all([
-    supabase
+    db
       .from('creator_profiles')
       .select('*')
       .eq('profile_id', targetUserId)
       .maybeSingle(),
-    supabase
+    db
       .from('advertiser_profiles')
       .select('*')
       .eq('profile_id', targetUserId)
       .maybeSingle(),
-    supabase
+    db
       .from('social_accounts')
       .select('*')
       .eq('creator_id', targetUserId)
       .order('connected_at', { ascending: false }),
-    supabase
+    db
       .from('wallets')
       .select('*')
       .eq('profile_id', targetUserId),
-    supabase
+    db
       .from('campaigns')
       .select('id, title, status, cpm_rate, total_budget, spent_budget, created_at')
       .eq('advertiser_id', targetUserId)
       .order('created_at', { ascending: false }),
-    supabase
+    db
       .from('submissions')
       .select(`
         id,
@@ -99,7 +102,7 @@ export default async function AdminUserDetailPage({
       `)
       .eq('creator_id', targetUserId)
       .order('submitted_at', { ascending: false }),
-    supabase
+    db
       .from('bank_accounts')
       .select('*')
       .eq('profile_id', targetUserId)
@@ -113,32 +116,32 @@ export default async function AdminUserDetailPage({
   // 3. Fetch wallet transactions and forensic audit logs across admin, creator, brand, and central tables
   const [txRes, adminAuditsRes, creatorAuditsRes, brandAuditsRes, centralAuditsRes] = await Promise.all([
     walletIds.length > 0
-      ? supabase
+      ? db
           .from('wallet_transactions')
           .select('*')
           .in('wallet_id', walletIds)
           .order('created_at', { ascending: false })
           .limit(60)
       : Promise.resolve({ data: [] }),
-    supabase
+    db
       .from('admin_audit_log')
       .select('id, action, target_table, target_id, details, payload, created_at, admin_id')
       .in('target_id', allTargetIds)
       .order('created_at', { ascending: false })
       .limit(60),
-    supabase
+    db
       .from('creator_audit_log')
       .select('id, action, target_table, target_id, details, payload, created_at')
       .eq('creator_id', targetUserId)
       .order('created_at', { ascending: false })
       .limit(60),
-    supabase
+    db
       .from('brand_audit_log')
       .select('id, action, target_table, target_id, details, payload, created_at')
       .eq('brand_id', targetUserId)
       .order('created_at', { ascending: false })
       .limit(60),
-    supabase
+    db
       .from('audit_log')
       .select('id, action, actor_role, target_table, target_id, payload, created_at')
       .or(`target_id.eq.${targetUserId},profile_id.eq.${targetUserId}`)
