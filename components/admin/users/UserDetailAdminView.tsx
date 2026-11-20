@@ -46,6 +46,8 @@ import {
   Info,
   Trophy,
   Award,
+  Landmark,
+  CreditCard,
 } from "lucide-react";
 import { getCreatorLevel, CREATOR_LEVELS } from "@/lib/utils/levels";
 import CreatorLevelBadge from "@/components/creator/CreatorLevelBadge";
@@ -91,6 +93,16 @@ export interface UserDetailProps {
     location?: string | null;
     tax_id?: string | null;
   } | null;
+  bankAccounts?: Array<{
+    id: string;
+    bank_name: string;
+    bank_code: string;
+    account_number: string;
+    account_name: string;
+    is_primary: boolean;
+    recipient_code?: string | null;
+    created_at?: string;
+  }>;
   socialAccounts: Array<{
     id: string;
     platform: string;
@@ -158,6 +170,7 @@ export default function UserDetailAdminView({
   user: initialUser,
   creatorProfile: initialCreatorProfile,
   advertiserProfile: initialAdvertiserProfile,
+  bankAccounts = [],
   socialAccounts,
   wallets: initialWallets,
   walletTransactions,
@@ -784,6 +797,110 @@ export default function UserDetailAdminView({
               </div>
             )}
           </div>
+
+          {/* Payout & Settlement Bank Accounts Card */}
+          {(isCreator || bankAccounts.length > 0) && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/3 space-y-4 md:col-span-2 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-white/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-base flex items-center gap-2">
+                      <span>Payout &amp; Settlement Bank Account</span>
+                      {bankAccounts.length > 0 ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+                          {bankAccounts.length} Verified
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">
+                          Not Added
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Nigerian bank account details verified for automated Paystack payouts and escrow withdrawals.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {bankAccounts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {bankAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className={`p-4 rounded-xl border transition-all ${
+                        account.is_primary
+                          ? "border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20 dark:border-emerald-500/30"
+                          : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                            {account.bank_name}
+                          </span>
+                        </div>
+                        {account.is_primary && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-600 text-white shadow-xs">
+                            Primary Payout
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-gray-500">Account Number</span>
+                          <div className="flex items-center gap-1.5 font-mono font-bold text-gray-900 dark:text-white text-sm">
+                            <span>{account.account_number}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(account.account_number, `bank-${account.id}`)}
+                              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+                              title="Copy account number"
+                            >
+                              {copiedKey === `bank-${account.id}` ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-gray-500">Account Name</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-200 uppercase">
+                            {account.account_name}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between py-1">
+                          <span className="text-gray-500">Bank Code / Recipient</span>
+                          <span className="font-mono text-gray-600 dark:text-gray-400">
+                            {account.bank_code} {account.recipient_code ? `• ${account.recipient_code}` : ""}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl border border-amber-200/60 dark:border-amber-800/30 bg-amber-50/40 dark:bg-amber-950/10 flex items-start gap-3 text-xs text-amber-700 dark:text-amber-400">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block">No Nigerian Bank Account Connected</span>
+                    <span className="text-amber-600 dark:text-amber-400/90">
+                      This user has not yet added or resolved a Nigerian bank account in onboarding or wallet settings.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Creator Gamification Rank & Progression Card */}
           {isCreator && (

@@ -54,6 +54,7 @@ export default async function AdminUserDetailPage({
     walletsRes,
     campaignsRes,
     submissionsRes,
+    bankAccountsRes,
   ] = await Promise.all([
     supabase
       .from('creator_profiles')
@@ -98,6 +99,11 @@ export default async function AdminUserDetailPage({
       `)
       .eq('creator_id', targetUserId)
       .order('submitted_at', { ascending: false }),
+    supabase
+      .from('bank_accounts')
+      .select('*')
+      .eq('profile_id', targetUserId)
+      .order('is_primary', { ascending: false }),
   ]);
 
   const wallets = walletsRes.data || [];
@@ -274,6 +280,7 @@ export default async function AdminUserDetailPage({
       }}
       creatorProfile={creatorRes.data || null}
       advertiserProfile={advertiserRes.data || null}
+      bankAccounts={bankAccountsRes.data || []}
       socialAccounts={socialsRes.data || []}
       wallets={wallets}
       walletTransactions={walletTransactions}
