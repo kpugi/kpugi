@@ -14,8 +14,8 @@
 ## How Kpugi Works
 - **Performance Model:** Creators are compensated on a Cost Per Mille (CPM) model—earning a fixed rate per 1,000 verified post views.
 - **Automated Verification:** View counts and post compliance are audited automatically via platform scrapers and APIs.
-- **Escrow Protection:** Advertisers fund campaigns upfront into escrow, guaranteeing timely and safe creator payouts via Paystack.
-- **Supported Channels:** TikTok, Instagram Reels & Stories, YouTube Shorts & Videos.
+- **Escrow Protection:** Advertisers fund campaigns upfront into escrow, guaranteeing timely and safe creator payouts.
+- **Supported Channels:** Facebook, TwitterTikTok, Instagram (Reels), YouTube (Shorts).
 
 ## Sitemaps & Feeds
 - [Campaign Sitemap](https://kpugi.com/sitemap-campaigns.xml): Real-time XML index of all public creator campaigns.
