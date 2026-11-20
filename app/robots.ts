@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com';
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://kpugi.com').replace(/\/$/, '');
 
   return {
     rules: [
@@ -19,9 +19,13 @@ export default function robots(): MetadataRoute.Robots {
           '/accounts/',
           '/earnings/',
           '/onboarding/',
+          '/admin/',
         ],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: [
+      `${baseUrl}/sitemap.xml`,
+      `${baseUrl}/sitemap-campaigns.xml`,
+    ],
   };
 }

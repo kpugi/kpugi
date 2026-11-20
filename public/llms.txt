@@ -1,0 +1,22 @@
+# Kpugi
+
+> Kpugi is Nigeria's premier performance-based creator advertising network. Brands launch escrow-backed CPM campaigns, and verified creators earn guaranteed payouts per 1,000 verified views on TikTok, Instagram, and YouTube.
+
+## Core Pages
+- [Home](https://kpugi.com): Overview of Kpugi's creator monetization platform.
+- [Browse Campaigns](https://kpugi.com/browse): Explore live brand campaigns with CPM rates, requirements, and total budgets.
+- [For Brands & Advertisers](https://kpugi.com/brands): Launch performance campaigns, set CPM rates, and manage escrow funding.
+- [For Creators](https://kpugi.com/creators): Join open campaigns, submit content links, and receive automated Paystack payouts.
+- [How It Works](https://kpugi.com/how-it-works): Step-by-step guide to the campaign lifecycle and escrow verification.
+- [Pricing & CPM Model](https://kpugi.com/pricing): Transparent pricing structure and CPM calculations.
+- [FAQ](https://kpugi.com/faq): Answers to common creator and advertiser questions.
+
+## How Kpugi Works
+- **Performance Model:** Creators are compensated on a Cost Per Mille (CPM) model—earning a fixed rate per 1,000 verified post views.
+- **Automated Verification:** View counts and post compliance are audited automatically via platform scrapers and APIs.
+- **Escrow Protection:** Advertisers fund campaigns upfront into escrow, guaranteeing timely and safe creator payouts via Paystack.
+- **Supported Channels:** TikTok, Instagram Reels & Stories, YouTube Shorts & Videos.
+
+## Sitemaps & Feeds
+- [Campaign Sitemap](https://kpugi.com/sitemap-campaigns.xml): Real-time XML index of all public creator campaigns.
+- [Main Sitemap](https://kpugi.com/sitemap.xml): Index of all static marketing and documentation pages.

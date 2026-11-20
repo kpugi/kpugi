@@ -1,0 +1,35 @@
+# ai.txt - AI Crawler & Model Permissions for Kpugi (https://kpugi.com)
+# Defines crawling, indexing, and data usage permissions for AI models and search engines.
+
+User-agent: *
+Allow: /
+Allow: /browse
+Allow: /browse/*
+Allow: /brands
+Allow: /creators
+Allow: /how-it-works
+Allow: /pricing
+Allow: /faq
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /llms.txt
+Allow: /sitemap.xml
+Allow: /sitemap-campaigns.xml
+
+Disallow: /api/
+Disallow: /c/
+Disallow: /b/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /wallet/
+Disallow: /submissions/
+Disallow: /accounts/
+Disallow: /earnings/
+Disallow: /onboarding/
+Disallow: /admin/
+
+# Permissions
+Usage: Search, Summarization, Retrieval-Augmented Generation (RAG)
+Attribution: Preferred (link to https://kpugi.com or specific /browse/[campaignId] URL)
+Contact: support@kpugi.com
