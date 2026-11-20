@@ -39,10 +39,11 @@ import {
   Trophy,
   Truck,
   BarChart3,
+  Loader2,
 } from 'lucide-react';
 import { PerkWithClaim, PerkType } from '@/lib/supabase/perks';
 import { getCreatorLevel } from '@/lib/utils/levels';
-import { submitPerkProofAction } from '@/app/actions/perks';
+import { submitPerkProofAction, claimInstantPerkAction } from '@/app/actions/perks';
 import { openFreshdeskWidget } from '@/lib/support/freshdesk';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,6 +108,9 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
   const [platform, setPlatform] = useState('TikTok Video');
   const [proofNotes, setProofNotes] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [hasClaimedInstant, setHasClaimedInstant] = useState(perk.claim?.status === 'approved');
+  const [instantClaimPending, startInstantClaim] = useTransition();
+  const [currentClaimedCount, setCurrentClaimedCount] = useState(perk.claimed_count || 0);
   const [error, setError] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -119,16 +123,20 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
   const meta = TYPE_META[perk.perk_type] || TYPE_META.challenge;
   const TypeIcon = meta.Icon;
 
-  const isApproved = claim?.status === 'approved';
+  const isClaimedInstant = hasClaimedInstant || claim?.status === 'approved';
+  const isApproved = isClaimedInstant;
   const isSubmitted = submitted || claim?.status === 'submitted';
   const isRejected = claim?.status === 'rejected';
+
+  const totalQuota = perk.total_quota;
+  const isPoolFull = totalQuota !== null && currentClaimedCount >= totalQuota;
 
   // Calculate progression percentage
   let progressPercent = 33;
   if (isLocked) {
     progressPercent = 0;
   } else if (perk.perk_type === 'coupon') {
-    progressPercent = 100; // Coupon discounts are 100% accessible immediately
+    progressPercent = isClaimedInstant ? 100 : 50;
   } else if (isApproved) {
     progressPercent = 100;
   } else if (isSubmitted) {
@@ -211,6 +219,21 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
 
       setSubmitted(true);
       setToastMessage('Verification proof submitted! Automated audit queued. Progress updated.');
+      setTimeout(() => setToastMessage(null), 8000);
+    });
+  };
+
+  const handleInstantClaim = () => {
+    setError('');
+    startInstantClaim(async () => {
+      const res = await claimInstantPerkAction(perk.id);
+      if (!res.success) {
+        setError(res.error || 'Failed to claim voucher. Please try again.');
+        return;
+      }
+      setHasClaimedInstant(true);
+      setCurrentClaimedCount((prev) => prev + 1);
+      setToastMessage('🎉 Voucher claimed successfully! Your exclusive promo code is now unlocked.');
       setTimeout(() => setToastMessage(null), 8000);
     });
   };
@@ -401,30 +424,36 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
 
                 {/* Step 2: Instant Code Activation (Pure Steps Tracker - Actions in Card 2 below) */}
                 <div className="flex items-start gap-4 p-4 rounded-xl bg-kpugi-paper/70 dark:bg-white/5 transition-colors border border-kpugi-border/60 dark:border-white/5">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm font-mono text-sm font-bold ${
                     isLocked
                       ? 'bg-slate-200 dark:bg-white/10 text-kpugi-slate'
-                      : 'bg-emerald-600 text-white'
+                      : isClaimedInstant
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-kpugi-blue text-white'
                   }`}>
-                    {isLocked ? <Lock className="w-4 h-4" /> : <Check className="w-5 h-5" />}
+                    {isLocked ? <Lock className="w-4 h-4" /> : isClaimedInstant ? <Check className="w-5 h-5" /> : '2'}
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <h3 className="font-display text-sm sm:text-base font-bold text-kpugi-ink dark:text-white">
-                        Step 2: Copy Voucher &amp; Redeem at Checkout
+                        Step 2: Claim Voucher &amp; Redeem at Checkout
                       </h3>
                       <span className={`px-2.5 py-0.5 rounded-full font-sans text-xs font-semibold shadow-xs ${
                         isLocked
                           ? 'bg-slate-200 dark:bg-white/10 text-kpugi-slate'
-                          : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                          : isClaimedInstant
+                          ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                          : 'bg-blue-100 dark:bg-blue-900/40 text-kpugi-blue dark:text-blue-300'
                       }`}>
-                        {isLocked ? 'Locked' : 'Unlocked & Ready ✓'}
+                        {isLocked ? 'Locked' : isClaimedInstant ? 'Claimed & Unlocked ✓' : 'Ready to Claim'}
                       </span>
                     </div>
                     <p className="font-sans text-xs sm:text-sm text-kpugi-slate dark:text-slate-400 mt-1">
                       {isLocked
                         ? 'Voucher codes unlock automatically once your creator rank eligibility is verified.'
-                        : 'Zero proof submissions or administrative delays. Your exclusive promo code is unlocked in the action card below.'}
+                        : isClaimedInstant
+                        ? 'Voucher claimed! Your exclusive promo code is revealed in the action card below.'
+                        : 'Click "Claim Voucher" in the action card below to reserve your slot and reveal your code.'}
                     </p>
                   </div>
                 </div>
@@ -682,49 +711,103 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
                         Redeem Discount Voucher
                       </h3>
                       <p className="font-sans text-xs text-kpugi-slate dark:text-slate-400">
-                        Copy your exclusive partner voucher code and apply directly at checkout
+                        {isClaimedInstant
+                          ? 'Copy your exclusive partner voucher code and apply directly at checkout'
+                          : 'Claim your voucher slot below to reveal your personal promo code'}
                       </p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 font-sans text-xs font-bold">
-                    Instant Zero-Wait
+                  <span className={`px-2.5 py-0.5 rounded-full font-sans text-xs font-bold ${
+                    isClaimedInstant
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300'
+                  }`}>
+                    {isClaimedInstant ? 'Claimed & Unlocked ✓' : 'Instant Zero-Wait'}
                   </span>
                 </div>
+
+                {/* Instant Claim Feedback Notifications */}
+                {toastMessage && (
+                  <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 font-sans text-xs sm:text-sm font-semibold flex items-center gap-2 border border-emerald-200 dark:border-emerald-800/40">
+                    <CheckCircle className="w-5 h-5 text-kpugi-naira shrink-0" />
+                    <span>{toastMessage}</span>
+                  </div>
+                )}
+                {error && (
+                  <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-300 font-sans text-xs sm:text-sm font-semibold flex items-center gap-2 border border-red-200 dark:border-red-800/40">
+                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 <div className="p-5 sm:p-6 rounded-xl bg-kpugi-paper dark:bg-white/5 border border-kpugi-border dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-5">
                   <div className="flex flex-col gap-1 text-center sm:text-left">
                     <span className="font-sans text-xs font-bold uppercase tracking-wider text-kpugi-slate dark:text-slate-400">
                       Your Exclusive Promo Code
                     </span>
-                    <span className="font-mono text-2xl sm:text-3xl font-extrabold text-kpugi-blue dark:text-blue-400 tracking-widest py-1">
-                      {perk.coupon_code || 'KPUGIPARTNER'}
+                    <span className="font-mono text-2xl sm:text-3xl font-extrabold text-kpugi-blue dark:text-blue-400 tracking-widest py-1 select-all">
+                      {isClaimedInstant
+                        ? (perk.coupon_code || 'KPUGIPARTNER')
+                        : (perk.coupon_code ? `${perk.coupon_code.slice(0, 3)}•••••` : '••••••••')}
                     </span>
                     <span className="font-sans text-xs text-kpugi-slate dark:text-slate-400">
-                      {perk.savings_value ? `${cleanDisplayValue(perk.savings_value)} • ` : ''}Apply directly at partner checkout
+                      {perk.savings_value ? `${cleanDisplayValue(perk.savings_value)} • ` : ''}
+                      {isClaimedInstant ? 'Apply directly at partner checkout' : 'Click Claim Voucher to unlock full code & slot'}
                     </span>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
-                    {perk.coupon_code && (
-                      <CopyButton value={perk.coupon_code} label="Copy Promo Code" />
-                    )}
-                    {perk.affiliate_url && (
-                      <a
-                        href={perk.affiliate_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-kpugi-blue text-white font-sans text-xs sm:text-sm font-bold hover:bg-blue-700 transition-all shadow-sm shrink-0"
+                    {isClaimedInstant ? (
+                      <>
+                        {perk.coupon_code && (
+                          <CopyButton value={perk.coupon_code} label="Copy Promo Code" />
+                        )}
+                        {perk.affiliate_url && (
+                          <a
+                            href={perk.affiliate_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-kpugi-blue text-white font-sans text-xs sm:text-sm font-bold hover:bg-blue-700 transition-all shadow-sm shrink-0"
+                          >
+                            <span>Redeem on Partner Portal</span>
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </>
+                    ) : isPoolFull ? (
+                      <div className="px-5 py-2.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-500 font-sans text-xs sm:text-sm font-bold text-center">
+                        All Slots Claimed
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleInstantClaim}
+                        disabled={instantClaimPending}
+                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-md shrink-0 disabled:opacity-60 cursor-pointer"
                       >
-                        <span>Redeem on Partner Portal</span>
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                        {instantClaimPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Claiming Voucher...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Gift className="w-4 h-4" />
+                            <span>Claim Voucher &amp; Reveal Code</span>
+                          </>
+                        )}
+                      </button>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 font-sans text-xs text-kpugi-slate dark:text-slate-400">
                   <Info className="w-4 h-4 text-kpugi-blue shrink-0" />
-                  <span>No verification proof or turnaround wait required for discount coupons. Enjoy your savings immediately!</span>
+                  <span>
+                    {isClaimedInstant
+                      ? 'No verification proof or turnaround wait required for discount coupons. Enjoy your savings immediately!'
+                      : 'Claiming reserves 1 slot from the partner quota and permanently links your voucher to your creator profile.'}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -1085,11 +1168,11 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
               <div className="flex items-center justify-between font-sans text-xs">
                 <span className="font-bold text-kpugi-ink dark:text-white flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-kpugi-blue dark:text-blue-400" />
-                  <span>{perk.claimed_count} Creators Joined</span>
+                  <span>{currentClaimedCount} Creators Joined</span>
                 </span>
                 <span className="font-mono font-bold text-kpugi-slate dark:text-slate-400">
                   {perk.total_quota
-                    ? `${Math.max(0, perk.total_quota - perk.claimed_count)} slots left`
+                    ? `${Math.max(0, perk.total_quota - currentClaimedCount)} slots left`
                     : 'Unlimited Slots'}
                 </span>
               </div>
@@ -1100,7 +1183,7 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
                   className="h-full bg-kpugi-blue rounded-full transition-all duration-700"
                   style={{
                     width: perk.total_quota
-                      ? `${quotaPct(perk.claimed_count, perk.total_quota)}%`
+                      ? `${quotaPct(currentClaimedCount, perk.total_quota)}%`
                       : '45%',
                   }}
                 />
@@ -1109,7 +1192,7 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
               <div className="flex items-center justify-between text-[11px] font-mono text-kpugi-slate dark:text-slate-400">
                 <span>
                   {perk.total_quota
-                    ? `${quotaPct(perk.claimed_count, perk.total_quota)}% Claimed`
+                    ? `${quotaPct(currentClaimedCount, perk.total_quota)}% Claimed`
                     : 'Open Enrollment'}
                 </span>
                 <span>Total Pool: {perk.total_quota || '∞'}</span>
@@ -1214,7 +1297,15 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
           </div>
           <div className="flex flex-col">
             <span className="font-display text-sm font-bold text-kpugi-ink dark:text-white">
-              {isApproved
+              {perk.perk_type === 'coupon'
+                ? isClaimedInstant
+                  ? 'Voucher Unlocked & Ready'
+                  : isPoolFull
+                  ? 'Perk Allocation Exhausted'
+                  : isLocked
+                  ? `Rank Threshold: Level ${perk.min_creator_level} Required`
+                  : 'Instant Voucher Ready to Claim'
+                : isApproved
                 ? 'Perk Successfully Claimed'
                 : isSubmitted
                 ? 'Proof Under Verification'
@@ -1225,7 +1316,15 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
                 : 'Instant Access Ready to Redeem'}
             </span>
             <span className="font-sans text-xs text-kpugi-slate dark:text-slate-400">
-              {isApproved
+              {perk.perk_type === 'coupon'
+                ? isClaimedInstant
+                  ? 'Copy your voucher code or redeem directly at partner checkout.'
+                  : isPoolFull
+                  ? 'All quota slots have been claimed for this batch.'
+                  : isLocked
+                  ? `Reach Level ${perk.min_creator_level} to participate in this perk.`
+                  : 'Claim this exclusive perk voucher to reveal your personal promo code.'
+                : isApproved
                 ? 'Your benefit has been verified. Check your Creator Wallet or partner account.'
                 : isSubmitted
                 ? 'Submissions are reviewed within 48 hours with automated milestone updates.'
@@ -1239,7 +1338,60 @@ export default function PerkDetailView({ perk, creatorId, totalEarned }: PerkDet
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-          {isApproved ? (
+          {perk.perk_type === 'coupon' ? (
+            isClaimedInstant ? (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {perk.coupon_code && (
+                  <CopyButton value={perk.coupon_code} label={`Copy Code: ${perk.coupon_code}`} />
+                )}
+                {perk.affiliate_url && (
+                  <a
+                    href={perk.affiliate_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <span>Redeem on Partner Portal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+            ) : isLocked ? (
+              <Link
+                href="/c/campaigns"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-kpugi-blue text-white font-sans text-xs font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <span>Explore Campaigns to Level Up</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            ) : isPoolFull ? (
+              <button
+                disabled
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-500 font-sans text-xs font-bold cursor-not-allowed"
+              >
+                All Slots Claimed
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleInstantClaim}
+                disabled={instantClaimPending}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {instantClaimPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Claiming...</span>
+                  </>
+                ) : (
+                  <>
+                    <Gift className="w-4 h-4" />
+                    <span>Claim Voucher &amp; Reveal Code</span>
+                  </>
+                )}
+              </button>
+            )
+          ) : isApproved ? (
             <Link
               href="/c/wallet"
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-kpugi-naira text-white font-sans text-xs font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 shadow-sm"

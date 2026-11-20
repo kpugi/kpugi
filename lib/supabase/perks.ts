@@ -252,7 +252,7 @@ export async function submitPerkProof(input: {
 
 /**
  * Creator claims a no-proof perk (instant coupon / software deal / freebie).
- * Creates a claim record in 'approved' state immediately.
+ * Creates a claim record in 'approved' state immediately and increments claimed_count.
  */
 export async function claimInstantPerk(input: {
   perkId: string;
@@ -260,24 +260,75 @@ export async function claimInstantPerk(input: {
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient();
 
-  const { error } = await supabase
+  // 1. Check if the creator has already claimed this perk
+  const { data: existingClaim } = await supabase
+    .from('platform_perk_claims')
+    .select('id, status')
+    .eq('perk_id', input.perkId)
+    .eq('creator_id', input.creatorId)
+    .maybeSingle();
+
+  if (existingClaim) {
+    return { success: true };
+  }
+
+  // 2. Fetch current perk state & quota
+  const { data: perk, error: perkErr } = await supabase
+    .from('platform_perks')
+    .select('id, total_quota, claimed_count, status')
+    .eq('id', input.perkId)
+    .single();
+
+  if (perkErr || !perk) {
+    console.error('[claimInstantPerk] perk fetch error:', perkErr);
+    return { success: false, error: 'Perk not found' };
+  }
+
+  if (perk.status !== 'active') {
+    return { success: false, error: 'This perk is no longer active' };
+  }
+
+  if (perk.total_quota !== null && (perk.claimed_count || 0) >= perk.total_quota) {
+    return { success: false, error: 'All slots for this perk have already been claimed' };
+  }
+
+  const now = new Date().toISOString();
+
+  // 3. Upsert claim record in approved state
+  const { error: claimErr } = await supabase
     .from('platform_perk_claims')
     .upsert(
       {
-        perk_id:    input.perkId,
-        creator_id: input.creatorId,
-        status:     'approved',
-        reward_paid: false,
+        perk_id:      input.perkId,
+        creator_id:   input.creatorId,
+        status:       'approved',
+        reward_paid:  false,
+        submitted_at: now,
+        reviewed_at:  now,
       },
       {
         onConflict: 'perk_id,creator_id',
-        ignoreDuplicates: true,
+        ignoreDuplicates: false,
       }
     );
 
-  if (error) {
-    console.error('[claimInstantPerk]', error);
-    return { success: false, error: error.message };
+  if (claimErr) {
+    console.error('[claimInstantPerk] claim error:', claimErr);
+    return { success: false, error: claimErr.message };
+  }
+
+  // 4. Atomically increment claimed_count on platform_perks
+  const newCount = (perk.claimed_count || 0) + 1;
+  const { error: updateErr } = await supabase
+    .from('platform_perks')
+    .update({
+      claimed_count: newCount,
+      updated_at: now,
+    })
+    .eq('id', input.perkId);
+
+  if (updateErr) {
+    console.warn('[claimInstantPerk] error updating claimed_count:', updateErr);
   }
 
   return { success: true };
