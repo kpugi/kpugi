@@ -263,6 +263,8 @@ export default async function AdminUserDetailPage({
   const accountStatus = (profile.account_status || checklist.account_status || 'active') as 'active' | 'suspended';
   const suspendedReason = (profile.suspended_reason || checklist.suspended_reason || null) as string | null;
   const suspendedAt = (profile.suspended_at || checklist.suspended_at || null) as string | null;
+  const referralSource = (checklist.referral_source as string) || null;
+  const referralFriendName = (checklist.referral_friend_name as string) || null;
 
   return (
     <UserDetailAdminView
@@ -280,6 +282,8 @@ export default async function AdminUserDetailPage({
         account_status: accountStatus,
         suspended_reason: suspendedReason,
         suspended_at: suspendedAt,
+        referral_source: referralSource,
+        referral_friend_name: referralFriendName,
       }}
       creatorProfile={creatorRes.data || null}
       advertiserProfile={advertiserRes.data || null}

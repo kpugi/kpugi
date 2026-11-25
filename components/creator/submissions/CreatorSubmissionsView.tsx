@@ -444,13 +444,24 @@ export default function CreatorSubmissionsView({ data }: CreatorSubmissionsViewP
                         AUDITING
                       </span>
                     ) : (
-                      <button
-                        onClick={() => setRejectionModalItem(item)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30 text-[11px] font-bold uppercase tracking-wider font-mono hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                      >
-                        <Info className="w-3.5 h-3.5" />
-                        REJECTED
-                      </button>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => setRejectionModalItem(item)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30 text-[11px] font-bold uppercase tracking-wider font-mono hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                          <span>Flagged · View Reason</span>
+                        </button>
+                        {item.rejectionReason && (
+                          <p
+                            onClick={() => setRejectionModalItem(item)}
+                            title={item.rejectionReason}
+                            className="text-[11px] text-red-600 dark:text-red-400 max-w-[220px] truncate cursor-pointer hover:underline"
+                          >
+                            {item.rejectionReason}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </td>
 

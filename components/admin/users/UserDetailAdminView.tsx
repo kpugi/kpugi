@@ -74,6 +74,8 @@ export interface UserDetailProps {
     account_status: "active" | "suspended";
     suspended_reason?: string | null;
     suspended_at?: string | null;
+    referral_source?: string | null;
+    referral_friend_name?: string | null;
   };
   creatorProfile?: {
     display_name?: string | null;
@@ -427,6 +429,16 @@ export default function UserDetailAdminView({
                   <Calendar className="w-3.5 h-3.5 text-gray-400" />
                   <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
                 </span>
+
+                {user.referral_source && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 text-[11px] font-medium">
+                    <span>Heard via:</span>
+                    <strong className="capitalize">{user.referral_source}</strong>
+                    {user.referral_source === "friend" && user.referral_friend_name && (
+                      <span>({user.referral_friend_name})</span>
+                    )}
+                  </span>
+                )}
               </div>
 
               {/* Copyable IDs */}
