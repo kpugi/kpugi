@@ -203,6 +203,8 @@ export async function POST(req: Request) {
         billing_email,
         campaign_goals,
         estimated_budget,
+        referral_source,
+        referral_friend_name,
       } = body;
 
       const finalCompanyName = company_name || userProfile.profile.full_name || 'Brand';
@@ -228,6 +230,8 @@ export async function POST(req: Request) {
             advertiser_settings: true,
             campaign_goals: campaign_goals || 'brand_reach',
             estimated_budget: estimated_budget || 'medium',
+            ...(referral_source ? { referral_source } : {}),
+            ...(referral_friend_name ? { referral_friend_name } : {}),
           },
           updated_at: new Date().toISOString(),
         })
@@ -292,6 +296,8 @@ export async function POST(req: Request) {
         niche_categories,
         channels,
         bank_details,
+        referral_source,
+        referral_friend_name,
       } = body;
 
       const finalDisplayName = display_name || userProfile.profile.full_name || 'Creator';
@@ -318,6 +324,8 @@ export async function POST(req: Request) {
             creator_bank: Boolean(bank_details?.account_number && bank_details?.account_name),
             channels: Array.isArray(channels) ? channels : [],
             niches: Array.isArray(niche_categories) ? niche_categories : [],
+            ...(referral_source ? { referral_source } : {}),
+            ...(referral_friend_name ? { referral_friend_name } : {}),
           },
           updated_at: new Date().toISOString(),
         })

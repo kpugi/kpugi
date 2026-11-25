@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { X, ExternalLink, ShieldCheck, Eye, Heart, MessageSquare, Share2, Clock, CheckCircle2, Lock } from 'lucide-react';
+import { X, ExternalLink, ShieldCheck, Eye, Heart, MessageSquare, Share2, Clock, CheckCircle2, Lock, Flag, AlertCircle } from 'lucide-react';
 import { SubmissionMockupData } from './types';
 import SocialPostMockup from './SocialPostMockup';
 import { formatCompactNumber } from '@/lib/utils/format';
@@ -9,9 +9,10 @@ import { formatCompactNumber } from '@/lib/utils/format';
 interface Props {
   submission: SubmissionMockupData | null;
   onClose: () => void;
+  onFlag?: (submission: SubmissionMockupData) => void;
 }
 
-export default function SubmissionInspectorModal({ submission, onClose }: Props) {
+export default function SubmissionInspectorModal({ submission, onClose, onFlag }: Props) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -135,6 +136,19 @@ export default function SubmissionInspectorModal({ submission, onClose }: Props)
               </div>
             </div>
 
+            {/* Flagged / Failure Reason Banner */}
+            {submission.failureReason && (
+              <div className="mt-4 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-500/30 space-y-1">
+                <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 text-xs font-bold">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Flagged Issue</span>
+                </div>
+                <p className="text-xs text-rose-800 dark:text-rose-200 leading-relaxed">
+                  {submission.failureReason}
+                </p>
+              </div>
+            )}
+
             {/* Payout & Settlement Info */}
             {submission.payoutAmount !== undefined && submission.payoutAmount !== null && (
               <div className={`mt-4 p-3.5 rounded-2xl border flex items-center justify-between ${
@@ -163,7 +177,7 @@ export default function SubmissionInspectorModal({ submission, onClose }: Props)
           </div>
 
           {/* Action Links */}
-          <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-3">
+          <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
             <button
               onClick={onClose}
               className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
@@ -171,17 +185,33 @@ export default function SubmissionInspectorModal({ submission, onClose }: Props)
               Close
             </button>
 
-            {submission.postUrl && (
-              <a
-                href={submission.postUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
-              >
-                <span>Open Live Post on {submission.platform}</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
+            <div className="flex items-center gap-2">
+              {onFlag &&
+                submission.status !== 'paid' &&
+                submission.status !== 'verified_fail' &&
+                submission.status !== 'rejected' && (
+                  <button
+                    type="button"
+                    onClick={() => onFlag(submission)}
+                    className="px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 font-sans text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <Flag className="w-3.5 h-3.5" />
+                    <span>Flag Issue</span>
+                  </button>
+                )}
+
+              {submission.postUrl && (
+                <a
+                  href={submission.postUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-2.5 rounded-xl bg-kpugi-blue hover:bg-blue-600 text-white font-sans text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+                >
+                  <span>Open Live Post on {submission.platform}</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
 

@@ -1199,3 +1199,125 @@ export async function logCancelledBachsDepositAction(reference: string, amount: 
   revalidatePath('/b/wallet');
   return { success: true };
 }
+
+/**
+ * Flag a creator submission with a reason from the Brand Campaign Detail View.
+ * Marks the submission as verified_fail with failure_reason so it surfaces
+ * on the creator's Submissions & Campaign Workspace pages and sends a notification.
+ */
+export async function flagSubmissionAction(submissionId: string, reason: string) {
+  const userProfile = await getOrCreateUserProfile();
+  if (!userProfile || !userProfile.profile) {
+    return { success: false, error: 'Please sign in to flag a submission.' };
+  }
+
+  const { isSuspended, reason: suspensionReason } = checkProfileSuspension(userProfile.profile);
+  if (isSuspended) {
+    return {
+      success: false,
+      error: `Account suspended (${suspensionReason || 'Read-Only Mode'}). Action disabled.`,
+    };
+  }
+
+  const trimmedReason = (reason || '').trim();
+  if (trimmedReason.length < 5) {
+    return { success: false, error: 'Please provide a clear reason (at least 5 characters).' };
+  }
+
+  if (!submissionId) {
+    return { success: false, error: 'Submission ID is required.' };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: submission, error: fetchError } = await supabase
+    .from('submissions')
+    .select(`
+      id,
+      status,
+      campaign_id,
+      creator_id,
+      post_url,
+      campaign:campaigns (
+        id,
+        title,
+        advertiser_id
+      )
+    `)
+    .eq('id', submissionId)
+    .single();
+
+  if (fetchError || !submission) {
+    return { success: false, error: 'Submission not found.' };
+  }
+
+  const campaign = Array.isArray(submission.campaign)
+    ? submission.campaign[0]
+    : (submission.campaign as { id: string; title: string; advertiser_id: string } | null);
+
+  if (!campaign || campaign.advertiser_id !== userProfile.profile.id) {
+    return { success: false, error: 'You do not have permission to flag this submission.' };
+  }
+
+  if (submission.status === 'paid') {
+    return { success: false, error: 'Paid submissions cannot be flagged here. Please contact support.' };
+  }
+
+  const now = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from('submissions')
+    .update({
+      status: 'verified_fail',
+      failure_reason: trimmedReason,
+      verified_at: now,
+    })
+    .eq('id', submissionId);
+
+  if (updateError) {
+    return { success: false, error: updateError.message || 'Failed to flag submission.' };
+  }
+
+  // Log audit event
+  await logAuditEvent({
+    profileId: userProfile.profile.id,
+    actorRole: 'advertiser',
+    action: AUDIT_ACTIONS.SUBMISSION_VERIFIED_FAIL,
+    targetTable: 'submissions',
+    targetId: submissionId,
+    details: `Brand flagged submission for "${campaign.title}": ${trimmedReason}`,
+    payload: {
+      campaign_id: campaign.id,
+      creator_id: submission.creator_id,
+      previous_status: submission.status,
+      failure_reason: trimmedReason,
+    },
+  });
+
+  // Notify creator of the flagged submission & reason
+  try {
+    const { data: creatorProfile } = await supabase
+      .from('profiles')
+      .select('id, clerk_id, email')
+      .eq('id', submission.creator_id)
+      .maybeSingle();
+
+    if (creatorProfile?.email) {
+      await notifyCreatorVerificationFailed({
+        clerkId: creatorProfile.clerk_id || '',
+        email: creatorProfile.email,
+        campaignTitle: campaign.title,
+        failureReason: trimmedReason,
+        campaignId: campaign.id,
+        profileId: creatorProfile.id,
+      });
+    }
+  } catch (notifyErr) {
+    console.warn('[flagSubmissionAction] Failed to notify creator:', notifyErr);
+  }
+
+  revalidatePath(`/b/campaigns/${campaign.id}`);
+  revalidatePath('/c/submissions');
+  revalidatePath(`/c/campaigns/${campaign.id}`);
+
+  return { success: true };
+}

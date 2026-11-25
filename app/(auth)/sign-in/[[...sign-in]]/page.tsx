@@ -1,4 +1,14 @@
+import type { Metadata } from 'next';
 import { SignIn } from '@clerk/nextjs';
+
+export const metadata: Metadata = {
+  title: 'Sign In | Kpugi',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 export default function SignInPage() {
   return (

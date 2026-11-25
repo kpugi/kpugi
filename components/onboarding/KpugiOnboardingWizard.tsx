@@ -91,6 +91,17 @@ const BUDGET_TIERS = [
   { id: 'tier_4', label: '₦10,000,000+', desc: 'Enterprise allocation' },
 ];
 
+const REFERRAL_SOURCES = [
+  { id: 'google', label: 'Google / Search' },
+  { id: 'tiktok', label: 'TikTok' },
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'x', label: 'X (Twitter)' },
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'friend', label: 'A Friend' },
+  { id: 'blog', label: 'Blog / Article' },
+  { id: 'other', label: 'Other' },
+];
+
 const BRAND_PERKS = [
   { icon: '📣', text: 'Targeted reach' },
   { icon: '💰', text: 'CPM budgeting' },
@@ -163,6 +174,10 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
   const [selectedGoal, setSelectedGoal] = useState('brand_reach');
   const [selectedBudget, setSelectedBudget] = useState('tier_2');
   const [agreedEscrowRules, setAgreedEscrowRules] = useState(true);
+
+  // ─── Step 4: Attribution Survey ──────────────────────────────────────────────
+  const [referralSource, setReferralSource] = useState<string>('');
+  const [referralFriendName, setReferralFriendName] = useState<string>('');
 
   // ─── Submission & Status State ───────────────────────────────────────────────
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -334,6 +349,11 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
     try {
       const selectedBankObj = FALLBACK_NIGERIAN_BANKS.find((b) => b.code === selectedBankCode);
 
+      const trimmedFriendName =
+        referralSource === 'friend' && referralFriendName.trim()
+          ? referralFriendName.trim()
+          : null;
+
       if (role === 'creator') {
         const payload = {
           action: 'complete-creator',
@@ -342,6 +362,8 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
           avatar_url: avatarUrl,
           niche_categories: selectedNiches,
           channels: selectedChannels,
+          referral_source: referralSource || null,
+          referral_friend_name: trimmedFriendName,
           bank_details:
             accountNumber.length === 10
               ? {
@@ -374,6 +396,8 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
           agreed_global_rules: agreedEscrowRules,
           campaign_goals: selectedGoal,
           estimated_budget: selectedBudget,
+          referral_source: referralSource || null,
+          referral_friend_name: trimmedFriendName,
         };
 
         const res = await fetch('/api/onboarding', {
@@ -1200,6 +1224,58 @@ export default function KpugiOnboardingWizard({ initialUser }: KpugiOnboardingWi
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Quick Attribution Survey Box */}
+                  <div className="max-w-md mx-auto p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-left space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        How did you hear about us?
+                      </label>
+                      <span className="text-[11px] font-medium text-slate-400">Optional</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {REFERRAL_SOURCES.map((source) => {
+                        const isSelected = referralSource === source.id;
+                        return (
+                          <button
+                            key={source.id}
+                            type="button"
+                            onClick={() =>
+                              setReferralSource((prev) => (prev === source.id ? '' : source.id))
+                            }
+                            className={cn(
+                              'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer',
+                              isSelected
+                                ? 'bg-[#2F49E8] text-white border-[#2F49E8] shadow-sm'
+                                : 'bg-white dark:bg-[#121626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+                            )}
+                          >
+                            {source.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {referralSource === 'friend' && (
+                      <div className="pt-1">
+                        <label
+                          htmlFor="referral-friend-name"
+                          className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1"
+                        >
+                          Friend&apos;s name (optional)
+                        </label>
+                        <input
+                          id="referral-friend-name"
+                          type="text"
+                          value={referralFriendName}
+                          onChange={(e) => setReferralFriendName(e.target.value)}
+                          placeholder="e.g. Chidi Okafor or @chidi"
+                          className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121626] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2F49E8]"
+                        />
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

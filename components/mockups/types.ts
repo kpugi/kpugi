@@ -16,6 +16,7 @@ export interface SubmissionMockupData {
   watchTimeSeconds?: number;
   submittedAt?: string | null;
   status: string;
+  failureReason?: string | null;
   payoutAmount?: number | null;
   isCapReached?: boolean;
   rank?: number;

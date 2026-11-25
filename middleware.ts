@@ -52,6 +52,11 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
     hostname.startsWith('admin.localhost');
 
   if (isAdminSubdomain) {
+    // Allow crawlers to read robots.txt on admin subdomain without redirecting to /sign-in
+    if (req.nextUrl.pathname === '/robots.txt') {
+      return NextResponse.next();
+    }
+
     const { userId } = await auth();
 
     // Unauthenticated → redirect to main site sign-in with clean public redirect URL
@@ -61,7 +66,9 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
         : `https://${hostname}${req.nextUrl.pathname}${req.nextUrl.search}`;
       const signInUrl = new URL(`${mainOrigin}/sign-in`);
       signInUrl.searchParams.set('redirect_url', publicUrl);
-      return NextResponse.redirect(signInUrl);
+      const redirectResponse = NextResponse.redirect(signInUrl);
+      redirectResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+      return redirectResponse;
     }
 
     // Rewrite admin.kpugi.com/anything → /admin/anything (same deployment)
@@ -84,7 +91,9 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   if (!isAdminSubdomain && !isDev && req.nextUrl.pathname.startsWith('/admin')) {
     const pathAfterAdmin = req.nextUrl.pathname.replace(/^\/admin/, '') || '/';
     const adminUrl = new URL(pathAfterAdmin + req.nextUrl.search, 'https://admin.kpugi.com');
-    return NextResponse.redirect(adminUrl);
+    const redirectResponse = NextResponse.redirect(adminUrl);
+    redirectResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    return redirectResponse;
   }
 
   // If in dev someone visits localhost:3000/admin directly, ensure protected
@@ -93,7 +102,9 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
     if (!userId) {
       const signInUrl = new URL('/sign-in', req.url);
       signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
+      const redirectResponse = NextResponse.redirect(signInUrl);
+      redirectResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+      return redirectResponse;
     }
   }
 
@@ -171,8 +182,12 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  // Enforce non-indexable status for all authenticated dashboard & management routes
-  if (isProtectedRoute(req)) {
+  // Enforce non-indexable status for all authenticated dashboard, management & auth routes
+  if (
+    isProtectedRoute(req) ||
+    req.nextUrl.pathname.startsWith('/sign-in') ||
+    req.nextUrl.pathname.startsWith('/sign-up')
+  ) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
 
